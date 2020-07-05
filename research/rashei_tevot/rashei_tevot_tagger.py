@@ -6,7 +6,7 @@ from data_utilities.util import traverse_ja
 from data_utilities.dibur_hamatchil_matcher import match_text
 
 slinks = LinkSet({"refs":{"$all":[re.compile("^Mishnah Berurah"),re.compile("^Shulchan Arukh, Orach Chayim")]}})
-print len(slinks)
+print(len(slinks))
 
 """
 Trying to match versions of Shulchan Arukh

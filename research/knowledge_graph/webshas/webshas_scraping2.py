@@ -63,17 +63,17 @@ class WebShasParser:
             jin = json.load(fin)
         rows = self.extract_topic_headers_recurse(jin, [])
         # rows = filter(lambda x: len(x["indent"]) < max_indent, rows)
-        rows = filter(lambda x: len(x[u"refs"]) == 0, rows)
+        rows = [x for x in rows if len(x["refs"]) == 0]
         # combine parents
         max_depth = 0
         for r in rows:
             if len(r["parents"]) > max_depth:
                 max_depth = len(r["parents"])
             for i, p in enumerate(r["parents"]):
-                r[u"level {}".format(i+1)] = p
+                r["level {}".format(i+1)] = p
             del r["parents"]
         with open("topic_headers.csv", "wb") as fout:
-            csv = unicodecsv.DictWriter(fout, [u"level {}".format(i+1) for i in xrange(max_depth)] + [u"refs"])
+            csv = unicodecsv.DictWriter(fout, ["level {}".format(i+1) for i in range(max_depth)] + ["refs"])
             csv.writeheader()
             csv.writerows(rows)
 
@@ -85,7 +85,7 @@ class WebShasParser:
             if "subtopics" in c:
                 temp_rows = self.extract_topic_headers_recurse(c["subtopics"], temp_parents, indent + 1)
             if "text" in c and (("refs" in c and len(c["refs"]) > 0) or ("subtopics" in c and len(temp_rows) > 0)):
-                rows += [{u"refs": u", ".join(c.get("refs", [])), u"parents": temp_parents}]
+                rows += [{"refs": ", ".join(c.get("refs", [])), "parents": temp_parents}]
             rows += temp_rows
         return rows
 
@@ -118,32 +118,32 @@ class WebShasParser:
                 out += [self.parse_link(p_obj["link"], verbose=False)]
             except InputError:
                 pass
-        print u"LINKS UNTOUCHED {} -- {}".format(len(self.all_links), self.all_links)
+        print("LINKS UNTOUCHED {} -- {}".format(len(self.all_links), self.all_links))
         with codecs.open("webshas2.json", "wb", encoding="utf8") as fout:
             json.dump(out, fout, indent=2, encoding="utf8")
 
     @staticmethod
     def get_page(url, verbose=True):
-        url = url.replace(ROOT, u"")
+        url = url.replace(ROOT, "")
         try:
-            with codecs.open(u"html/{}".format(url.replace(u"/", u"_")), "rb", encoding="utf8") as fin:
+            with codecs.open("html/{}".format(url.replace("/", "_")), "rb", encoding="utf8") as fin:
                 return fin.read()
         except IOError:
 
             try:
-                with codecs.open(u"html/bad/{}".format(url.replace(u"/", u"_")), "rb", encoding="utf8") as fin:
+                with codecs.open("html/bad/{}".format(url.replace("/", "_")), "rb", encoding="utf8") as fin:
                     return False
             except IOError:
                 if verbose:
-                    print u"fetching: {}".format(url)
+                    print("fetching: {}".format(url))
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
                 page = requests.get(ROOT + url, headers=headers)
-                with codecs.open(u"html/{}".format(url.replace(u"/", u"_")), "wb", encoding="utf8") as fout:
+                with codecs.open("html/{}".format(url.replace("/", "_")), "wb", encoding="utf8") as fout:
                     fout.write(page.text)
                 return page.text
         except UnicodeDecodeError:
-            print url
+            print(url)
             return False
 
     def parse_list(self, ul, page_href, verbose=True):
@@ -154,12 +154,12 @@ class WebShasParser:
         else:
             title = i_tag.get_text().strip()
             if verbose:
-                print u"> {}".format(title)
-        out = {u"text": title, u"subtopics": []}
+                print("> {}".format(title))
+        out = {"text": title, "subtopics": []}
         links = []
         temp_line = []
         for item in ul.descendants:
-            if item.parent != ul and (item.parent.name != u"ul" or item.parent.parent != ul):
+            if item.parent != ul and (item.parent.name != "ul" or item.parent.parent != ul):
                 # avoid recursion
                 continue
             if isinstance(item, NavigableString):
@@ -167,22 +167,22 @@ class WebShasParser:
                     continue
                 temp_line += [item]
             elif len(item.get_text().strip()) == 0:
-                if item.name == u"hr":  # last element on the page
+                if item.name == "hr":  # last element on the page
                     break
-                elif item.name == u"br":
+                elif item.name == "br":
                     if len(temp_line) > 0:
                         parsed_line, temp_links = self.parse_line(temp_line, page_href, title, verbose=verbose)
-                        out[u"subtopics"] += [parsed_line]
+                        out["subtopics"] += [parsed_line]
                         links += temp_links
                         temp_line = []
-                elif item.name == u"ul":
+                elif item.name == "ul":
                     # TODO find title
                     parsed_list, links = self.parse_list(item, page_href, verbose=verbose)
-                    out[u"subtopics"] += [parsed_list]
-            elif item.name == u"a":
+                    out["subtopics"] += [parsed_list]
+            elif item.name == "a":
                 temp_line += [item]
             else:
-                print u"UNKNOWN ELEMENT: {} - {}".format(item.name, item)
+                print("UNKNOWN ELEMENT: {} - {}".format(item.name, item))
         return out, links
 
     def parse_link(self, l, verbose=True):
@@ -191,7 +191,7 @@ class WebShasParser:
         if page_href in self.all_links:
             self.all_links.remove(page_href)
         if page_href in self.visited_links:
-            print "DONT REVISIT {}".format(page_href)
+            print("DONT REVISIT {}".format(page_href))
             raise InputError
         self.visited_links.add(page_href)
         page = self.get_page(page_href)
@@ -200,13 +200,13 @@ class WebShasParser:
         subsoup = BeautifulSoup(page, "lxml")
         h2 = subsoup.select_one("h2")
         if h2 is None:
-            print u"NO H2!!"
+            print("NO H2!!")
             raise InputError
         title = h2.get_text()
         if verbose:
-            print u"-------"*20
-            print title + u" - " + l
-        out = {u"text": title, u"link": page_href, u"subtopics": []}
+            print("-------"*20)
+            print(title + " - " + l)
+        out = {"text": title, "link": page_href, "subtopics": []}
         subtopic_list = subsoup.select("ul")
         if len(subtopic_list) == 0:
             # assume list a a_tags. use parent as list root
@@ -215,29 +215,29 @@ class WebShasParser:
             parsed_list, links = self.parse_list(ul, page_href, verbose=verbose)
             if not parsed_list:
                 continue
-            if parsed_list[u"text"] is None:
-                out[u"subtopics"] = parsed_list[u"subtopics"]
+            if parsed_list["text"] is None:
+                out["subtopics"] = parsed_list["subtopics"]
             else:
-                out[u"subtopics"] += [parsed_list]
+                out["subtopics"] += [parsed_list]
 
 
 
         return out
 
     def line2str(self, ln):
-        return u" ".join([i.strip() if isinstance(i, NavigableString) else i.get_text().strip() for i in ln])
+        return " ".join([i.strip() if isinstance(i, NavigableString) else i.get_text().strip() for i in ln])
 
     def parse_refs(self, refs):
         replacements = {
-            u"Rosh haShanah": u"Rosh Hashanah",
-            u"Menachos": u"Menachot"
+            "Rosh haShanah": "Rosh Hashanah",
+            "Menachos": "Menachot"
         }
         srefs = []
-        ref_list = re.split(ur"[;,]", refs)
+        ref_list = re.split(r"[;,]", refs)
         mult_added = 0
-        mult_reg = ur"[(\[](\d+)x[)\]]"
+        mult_reg = r"[(\[](\d+)x[)\]]"
         for i, r in enumerate(ref_list):
-            if i != 0 and re.search(ur"^\d+[ab](?:-(?:\d+)?[ab])?(?: {})?$".format(mult_reg), r.strip()):
+            if i != 0 and re.search(r"^\d+[ab](?:-(?:\d+)?[ab])?(?: {})?$".format(mult_reg), r.strip()):
                 if len(srefs) - mult_added != i:
                     continue
                 r = srefs[i - 1].index.title + r
@@ -248,47 +248,47 @@ class WebShasParser:
                 if multiplier:
                     try:
                         times = int(multiplier.group(1))
-                        r = r.replace(multiplier.group(), u'')
+                        r = r.replace(multiplier.group(), '')
                     except ValueError:
                         pass
                 mult_added += (times - 1)
                 # remove other parentheticals
-                r = re.sub(ur"[(\[][^)\]]+[)\]]?", u"", r)
+                r = re.sub(r"[(\[][^)\]]+[)\]]?", "", r)
                 # normalize book name
-                for k, v in replacements.items():
+                for k, v in list(replacements.items()):
                     if k in r:
                         r = r.replace(k, v)
-                srefs += [Ref(r.strip()) for _ in xrange(times)]
+                srefs += [Ref(r.strip()) for _ in range(times)]
             except InputError:
-                print u"INPUT ERROR: {}".format(r)
+                print("INPUT ERROR: {}".format(r))
             except ValueError:
-                print u"VALUE ERROR: {}".format(r)
+                print("VALUE ERROR: {}".format(r))
             except AttributeError:
-                print u"ATTRIBUTE ERROR: {}".format(r)
+                print("ATTRIBUTE ERROR: {}".format(r))
 
         try:
             return [r.normal() for r in srefs]
         except AttributeError:
-            print u"ATTRIBUTE ERROR"
-            print refs
+            print("ATTRIBUTE ERROR")
+            print(refs)
             return []
 
-    def normalize_href(self, href, page_href=u"", relative=True):
-        href = href.replace(ROOT, u"")
+    def normalize_href(self, href, page_href="", relative=True):
+        href = href.replace(ROOT, "")
         href = href.strip()
-        if re.search(ur"^\s*(\.\./)+", href):
-            href = re.sub(ur"^\s*(\.\./)+", u"", href)
+        if re.search(r"^\s*(\.\./)+", href):
+            href = re.sub(r"^\s*(\.\./)+", "", href)
         elif relative:
-            page_href = page_href.replace(ROOT, u"")
+            page_href = page_href.replace(ROOT, "")
             try:
-                page_loc = re.findall(u"(^.+)/[^/]+\.htm$", page_href)[0]
+                page_loc = re.findall("(^.+)/[^/]+\.htm$", page_href)[0]
             except IndexError:
-                page_loc = re.findall(u"(^[^/]+)/index\.htm$", page_href)[0]
-            href = page_loc + u"/" + href
+                page_loc = re.findall("(^[^/]+)/index\.htm$", page_href)[0]
+            href = page_loc + "/" + href
         return ROOT + href
 
     def denormalize_href(self, href):
-        href = href.replace(ROOT, u"")
+        href = href.replace(ROOT, "")
         return ROOT + href.replace("_", "/")
 
     def should_follow_link(self, page_href, new_href):
@@ -299,52 +299,52 @@ class WebShasParser:
         :return:
         """
         if new_href in self.leftover_links:
-            top_level1 = re.findall(u"^" + ROOT + u"[^/]+", page_href)
-            top_level2 = re.findall(u"^" + ROOT + u"[^/]+", new_href)
+            top_level1 = re.findall("^" + ROOT + "[^/]+", page_href)
+            top_level2 = re.findall("^" + ROOT + "[^/]+", new_href)
             if top_level1 == top_level2:
-                print u"LEFTOVERS: {} - {}".format(page_href, new_href)
+                print("LEFTOVERS: {} - {}".format(page_href, new_href))
                 self.leftover_links.remove(new_href)
                 return True
             else:
-                print u"REJECT LEOVER: {} - {}".format(page_href, new_href)
-        page_href = re.sub(ur"(?:/index|/general)?\.htm", u"", page_href)
+                print("REJECT LEOVER: {} - {}".format(page_href, new_href))
+        page_href = re.sub(r"(?:/index|/general)?\.htm", "", page_href)
         return new_href.startswith(page_href)
 
     def parse_line(self, ln, page_href, subtopic, verbose=True):
-        obj = {u'links': []}
+        obj = {'links': []}
         links = []
         text = self.line2str(ln)
         just_a_link = False
-        if (len(ln) == 1 and ln[0].name == u"a") or subtopic == u"Links":
-            obj[u'text'] = text
+        if (len(ln) == 1 and ln[0].name == "a") or subtopic == "Links":
+            obj['text'] = text
             just_a_link = True
         else:
-            text_split = re.split(ur":(?=[^:]+$)", text)
+            text_split = re.split(r":(?=[^:]+$)", text)
             if len(text_split) != 2:
-                print u"WEIRD LINE: len {}".format(len(text_split))
+                print("WEIRD LINE: len {}".format(len(text_split)))
             else:
                 text, refs = text_split
-                obj[u'text'] = text
-                obj[u'refs'] = self.parse_refs(refs)
+                obj['text'] = text
+                obj['refs'] = self.parse_refs(refs)
         for elem in ln:
-            if elem.name == u'a':
-                href = self.normalize_href(elem[u'href'], page_href)
+            if elem.name == 'a':
+                href = self.normalize_href(elem['href'], page_href)
                 if just_a_link:
                     links += [href]
                     # TODO deal with multiple links in one line
-                    if u'links' in obj:
-                        del obj[u'links']
-                    obj[u'link'] = href
+                    if 'links' in obj:
+                        del obj['links']
+                    obj['link'] = href
                     if self.should_follow_link(page_href, href):
                         try:
                             parsed_link = self.parse_link(href, verbose=verbose)
                         except InputError:
-                            print u"Couldn't parse: {}".format(href)
+                            print("Couldn't parse: {}".format(href))
                             continue
-                        obj[u'alt_text'] = parsed_link[u'text']
-                        obj[u'subtopics'] = parsed_link[u'subtopics']
+                        obj['alt_text'] = parsed_link['text']
+                        obj['subtopics'] = parsed_link['subtopics']
                 else:
-                    obj[u'links'] += [href]
+                    obj['links'] += [href]
         return obj, links
 
 if __name__ == '__main__':

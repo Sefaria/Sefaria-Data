@@ -24,12 +24,15 @@ skip_matches = ht[a]
 
 
 """
+from tqdm import tqdm
+from functools import cmp_to_key
 import django
+from functools import reduce
 django.setup()
 import regex as re
 import time as pytime
 import numpy as np
-import cPickle as pickle
+import pickle as pickle
 import bisect, csv, codecs, json
 from collections import OrderedDict, defaultdict
 import itertools
@@ -39,7 +42,8 @@ from sources.functions import post_link
 from sefaria.system.exceptions import DuplicateRecordError
 from sefaria.system.exceptions import InputError
 from sefaria.system.exceptions import PartialRefInputError
-from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh
+from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh, get_maximum_dh, ComputeLevenshteinDistanceByWord
+
 import logging
 import multiprocessing
 
@@ -77,32 +81,32 @@ def get_texts_from_category(category):
     return text_names
 
 def tokenize_words_old(str):
-    str = str.replace(u"־"," ")
+    str = str.replace("־"," ")
     str = re.sub(r"</?[^>]+>","",str) #get rid of html tags
     str = re.sub(r"\([^\(\)]+\)","",str) #get rid of refs
     str = str.replace('"',"'")
-    word_list = filter(bool,re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]",str))
+    word_list = list(filter(bool,re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]",str)))
     return word_list
 
-stop_words = [u"ר'",u'רב',u'רבי',u'בן',u'בר',u'בריה',u'אמר',u'כאמר',u'וכאמר',u'דאמר',u'ודאמר',u'כדאמר',u'וכדאמר',u'ואמר',u'כרב',
-              u'ורב',u'כדרב',u'דרב',u'ודרב',u'וכדרב',u'כרבי',u'ורבי',u'כדרבי',u'דרבי',u'ודרבי',u'וכדרבי',u"כר'",u"ור'",u"כדר'",
-              u"דר'",u"ודר'",u"וכדר'",u'א״ר',u'וא״ר',u'כא״ר',u'דא״ר',u'דאמרי',u'משמיה',u'קאמר',u'קאמרי',u'לרב',u'לרבי',
-              u"לר'",u'ברב',u'ברבי',u"בר'",u'הא',u'בהא',u'הך',u'בהך',u'ליה',u'צריכי',u'צריכא',u'וצריכי',u'וצריכא',u'הלל',u'שמאי', u"וגו'",u'וגו׳']
-stop_phrases = [u'למה הדבר דומה',u'כלל ופרט וכלל',u'אלא כעין הפרט',u'מה הפרט',u'כלל ופרט',u'אין בכלל',u'אלא מה שבפרט', u'אשר קדשנו במצותיו וצונו']
+stop_words = ["ר'",'רב','רבי','בן','בר','בריה','אמר','כאמר','וכאמר','דאמר','ודאמר','כדאמר','וכדאמר','ואמר','כרב',
+              'ורב','כדרב','דרב','ודרב','וכדרב','כרבי','ורבי','כדרבי','דרבי','ודרבי','וכדרבי',"כר'","ור'","כדר'",
+              "דר'","ודר'","וכדר'",'א״ר','וא״ר','כא״ר','דא״ר','דאמרי','משמיה','קאמר','קאמרי','לרב','לרבי',
+              "לר'",'ברב','ברבי',"בר'",'הא','בהא','הך','בהך','ליה','צריכי','צריכא','וצריכי','וצריכא','הלל','שמאי', "וגו'",'וגו׳']
+stop_phrases = ['למה הדבר דומה','כלל ופרט וכלל','אלא כעין הפרט','מה הפרט','כלל ופרט','אין בכלל','אלא מה שבפרט', 'אשר קדשנו במצותיו וצונו']
 
 
 def tokenize_words(base_str):
     base_str = base_str.strip()
     base_str = bleach.clean(base_str, tags=[], strip=True)
-    for match in re.finditer(ur'\(.*?\)', base_str):
+    for match in re.finditer(r'\(.*?\)', base_str):
         if library.get_titles_in_string(match.group()) and len(match.group().split()) <= 5:
-            base_str = base_str.replace(match.group(), u"")
+            base_str = base_str.replace(match.group(), "")
             # base_str = re.sub(ur"(?:\(.*?\)|<.*?>)", u"", base_str)
-    base_str = re.sub(ur'־',u' ',base_str)
-    base_str = re.sub(ur'[A-Za-z]',u'',base_str)
+    base_str = re.sub(r'־',' ',base_str)
+    base_str = re.sub(r'[A-Za-z]','',base_str)
     for phrase in stop_phrases:
-        base_str = base_str.replace(phrase,u'')
-    word_list = re.split(ur"\s+", base_str)
+        base_str = base_str.replace(phrase,'')
+    word_list = re.split(r"\s+", base_str)
     word_list = [w for w in word_list if len(w.strip()) > 0 and w not in stop_words]
     return word_list
 
@@ -110,11 +114,11 @@ def tokenize_words(base_str):
 def tokinzer_removed_indices(str, segNum):
     #TODO this function is not completely parallel to `tokenize_words()`. notably, it doesn't account for adding words by splitting on maqaf.
     #TODO i needed this function just for talmud which doesn't have maqaf so i didn't worry about it
-    filter_reg_html = u"<.*?>"
-    filter_reg_paren = u"[:\(\[]*\(.*?\)[:\)\]]*"
-    filter_reg_eng = u"[A-Za-z]+"
-    filter_reg_stop_phrases = u"|".join(stop_phrases)
-    filter_reg_stop_words = u"|".join(stop_words)
+    filter_reg_html = "<.*?>"
+    filter_reg_paren = "[:\(\[]*\(.*?\)[:\)\]]*"
+    filter_reg_eng = "[A-Za-z]+"
+    filter_reg_stop_phrases = "|".join(stop_phrases)
+    filter_reg_stop_words = "|".join(stop_words)
     regs = [filter_reg_html, filter_reg_paren, filter_reg_eng, filter_reg_stop_phrases,filter_reg_stop_words]
     match_spans = []
     match_text = []
@@ -122,9 +126,9 @@ def tokinzer_removed_indices(str, segNum):
     prev_removed_citations = []
     for ireg, reg in enumerate(regs):
         if ireg == 3:
-            full_reg = u"(?<=\s)[משדהוכלב]?(?:{}):?(?=\s|$)|^[משדהוכלב]?(?:{}):?(?=\s|$)".format(reg, reg)
+            full_reg = "(?<=\s)[משדהוכלב]?(?:{}):?(?=\s|$)|^[משדהוכלב]?(?:{}):?(?=\s|$)".format(reg, reg)
         else:
-            full_reg = u"(?<=\s)(?:{})(?=\s|$)|^(?:{})(?=\s|$)".format(reg, reg)
+            full_reg = "(?<=\s)(?:{})(?=\s|$)|^(?:{})(?=\s|$)".format(reg, reg)
         for m in re.finditer(full_reg, str):
             if ireg == 0:
                 cleaned_match = bleach.clean(m.group(), tags=[], strip=True)
@@ -138,27 +142,27 @@ def tokinzer_removed_indices(str, segNum):
                 prev_removed_citations += [m.group()]
                 whats_left = m.group()
                 for prev_removed in prev_removed_citations:
-                    actually_removed = re.findall(ur"\(.*?\)", prev_removed)[0]
-                    whats_left = whats_left.replace(actually_removed, u"")
+                    actually_removed = re.findall(r"\(.*?\)", prev_removed)[0]
+                    whats_left = whats_left.replace(actually_removed, "")
                 len_removed = len(m.group().split()) - len(whats_left.strip().split())
             elif ireg == 3:
                 whats_left = m.group()
                 for phrase in stop_phrases:
-                    whats_left = whats_left.replace(phrase, u"")
+                    whats_left = whats_left.replace(phrase, "")
                 len_removed = len(m.group().split()) - len(whats_left.split())
                 removes_words = len_removed > 0
             else:
                 removes_words = True
-                len_removed = len(re.split(ur'\s+', m.group()))
+                len_removed = len(re.split(r'\s+', m.group()))
 
             if removes_words:
                 match_text.append(m.group())
                 match_spans.append(m.span(0))
                 match_word_counts.append(len_removed)
 
-    sort_unzip = zip(*sorted(zip(match_spans, match_text, match_word_counts), key=lambda x: x[0][0]))
+    sort_unzip = list(zip(*sorted(zip(match_spans, match_text, match_word_counts), key=lambda x: x[0][0])))
     match_spans, match_text, match_word_counts = ([], [], []) if len(sort_unzip) == 0 else sort_unzip
-    word_iter = re.finditer(ur"\s+", str)
+    word_iter = re.finditer(r"\s+", str)
     word_spans = [m.start(0) for m in word_iter]
     word_removed_indices = [bisect.bisect_right(word_spans, span[0]) for span in match_spans]
     word_removed_indices = reduce(lambda a, b: a + [b - len(a)], word_removed_indices, [])
@@ -169,8 +173,8 @@ def tokinzer_removed_indices(str, segNum):
         num_skipped_words_passed = sum(match_word_counts[:iwri]) - iwri
         real_word_removed_indices += ([wri - num_skipped_words_passed]*match_word_counts[iwri])
 
-    if len(re.split(ur"\s+", str.strip())) - len(real_word_removed_indices) != len(tokenize_words(str)):
-        print "Badness {}".format(segNum)
+    if len(re.split(r"\s+", str.strip())) - len(real_word_removed_indices) != len(tokenize_words(str)):
+        print("Badness {}".format(segNum))
 
     return real_word_removed_indices
 
@@ -183,8 +187,8 @@ class Gemara_Hashtable:
         """
         self.lemmatizer = self.get_two_letter_word if lemmatizer is None else lemmatizer
         self.lemma2index = self.w2i if lemma2index is None else lemma2index
-        self.letter_freqs_list = [u'י', u'ו', u'א', u'מ', u'ה', u'ל', u'ר', u'נ', u'ב', u'ש', u'ת', u'ד', u'כ', u'ע', u'ח', u'ק',
-                         u'פ', u'ס', u'ט', u'ז', u'ג', u'צ']
+        self.letter_freqs_list = ['י', 'ו', 'א', 'מ', 'ה', 'ל', 'ר', 'נ', 'ב', 'ש', 'ת', 'ד', 'כ', 'ע', 'ח', 'ק',
+                         'פ', 'ס', 'ט', 'ז', 'ג', 'צ']
 
         self.letter_freqs_dict = {
             k: v for v, k in enumerate(self.letter_freqs_list)
@@ -193,21 +197,21 @@ class Gemara_Hashtable:
         self._two_letter_cache = {}
 
         self.sofit_map = {
-            u'ך': u'כ',
-            u'ם': u'מ',
-            u'ן': u'נ',
-            u'ף': u'פ',
-            u'ץ': u'צ',
+            'ך': 'כ',
+            'ם': 'מ',
+            'ן': 'נ',
+            'ף': 'פ',
+            'ץ': 'צ',
         }
         self.full_heb_map = self.sofit_map
         for l in self.letter_freqs_dict:
             self.full_heb_map[l] = l
 
-        self.letters = [u'א', u'ב', u'ג', u'ד', u'ה',
-                        u'ו', u'ז', u'ח', u'ט', u'י',
-                        u'כ', u'ל', u'מ', u'נ', u'ס',
-                        u'ע', u'פ', u'צ', u'ק', u'ר',
-                        u'ש', u'ת', unichr(ord(u'ת')+1)]
+        self.letters = ['א', 'ב', 'ג', 'ד', 'ה',
+                        'ו', 'ז', 'ח', 'ט', 'י',
+                        'כ', 'ל', 'מ', 'נ', 'ס',
+                        'ע', 'פ', 'צ', 'ק', 'ר',
+                        'ש', 'ת', chr(ord('ת')+1)]
 
         self.letters_dict = {
             k: v for v, k in enumerate(self.letters)
@@ -245,7 +249,7 @@ class Gemara_Hashtable:
         :param small_five_gram: a list of words which is self.skip_gram_size as opposed to self.skip_gram_size + 1. used for looking up last skip gram in book
         :return:
         """
-        lemmas = u''.join([self.lemmatizer(w) for w in small_five_gram])
+        lemmas = ''.join([self.lemmatizer(w) for w in small_five_gram])
         index = self.lemma2index(lemmas)
         return self._hash_table[index]
 
@@ -259,7 +263,7 @@ class Gemara_Hashtable:
         """
 
         lemmas = [self.lemmatizer(w) for w in five_gram]
-        skip_gram_list = [u''.join(temp_skip) for temp_skip in itertools.combinations(lemmas, self.skip_gram_size)]
+        skip_gram_list = [''.join(temp_skip) for temp_skip in itertools.combinations(lemmas, self.skip_gram_size)]
         if not is_end:
             del skip_gram_list[-1] # last one is the one that skips the first element
         return skip_gram_list
@@ -282,13 +286,13 @@ class Gemara_Hashtable:
         cache = self._two_letter_cache.get(word, None)
         if cache:
             return cache
-        temp_word = u''.join([self.full_heb_map.get(C, u'') for C in word])
+        temp_word = ''.join([self.full_heb_map.get(C, '') for C in word])
 
         if len(temp_word) < 2:
             if len(temp_word) == 1:
-                two_letter_word = u'{}{}'.format(temp_word,self.letters[-1])
+                two_letter_word = '{}{}'.format(temp_word,self.letters[-1])
             else:  # efes
-                two_letter_word = u'{}{}'.format(self.letters[-1],self.letters[-1])
+                two_letter_word = '{}{}'.format(self.letters[-1],self.letters[-1])
         else:
             indices = [self.letter_freqs_dict[c] for c in temp_word]
             current_max = max(indices)
@@ -298,9 +302,9 @@ class Gemara_Hashtable:
             sec_max, i_sec_max = self.letter_freqs_list[current_max],indices.index(current_max)
 
             if i_first_max <= i_sec_max:
-                two_letter_word = u'{}{}'.format(first_max,sec_max)
+                two_letter_word = '{}{}'.format(first_max,sec_max)
             else:
-                two_letter_word = u'{}{}'.format(sec_max,first_max)
+                two_letter_word = '{}{}'.format(sec_max,first_max)
         self._two_letter_cache[word] = two_letter_word
         return two_letter_word
 
@@ -374,13 +378,11 @@ class Mesorah_Item:
         if self.mesechta_index != other.mesechta_index:
             return False
         else:
-            if self.ref.is_bavli():
-                assert other.ref.is_bavli()
+            if self.ref.is_bavli() and other.ref.is_bavli():
                 return abs(self.location[0] - other.location[0]) < self.min_distance_between_matches
             else:
                 return self.ref == other.ref and \
                        abs(self.location[0] - other.location[0]) < self.min_distance_between_matches
-
 
     def mesechta_diff(self, other):
         return self.mesechta_index - other.mesechta_index
@@ -453,14 +455,25 @@ class PartialMesorahMatch:
         return Mesorah_Match(self.a_start + self.a_end, self.b_start + self.b_end, self.min_words_in_match, score)
 
 
+def default_calculate_score(words_a, words_b):
+    best_match = get_maximum_dh(words_a, words_b, min_dh_len=len(words_b)-1, max_dh_len=len(words_b))
+    if best_match:
+        return -best_match.score
+    else:
+        return -ComputeLevenshteinDistanceByWord(" ".join(words_a), " ".join(words_b))
+
+
 class ParallelMatcher:
 
     def __init__(self, tokenizer, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
                  min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True,
-                 calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None):
+                 calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None, ignore_subset_results=True):
         """
+        Minimal usage would be:
+        >>> p = ParallelMatcher(lambda s: s.split())
+        >>> p.match()
 
-        :param tokenizer: returns list of words
+        :param tokenizer: f(str)->[].   Returns list of words.  E.g. a function to remove HTML and split on space.
         :param f(str) -> str dh_extract_method: takes the full text of `comment` and returns only the dibur hamatchil. `self.tokenizer` will be applied to it afterward. this will only be used if `comment_index_list` in `match()` is not None
         :param ngram_size: int, basic unit of matching. 1 word will be skipped in each ngram of size `ngram_size`
         :param max_words_between: max words between consecutive ngrams
@@ -468,10 +481,11 @@ class ParallelMatcher:
         :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
         :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry TODO: interesting question on sharing ram: https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
+        :param f(str, str) -> float: function that takes two strings as parameters, representing both sides of a match. returns float representing score. This score does not affect the algorithm at all. it's purpose is to be used for post-processing on the results
         :param bool only_match_first: True if you want to return matches to the first item in the list
         :param f(str) -> str lemmatizer: function that takes a word and returns the lemma of the word. Default is `self.get_two_letter_word` which is useful for Hebrew
         :param f(str) -> hashable lemma2index: function that takes a string of concatenated lemmas (from self.lemmatizer) and produces a key to store those lemmas in the hashtable
-
+        :param bool ignore_subset_results: if True, filters out subset results before returning
         """
         self.tokenizer = tokenizer
         self.dh_extract_method = dh_extract_method
@@ -487,9 +501,13 @@ class ParallelMatcher:
         self.with_scoring = False
         self.calculate_score = None
         self.only_match_first = only_match_first
+        self.word_list_map = {}
+        self.with_scoring = True  # hard-coding to True now that calculate_score has a default
+        self.ignore_subset_results = ignore_subset_results
         if calculate_score:
-            self.with_scoring = True
             self.calculate_score = calculate_score
+        else:
+            self.calculate_score = default_calculate_score
 
 
 
@@ -515,7 +533,10 @@ class ParallelMatcher:
               return_obj=False):
         """
 
-        :param list[str] tref_list: list of index names to match against. Hack: you can also include tuples in this list where the tuples look like (content, unique_id) where `content` is the text to match and `unique_id` is a unique id.
+        :param list[str] tref_list: list of trefs names to match against.
+            Each item in the list can be either:
+                - str: will be interpretted as a tref. str have multiple trefs in it separated by '|'. This is useful when you want to match against a whole category of texts (e.g. Tanakh)
+                - tuple: where the tuples look like (content, unique_id) where `content` is the text to match and `unique_id` is a unique id.
         :param list[int] comment_index_list: list of indexes which correspond to either `index_list` or `tc_list` (whichever is not None). each index in this list indicates that the corresponding element should be treated as a `comment` meaning `self.dh_extract_method()` will be used on it.
         :param bool use_william: True if you want to use William Davidson version for Talmud refs
         :return: mesorat_hashas, mesorat_hashas_indexes
@@ -523,7 +544,7 @@ class ParallelMatcher:
         self.reset()
         start_time = pytime.time()
 
-        text_index_map_data = [None for yo in xrange(len(tref_list))]
+        text_index_map_data = [None for yo in range(len(tref_list))]
         for iunit, tref in enumerate(tref_list):
             if comment_index_list is not None and iunit in comment_index_list:
                 # this unit is a comment. modify tokenizer so that it applies dh_extract_method first
@@ -531,41 +552,51 @@ class ParallelMatcher:
             else:
                 unit_tokenizer = self.tokenizer
 
-            if self.verbose: print "Hashing {}".format(tref)
+            if self.verbose: print("Hashing {}".format(tref[1] if isinstance(tref, tuple) else tref))
             if isinstance(tref, tuple):
                 # otherwise, format is a tuple with (str, textname)
                 unit_il, unit_rl = [0], [Ref("Berakhot 58a")]  # random ref, doesn't actually matter
                 unit_wl = unit_tokenizer(tref[0])
-                unit_str = u"{}".format(tref[1])
+                unit_str = "{}".format(tref[1])
             else:
-                oref = Ref(tref)
-                if len(oref.index.categories) >= 2 and oref.index.categories[1] == "Bavli" and use_william:
-                    vtitle = 'William Davidson Edition - Aramaic'
-                else:
-                    vtitle = None
-                try:
-                    # jagged array, can be instantiated as TextChunk
-                    text_chunk = oref.text(lang, vtitle)
-                    unit_il, unit_rl, total_len, unit_flattened = text_chunk.text_index_map(unit_tokenizer, ret_ja=True)
-                    unit_wl = [w for seg in unit_flattened for w in unit_tokenizer(seg)]
-                    unit_str = oref.normal()
-                except InputError:
-                    # schema node
-                    schema_node = oref.index_node
-                    assert schema_node.ref() == oref, u"Schema Node {} isn't equal to original ref {}".format(schema_node.ref().normal(), oref.normal())
-                    unit_il, unit_rl = schema_node.text_index_map(unit_tokenizer, lang=lang, vtitle=vtitle, strict=False)
-                    unit_list_temp = schema_node.traverse_to_list(
-                        lambda n, _: TextChunk(n.ref(), lang, vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
-                    unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
-                    unit_str = tref
-
+                unit_il, unit_wl, unit_rl, last_total_len = [], [], [], 0
+                for temp_tref in tref.split("|"):
+                    oref = Ref(temp_tref)
+                    if len(oref.index.categories) >= 2 and oref.index.categories[1] == "Bavli" and use_william:
+                        vtitle = 'William Davidson Edition - Aramaic'
+                    else:
+                        vtitle = None
+                    try:
+                        # jagged array, can be instantiated as TextChunk
+                        text_chunk = oref.text(lang, vtitle)
+                        temp_unit_il, temp_unit_rl, total_len, unit_flattened = text_chunk.text_index_map(unit_tokenizer, ret_ja=True)
+                        temp_unit_wl = [w for seg in unit_flattened for w in unit_tokenizer(seg)]
+                    except InputError:
+                        # schema node
+                        schema_node = oref.index_node
+                        assert schema_node.ref() == oref, "Schema Node {} isn't equal to original ref {}".format(schema_node.ref().normal(), oref.normal())
+                        temp_unit_il, temp_unit_rl = schema_node.text_index_map(unit_tokenizer, lang=lang, vtitle=vtitle, strict=False)
+                        unit_list_temp = schema_node.traverse_to_list(
+                            lambda n, _: TextChunk(n.ref(), lang, vtitle=vtitle).ja().flatten_to_array() if not n.children else [])
+                        temp_unit_wl = [w for seg in unit_list_temp for w in unit_tokenizer(seg)]
+                    if len(unit_il) > 0:
+                        temp_unit_il = [x + last_total_len for x in temp_unit_il]
+                    unit_il += temp_unit_il
+                    unit_rl += temp_unit_rl
+                    last_total_len += len(temp_unit_wl)
+                    unit_wl += temp_unit_wl
+                unit_str = tref
+            self.word_list_map[unit_str] = unit_wl
             text_index_map_data[iunit] = (unit_wl, unit_il, unit_rl, unit_str)
             total_len = len(unit_wl)
             if not return_obj:
                 with open('{}text_index_map/{}.pkl'.format(output_root, tref), 'wb') as my_pickle:
                     pickle.dump((unit_il, unit_rl, total_len), my_pickle, -1)
 
-            for i_word in xrange(len(unit_wl) - self.skip_gram_size):
+            itt = range(len(unit_wl) - self.skip_gram_size)
+            if self.verbose and False:
+                itt = tqdm(itt, leave=False, smoothing=0)
+            for i_word in itt:
                 is_unit_end = i_word == (len(unit_wl) - self.skip_gram_size - 1)
                 skip_gram_list = self.ght.get_skip_grams(unit_wl[i_word:i_word + self.skip_gram_size + 1], is_end=is_unit_end)
                 for iskip_gram, skip_gram in enumerate(skip_gram_list):
@@ -580,7 +611,7 @@ class ParallelMatcher:
                     else:
                         try:
                             matched_ref = start_ref.to(end_ref)
-                        except AssertionError:
+                        except (AssertionError, InputError):
                             continue
 
                     self.ght[skip_gram] = Mesorah_Item(unit_str, iunit, (start_index, end_index), matched_ref, self.min_distance_between_matches)
@@ -602,7 +633,10 @@ class ParallelMatcher:
 
 
         # deal with one-off error at end of matches
-        for mm in mesorat_hashas:
+        itt = mesorat_hashas
+        if self.verbose:
+            itt = tqdm(itt, leave=False, smoothing=0)
+        for mm in itt:
             mes_wl_a, mes_il_a, mes_rl_a, unit = text_index_map_data[mm.a.mesechta_index]
             mes_wl_b, mes_il_b, mes_rl_b, unit = text_index_map_data[mm.b.mesechta_index]
 
@@ -617,13 +651,11 @@ class ParallelMatcher:
             new_end_ref = mes_rl_b[bisect.bisect_right(mes_il_b, new_loc[1]) - 1]
             mm.b = Mesorah_Item(mm.b.mesechta, mm.b.mesechta_index, new_loc, new_start_ref.to(new_end_ref),
                                  mm.b.min_distance_between_matches)
-
             if self.with_scoring:
                 mm.score = self.calculate_score(mes_wl_a[mm.a.location[0]:mm.a.location[1]+1], mes_wl_b[mm.b.location[0]:mm.b.location[1]+1])
-
-
-
-        if self.verbose: print "...{}s".format(round(pytime.time() - start_time, 2))
+        if self.ignore_subset_results:
+            mesorat_hashas = self._filter_subset_results(mesorat_hashas)
+        if self.verbose: print("...{}s".format(round(pytime.time() - start_time, 2)))
         if return_obj:
             return mesorat_hashas
         else:
@@ -641,6 +673,18 @@ class ParallelMatcher:
             objStr = json.dumps(obj_with_indexes, indent=4, ensure_ascii=False)
             with open('{}mesorat_hashas_indexes.json'.format(output_root), "wb") as f:
                 f.write(objStr.encode('utf-8'))
+
+    @staticmethod
+    def _filter_subset_results(matches):
+        matches_by_books_and_end_loc = defaultdict(list)
+        for m in matches:
+            key = (m.a.mesechta, m.b.mesechta, m.a.location[1]) if m.a.mesechta < m.b.mesechta else (m.b.mesechta, m.a.mesechta, m.a.location[1])
+            matches_by_books_and_end_loc[key] += [m]
+        new_matches = []
+        for m_list in matches_by_books_and_end_loc.values():
+            m_list.sort(key=lambda x: x.a.location[1] - x.a.location[0])
+            new_matches += [m_list[-1]]
+        return new_matches
 
     def compare_new_skip_matches(self, old_partials, new_b_skips, current_a):
         """
@@ -690,10 +734,13 @@ class ParallelMatcher:
 
     def get_matches_in_unit(self, input):
         imes, (mes_wl, mes_il, mes_rl, mes) = input
-        if self.verbose: print 'Searching {}'.format(mes)
+        if self.verbose: print('Searching {}'.format(mes))
         already_matched_dict = defaultdict(list)  # keys are word indexes that have matched. values are lists of Mesorah_Items that they matched to.
         matches = []
-        for i_word in xrange(len(mes_wl) - self.skip_gram_size):
+        itt = range(len(mes_wl) - self.skip_gram_size)
+        if self.verbose:
+            itt = tqdm(itt, leave=False, smoothing=0)
+        for i_word in itt:
             start_ref = mes_rl[bisect.bisect_right(mes_il, i_word) - 1]
             end_ref = mes_rl[bisect.bisect_right(mes_il, i_word + self.skip_gram_size) - 1]
 
@@ -702,7 +749,7 @@ class ParallelMatcher:
             else:
                 try:
                     matched_ref = start_ref.to(end_ref)
-                except AssertionError:
+                except (AssertionError, InputError):
                     continue
 
             a = Mesorah_Item(mes, imes, (i_word, i_word + self.skip_gram_size), matched_ref, self.min_distance_between_matches)
@@ -710,21 +757,21 @@ class ParallelMatcher:
             skip_matches.remove(a)  # remove the skip match that we're inspecting
             if not self.all_to_all:
                 # filter anything that's in this TextChunk
-                skip_matches = filter(lambda x: not imes == x.mesechta_index, skip_matches)
-            skip_matches = filter(lambda x: not x.too_close(a), skip_matches)
-            skip_matches = filter(lambda x: not self.ght.already_started_here((a, x)), skip_matches) # TODO use some closeness metric here also
+                skip_matches = [x for x in skip_matches if not imes == x.mesechta_index]
+            skip_matches = [x for x in skip_matches if not x.too_close(a)]
+            skip_matches = [x for x in skip_matches if not self.ght.already_started_here((a, x))] # TODO use some closeness metric here also
             try:
                 # avoid matching things close to what we already matched
                 temp_already_matched_list = already_matched_dict[i_word]
 
                 for temp_already_matched in temp_already_matched_list:
-                    skip_matches = filter(lambda x: not x.too_close(temp_already_matched), skip_matches)
+                    skip_matches = [x for x in skip_matches if not x.too_close(temp_already_matched)]
             except KeyError:
                 pass
-            skip_matches.sort(lambda x, y: x.compare(y))
+            skip_matches.sort(key=cmp_to_key(lambda x, y: x.compare(y)))
             partial_match_list = [PartialMesorahMatch(a, a, b, b, self.min_words_in_match) for b in skip_matches]
 
-            for j_word in xrange(i_word + 1, len(mes_wl) - self.skip_gram_size + 1):  # +1 at end of range to get last incomplete skip-gram
+            for j_word in range(i_word + 1, len(mes_wl) - self.skip_gram_size + 1):  # +1 at end of range to get last incomplete skip-gram
                 if len(partial_match_list) == 0:
                     break
                 temp_start_ref = mes_rl[bisect.bisect_right(mes_il, j_word) - 1]
@@ -734,7 +781,7 @@ class ParallelMatcher:
                 else:
                     try:
                         temp_matched_ref = temp_start_ref.to(temp_end_ref)
-                    except AssertionError:
+                    except (AssertionError, InputError):
                         continue
 
                 temp_a = Mesorah_Item(mes, imes, (j_word, j_word + self.skip_gram_size), temp_matched_ref, self.min_distance_between_matches)
@@ -743,17 +790,17 @@ class ParallelMatcher:
                 else:
                     temp_skip_matches = self.ght[mes_wl[j_word:j_word + self.skip_gram_size + 1]]
                     temp_skip_matches.remove(temp_a)  # temp_a wont be in temp_skip_matches if the if path is true
-                temp_skip_matches = filter(lambda x: not x.too_close(temp_a), temp_skip_matches)
-                temp_skip_matches.sort(lambda x, y: x.compare(y))
+                temp_skip_matches = [x for x in temp_skip_matches if not x.too_close(temp_a)]
+                temp_skip_matches.sort(key=cmp_to_key(lambda x, y: x.compare(y)))
                 new_partial_match_list, dead_matches_possibly = self.compare_new_skip_matches(partial_match_list,
                                                                                          temp_skip_matches, temp_a)
 
                 for dead in dead_matches_possibly:
                     distance_from_last_match = j_word - dead.last_a_word_matched()
                     if distance_from_last_match > self.max_words_between:
-                        if len(dead) > self.min_words_in_match:
+                        if len(dead) >= self.min_words_in_match:
                             self.ght.put_already_started((dead.b_start, dead.a_start))
-                            for i_matched_word in xrange(dead.a_start.location[0], dead.a_end.location[1] + 100):
+                            for i_matched_word in range(dead.a_start.location[0], dead.a_end.location[1] + 100):
                                 already_matched_dict[i_matched_word] += [dead.b_start]
                             try:
                                 matches += [dead.finalize()]
@@ -768,7 +815,7 @@ class ParallelMatcher:
             # account for matches at end of book
             for dead in partial_match_list:
                 distance_from_last_match = (len(mes_wl)-self.skip_gram_size) - dead.last_a_word_matched()
-                if len(dead) > self.min_words_in_match:
+                if len(dead) >= self.min_words_in_match:
                     self.ght.put_already_started((dead.b_start, dead.a_start))
                     try:
                         matches += [dead.finalize()]
@@ -785,17 +832,17 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
 
     def bible_tokenizer(s):
 
-        words = re.split(ur'\s+',re.sub(u'\u05be', u' ',s))
-        words = filter(lambda w: not (u'[' in w and u']' in w) and w != u'',words) # strip out kri
+        words = re.split(r'\s+',re.sub('\u05be', ' ',s))
+        words = [w for w in words if not ('[' in w and ']' in w) and w != ''] # strip out kri
         return words
 
     def talmud_tokenizer(s):
-        for match in re.finditer(ur'\(.*?\)', s):
+        for match in re.finditer(r'\(.*?\)', s):
             if library.get_titles_in_string(match.group()) and len(match.group().split()) <= 5:
-                s = s.replace(match.group(), u"")
+                s = s.replace(match.group(), "")
         for phrase in stop_phrases:
-            s = s.replace(phrase, u'')
-        words = [w for w in re.split(ur'\s+',s) if w not in stop_words and w != u'']
+            s = s.replace(phrase, '')
+        words = [w for w in re.split(r'\s+',s) if w not in stop_words and w != '']
         return words
 
 
@@ -826,10 +873,10 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
     new_mesorat_hashas = []
     bad_mesorat_hashas = []
 
-    len_m = len(matches.items())
+    len_m = len(list(matches.items()))
     for ildict, (match_str_tup, (ref1, ref2, inds)) in enumerate(matches.items()):
         if ildict % 100 == 0:
-            print "{}/{}--------------------------------------------".format(ildict,len_m)
+            print("{}/{}--------------------------------------------".format(ildict,len_m))
         bad_match = False
         m = ref1.index.title
         ind_list = pickle_jar[m][0]
@@ -855,7 +902,7 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
             oe = inds[ir][1] - s
             match_len = oe-os + 1
 
-            tb = {yo: 0 for yo in xrange(os,oe+1)}
+            tb = {yo: 0 for yo in range(os,oe+1)}
             tt_slice = tt[os:oe+1]
 
             for bl in biblset:
@@ -865,12 +912,12 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
                         continue
                     bt = bible_tokenizer(Ref(bl.refs[1]).text('he','Tanach with Text Only').as_string()) if bl.refs[1] not in bible_array_cache else bible_array_cache[bl.refs[1]]
                 except InputError as e:
-                    print e
-                    print u"This ref is problematic {} on this Talmud ref {}".format(bl.refs[1],unicode(rr))
+                    print(e)
+                    print("This ref is problematic {} on this Talmud ref {}".format(bl.refs[1],str(rr)))
                     continue
                 bs,be = get_maximum_subset_dh(tt_slice,bt,threshold=85)
                 if bs != -1 and be != -1:
-                    for ib in xrange(bs+os,be+os):
+                    for ib in range(bs+os,be+os):
                         tb[ib] = 1
 
 
@@ -887,9 +934,9 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
         else:
             bad_mesorat_hashas.append(list(match_str_tup))
 
-    print bad_mesorat_hashas
-    print "Old: {} New: {} Difference: {}".format(len_m, len(new_mesorat_hashas),
-                                                  len_m - len(new_mesorat_hashas))
+    print(bad_mesorat_hashas)
+    print("Old: {} New: {} Difference: {}".format(len_m, len(new_mesorat_hashas),
+                                                  len_m - len(new_mesorat_hashas)))
 
     objStr = json.dumps(bad_mesorat_hashas, indent=4, ensure_ascii=False)
     with open('mesorat_hashas_pasuk_filtered_bad.json', "w") as f:
@@ -923,11 +970,11 @@ def filter_close_matches(mesorat_hashas_name, max_cluster_dist=20, filter_only_t
         for temp_r in rray:
             seg_map[temp_r.normal()].add((other_r, r))
 
-    m = len(seg_map.items())
+    m = len(list(seg_map.items()))
     for iseg, (strr, rset) in enumerate(seg_map.items()):
         rray = list(rset)
         if iseg % 100 == 0:
-            print "{}/{}".format(iseg,m)
+            print("{}/{}".format(iseg,m))
         n = len(rray)
         dist_mat = np.zeros((n,n))
         for i in range(n):
@@ -982,10 +1029,10 @@ def filter_close_matches(mesorat_hashas_name, max_cluster_dist=20, filter_only_t
 
             c.remove(other_r)
             for temp_other_r in c:
-                temp_link = tuple(sorted((unicode(temp_other_r[0]), unicode(temp_other_r[1])), key=lambda r: Ref(r).order_id()))
+                temp_link = tuple(sorted((str(temp_other_r[0]), str(temp_other_r[1])), key=lambda r: Ref(r).order_id()))
                 all_bad_links.add(temp_link)
 
-            temp_link = tuple(sorted((unicode(other_r[0]),unicode(other_r[1])),key=lambda r: Ref(r).order_id()))
+            temp_link = tuple(sorted((str(other_r[0]),str(other_r[1])),key=lambda r: Ref(r).order_id()))
 
             # make sure temp_link isn't within max_dist of itself
             try:
@@ -1001,7 +1048,7 @@ def filter_close_matches(mesorat_hashas_name, max_cluster_dist=20, filter_only_t
                 new_mesorat_hashas.add(temp_link)
 
         for other_r in non_clustered:
-            temp_link = tuple(sorted((unicode(other_r[0]),unicode(other_r[1])),key=lambda r: Ref(r).order_id()))
+            temp_link = tuple(sorted((str(other_r[0]),str(other_r[1])),key=lambda r: Ref(r).order_id()))
 
             # make sure temp_link isn't within max_dist of itself
             try:
@@ -1028,7 +1075,7 @@ def filter_close_matches(mesorat_hashas_name, max_cluster_dist=20, filter_only_t
 
 
 
-    print "Old: {} New: {} Difference: {}".format(len(mesorat_hashas),len(filtered_mesorat_hashas),len(mesorat_hashas)-len(filtered_mesorat_hashas))
+    print("Old: {} New: {} Difference: {}".format(len(mesorat_hashas),len(filtered_mesorat_hashas),len(mesorat_hashas)-len(filtered_mesorat_hashas)))
     objStr = json.dumps(filtered_mesorat_hashas, indent=4, ensure_ascii=False)
     with open('mesorat_hashas_clustered.json', "w") as f:
         f.write(objStr.encode('utf-8'))
@@ -1056,8 +1103,8 @@ def remove_mishnah_talmud_dups(mesorat_hashas_name):
         if not is_bad_link:
             new_mesorat_hashas += [l]
 
-    print "Old: {} New: {} Difference: {}".format(len(mesorat_hashas), len(new_mesorat_hashas),
-                                                  len(mesorat_hashas) - len(new_mesorat_hashas))
+    print("Old: {} New: {} Difference: {}".format(len(mesorat_hashas), len(new_mesorat_hashas),
+                                                  len(mesorat_hashas) - len(new_mesorat_hashas)))
     objStr = json.dumps(new_mesorat_hashas, indent=4, ensure_ascii=False)
     with open('mesorat_hashas_mishnah_filtered.json', "w") as f:
         f.write(objStr.encode('utf-8'))
@@ -1069,7 +1116,7 @@ def save_links_local(category, mesorat_hashas_name):
     num_dups = 0
     for link in mesorat_hashas:
         for i,l in enumerate(link):
-            link[i] = l.replace(u'<d>',u'')
+            link[i] = l.replace('<d>','')
         link_obj = {"auto": True, "refs": link, "anchorText": "", "generated_by": "mesorat_hashas.py {}".format(category),
                     "type": "mesorat hashas"}
         try:
@@ -1078,7 +1125,7 @@ def save_links_local(category, mesorat_hashas_name):
             num_dups += 1
             pass  # poopy
 
-    print "num dups {}".format(num_dups)
+    print("num dups {}".format(num_dups))
 
 
 
@@ -1089,8 +1136,8 @@ def save_links_post_request(category):
     links = [l.contents() for l in ls]
     i = 0
     while i < len(links):
-        print "Posting [{}:{}]".format(i, i+499)
-        print post_link(links[i:i+500])
+        print("Posting [{}:{}]".format(i, i+499))
+        print(post_link(links[i:i+500]))
         i += 500
 class Mesorah_Match_Ref:
 
@@ -1151,13 +1198,13 @@ def compare_mesorat_hashas(compare_a_name, compare_b_name):
     j = 0
     for i,m in enumerate(compare_b_mmr):
         if i % 1000 == 0:
-            print "({}/{})".format(i,len(compare_b))
+            print("({}/{})".format(i,len(compare_b)))
         while compare_a_mmr[j] < m and j < len(compare_a_mmr) - 1:
             j += 1
         if compare_a_mmr[j] > m:
             inbnota += [m.normal()]
 
-    print "Num in B not in A: {}".format(len(inbnota))
+    print("Num in B not in A: {}".format(len(inbnota)))
     objStr = json.dumps(inbnota, indent=4, ensure_ascii=False)
     with open('mesorat_hashas_comparison.json', "w") as f:
         f.write(objStr.encode('utf-8'))
@@ -1178,8 +1225,8 @@ def filter_subset(mesorat_hashas_name):
         next_20 = mesorat_hashas_mmr[immr:immr+20]
         w = len(next_20)
         dist_array = np.zeros((w, w))
-        for i in xrange(w):
-            for j in xrange(i+1, w):
+        for i in range(w):
+            for j in range(i+1, w):
                 dist_array[i,j] = next_20[i].distance(next_20[j])
 
 
@@ -1225,7 +1272,7 @@ def count_cats(mesorat_hashas_name):
             elif temp_title in talmud:
                 tal += 1
 
-    print 'Mish {}, Tos {}, Mid {}, Tal {}'.format(mish, tos, mid, tal)
+    print('Mish {}, Tos {}, Mid {}, Tal {}'.format(mish, tos, mid, tal))
 
 def daf_with_most_links(mesorat_hashas_name):
     mesorat_hashas = json.load(open(mesorat_hashas_name, 'rb'))
@@ -1241,8 +1288,8 @@ def daf_with_most_links(mesorat_hashas_name):
 
     max = 0
     max_ref = None
-    yo = sorted(counter.items(), key=lambda x: x[1])
-    print yo[-20:]
+    yo = sorted(list(counter.items()), key=lambda x: x[1])
+    print(yo[-20:])
 
 def get_diff_ids(sefaria_mesorat_hashas_name, mongo_export):
     mesorat_hashas = json.load(open(sefaria_mesorat_hashas_name,'rb'))
@@ -1263,32 +1310,32 @@ def get_diff_ids(sefaria_mesorat_hashas_name, mongo_export):
     j = 0
     for i,m in enumerate(export_mmr):
         if i % 1000 == 0:
-            print "({}/{})".format(i,len(export_mmr))
+            print("({}/{})".format(i,len(export_mmr)))
         while mesorah_mmr[j] < m and j < len(mesorah_mmr) - 1:
             j += 1
         if mesorah_mmr[j] > m:
             inbnota += [m.normal(with_ids=True)]
 
-    print "Num in B not in A: {}".format(len(inbnota))
+    print("Num in B not in A: {}".format(len(inbnota)))
     objStr = json.dumps(inbnota, indent=4, ensure_ascii=False)
     with open('mesorat_hashas_comparison.json', "w") as f:
         f.write(objStr.encode('utf-8'))
 
 
 def bulk_delete(id_file_name):
-    import urllib2
+    import urllib.request, urllib.error, urllib.parse
     id_file = json.load(open(id_file_name,'rb'))
 
     for obj in id_file:
         id = obj['_id']
         url = 'http://www.sefaria.org/api/links/{}'.format(id)
-        request = urllib2.Request(url)
+        request = urllib.request.Request(url)
         request.get_method = lambda: 'DELETE'
         try:
-            response = urllib2.urlopen(request)
-            print response.read()
-        except urllib2.HTTPError:
-            print "{} error".format(id)
+            response = urllib.request.urlopen(request)
+            print(response.read())
+        except urllib.error.HTTPError:
+            print("{} error".format(id))
 
 
 def filter_index_file(filtered_mesorat_hashas, index_mesorat_hashas):
@@ -1297,9 +1344,9 @@ def filter_index_file(filtered_mesorat_hashas, index_mesorat_hashas):
     link_set = set()
     for link in fmh:
         link_set.add((link[0], link[1]))
-    new_index_mesorat_hashas = filter(lambda x: (x["match"][0], x["match"][1]) in link_set, imh)
-    print "{}".format(len(fmh))
-    print "Old {} New {}".format(len(imh), len(new_index_mesorat_hashas))
+    new_index_mesorat_hashas = [x for x in imh if (x["match"][0], x["match"][1]) in link_set]
+    print("{}".format(len(fmh)))
+    print("Old {} New {}".format(len(imh), len(new_index_mesorat_hashas)))
     objStr = json.dumps(new_index_mesorat_hashas, indent=4, ensure_ascii=False)
     with open('mesorat_hashas_indexed_mishnah_filtered_2018_06_14.json', "wb") as f:
         f.write(objStr.encode('utf-8'))
@@ -1313,14 +1360,14 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
     willy_titles = talmud_titles[:talmud_titles.index('Megillah') + 1]
     talmud_words_dict = {}
     for iindex, index in enumerate(talmud_indexes):
-        print "Tokenizing {} ({}/{})".format(index.title, iindex, len(talmud_indexes))
+        print("Tokenizing {} ({}/{})".format(index.title, iindex, len(talmud_indexes)))
         vtitle = 'William Davidson Edition - Aramaic' if index.title in willy_titles else None
         seg_list = index.nodes.traverse_to_list(
                 lambda n, _: TextChunk(n.ref(), "he", vtitle=vtitle).ja().flatten_to_array())
         seg_list_tokenized = [tokenize_words(seg) for seg in seg_list]
         seg_list_cumul_len = reduce(lambda a, b: a + [len(b) + a[-1]], seg_list_tokenized, [0])
         word_list = [w for seg in seg_list_tokenized for w in seg]
-        word_list_space = [w for seg in seg_list for w in re.split(ur"\s+", seg.strip())]
+        word_list_space = [w for seg in seg_list for w in re.split(r"\s+", seg.strip())]
         index_list, ref_list = index.text_index_map(vtitle=vtitle)
         word_list_removed = [w + seg_list_cumul_len[iseg] for iseg, seg in enumerate(seg_list) for w in tokinzer_removed_indices(seg, iseg)]
         talmud_words_dict[index.title] = {
@@ -1334,13 +1381,13 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
         }
     for ilink, link in enumerate(imh):
         if ilink % 1000 == 0:
-            print "{}/{}".format(ilink, len(imh))
+            print("{}/{}".format(ilink, len(imh)))
         try:
             ref_link = [Ref(r) for r in link["match"]]
         except PartialRefInputError as e:
-            print link["match"]
+            print(link["match"])
         except InputError as e:
-            print link["match"]
+            print(link["match"])
         for il, l in enumerate(ref_link):
             other_l = ref_link[int(il == 0)]
             if l.primary_category == "Talmud" and l.index.title == "Megillah" and other_l.primary_category != "Talmud" and other_l.index.title not in aramaic_books:
@@ -1354,7 +1401,7 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
 
                 for i in range(orig_start + space_start, orig_end + space_end+1):
                     if i == 400425:
-                        print "oh no"
+                        print("oh no")
                     talmud_words_dict[title]["linked"].add(i)
                 if len(space_str) == 0 and len(orig_str) != 0:
                     "One is len 0"
@@ -1364,12 +1411,12 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
                 first_space = tokenize_words(space_str[0])
                 last_space = tokenize_words(space_str[-1])
                 if len(first_space) == 0 or len(last_space) == 0:
-                    print "Zero length word"
+                    print("Zero length word")
                     continue
                 if orig_str[0] != first_space[0]:
-                    print "Not the same First"
+                    print("Not the same First")
                 if orig_str[-1] != last_space[0]:
-                    print "Not the same last"
+                    print("Not the same last")
     mishnah_map = LinkSet({"type": "mishnah in talmud"})
     for link in mishnah_map:
         link_refs = [Ref(r) for r in link.refs]
@@ -1385,7 +1432,7 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
                 for i in range(start_index, end_index + 1):
                     if i == 400425:
 
-                        print 'oh no mishnah'
+                        print('oh no mishnah')
                     talmud_words_dict[r.index.title]["linked"].add(i)
 
     num_linked = 0
@@ -1414,6 +1461,6 @@ def test_tokenize_words_remove_indexes(index_mesorat_hashas):
             prev_link_index = link_index
         talmud_range_dict[index.title]["ranges"] = ranges
     objStr = json.dumps(talmud_range_dict, indent=4, ensure_ascii=False)
-    print "{}/{} {}".format(num_linked, num_words, 1.0*num_linked/num_words)
+    print("{}/{} {}".format(num_linked, num_words, 1.0*num_linked/num_words))
     with open('talmud_hebrew_ranges.json', "wb") as fout:
         fout.write(objStr.encode('utf-8'))

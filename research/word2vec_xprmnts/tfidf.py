@@ -30,7 +30,7 @@ class tfidf:
     if n == 1:
       return max(enumerate(iterable), key=lambda x: x[1])[0]
     else:
-      return heapq.nlargest(n, xrange(len(iterable)), iterable.__getitem__)
+      return heapq.nlargest(n, range(len(iterable)), iterable.__getitem__)
 
   def addDocument(self, doc_obj, list_of_words):
     # building a dictionary
@@ -48,9 +48,9 @@ class tfidf:
 
   def finalize(self):
     num_docs = float(len(self.documents))
-    for w, wc in self.corpus_dict.items():
+    for w, wc in list(self.corpus_dict.items()):
       temp_idf = 1 + math.log(num_docs / self.corpus_dict[w])
-      for k, doc_list in self.documents.items():
+      for k, doc_list in list(self.documents.items()):
         doc_list[self.word2int[w]] *= temp_idf
 
   def get_n_mvv(self, v1, v2, n):
@@ -67,11 +67,11 @@ class tfidf:
     doc_list /= float(len(list_of_words))
 
     num_docs = float(len(self.documents))
-    for w, wc in self.corpus_dict.items():
+    for w, wc in list(self.corpus_dict.items()):
       temp_idf = 1 + math.log(num_docs / self.corpus_dict[w])
       doc_list[self.word2int[w]] *= temp_idf
 
-    for temp_doc_obj, temp_doc_list in self.documents.items():
+    for temp_doc_obj, temp_doc_list in list(self.documents.items()):
       sims = []
       cos_dist = np.dot(doc_list, temp_doc_list) / (np.linalg.norm(doc_list) * np.linalg.norm(temp_doc_list))
 
@@ -90,7 +90,7 @@ class tfidf:
   def similarities(self, doc_obj, top_n_words):
     doc_list = self.documents[doc_obj]
     sims = []
-    for temp_doc_obj, temp_doc_list in self.documents.items():
+    for temp_doc_obj, temp_doc_list in list(self.documents.items()):
       if temp_doc_obj == doc_obj:
         continue
       cos_dist = np.dot(doc_list, temp_doc_list) / (np.linalg.norm(doc_list) * np.linalg.norm(temp_doc_list))

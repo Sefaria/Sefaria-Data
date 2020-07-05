@@ -199,17 +199,17 @@ class TestSegmentMapPartialVerse(object):
     def test_correct_text(self):
         tc = TextChunk(Ref("Shabbat 2b"), "he", "Wikisource Talmud Bavli")
 
-        assert self.splicer.segment_maps[1].get_text(tc) == u"המוציא מרשות לרשות"
-        assert self.splicer.segment_maps[2].get_text(tc) == u"חייב מי לא עסקינן דקא"
-        assert self.splicer.segment_maps[3].get_text(tc) == u"מעייל"
-        assert self.splicer.segment_maps[4].get_text(tc) == u'מרה"ר לרה"י וקא קרי לה הוצאה'
+        assert self.splicer.segment_maps[1].get_text(tc) == "המוציא מרשות לרשות"
+        assert self.splicer.segment_maps[2].get_text(tc) == "חייב מי לא עסקינן דקא"
+        assert self.splicer.segment_maps[3].get_text(tc) == "מעייל"
+        assert self.splicer.segment_maps[4].get_text(tc) == 'מרה"ר לרה"י וקא קרי לה הוצאה'
 
-        assert self.splicer.segment_maps[5].get_text(tc) == u"וטעמא מאי כל עקירת חפץ ממקומו תנא הוצאה קרי לה"
+        assert self.splicer.segment_maps[5].get_text(tc) == "וטעמא מאי כל עקירת חפץ ממקומו תנא הוצאה קרי לה"
 
-        assert self.splicer.segment_maps[6].get_text(tc) == u"אמר רבינא מתניתין נמי דיקא דקתני"
-        assert self.splicer.segment_maps[7].get_text(tc) == u'יציאות וקא מפרש הכנסה לאלתר ש"מ'
+        assert self.splicer.segment_maps[6].get_text(tc) == "אמר רבינא מתניתין נמי דיקא דקתני"
+        assert self.splicer.segment_maps[7].get_text(tc) == 'יציאות וקא מפרש הכנסה לאלתר ש"מ'
 
-        assert self.splicer.segment_maps[9].get_text(tc) == u"מתנה לאביי הא תמני"
+        assert self.splicer.segment_maps[9].get_text(tc) == "מתנה לאביי הא תמני"
 
 
 class TestSegmentMapAdjustment(object):

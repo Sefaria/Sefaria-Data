@@ -62,12 +62,12 @@ class _ContinuousHMM(_BaseHMM):
             self.A = numpy.ones( (self.n,self.n), dtype=self.precision)*(1.0/self.n)
             self.w = numpy.ones( (self.n,self.m), dtype=self.precision)*(1.0/self.m)            
             self.means = numpy.zeros( (self.n,self.m,self.d), dtype=self.precision)
-            self.covars = [[ numpy.matrix(numpy.ones((self.d,self.d), dtype=self.precision)) for j in xrange(self.m)] for i in xrange(self.n)]
+            self.covars = [[ numpy.matrix(numpy.ones((self.d,self.d), dtype=self.precision)) for j in range(self.m)] for i in range(self.n)]
         elif init_type == 'user':
             # if the user provided a 4-d array as the covars, replace it with a 2-d array of numpy matrices.
-            covars_tmp = [[ numpy.matrix(numpy.ones((self.d,self.d), dtype=self.precision)) for j in xrange(self.m)] for i in xrange(self.n)]
-            for i in xrange(self.n):
-                for j in xrange(self.m):
+            covars_tmp = [[ numpy.matrix(numpy.ones((self.d,self.d), dtype=self.precision)) for j in range(self.m)] for i in range(self.n)]
+            for i in range(self.n):
+                for j in range(self.m):
                     if type(self.covars[i][j]) is numpy.ndarray:
                         covars_tmp[i][j] = numpy.matrix(self.covars[i][j])
                     else:
@@ -84,8 +84,8 @@ class _ContinuousHMM(_BaseHMM):
         '''        
         self.B_map = numpy.zeros( (self.n,len(observations)), dtype=self.precision)
         self.Bmix_map = numpy.zeros( (self.n,self.m,len(observations)), dtype=self.precision)
-        for j in xrange(self.n):
-            for t in xrange(len(observations)):
+        for j in range(self.n):
+            for t in range(len(observations)):
                 self.B_map[j][t] = self._calcbjt(j, t, observations[t])
                 
     """
@@ -100,7 +100,7 @@ class _ContinuousHMM(_BaseHMM):
         Helper method to compute Bj(Ot) = sum(1...M){Wjm*Bjm(Ot)}
         '''
         bjt = 0
-        for m in xrange(self.m):
+        for m in range(self.m):
             self.Bmix_map[j][m][t] = self._pdf(Ot, self.means[j][m], self.covars[j][m])
             bjt += (self.w[j][m]*self.Bmix_map[j][m][t])
         return bjt
@@ -114,16 +114,16 @@ class _ContinuousHMM(_BaseHMM):
         '''        
         gamma_mix = numpy.zeros((len(observations),self.n,self.m),dtype=self.precision)
         
-        for t in xrange(len(observations)):
-            for j in xrange(self.n):
-                for m in xrange(self.m):
+        for t in range(len(observations)):
+            for j in range(self.n):
+                for m in range(self.m):
                     alphabeta = 0.0
-                    for jj in xrange(self.n):
+                    for jj in range(self.n):
                         alphabeta += alpha[t][jj]*beta[t][jj]
                     comp1 = (alpha[t][j]*beta[t][j]) / alphabeta
                     
                     bjk_sum = 0.0
-                    for k in xrange(self.m):
+                    for k in range(self.m):
                         bjk_sum += (self.w[j][k]*self.Bmix_map[j][k][t])
                     comp2 = (self.w[j][m]*self.Bmix_map[j][m][t])/bjk_sum
                     
@@ -177,34 +177,34 @@ class _ContinuousHMM(_BaseHMM):
         '''        
         w_new = numpy.zeros( (self.n,self.m), dtype=self.precision)
         means_new = numpy.zeros( (self.n,self.m,self.d), dtype=self.precision)
-        covars_new = [[ numpy.matrix(numpy.zeros((self.d,self.d), dtype=self.precision)) for j in xrange(self.m)] for i in xrange(self.n)]
+        covars_new = [[ numpy.matrix(numpy.zeros((self.d,self.d), dtype=self.precision)) for j in range(self.m)] for i in range(self.n)]
         
-        for j in xrange(self.n):
-            for m in xrange(self.m):
+        for j in range(self.n):
+            for m in range(self.m):
                 numer = 0.0
                 denom = 0.0                
-                for t in xrange(len(observations)):
-                    for k in xrange(self.m):
+                for t in range(len(observations)):
+                    for k in range(self.m):
                         denom += (self._eta(t,len(observations)-1)*gamma_mix[t][j][k])
                     numer += (self._eta(t,len(observations)-1)*gamma_mix[t][j][m])
                 w_new[j][m] = numer/denom
             w_new[j] = self._normalize(w_new[j])
                 
-        for j in xrange(self.n):
-            for m in xrange(self.m):
+        for j in range(self.n):
+            for m in range(self.m):
                 numer = numpy.zeros( (self.d), dtype=self.precision)
                 denom = numpy.zeros( (self.d), dtype=self.precision)
-                for t in xrange(len(observations)):
+                for t in range(len(observations)):
                     numer += (self._eta(t,len(observations)-1)*gamma_mix[t][j][m]*observations[t])
                     denom += (self._eta(t,len(observations)-1)*gamma_mix[t][j][m])
                 means_new[j][m] = numer/denom
                 
-        cov_prior = [[ numpy.matrix(self.min_std*numpy.eye((self.d), dtype=self.precision)) for j in xrange(self.m)] for i in xrange(self.n)]
-        for j in xrange(self.n):
-            for m in xrange(self.m):
+        cov_prior = [[ numpy.matrix(self.min_std*numpy.eye((self.d), dtype=self.precision)) for j in range(self.m)] for i in range(self.n)]
+        for j in range(self.n):
+            for m in range(self.m):
                 numer = numpy.matrix(numpy.zeros( (self.d,self.d), dtype=self.precision))
                 denom = numpy.matrix(numpy.zeros( (self.d,self.d), dtype=self.precision))
-                for t in xrange(len(observations)):
+                for t in range(len(observations)):
                     vector_as_mat = numpy.matrix( (observations[t]-self.means[j][m]), dtype=self.precision )
                     numer += (self._eta(t,len(observations)-1)*gamma_mix[t][j][m]*numpy.dot( vector_as_mat.T, vector_as_mat))
                     denom += (self._eta(t,len(observations)-1)*gamma_mix[t][j][m])
@@ -219,7 +219,7 @@ class _ContinuousHMM(_BaseHMM):
         they all sum to '1'
         '''
         summ = numpy.sum(arr)
-        for i in xrange(len(arr)):
+        for i in range(len(arr)):
             arr[i] = (arr[i]/summ)
         return arr
     

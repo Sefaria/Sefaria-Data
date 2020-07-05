@@ -36,7 +36,7 @@ sLAYERS = '3' if fDo_3_Layers else '2'
 Filename_to_log = 'postagger_log_embdim' + str(EMBED_DIM) + '_hiddim' + str(HIDDEN_DIM) + '_lyr' + sLAYERS + '.txt'
 
 def log_message(message):
-    print message
+    print(message)
     with open(Filename_to_log, "a", encoding="utf8") as myfile:
         myfile.write("\n" + message)
 
@@ -93,8 +93,8 @@ def read_data(dir=''):
             if word_class: word_pos = word['POS']
             
             total_words += 1
-            if word_class and word_s == u'הכא' and word_pos != u'a':
-                print "OH NO! {}".format(file)
+            if word_class and word_s == 'הכא' and word_pos != 'a':
+                print("OH NO! {}".format(file))
             all_words.append((word_s, word_class, word_pos))
         
         total_daf += 1
@@ -248,7 +248,7 @@ class ConfusionMatrix:
             html += "<td>{}</td>".format(round(100.0*(fn_matrix[i]-self.matrix[i,i])/fn_matrix[i],2))
         html += "</tr>"
 
-        for k,v in stats.items():
+        for k,v in list(stats.items()):
             html += "<tr><td>{}</td>".format(k)
             for j in range(self.size):
                 tp = self.matrix[j,j]
@@ -428,8 +428,8 @@ split_index = int(round(len(all_data) * percent_training))
 train_data = all_data[split_index:]
 val_data = all_data[:split_index]
 
-print 'Training dafs: {}'.format(len(train_data))
-print 'Validation dafs: {}'.format(len(val_data))
+print('Training dafs: {}'.format(len(train_data)))
+print('Validation dafs: {}'.format(len(val_data)))
 
 pos_hashtable = make_pos_hashtable(train_data)
 
@@ -453,10 +453,10 @@ log_message('let: ' + str(let_vocab.size()))
 #debug - write out the vocabularies
 # write out to files the pos vocab and the letter vocab
 with open('let_vocab.txt', 'w', encoding='utf8') as f:
-    for let, id in let_vocab.get_c2i().items():
+    for let, id in list(let_vocab.get_c2i().items()):
         f.write(str(id) + ' : ' + let + '\n')
 with open('pos_vocab.txt', 'w', encoding='utf8') as f:
-    for pos, id in pos_vocab.get_c2i().items():
+    for pos, id in list(pos_vocab.get_c2i().items()):
         f.write(str(id) + ' : ' + pos + '\n')
 
 

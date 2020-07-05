@@ -7,7 +7,7 @@ import regex as re
 
 
 def dh_extraction_method(string):
-    stop_words = [u'פירוש',u'פי׳',u'פירשו',u'ופירש',u'פרש״י',u'פירש״י',u'כלומר',u'וכו׳',u'וא״ת',u'ק״ל']
+    stop_words = ['פירוש','פי׳','פירשו','ופירש','פרש״י','פירש״י','כלומר','וכו׳','וא״ת','ק״ל']
     return string
 
 def rashi_filter(string):
@@ -34,7 +34,7 @@ def match():
         while gemRefList[gemInd].sections[0] != yrRef.sections[0]:
             gemInd += 1
         gemRef = gemRefList[gemInd]
-        print "----- {} -----".format(gemRef)
+        print("----- {} -----".format(gemRef))
         log.write("----- {} -----\n".format(gemRef))
 
         yrtc = TextChunk(yrRef,'he')
@@ -63,8 +63,8 @@ def match():
         abbrevs = [am for seg in matched['abbrevs'] for am in seg]
         for am in abbrevs:
             rt_log_csv.writerow(
-                {'abbrev': dhm.cleanAbbrev(am.abbrev), 'expanded': u' '.join(am.expanded),
-                 'context_before': u' '.join(am.contextBefore), 'context_after': u' '.join(am.contextAfter)})
+                {'abbrev': dhm.cleanAbbrev(am.abbrev), 'expanded': ' '.join(am.expanded),
+                 'context_before': ' '.join(am.contextBefore), 'context_after': ' '.join(am.contextAfter)})
 
         temp_link_list = [l for l in ref_map if not l[0] is None and not l[1] is None]
         link_list += temp_link_list
@@ -74,8 +74,8 @@ def match():
 
         num_searched += len(ref_map)
 
-        print "MATCHES - {}".format(ref_map)
-        print "ACCURACY - {}%".format(round(1.0 * num_matched / num_searched, 5) * 100)
+        print("MATCHES - {}".format(ref_map))
+        print("ACCURACY - {}%".format(round(1.0 * num_matched / num_searched, 5) * 100))
         log.write("MATCHES - {}\n".format(temp_link_list))
         log.write("NOT FOUND - {}\n".format(unlink_list))
         log.write("ACCURACY - {}%\n".format(round(1.0 * num_matched / num_searched, 5) * 100))

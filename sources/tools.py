@@ -1,6 +1,6 @@
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+from urllib.error import URLError, HTTPError
 import json
 
 ak = ''
@@ -19,13 +19,13 @@ def post_index(index):
 		'json': indexJSON, 
 		'apikey': ak
 	}
-	data = urllib.urlencode(values)
-	req = urllib2.Request(url, data)
+	data = urllib.parse.urlencode(values)
+	req = urllib.request.Request(url, data)
 	try:
-		response = urllib2.urlopen(req)
-		print response.read()
-	except HTTPError, e:
-		print 'Error code: ', e.code
+		response = urllib.request.urlopen(req)
+		print(response.read())
+	except HTTPError as e:
+		print('Error code: ', e.code)
 
 post_index(index)
 
@@ -45,13 +45,13 @@ def post_text(ref, text):
 	ref = ref.replace(" ", "_")
 	url = 'http://localhost:8000/api/texts/%s' % ref
 	values = {'json': textJSON, 'apikey': ak}
-	data = urllib.urlencode(values)
-	req = urllib2.Request(url, data)
+	data = urllib.parse.urlencode(values)
+	req = urllib.request.Request(url, data)
 	try:
-		response = urllib2.urlopen(req)
-		print response.read()
-	except HTTPError, e:
-		print 'Error code: ', e.code
-		print e.read()
+		response = urllib.request.urlopen(req)
+		print(response.read())
+	except HTTPError as e:
+		print('Error code: ', e.code)
+		print(e.read())
 
 post_text("Sefer Ploni 5", text)

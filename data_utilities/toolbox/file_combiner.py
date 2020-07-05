@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+from urllib.error import URLError, HTTPError
 import json 
 import pdb
 import os

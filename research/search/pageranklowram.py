@@ -10,6 +10,7 @@
 
 import numpy
 import random
+from functools import reduce
 
 class web:
   def __init__(self,n):
@@ -17,7 +18,7 @@ class web:
     self.in_links = {}
     self.number_out_links = {}
     self.dangling_pages = {}
-    for j in xrange(n):
+    for j in range(n):
       self.in_links[j] = []
       self.number_out_links[j] = 0
       self.dangling_pages[j] = True
@@ -38,9 +39,9 @@ def random_web(n=1000,power=2.0):
   probability mass function p(l) proportional to
   1/(l+1)^power.'''
   g = web(n)
-  for k in xrange(n):
+  for k in range(n):
     lk = paretosample(n+1,power)-1
-    values = random.sample(xrange(n),lk)
+    values = random.sample(range(n),lk)
     g.in_links[k] = values
     for j in values:
       if g.number_out_links[j] == 0: g.dangling_pages.pop(j)
@@ -49,7 +50,7 @@ def random_web(n=1000,power=2.0):
 
 
 def create_empty_nodes(g):
-  all_links = set(reduce(lambda a, b: a + b, [v.keys() for v in g.values()], []))
+  all_links = set(reduce(lambda a, b: a + b, [list(v.keys()) for v in list(g.values())], []))
   for l in all_links:
     if l not in g:
       g[l] = {}
@@ -77,8 +78,8 @@ def step(g,p,s=0.85):
   vector.'''
   n = g.size
   v = numpy.matrix(numpy.zeros((n,1)))
-  inner_product = sum([p[j] for j in g.dangling_pages.keys()])
-  for j in xrange(n):
+  inner_product = sum([p[j] for j in list(g.dangling_pages.keys())])
+  for j in range(n):
     v[j] = s*sum([p[k]/g.number_out_links[k]
     for k in g.in_links[j]])+s*inner_product/n+(1-s)/n
   # We rescale the return vector, so it remains a
@@ -93,14 +94,14 @@ def pagerank(g,s=0.85,tolerance=0.00001, maxiter=100, verbose=False):
   iteration = 1
   change = 2
   while change > tolerance and iteration < maxiter:
-    if verbose: print "Iteration: %s" % iteration
+    if verbose: print("Iteration: %s" % iteration)
     new_p = step(w,p,s)
     change = numpy.sum(numpy.abs(p-new_p))
-    if verbose: print "Change in l1 norm: %s" % change
+    if verbose: print("Change in l1 norm: %s" % change)
     p = new_p
     iteration += 1
   pr_list = list(numpy.squeeze(numpy.asarray(p)))
-  return {k:v for k,v in zip(g.keys(), pr_list)}
+  return {k:v for k,v in zip(list(g.keys()), pr_list)}
 
 
 g = random_web(100,2.0) # works up to several million

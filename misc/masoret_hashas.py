@@ -6,9 +6,9 @@ import os
 import sys
 import argparse
 import json
-import urllib
-import urllib2
-from urllib2 import HTTPError
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+from urllib.error import HTTPError
 import re
 from numpy import mean
 import timeit
@@ -25,16 +25,16 @@ folder = "n_grams"
 apikey = ''
 
 # List of words to look out for when scoring hits
-ravs = [u"רב", u"רבי", u"רבה", u"רבא", u"ר'", u"רבן", u"שמואל", u"אביי", u'א"ר', u"רבין", u"מר", u"ריש לקיש"]
-ravs += [u"ל" + x for x in ravs]
-ravs += [u"ד" + x for x in ravs]
-ravs += [u"מ" + x for x in ravs]
-ravs += [u"ו" + x for x in ravs]
-chain = [u"בן", u"בר", u"בריה", u"משמיה", u"בשם", u"משום"]
-said = [u'א"ר', u"אמר", u"אומר", u"תני", u"תנן", u"תנא", u'א"ל']
-phrases = [u"אלא אמר", u"לא שנו אלא", u"עד כאן לא קאמר", u"חייא בר אבא אמר רבי יוחנן", u"ראיה לדבר זכר לדבר",
-           u"עד כאן לא קאמר", u"מאי שנא רישא ומאי שנא סיפא", u"אי איתמר הכי איתמר", u"שנא רישא ומאי שנא סיפא",
-           u"הוא מותיב לה והוא מפרק לה", u"חייא בר אבא אמר ר' יוחנן"]
+ravs = ["רב", "רבי", "רבה", "רבא", "ר'", "רבן", "שמואל", "אביי", 'א"ר', "רבין", "מר", "ריש לקיש"]
+ravs += ["ל" + x for x in ravs]
+ravs += ["ד" + x for x in ravs]
+ravs += ["מ" + x for x in ravs]
+ravs += ["ו" + x for x in ravs]
+chain = ["בן", "בר", "בריה", "משמיה", "בשם", "משום"]
+said = ['א"ר', "אמר", "אומר", "תני", "תנן", "תנא", 'א"ל']
+phrases = ["אלא אמר", "לא שנו אלא", "עד כאן לא קאמר", "חייא בר אבא אמר רבי יוחנן", "ראיה לדבר זכר לדבר",
+           "עד כאן לא קאמר", "מאי שנא רישא ומאי שנא סיפא", "אי איתמר הכי איתמר", "שנא רישא ומאי שנא סיפא",
+           "הוא מותיב לה והוא מפרק לה", "חייא בר אבא אמר ר' יוחנן"]
 
 # Counts to keep track of when printing interesting info about data set
 most_hits = 0
@@ -43,7 +43,7 @@ linked_hits = 0
 unlinked_hits = 0
 
 # Table of punctuation in unicode
-table = dict.fromkeys(i for i in xrange(sys.maxunicode) if unicodedata.category(unichr(i)).startswith('P'))
+table = dict.fromkeys(i for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith('P'))
 
 
 def remove_punctuation(terms):
@@ -69,7 +69,7 @@ def get_masoret_hashas_links():
         links = get_book_category_linkset(tractate, "Bavli")
         for link in links:
             link_dict = link.__dict__
-            if link_dict["type"] == u"mesorat hashas":
+            if link_dict["type"] == "mesorat hashas":
                 refs = link_dict["refs"]
                 if refs:
                     try:
@@ -146,11 +146,11 @@ def api_get_text(ref, lang=None, version=None):
         ref_version = "&version=" + version
     url = 'http://' + server + '/api/texts/%s?commentary=0&context=0%s%s' % (ref, ref_lang, ref_version)
     try:
-        response = urllib2.urlopen(url)
+        response = urllib.request.urlopen(url)
         resp = json.loads(response.read())
         return resp
-    except HTTPError, e:
-        print 'Error code: ', e.code, " because ", e.reason
+    except HTTPError as e:
+        print('Error code: ', e.code, " because ", e.reason)
 
 
 def get_tractates():
@@ -161,7 +161,7 @@ def get_tractates():
     tractates = []
     url = "http://{}/api/index".format(server)
     try:
-        response = urllib2.urlopen(url)
+        response = urllib.request.urlopen(url)
         resp = response.read()
         resp_file = json.loads(resp)
         for section in resp_file:
@@ -171,8 +171,8 @@ def get_tractates():
                         for seder in sub_section["contents"]:
                             for masechet in seder["contents"]:
                                 tractates.append(masechet["title"])
-    except HTTPError, e:
-        print 'Error code: ', e.code, " because ", e.reason
+    except HTTPError as e:
+        print('Error code: ', e.code, " because ", e.reason)
     return tractates
 
 
@@ -191,7 +191,7 @@ def generate_n_grams(n):
         ref_range = []
         ref = tractate
         while ref is not None:
-            print ref
+            print(ref)
             text_obj = api_get_text(ref)
             text = text_obj.get("he")
             for line in range(len(text)):
@@ -205,8 +205,8 @@ def generate_n_grams(n):
                 ref_range += [current_ref] * len(word_list)
                 # Text is appended to the text_chunk until it is large enough to be broken into n-grams
                 if len(text_chunk) >= n:
-                    gram_list = [text_chunk[i:i + n] for i in xrange(len(text_chunk) - n + 1)]
-                    ref_list = [ref_range[i:i + n] for i in xrange(len(ref_range) - n + 1)]
+                    gram_list = [text_chunk[i:i + n] for i in range(len(text_chunk) - n + 1)]
+                    ref_list = [ref_range[i:i + n] for i in range(len(ref_range) - n + 1)]
                     for i in range(len(gram_list)):
                         gram = gram_list[i]
                         refs = ref_list[i]
@@ -220,7 +220,7 @@ def generate_n_grams(n):
             ref = text_obj.get("next")
         with open(folder + os.sep + tractate + ".json", 'w') as gram_file:
             json.dump(grams, gram_file)
-        print "Hadran " + tractate
+        print("Hadran " + tractate)
 
 
 def search_bavli(search_term):
@@ -252,12 +252,12 @@ def search_bavli(search_term):
             }
     data = json.dumps(data)
     try:
-        response = urllib2.urlopen(url, data)
+        response = urllib.request.urlopen(url, data)
         resp = response.read()
         resp_file = json.loads(resp)
         return resp_file
-    except HTTPError, e:
-        print 'Error code: ', e.code, " because ", e.reason, " for ", search_term.encode('utf-8')
+    except HTTPError as e:
+        print('Error code: ', e.code, " because ", e.reason, " for ", search_term.encode('utf-8'))
 
 
 def score_and_add_result(sources, locations, terms, counts):
@@ -314,7 +314,7 @@ def split_hit(hit):
     new_refs = []
     new_counts = []
     new_dupes = []
-    for i in xrange(len(hit["duplicates"])):
+    for i in range(len(hit["duplicates"])):
         if hit["duplicates"][i] >= 0:
             new_terms.append(hit["terms"][i])
             new_refs.append(hit["refs"][i])
@@ -345,12 +345,12 @@ def find_reverse_hit(this_hit, those_hits):
     this_term = remove_punctuation(this_hit["terms"])
     for that_hit in those_hits:
         that_term = remove_punctuation(that_hit["terms"])
-        if any(this_term == that_term[i:i + len(this_term)] for i in xrange(len(that_term))):
+        if any(this_term == that_term[i:i + len(this_term)] for i in range(len(that_term))):
             terms = this_hit["terms"]
             sources = this_hit["refs"]
             counts = this_hit["counts"]
             locations = []
-            for x in xrange(len(this_hit["terms"])):
+            for x in range(len(this_hit["terms"])):
                 i = that_term.index(this_term[x])
                 this_hit["duplicates"][x] -= 1
                 that_hit["duplicates"][i] -= 1
@@ -358,12 +358,12 @@ def find_reverse_hit(this_hit, those_hits):
             hit_to_delete = that_hit
             result = score_and_add_result(sources, locations, terms, counts)
             break
-        elif any(that_term == this_term[i:i + len(that_term)] for i in xrange(len(this_term))):
+        elif any(that_term == this_term[i:i + len(that_term)] for i in range(len(this_term))):
             terms = that_hit["terms"]
             sources = that_hit["refs"]
             counts = that_hit["counts"]
             locations = []
-            for x in xrange(len(that_hit["terms"])):
+            for x in range(len(that_hit["terms"])):
                 i = this_term.index(that_term[x])
                 that_hit["duplicates"][x] -= 1
                 this_hit["duplicates"][i] -= 1
@@ -386,8 +386,8 @@ def merge_hits(hits):
     global linked_hits
     global unlinked_hits
     all_results = {}
-    for this_daf in hits.keys():
-        for that_daf in hits[this_daf].keys():
+    for this_daf in list(hits.keys()):
+        for that_daf in list(hits[this_daf].keys()):
             if that_daf != this_daf:
                 for this_hit in sorted(hits[this_daf][that_daf], key=lambda x: -len(x["terms"])):
                     result = None
@@ -405,7 +405,7 @@ def merge_hits(hits):
                     else:
                         result = score_and_add_result(this_hit["refs"], [that_daf], this_hit["terms"],
                                                       this_hit["counts"])
-                        for i in xrange(len(this_hit["duplicates"])):
+                        for i in range(len(this_hit["duplicates"])):
                             this_hit["duplicates"][i] -= 1
                         hits[this_daf][that_daf] += split_hit(this_hit)
                         unlinked_hits += 1
@@ -489,7 +489,7 @@ def search_n_grams():
                         hits[daf][result_daf] = [tractate_hits[result_daf]]
                 else:
                     hits[daf] = {result_daf: [tractate_hits[result_daf]]}
-        print "Finished tractate " + filename.replace(".json", "")
+        print("Finished tractate " + filename.replace(".json", ""))
     with open("all_hits.json", "w") as all_hits:
         json.dump(hits, all_hits)
     return hits
@@ -678,7 +678,7 @@ def post_links():
     url = 'http://' + server + '/api/links/'
     for result in results:
         if result["score"] < 100:
-            print count
+            print(count)
             return
         else:
             link = {"refs": [result["source"], result["location"]],
@@ -691,13 +691,13 @@ def post_links():
                 'json': textjson,
                 'apikey': apikey
             }
-            data = urllib.urlencode(values)
-            req = urllib2.Request(url, data)
+            data = urllib.parse.urlencode(values)
+            req = urllib.request.Request(url, data)
             try:
-                response = urllib2.urlopen(req)
+                response = urllib.request.urlopen(req)
                 count += 1
-            except HTTPError, e:
-                print e
+            except HTTPError as e:
+                print(e)
 
 
 if __name__ == '__main__':

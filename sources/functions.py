@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+from urllib.error import URLError, HTTPError
 import json
 import requests
 import pdb
@@ -13,7 +13,7 @@ import re
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
 sys.path.insert(0, "../")
-from local_settings import *
+from .local_settings import *
 import django
 django.setup()
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
@@ -28,40 +28,40 @@ from functools import wraps
 # from word2number import w2n
 
 gematria = {}
-gematria[u'א'] = 1
-gematria[u'ב'] = 2
-gematria[u'ג'] = 3
-gematria[u'ד'] = 4
-gematria[u'ה'] = 5
-gematria[u'ו'] = 6
-gematria[u'ז'] = 7
-gematria[u'ח'] = 8
-gematria[u'ט'] = 9
-gematria[u'י'] = 10
-gematria[u'כ'] = 20
-gematria[u'ל'] = 30
-gematria[u'מ'] = 40
-gematria[u'נ'] = 50
-gematria[u'ס'] = 60
-gematria[u'ע'] = 70
-gematria[u'פ'] = 80
-gematria[u'צ'] = 90
-gematria[u'ק'] = 100
-gematria[u'ר'] = 200
-gematria[u'ש'] = 300
-gematria[u'ת'] = 400
+gematria['א'] = 1
+gematria['ב'] = 2
+gematria['ג'] = 3
+gematria['ד'] = 4
+gematria['ה'] = 5
+gematria['ו'] = 6
+gematria['ז'] = 7
+gematria['ח'] = 8
+gematria['ט'] = 9
+gematria['י'] = 10
+gematria['כ'] = 20
+gematria['ל'] = 30
+gematria['מ'] = 40
+gematria['נ'] = 50
+gematria['ס'] = 60
+gematria['ע'] = 70
+gematria['פ'] = 80
+gematria['צ'] = 90
+gematria['ק'] = 100
+gematria['ר'] = 200
+gematria['ש'] = 300
+gematria['ת'] = 400
 
 
 inv_gematria = {}
-for key in gematria.keys():
+for key in list(gematria.keys()):
     inv_gematria[gematria[key]] = key
 
-heb_parshiot = [u"בראשית",u"נח", u"לך לך", u"וירא", u"חיי שרה", u"תולדות", u"ויצא", u"וישלח", u"וישב", u"מקץ",
-u"ויגש", u"ויחי", u"שמות", u"וארא", u"בא", u"בשלח", u"יתרו", u"משפטים", u"תרומה", u"תצוה", u"כי תשא",
-u"ויקהל", u"פקודי", u"ויקרא", u"צו", u"שמיני", u"תזריע", u"מצרע", u"אחרי מות", u"קדשים", u"אמר", u"בהר",
-u"בחקתי", u"במדבר", u"נשא", u"בהעלתך", u"שלח לך", u"קרח", u"חקת", u"בלק", u"פינחס", u"מטות",
-u"מסעי", u"דברים", u"ואתחנן", u"עקב", u"ראה", u"שפטים", u"כי תצא", u"כי תבוא", u"נצבים",
-u"וילך", u"האזינו", u"וזאת הברכה"]
+heb_parshiot = ["בראשית","נח", "לך לך", "וירא", "חיי שרה", "תולדות", "ויצא", "וישלח", "וישב", "מקץ",
+"ויגש", "ויחי", "שמות", "וארא", "בא", "בשלח", "יתרו", "משפטים", "תרומה", "תצוה", "כי תשא",
+"ויקהל", "פקודי", "ויקרא", "צו", "שמיני", "תזריע", "מצרע", "אחרי מות", "קדשים", "אמר", "בהר",
+"בחקתי", "במדבר", "נשא", "בהעלתך", "שלח לך", "קרח", "חקת", "בלק", "פינחס", "מטות",
+"מסעי", "דברים", "ואתחנן", "עקב", "ראה", "שפטים", "כי תצא", "כי תבוא", "נצבים",
+"וילך", "האזינו", "וזאת הברכה"]
 
 eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach",
 "Vayeshev", "Miketz", "Vayigash", "Vayechi", "Shemot", "Vaera", "Bo", "Beshalach", "Yitro",
@@ -98,7 +98,7 @@ def any_hebrew_in_str(line):
         char = line[i: i + 2]
         try:
             char = char.decode('utf-8')
-            any_hebrew = re.findall(u"[\u0591-\u05EA]", char)
+            any_hebrew = re.findall("[\u0591-\u05EA]", char)
             is_hebrew = any_hebrew != []
             if is_hebrew:
                 return True
@@ -115,7 +115,7 @@ def any_english_in_str(line):
 #         return eng_dictionary.check(line)
 #     return False
 
-def create_simple_index_commentary(en_title, he_title, base_title, categories, type="many_to_one", server=SEFARIA_SERVER):
+def create_simple_index_commentary(en_title, he_title, base_title, categories, addressTypes=None, type="many_to_one", server=SEFARIA_SERVER):
     '''
     Returns a JSON index object for a simple Index that is a Commentary.
     :param en_title: Name of commentary in English
@@ -125,16 +125,18 @@ def create_simple_index_commentary(en_title, he_title, base_title, categories, t
     :param categories: Array such as ["Tanakh", "Commentary", "Rashi", "Writings", "Psalms"]
     :return:
     '''
+    if addressTypes is None:
+        addressTypes = []
     base_index = library.get_index(base_title)
     root = JaggedArrayNode()
     full_title = "{} on {}".format(en_title, base_title)
     he_base_title = base_index.get_title('he')
-    he_full_title = u"{} על {}".format(he_title, he_base_title)
+    he_full_title = "{} על {}".format(he_title, he_base_title)
     root.add_primary_titles(full_title, he_full_title)
     structure = base_index.nodes.sectionNames #this mimics the structure as "one_to_one"
     if type == "many_to_one":
         structure.append("Comment")
-    root.add_structure(structure)
+    root.add_structure(structure, address_types=addressTypes)
 
     index = {
         "title": full_title,
@@ -161,7 +163,7 @@ def create_complex_index_torah_commentary(en_title, he_title, intro_structure=["
     path = ["Tanakh", "Commentary", en_title]
     root = SchemaNode()
     full_title = "{} on Torah".format(en_title)
-    he_full_title = u"{} על תורה".format(he_title)
+    he_full_title = "{} על תורה".format(he_title)
     root.add_primary_titles(full_title, he_full_title)
     root.key = en_title
 
@@ -214,10 +216,10 @@ def perek_to_number(perek_num):
     :param perek_num:
     :return:
     '''
-    line = u"""  פרק ראשון   פרק שני   פרק שלישי   פרק רביעי   פרק חמישי   פרק ששי   פרק שביעי   פרק שמיני   פרק תשיעי   פרק עשירי   פרק אחד עשר   פרק שנים עשר   פרק שלשה עשר   פרק ארבעה עשר   פרק חמשה עשר   פרק ששה עשר   פרק שבעה עשר   פרק שמונה עשר   פרק תשעה עשר   פרק עשרים   פרק אחד ועשרים   פרק שנים ועשרים   פרק שלשה ועשרים   פרק ארבעה ועשרים   פרק חמשה ועשרים   פרק ששה ועשרים   פרק שבעה ועשרים   פרק שמונה ועשרים   פרק תשעה ועשרים   פרק שלשים"""
+    line = """  פרק ראשון   פרק שני   פרק שלישי   פרק רביעי   פרק חמישי   פרק ששי   פרק שביעי   פרק שמיני   פרק תשיעי   פרק עשירי   פרק אחד עשר   פרק שנים עשר   פרק שלשה עשר   פרק ארבעה עשר   פרק חמשה עשר   פרק ששה עשר   פרק שבעה עשר   פרק שמונה עשר   פרק תשעה עשר   פרק עשרים   פרק אחד ועשרים   פרק שנים ועשרים   פרק שלשה ועשרים   פרק ארבעה ועשרים   פרק חמשה ועשרים   פרק ששה ועשרים   פרק שבעה ועשרים   פרק שמונה ועשרים   פרק תשעה ועשרים   פרק שלשים"""
     line = line.replace("\n", "")
-    perek_num = perek_num.replace(u"פרק ", u"")
-    line = line.split(u" פרק")[1:]
+    perek_num = perek_num.replace("פרק ", "")
+    line = line.split(" פרק")[1:]
     arr_nums = []
     poss_num = 0
     line = [el.strip() for el in line]
@@ -225,12 +227,12 @@ def perek_to_number(perek_num):
     if result:
         return line.index(result) + 1
     else:
-        print u"Not supporting {} yet".format(perek_num)
-        return u"Not supporting {} yet".format(perek_num)
+        print("Not supporting {} yet".format(perek_num))
+        return "Not supporting {} yet".format(perek_num)
 
 
 
-def removeExtraSpaces(txt, unicode=False):
+def removeExtraSpaces(txt, str=False):
     txt = txt.replace("\xc2\xa0", " ").replace("\xe2\x80\x83", "")#make sure we only have one kind of space, get rid of unicode space
     while txt.find("  ") >= 0:          #now get rid of all double spaces
         txt = txt.replace("  ", " ")
@@ -271,7 +273,7 @@ def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[], output_f
         if line.find("00") >= 0:
             time+=1
         line = line.decode('utf-8')
-        line = line.replace(u"\u202a", "").replace(u"\u202c","")
+        line = line.replace("\u202a", "").replace("\u202c","")
         if len(line) == 0:
             continue
         if len(reg_exp_reset) > 0:
@@ -288,9 +290,9 @@ def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[], output_f
         result = in_order(in_order_array)
 
     if result != "":
-        print file
-        print result
-        print "\n"
+        print(file)
+        print(result)
+        print("\n")
         output_file.write(file.encode('utf-8')+"\n")
         output_file.write("חסר פרק "+result.encode('utf-8')+"\n\n\n")
     output_file.close()
@@ -357,45 +359,45 @@ def in_order(list_tags, multiple_segments=False, dont_count=[], increment_by=1):
 
 def wordHasNekudot(word):
     data = word.decode('utf-8')
-    data = data.replace(u"\u05B0", "")
-    data = data.replace(u"\u05B1", "")
-    data = data.replace(u"\u05B2", "")
-    data = data.replace(u"\u05B3", "")
-    data = data.replace(u"\u05B4", "")
-    data = data.replace(u"\u05B5", "")
-    data = data.replace(u"\u05B6", "")
-    data = data.replace(u"\u05B7", "")
-    data = data.replace(u"\u05B8", "")
-    data = data.replace(u"\u05B9", "")
-    data = data.replace(u"\u05BB", "")
-    data = data.replace(u"\u05BC", "")
-    data = data.replace(u"\u05BD", "")
-    data = data.replace(u"\u05BF", "")
-    data = data.replace(u"\u05C1", "")
-    data = data.replace(u"\u05C2", "")
-    data = data.replace(u"\u05C3", "")
-    data = data.replace(u"\u05C4", "")
+    data = data.replace("\u05B0", "")
+    data = data.replace("\u05B1", "")
+    data = data.replace("\u05B2", "")
+    data = data.replace("\u05B3", "")
+    data = data.replace("\u05B4", "")
+    data = data.replace("\u05B5", "")
+    data = data.replace("\u05B6", "")
+    data = data.replace("\u05B7", "")
+    data = data.replace("\u05B8", "")
+    data = data.replace("\u05B9", "")
+    data = data.replace("\u05BB", "")
+    data = data.replace("\u05BC", "")
+    data = data.replace("\u05BD", "")
+    data = data.replace("\u05BF", "")
+    data = data.replace("\u05C1", "")
+    data = data.replace("\u05C2", "")
+    data = data.replace("\u05C3", "")
+    data = data.replace("\u05C4", "")
     return data != word.decode('utf-8')
 
 def strip_nekud(word):
-    data = word.replace(u"\u05B0", "")
-    data = data.replace(u"\u05B1", "")
-    data = data.replace(u"\u05B2", "")
-    data = data.replace(u"\u05B3", "")
-    data = data.replace(u"\u05B4", "")
-    data = data.replace(u"\u05B5", "")
-    data = data.replace(u"\u05B6", "")
-    data = data.replace(u"\u05B7", "")
-    data = data.replace(u"\u05B8", "")
-    data = data.replace(u"\u05B9", "")
-    data = data.replace(u"\u05BB", "")
-    data = data.replace(u"\u05BC", "")
-    data = data.replace(u"\u05BD", "")
-    data = data.replace(u"\u05BF", "")
-    data = data.replace(u"\u05C1", "")
-    data = data.replace(u"\u05C2", "")
-    data = data.replace(u"\u05C3", "")
-    data = data.replace(u"\u05C4", "")
+    data = word.replace("\u05B0", "")
+    data = data.replace("\u05B1", "")
+    data = data.replace("\u05B2", "")
+    data = data.replace("\u05B3", "")
+    data = data.replace("\u05B4", "")
+    data = data.replace("\u05B5", "")
+    data = data.replace("\u05B6", "")
+    data = data.replace("\u05B7", "")
+    data = data.replace("\u05B8", "")
+    data = data.replace("\u05B9", "")
+    data = data.replace("\u05BB", "")
+    data = data.replace("\u05BC", "")
+    data = data.replace("\u05BD", "")
+    data = data.replace("\u05BF", "")
+    data = data.replace("\u05C1", "")
+    data = data.replace("\u05C2", "")
+    data = data.replace("\u05C3", "")
+    data = data.replace("\u05C4", "")
     return data
 
 
@@ -412,8 +414,8 @@ def getHebrewParsha(eng_parsha):
 def getHebrewTitle(sefer, SEFARIA_SERVER='http://www.sefaria.org/'):
    sefer = sefer.title() 
    sefer_url = SEFARIA_SERVER+'api/index/'+sefer.replace(" ","_")
-   req = urllib2.Request(sefer_url)
-   res = urllib2.urlopen(req)
+   req = urllib.request.Request(sefer_url)
+   res = urllib.request.urlopen(req)
    data = json.load(res)
    return data['heTitle']
 
@@ -517,7 +519,7 @@ def onlyOne(text, subset):
     return False
 
 def get_all_non_ascii(text):
-    non = filter(lambda x: ord(x) >= 128, text)
+    non = [x for x in text if ord(x) >= 128]
     non_ascii_set = set()
     for each_char in non:
         non_ascii_set.add(each_char)
@@ -525,8 +527,8 @@ def get_all_non_ascii(text):
 
 def replaceBadNodeTitlesHelper(title, replaceBadNodeTitles, bad_char, good_char):
     url = SEFARIA_SERVER+'api/index/'+title.replace(" ", "_")
-    req = urllib2.Request(url)
-    data = json.load(urllib2.urlopen(req))
+    req = urllib.request.Request(url)
+    data = json.load(urllib.request.urlopen(req))
     replaceBadNodeTitles(bad_char, good_char, data)
     post_index(data)
 
@@ -536,7 +538,7 @@ def replaceBadNodeTitlesHelper(title, replaceBadNodeTitles, bad_char, good_char)
 def checkLengthsDicts(x_dict, y_dict):
     for daf in x_dict:
         if len(x_dict[daf]) != len(y_dict[daf]):
-            print "{} by {}".format(daf+1, len(x_dict[daf]) - len(y_dict[daf]))
+            print("{} by {}".format(daf+1, len(x_dict[daf]) - len(y_dict[daf])))
 
 
 def weak_connection(func):
@@ -551,7 +553,7 @@ def weak_connection(func):
                 try:
                     result = func(*args, **kwargs)
                 except (HTTPError, URLError, requests.exceptions.ConnectionError) as e:
-                    print 'handling weak network'
+                    print('handling weak network')
                 else:
                     success = True
                     break
@@ -581,7 +583,7 @@ def http_request(url, params=None, body=None, json_payload=None, method="GET"):
         json_response = response.json()
         if isinstance(json_response, dict) and json_response.get("error"):
             success = False
-            print u"Error: {}".format(json_response["error"])
+            print("Error: {}".format(json_response["error"]))
     except ValueError:
         success = False
         json_response = ''
@@ -589,10 +591,10 @@ def http_request(url, params=None, body=None, json_payload=None, method="GET"):
             outfile.write(response.text)
 
     if success:
-        print u"\033[92m{} request to {} successful\033[0m".format(method, url)
+        print("\033[92m{} request to {} successful\033[0m".format(method, url))
         return json_response
     else:
-        print u"\033[91m{} request to {} failed\033[0m".format(method, url)
+        print("\033[91m{} request to {} failed\033[0m".format(method, url))
         return response.text
 
 
@@ -618,7 +620,7 @@ def make_title(text):
 
     #capitalize non-stopwords
     for word in text.split(" ")[1:]:
-        is_roman_numeral = filter(lambda x: x not in roman_letters, word) == ""
+        is_roman_numeral = [x for x in word if x not in roman_letters] == ""
         if is_roman_numeral:
             new_text += word.upper() + " "
         elif word not in stop_words:
@@ -701,7 +703,7 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
     response = requests.get('{}/api/category/{}'.format(server, '/'.join(path))).json()
 
     if response.get('error') is None:  # category already exists, exit
-        print "Category already exists at {}".format(server)
+        print("Category already exists at {}".format(server))
         return response
 
     # add missing parents
@@ -740,7 +742,7 @@ def post_link(info, server=SEFARIA_SERVER, VERBOSE = False):
     url = server+'/api/links/'
     result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method="POST")
     if VERBOSE:
-        print result
+        print(result)
     return result
 
 
@@ -751,25 +753,25 @@ def post_link_weak_connection(info, repeat=10):
         'json': infoJSON,
         'apikey': API_KEY
     }
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
+    data = urllib.parse.urlencode(values)
+    req = urllib.request.Request(url, data)
     for i in range(repeat):
         try:
-            response = urllib2.urlopen(req, timeout=20)
+            response = urllib.request.urlopen(req, timeout=20)
             x = response.getcode()
-            print x
+            print(x)
 
             if x == 200:
                 break
-        except HTTPError, e:
+        except HTTPError as e:
             with open('errors.html', 'w') as errors:
                 errors.write(e.read())
             continue
-        except Exception, e:
-            print 'Exception {}'.format(i + 1)
+        except Exception as e:
+            print('Exception {}'.format(i + 1))
             continue
     else:
-        print 'too many errors'
+        print('too many errors')
         sys.exit(1)
 
 
@@ -803,7 +805,7 @@ def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, ta
     matched = 0
     total = 0
     for daf in dh_dict:
-        print daf
+        print(daf)
         if talmud:
             base_text_ref = "{} {}".format(base_text_title, AddressTalmud.toStr("en", daf))
             comm_ref = "{} on {} {}".format(commentary_title, base_text_title, AddressTalmud.toStr("en", daf))
@@ -825,8 +827,8 @@ def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, ta
                 })
                 matched += 1
             total += 1
-    print "Matched: {}".format(matched)
-    print "Total {}".format(total)
+    print("Matched: {}".format(matched))
+    print("Total {}".format(total))
     post_link(links, server=server)
 
     return results
@@ -876,12 +878,14 @@ def post_text(ref, text, index_count="on", skip_links=False, server=SEFARIA_SERV
     :param index_count:
     :param skip_links:
     :param server:
-    :return:
+    :return:`
     """
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     url = server+'/api/texts/'+ref
     params, body = {}, {'apikey': API_KEY}
+    if 'status' not in params:
+        params['status'] = 'locked'
     if index_count == "on":
         params['count_after'] = 1
     if skip_links:
@@ -956,25 +960,25 @@ def post_text_weak_connection(ref, text, index_count="off", repeat=10):
     else:
         url = SEFARIA_SERVER + '/api/texts/' + ref + '?count_after=1'
     values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
+    data = urllib.parse.urlencode(values)
+    req = urllib.request.Request(url, data)
     for i in range(repeat):
         try:
-            response = urllib2.urlopen(req, timeout=15)
+            response = urllib.request.urlopen(req, timeout=15)
             code = response.getcode()
-            print code
+            print(code)
 
             if code == 200:
                 break
-        except HTTPError, e:
+        except HTTPError as e:
             with open('errors.html', 'w') as errors:
                 errors.write(e.read())
             continue
-        except Exception, e:
-            print 'Exception {}'.format(i+1)
+        except Exception as e:
+            print('Exception {}'.format(i+1))
             continue
     else:
-        print 'too many errors'
+        print('too many errors')
         sys.exit(1)
 
 
@@ -982,8 +986,8 @@ def post_text_burp(ref, text, index_count="off"):
     """
     Use to debug with burp suite
     """
-    proxy = urllib2.ProxyHandler({'http': '127.0.0.1:8080'})
-    opener = urllib2.build_opener(proxy)
+    proxy = urllib.request.ProxyHandler({'http': '127.0.0.1:8080'})
+    opener = urllib.request.build_opener(proxy)
 
     textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
@@ -992,15 +996,15 @@ def post_text_burp(ref, text, index_count="off"):
     else:
         url = SEFARIA_SERVER + '/api/texts/' + ref + '?count_after=1'
     values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
+    data = urllib.parse.urlencode(values)
+    req = urllib.request.Request(url, data)
     try:
         response = opener.open(req)
         x = response.read()
-        print x
+        print(x)
         if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
             return "error"
-    except HTTPError, e:
+    except HTTPError as e:
         with open('errors.html', 'w') as errors:
             errors.write(e.read())
 
@@ -1017,18 +1021,18 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
     textJSON = json.dumps(flags)
     version['ref'] = version['ref'].replace(' ', '_')
     url = server+'/api/version/flags/{}/{}/{}'.format(
-        urllib.quote(version['ref']), urllib.quote(version['lang']), urllib.quote(version['vtitle'])
+        urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']), urllib.parse.quote(version['vtitle'])
     )
     values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.urlencode(values)
-    req = urllib2.Request(url, data)
+    data = urllib.parse.urlencode(values)
+    req = urllib.request.Request(url, data)
     try:
-        response = urllib2.urlopen(req)
+        response = urllib.request.urlopen(req)
         x = response.read()
-        print x
+        print(x)
         if x.find("error") >= 0 and x.find("Daf") >= 0 and x.find("0") >= 0:
             return "error"
-    except HTTPError, e:
+    except HTTPError as e:
         with open('errors.html', 'w') as errors:
             errors.write(e.read())
 
@@ -1037,7 +1041,7 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
 def post_term(term_dict, server=SEFARIA_SERVER, update=False):
     name = term_dict['name']
     # term_JSON = json.dumps(term_dict)
-    url = '{}/api/terms/{}'.format(server, urllib.quote(name))
+    url = '{}/api/terms/{}'.format(server, urllib.parse.quote(name))
     if update:
         url += "?update=1"
     return http_request(url, body={'apikey': API_KEY}, json_payload=term_dict, method="POST")
@@ -1096,20 +1100,20 @@ def get_text(ref, lang="", versionTitle="", server="http://draft.sefaria.org"):
     url = '{}/api/texts/{}'.format(server, ref)
     if lang and versionTitle:
         url += "/{}/{}".format(lang, versionTitle)
-    req = urllib2.Request(url)
+    req = urllib.request.Request(url)
     try:
-        response = urllib2.urlopen(req)
+        response = urllib.request.urlopen(req)
         data = json.load(response)
         return data
     except:
-        print 'Error'
+        print('Error')
 
 def get_text_plus(ref, SERVER='www'):
     #ref = Ref(ref).url()
     url = 'http://'+SERVER+'.sefaria.org/api/texts/'+ref.replace(" ","_")+'?commentary=0&context=0&pad=0'
-    req = urllib2.Request(url)
+    req = urllib.request.Request(url)
     try:
-        response = urllib2.urlopen(req)
+        response = urllib.request.urlopen(req)
         data = json.load(response)
         return data
     except HTTPError as e:
@@ -1199,15 +1203,15 @@ def isGematria(txt):
                             #print "3 length hundreds false, no taf"
                             return False
     else:
-        print "length of gematria is off"
-        print txt
+        print("length of gematria is off")
+        print(txt)
         return False
     return True
 
 def getGematria(txt):
-    if not isinstance(txt, unicode):
+    if not isinstance(txt, str):
         txt = txt.decode('utf-8')
-    txt = txt.replace(u"ך", u"כ").replace(u"ם", u"מ").replace(u"ן", u"נ").replace(u"ף", u"פ").replace(u"ץ", u"צ")
+    txt = txt.replace("ך", "כ").replace("ם", "מ").replace("ן", "נ").replace("ף", "פ").replace("ץ", "צ")
     index=0
     sum=0
     while index <= len(txt)-1:
@@ -1226,13 +1230,12 @@ def numToHeb(engnum=""):
     letters[1]=["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"]
     letters[2]=["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"]
     if (numdig > 3):
-        print "We currently can't handle numbers larger than 999"
+        print("We currently can't handle numbers larger than 999")
         exit()
     for count in range(numdig):
         hebnum += letters[numdig-count-1][int(engnum[count])]
     hebnum = re.sub('יה', 'טו', hebnum)
     hebnum = re.sub('יו', 'טז', hebnum)
-    hebnum = hebnum.decode('utf-8')
     return hebnum
 
 def isGematria(txt):
@@ -1319,8 +1322,8 @@ def isGematria(txt):
                             #print "3 length hundreds false, no taf"
                             return False
     else:
-        print "length of gematria is off"
-        print txt
+        print("length of gematria is off")
+        print(txt)
         return False
     return True
 
@@ -1334,7 +1337,7 @@ def multiple_replace(old_string, replacement_dictionary):
     :return: String with replacements made.
     """
 
-    for keys, value in replacement_dictionary.iteritems():
+    for keys, value in replacement_dictionary.items():
         old_string = old_string.replace(keys, value)
 
     return old_string
@@ -1359,14 +1362,14 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
     for book in book_list:
 
         # print book to give user update on progress
-        print book
+        print(book)
         book = book.replace(' ', '_')
         book = book.replace('\n', '')
 
         if middle:
 
-            print "Start {0} at chapter: ".format(book)
-            start_chapter = input()
+            print("Start {0} at chapter: ".format(book))
+            start_chapter = eval(input())
             url = SEFARIA_SERVER + '/api/texts/' + book + '.' + \
                 str(start_chapter) + '/' + language + '/' + version_title
 
@@ -1376,7 +1379,7 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
 
         try:
             # get first chapter in book
-            response = urllib2.urlopen(url)
+            response = urllib.request.urlopen(url)
             version_text = json.load(response)
 
             # loop through chapters
@@ -1397,10 +1400,10 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                         # set middle back to false
                         middle = False
 
-                print index+1,
+                print(index+1, end=' ')
 
                 # get canonical number of verses
-                canon = len(TextChunk(chapter, vtitle=u'Tanach with Text Only', lang='he').text)
+                canon = len(TextChunk(chapter, vtitle='Tanach with Text Only', lang='he').text)
 
                 # get number of verses in version
                 verses = len(version_text['text'])
@@ -1412,12 +1415,12 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                 next_chapter = next_chapter.replace(' ', '_')
                 url = SEFARIA_SERVER+'/api/texts/'+next_chapter+'/'+language+'/'+version_title
 
-                response = urllib2.urlopen(url)
+                response = urllib.request.urlopen(url)
                 version_text = json.load(response)
 
         except (URLError, HTTPError, KeyboardInterrupt, KeyError, ValueError) as e:
-            print e
-            print url
+            print(e)
+            print(url)
             file_buffer.close()
             sys.exit(1)
 
@@ -1432,11 +1435,11 @@ def get_daf(num):
 
     if num % 2 == 1:
         num = num / 2 + 2
-        return u'{}_א'.format(numToHeb(num))
+        return '{}_א'.format(numToHeb(num))
 
     else:
         num = num / 2 + 1
-        return u'{}_ב'.format(numToHeb(num))
+        return '{}_ב'.format(numToHeb(num))
 
 
 def get_page(daf, amud):
@@ -1452,10 +1455,10 @@ def get_page(daf, amud):
     elif amud == 'b':
         return 2*daf - 2
     else:
-        print 'invalid daf number'
+        print('invalid daf number')
         return 0
 
-import csv, codecs, cStringIO
+import csv, codecs, io
 
 class UTF8Recoder:
     """
@@ -1467,7 +1470,7 @@ class UTF8Recoder:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         return self.reader.next().encode("utf-8")
 
 class UnicodeReader:
@@ -1480,9 +1483,9 @@ class UnicodeReader:
         f = UTF8Recoder(f, encoding)
         self.reader = csv.reader(f, dialect=dialect, **kwds)
 
-    def next(self):
-        row = self.reader.next()
-        return [unicode(s, "utf-8") for s in row]
+    def __next__(self):
+        row = next(self.reader)
+        return [str(s, "utf-8") for s in row]
 
     def __iter__(self):
         return self
@@ -1495,7 +1498,7 @@ class UnicodeWriter:
 
     def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
         # Redirect output to a queue
-        self.queue = cStringIO.StringIO()
+        self.queue = io.StringIO()
         self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
         self.stream = f
         self.encoder = codecs.getincrementalencoder(encoding)()
@@ -1504,11 +1507,10 @@ class UnicodeWriter:
         self.writer.writerow([s.encode("utf-8") for s in row])
         # Fetch UTF-8 output from the queue ...
         data = self.queue.getvalue()
-        data = data.decode("utf-8")
         # ... and reencode it into the target encoding
         data = self.encoder.encode(data)
         # write to the target stream
-        self.stream.write(data)
+        self.stream.write(str(data))
         # empty queue
         self.queue.truncate(0)
 
@@ -1580,7 +1582,7 @@ class WordsToNumbers():
     #    2-the ones
     __tens_and_ones_re__ = re.compile(
         r'((?:%s))(?:\s(.*)|$)' %
-        ('|'.join(__tens__.keys()))
+        ('|'.join(list(__tens__.keys())))
     )
 
     def parse(self, words):

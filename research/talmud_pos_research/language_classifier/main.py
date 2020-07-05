@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
-import cal_tools
-import language_tools
+from . import cal_tools
+from . import language_tools
 from sefaria.model import *
 
-word1 = u'וימן'
-word2 = u'יאמר'
-print language_tools.weighted_levenshtein(word1, word2, language_tools.weighted_levenshtein_cost)
-print language_tools.get_two_letter_word(word1)
+word1 = 'וימן'
+word2 = 'יאמר'
+print(language_tools.weighted_levenshtein(word1, word2, language_tools.weighted_levenshtein_cost))
+print(language_tools.get_two_letter_word(word1))
 
 
 test_set_name = "test_set_9_11"
 text_names = ["Berakhot","Shabbat","Eruvin","Pesachim","Bava Kamma","Bava Metzia","Bava Batra"]
 
 for text_name in text_names:
-    print text_name
+    print(text_name)
     start_ref = None #Ref("{} 2a".format(text_name))
     end_ref   = None #Ref("{} 7a".format(text_name))
 
     #test_discrete()
     #make_training_sets("talmudic")
     #language_tools.make_cal_db_word_list(text_name)
-    print "done making training"
+    print("done making training")
     ref_list = language_tools.get_ref_list(text_name,start_ref,end_ref)
     #word_list_in,test_set_lens,bib_links = language_tools.get_test_set(text_name,ref_list,strip_html=False,get_bib_links=True)
     #language_tools.tag_testing_naive(text_name,bib_links,test_set_lens,word_list_in,ref_list,test_set_name)

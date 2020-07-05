@@ -6,10 +6,10 @@ from sefaria.system.database import db
 import re
 from sources.functions import *
 #
-# GET_SERVER = "https://www.sefaria.org"
-# POST_SERVER = "https://www.sefaria.org"
-GET_SERVER = "http://nechama.sandbox.sefaria.org"
-POST_SERVER = "http://nechama.sandbox.sefaria.org"
+GET_SERVER = "https://www.sefaria.org"
+POST_SERVER = "https://www.sefaria.org"
+# GET_SERVER = "http://nechama.sandbox.sefaria.org"
+# POST_SERVER = "http://nechama.sandbox.sefaria.org"
 
 delete_data_ref_info = True
 compile_seg2ref = re.compile(u'<.*?(?P<add_to>class="refLink"\s*href="/(?P<sheet>sheets/)?(?P<ref>.*?)").*?>')

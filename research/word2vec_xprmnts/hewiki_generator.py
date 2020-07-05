@@ -17,9 +17,9 @@ from gensim.corpora import WikiCorpus
 def make_corpus(wiki):
     """Convert Wikipedia xml dump file to text corpus"""
     for text in wiki.get_texts():
-        text = u' '.join(text)  # unicodify text
-        text = re.sub(ur"[^\u05d0-\u05ea '\"״׳]", u" ", text)
-        text = u" ".join(text.split())
+        text = ' '.join(text)  # unicodify text
+        text = re.sub(r"[^\u05d0-\u05ea '\"״׳]", " ", text)
+        text = " ".join(text.split())
 
         # run prefix tagger here
         yield text

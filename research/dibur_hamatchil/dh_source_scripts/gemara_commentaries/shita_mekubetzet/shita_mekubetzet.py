@@ -7,27 +7,27 @@
 from research.dibur_hamatchil.dh_source_scripts.gemara_commentaries.gemara_commentary_matcher import *
 
 def tokenize_words(str):
-    str = str.replace(u"־", " ")
+    str = str.replace("־", " ")
     str = re.sub(r"</?.+>", "", str)  # get rid of html tags
     str = re.sub(r"\([^\(\)]+\)", "", str)  # get rid of refs
     str = str.replace("'", '"')
-    word_list = filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str))
+    word_list = list(filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", str)))
     return word_list
 
 def dh_extraction_method(s):
-    s = re.sub(ur'\(.+?\)',u'',s)
+    s = re.sub(r'\(.+?\)','',s)
     stop_phrases = []
     for phrase in stop_phrases:
-        s = s.replace(phrase,u'')
-    bold_list = re.findall(ur'<b>(.+?)</b>',s)
+        s = s.replace(phrase,'')
+    bold_list = re.findall(r'<b>(.+?)</b>',s)
     if len(bold_list) > 0:
         bold = bold_list[0]
 
-        if u"וכו'" in bold:
-            bold = bold[:bold.index(u"וכו'")]
-        elif u"כו'" in bold:
-            bold = bold[:bold.index(u"כו'")]
-        bold = re.sub(ur'[\,\.\:\;]',u'',bold)
+        if "וכו'" in bold:
+            bold = bold[:bold.index("וכו'")]
+        elif "כו'" in bold:
+            bold = bold[:bold.index("כו'")]
+        bold = re.sub(r'[\,\.\:\;]','',bold)
         return bold
     else:
         return s
@@ -35,7 +35,7 @@ def dh_extraction_method(s):
 
 def rashi_filter(text):
     dh = dh_extraction_method(text)
-    return u'ז"ל' not in dh and u'רשב"א' not in dh
+    return 'ז"ל' not in dh and 'רשב"א' not in dh
 
 def match():
     mesechtot = ["Beitzah", "Ketubot", "Nedarim","Nazir","Sotah","Bava Kamma","Bava Metzia","Bava Batra"]

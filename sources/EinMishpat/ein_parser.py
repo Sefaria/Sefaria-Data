@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __builtin__ import enumerate
 
 import django
 django.setup()
@@ -25,7 +24,7 @@ class Massekhet(object):
     def write_shgia(self, txt):
         self.error_flag = txt
         self.ErrorFile.write(str(self.line_num) + ': ' + txt + '\n')
-        print self.line_num, txt
+        print(self.line_num, txt)
 
 
 def resolveExceptin(tr,book, sectionList):
@@ -41,7 +40,7 @@ def resolveExceptin(tr,book, sectionList):
     except IbidKeyNotFoundException:
         return "error, couldn't find this key"
     except IbidRefException:
-        return u"problem with the Ref iteslf. {}.{}"
+        return "problem with the Ref iteslf. {}.{}"
 
 class EM_Citation(object):
     """
@@ -75,31 +74,31 @@ class EM_Citation(object):
     def get_dict(self, i):
         try:
             dict = {
-                u'txt file line': self._file_line,
-                u'Perek running counter': self._perek_counter,
-                u'page running counter': self._page_counter[i],
-                u'Perek aprx': self._perek,
-                u'Page aprx': self._page,
-                u'Rambam': self._mimon,
-                u'Semag': self._semag,
-                u'Tur Shulchan Arukh': self._tsh,
-                u'original': self._original,
-                u'problem': None
+                'txt file line': self._file_line,
+                'Perek running counter': self._perek_counter,
+                'page running counter': self._page_counter[i],
+                'Perek aprx': self._perek,
+                'Page aprx': self._page,
+                'Rambam': self._mimon,
+                'Semag': self._semag,
+                'Tur Shulchan Arukh': self._tsh,
+                'original': self._original,
+                'problem': None
                 }
         except IndexError:
             dict = {
-                u'txt file line': self._file_line,
-                u'Perek running counter': self._perek_counter,
-                u'page running counter':None,
-                u'Perek aprx': self._perek,
-                u'Page aprx': self._page,
-                u'Rambam': self._mimon,
-                u'Semag': self._semag,
-                u'Tur Shulchan Arukh': self._tsh,
-                u'original': self._original,
-                u'problem': u'error missing little or big letter'
+                'txt file line': self._file_line,
+                'Perek running counter': self._perek_counter,
+                'page running counter':None,
+                'Perek aprx': self._perek,
+                'Page aprx': self._page,
+                'Rambam': self._mimon,
+                'Semag': self._semag,
+                'Tur Shulchan Arukh': self._tsh,
+                'original': self._original,
+                'problem': 'error missing little or big letter'
             }
-            print u'error missing little or big letter'
+            print('error missing little or big letter')
         for key in dict.keys():
             if isinstance(dict[key], list):
                 dict[key] = [ref.normal() for ref in dict[key] if (isinstance(ref, Ref))]
@@ -127,14 +126,14 @@ def parse_em(filename, passing, errorfilename, EM = True):
     cit_dictionary = []
     with codecs.open(filename, 'r', 'utf-8') as fp:
         lines = fp.readlines()
-    # pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור)'''
-    pattern = ur'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור|ו?ה?רמב"ם)'''
+    # pattern = r'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור)'''
+    pattern = r'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור|ו?ה?רמב"ם)'''
 
     for line in lines:
         mass.error_flag = False
         i += 1
-        print i, filename
-        print line
+        print(i, filename)
+        print(line)
         mass.line_num = i
         line = clean_line(line.strip())
         if not line:  # ignore empty lines
@@ -153,37 +152,37 @@ def parse_em(filename, passing, errorfilename, EM = True):
                 if perek_c == 1:
                     perek += 1
                     page = 0
-                elif perek_c-1 != getGematria(cit_dictionary[-1][u'Perek running counter']) and cit_dictionary[-1]['problem'] != u'error, cit with the perek/page counters':
-                    mass.write_shgia(u'error, cit with the perek/page counters')
+                elif perek_c-1 != getGematria(cit_dictionary[-1]['Perek running counter']) and cit_dictionary[-1]['problem'] != 'error, cit with the perek/page counters':
+                    mass.write_shgia('error, cit with the perek/page counters')
 
                 cit._perek = perek
-                if (not cit._page_counter) or (cit._page_counter[0] == u'א'):
+                if (not cit._page_counter) or (cit._page_counter[0] == 'א'):
                     page += 1
                 cit._page = page
-                if filter(lambda x: len(x) > 3 or re.search(u'שם',x), cit._page_counter):
-                    mass.write_shgia(u'error, missing an indicator')
+                if filter(lambda x: len(x) > 3 or re.search('שם',x), cit._page_counter):
+                    mass.write_shgia('error, missing an indicator')
 
             except:
-                mass.write_shgia(u'error, cit with the perek/page counters')
+                mass.write_shgia('error, cit with the perek/page counters')
             # start the parsing
         else:
-            counters_split = re.split(u'\s', split[0])
+            counters_split = re.split('\s', split[0])
             cit._perek_counter = counters_split[0]
             cit._page_counter = counters_split[1]
         split_it = iter(split)
         for part in split_it:
-            if re.search(ur'''(מיי'|ו?רמב"ם)''', part):
+            if re.search(r'''(מיי'|ו?רמב"ם)''', part):
                 rambam_cit = split_it.next()
-                cit.check_double(u'_mimon', mishneh.parse_rambam(rambam_cit, mass)) #cit._mimon = mishneh.parse_rambam(rambam_cit)
-            elif re.search(u'ו?סמ"?ג',part):
+                cit.check_double('_mimon', mishneh.parse_rambam(rambam_cit, mass)) #cit._mimon = mishneh.parse_rambam(rambam_cit)
+            elif re.search('ו?סמ"?ג',part):
                 semag_cit = split_it.next()
-                cit.check_double(u'_semag', smg.parse_semag(semag_cit, mass))  # cit._semag = smg.parse_semag(semag_cit)
-            elif re.search(u'ו?טוש"ע|ש"ע|שו"ע', part):
+                cit.check_double('_semag', smg.parse_semag(semag_cit, mass))  # cit._semag = smg.parse_semag(semag_cit)
+            elif re.search('ו?טוש"ע|ש"ע|שו"ע', part):
                     tsh_cit = split_it.next()
-                    cit.check_double(u'_tsh', tursh.parse_tsh(tsh_cit, mass))  # tursh.parse_tsh(tsh_cit)
-            elif re.search(ur'טור', part):
+                    cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass))  # tursh.parse_tsh(tsh_cit)
+            elif re.search(r'טור', part):
                 next = split_it.next()
-                # if next == ur'שו?"ע':
+                # if next == r'שו?"ע':
                 #     tsh_cit = split_it.next()
                 #     cit._tsh = tursh.parse_tsh(tsh_cit, mass)
                 # else:# basically assuming there isn't SA citation here
@@ -192,9 +191,9 @@ def parse_em(filename, passing, errorfilename, EM = True):
                 tsh_cit = next
                 cit.check_double('_tsh', tursh.parse_tsh(tsh_cit, mass, only_tur=True))  # cit._tsh = tursh.parse_tsh(tsh_cit, only_tur = True)
         cit_dictionary.extend(cit.obj2dict(passing))
-        if cit_dictionary[-1][u'problem'] != u'error missing little or big letter' and cit_dictionary[-1][u'problem'] != u'error, cit with the perek/page counters':
-            cit_dictionary[-1][u'problem'] = mass.error_flag
-        print cit_dictionary[-1]
+        if cit_dictionary[-1]['problem'] != 'error missing little or big letter' and cit_dictionary[-1]['problem'] != 'error, cit with the perek/page counters':
+            cit_dictionary[-1]['problem'] = mass.error_flag
+        print(cit_dictionary[-1])
     return cit_dictionary
 
 
@@ -205,39 +204,39 @@ class Semag(object):
     def __init__(self):
         self._tracker = BookIbidTracker()
         self._table = {
-            u'שם': None,
-            u'לאוין': u'Sefer Mitzvot Gadol, Negative Commandments',
-            u'לאין': u'Sefer Mitzvot Gadol, Negative Commandments',
-            u'עשין': u'Sefer Mitzvot Gadol, Positive Commandments',
-            u'א':u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Eruvin',
-            u'ב': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Mourning',
-            u'ג': u"Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Tisha B'Av",
-            u'ד': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Megillah',
-            u'ה': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Chanukah'
+            'שם': None,
+            'לאוין': 'Sefer Mitzvot Gadol, Negative Commandments',
+            'לאין': 'Sefer Mitzvot Gadol, Negative Commandments',
+            'עשין': 'Sefer Mitzvot Gadol, Positive Commandments',
+            'א':'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Eruvin',
+            'ב': 'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Mourning',
+            'ג': "Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Tisha B'Av",
+            'ד': 'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Megillah',
+            'ה': 'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Chanukah'
                        }
 
         # self._table = {
-        #     u'שם': None,
-        #     u'לאוין': u'Sefer Mitzvot Gadol, Volume One ',
-        #     u'לאין': u'Sefer Mitzvot Gadol, Volume One ',
-        #     u'עשין': u'Sefer Mitzvot Gadol, Volume Two ',
-        #     u'א': u'Sefer Mitzvot Gadol, Volume Two, Laws of Eruvin ',
-        #     u'ב': u'Sefer Mitzvot Gadol, Volume Two, Laws of Mourning ',
-        #     u'ג': u"Sefer Mitzvot Gadol, Volume Two, Laws of Tisha B'Av ",
-        #     u'ד': u'Sefer Mitzvot Gadol, Volume Two, Laws of Megillah ',
-        #     u'ה': u'Sefer Mitzvot Gadol, Volume Two, Laws of Chanukah '
+        #     'שם': None,
+        #     'לאוין': 'Sefer Mitzvot Gadol, Volume One ',
+        #     'לאין': 'Sefer Mitzvot Gadol, Volume One ',
+        #     'עשין': 'Sefer Mitzvot Gadol, Volume Two ',
+        #     'א': 'Sefer Mitzvot Gadol, Volume Two, Laws of Eruvin ',
+        #     'ב': 'Sefer Mitzvot Gadol, Volume Two, Laws of Mourning ',
+        #     'ג': "Sefer Mitzvot Gadol, Volume Two, Laws of Tisha B'Av ",
+        #     'ד': 'Sefer Mitzvot Gadol, Volume Two, Laws of Megillah ',
+        #     'ה': 'Sefer Mitzvot Gadol, Volume Two, Laws of Chanukah '
         #                }
 
 
     def parse_semag(self, str, mass):
-        reg_book = re.compile(u'ו?ב?(עשין|שם|לאוין|לאין)')
+        reg_book = re.compile('ו?ב?(עשין|שם|לאוין|לאין)')
         split = re.split(reg_book, str.strip())
         str_list = filter(None, [item.strip() for item in split])
         resolveds = []
         derabanan_flag = False
         book = None
-        reg_siman = u"סי'?|סימן"
-        reg_vav = u'ו{}'.format(reg_siman)
+        reg_siman = "סי'?|סימן"
+        reg_vav = 'ו{}'.format(reg_siman)
         for i, word in enumerate(str_list):
             if derabanan_flag:
                 derabanan_flag = False
@@ -247,13 +246,13 @@ class Semag(object):
                 continue
             elif re.search(reg_book, word):
                 try:
-                    if word != u'שם':
-                        derabanan = filter(None, [item.strip() for item in re.split(u'(מד"ס|מ?דרבנן)',str_list[i+1].strip())])
+                    if word != 'שם':
+                        derabanan = filter(None, [item.strip() for item in re.split('(מד"ס|מ?דרבנן)',str_list[i+1].strip())])
                 except IndexError:
                     mass.write_shgia('error smg, no place in book notation')
                     return
-                if word == u'עשין' and len(derabanan) > 1:
-                    book = re.search(u'[א-ה]',derabanan[1])
+                if word == 'עשין' and len(derabanan) > 1:
+                    book = re.search('[א-ה]',derabanan[1])
                     book = self._table[book.group(0)]
                     derabanan_flag = True
                 elif re.match(reg_book, word):
@@ -269,7 +268,7 @@ class Semag(object):
                         resolved = resolveExceptin(self._tracker, book, [None])
                         resolveds.append(resolved)
 
-                    if m == u'ו?שם':
+                    if m == 'ו?שם':
                         m = None
                     elif re.search(reg_siman, m):
                         continue
@@ -286,7 +285,7 @@ class Semag(object):
 
             resolveds.append(resolved)
         if len([item for item in resolveds if not isinstance(item, Ref)]) > 0:
-            mass.write_shgia(u'error from ibid in Ref or table none problem')
+            mass.write_shgia('error from ibid in Ref or table none problem')
         return resolveds
 
 
@@ -297,22 +296,22 @@ class TurSh(object):
     def __init__(self):
         self._tracker_sa = BookIbidTracker()
         self._tracker_tur = BookIbidTracker()
-        self._sa_table = {u'ח"מ': u'Shulchan Arukh, Choshen Mishpat',
-                          u'חו"מ': u'Shulchan Arukh, Choshen Mishpat',
-                          u'אה"ע': u'Shulchan Arukh, Even HaEzer',
-                          u'א"ה': u'Shulchan Arukh, Even HaEzer',
-                          u'י"ד': u"Shulchan Arukh, Yoreh De'ah",
-                          u'יד': u"Shulchan Arukh, Yoreh De'ah",
-                          u'יו"ד': u"Shulchan Arukh, Yoreh De'ah",
-                          u'או"ח': u'Shulchan Arukh, Orach Chayim',
-                          u'א"ח': u'Shulchan Arukh, Orach Chayim'
+        self._sa_table = {'ח"מ': 'Shulchan Arukh, Choshen Mishpat',
+                          'חו"מ': 'Shulchan Arukh, Choshen Mishpat',
+                          'אה"ע': 'Shulchan Arukh, Even HaEzer',
+                          'א"ה': 'Shulchan Arukh, Even HaEzer',
+                          'י"ד': "Shulchan Arukh, Yoreh De'ah",
+                          'יד': "Shulchan Arukh, Yoreh De'ah",
+                          'יו"ד': "Shulchan Arukh, Yoreh De'ah",
+                          'או"ח': 'Shulchan Arukh, Orach Chayim',
+                          'א"ח': 'Shulchan Arukh, Orach Chayim'
                        }
         self._tur_table = {
             None: None,
-            u'Shulchan Arukh, Choshen Mishpat': u'Tur, Choshen Mishpat',
-            u'Shulchan Arukh, Even HaEzer': u'Tur, Even HaEzer',
-            u"Shulchan Arukh, Yoreh De'ah": u'Tur, Yoreh Deah',
-            u'Shulchan Arukh, Orach Chayim': u'Tur, Orach Chaim'
+            'Shulchan Arukh, Choshen Mishpat': 'Tur, Choshen Mishpat',
+            'Shulchan Arukh, Even HaEzer': 'Tur, Even HaEzer',
+            "Shulchan Arukh, Yoreh De'ah": 'Tur, Yoreh Deah',
+            'Shulchan Arukh, Orach Chayim': 'Tur, Orach Chaim'
             }
 
     def check_uno(self, book, siman):
@@ -333,18 +332,18 @@ class TurSh(object):
                   406, 411, 412, 413, 417, 419, 421, 424, 427, 430, 669, 435, 449, 458, 464, 661, 469, 474, 479,
                   480, 482, 483, 484, 485, 486, 492, 596, 505, 656}
         uno_eh = {84, 72, 14, 18, 51, 52, 54, 151, 24, 57, 60, 153}
-        if book == u'Shulchan Arukh, Choshen Mishpat' and siman in uno_hm:
+        if book == 'Shulchan Arukh, Choshen Mishpat' and siman in uno_hm:
             return True
-        elif book == u'Shulchan Arukh, Even HaEzer' and siman in uno_eh:
+        elif book == 'Shulchan Arukh, Even HaEzer' and siman in uno_eh:
             return True
-        elif book == u"Shulchan Arukh, Yoreh De'ah" and siman in uno_yd:
+        elif book == "Shulchan Arukh, Yoreh De'ah" and siman in uno_yd:
             return True
-        elif book == u'Shulchan Arukh, Orach Chayim' and siman in uno_oc:
+        elif book == 'Shulchan Arukh, Orach Chayim' and siman in uno_oc:
             return True
         return False
 
     def parse_tsh(self, str, mass, only_tur = False):
-        ayyen = re.split(u''' ובהג"ה|ועיין|ועי'?|וע"ש''', str)
+        ayyen = re.split(''' ובהג"ה|ועיין|ועי'?|וע"ש''', str)
         if len(ayyen) > 1:
             str = ayyen[0]
         split = re.split('\s', str.strip())
@@ -353,11 +352,11 @@ class TurSh(object):
         if not str_list:
             return
         str_it = iter(str_list[1:])
-        reg_siman = u"סי'?|סימן"
-        reg_seif = u'''סעיף|סעי?'?|ס([א-ת]?"[א-ת])'''
-        reg_sham = u'ו?שם'
-        reg_combined = u'ס([א-ת]?"[א-ת])'
-        reg_vav = u'ו({}|{}|{}|{})'.format(reg_seif, reg_siman, reg_sham, reg_combined)
+        reg_siman = "סי'?|סימן"
+        reg_seif = '''סעיף|סעי?'?|ס([א-ת]?"[א-ת])'''
+        reg_sham = 'ו?שם'
+        reg_combined = 'ס([א-ת]?"[א-ת])'
+        reg_vav = 'ו({}|{}|{}|{})'.format(reg_seif, reg_siman, reg_sham, reg_combined)
         resolveds = []
         try:
             book = str_list[0]
@@ -374,7 +373,7 @@ class TurSh(object):
                 book_sa = None
                 str_it = iter(str_list)
             else:
-                mass.write_shgia(u"error tsh, don't recognize book name")
+                mass.write_shgia("error tsh, don't recognize book name")
                 return
             flag_next = False
             gim = False
@@ -413,10 +412,10 @@ class TurSh(object):
                     elif self.check_uno(book_sa, siman):
                         seif = 1
                     elif not only_tur:
-                        mass.write_shgia(u'error tsh, missing seif')
+                        mass.write_shgia('error tsh, missing seif')
                         if mass.error_flag:
-                            mass.error_flag = [mass.error_flag, u'error tsh, missing seif']
-                            print u'error tsh, missing seif'
+                            mass.error_flag = [mass.error_flag, 'error tsh, missing seif']
+                            print('error tsh, missing seif')
                             return
                 elif re.search(reg_seif, word):
                     to_res = True
@@ -425,7 +424,7 @@ class TurSh(object):
                         seif = getGematriaVav(combined.group(1), mass)
                     else:
                         seif = getGematriaVav(str_it.next(), mass)
-                elif len(word) <= 3:# todo: note: 3 is a bit long check that not getting gorbage, deleted: from line start re.match(u'''[א-ת]{1}''', word) and
+                elif len(word) <= 3:# todo: note: 3 is a bit long check that not getting gorbage, deleted: from line start re.match('''[א-ת]{1}''', word) and
                     if not re.search(reg_sham, word) and not only_tur:
                         seif = getGematriaVav(word, mass)
                         to_res = True
@@ -461,10 +460,10 @@ class TurSh(object):
                     resolved_tur = resolveExceptin(self._tracker_tur, self._tur_table[book_sa], [siman])
                     resolveds.append(resolved_tur)
             if len([item for item in resolveds if not isinstance(item, Ref)]) > 0:
-                mass.write_shgia(u'error from ibid in Ref or table none problem')
+                mass.write_shgia('error from ibid in Ref or table none problem')
             return resolveds
         except KeyError:
-            mass.write_shgia(u'error tsh, there is missing data where in the tur to look')
+            mass.write_shgia('error tsh, there is missing data where in the tur to look')
             return
 
     def parse_tur(self, book_sa = None, siman = None):
@@ -485,16 +484,16 @@ class Rambam(object):
         self._conv_table = rambam_name_table()
 
     def parse_rambam(self, str, mass): # these will be aoutomatic from the privates of the object (Rambam)
-        str = re.sub(u'''יוה"כ''', u'יום הכפורים', str)
-        reg1 = u'''(מהל|מהלכות|מהל'|מהלכו?'|מה')'''  # מהלכות before the book name
-        reg21 = u''' ו?הלכה| ו?הל'?| ו?הלכ'?| ו?דין'''
-        # reg22 = u''' ה"[א-ת]'''
-        reg22 = u'''ו?הל?([א-ת]?"[א-ת])'''
+        str = re.sub('''יוה"כ''', 'יום הכפורים', str)
+        reg1 = '''(מהל|מהלכות|מהל'|מהלכו?'|מה')'''  # מהלכות before the book name
+        reg21 = ''' ו?הלכה| ו?הל'?| ו?הלכ'?| ו?דין'''
+        # reg22 = ''' ה"[א-ת]'''
+        reg22 = '''ו?הל?([א-ת]?"[א-ת])'''
         combi = re.search(reg22, str)
 
-        reg2 = u'''({}|{}|ו?שם)'''.format(reg21,reg22)  # before the halacha
-        reg_double_cit = u''' (ופ'|ופ[א-ת]?"[א-ת]|ופרק|ושם)'''
-        reg_for_book = ur'''{} (.+?){}'''.format(reg1,reg2)
+        reg2 = '''({}|{}|ו?שם)'''.format(reg21,reg22)  # before the halacha
+        reg_double_cit = ''' (ופ'|ופ[א-ת]?"[א-ת]|ופרק|ושם)'''
+        reg_for_book = r'''{} (.+?){}'''.format(reg1,reg2)
 
         # check for multiple citation
         multiple = re.search(reg_double_cit, str)
@@ -507,7 +506,7 @@ class Rambam(object):
 
         # book
         if not re.search(reg2, str):
-            reg_for_book = ur'''{} (.+)'''.format(reg1)
+            reg_for_book = r'''{} (.+)'''.format(reg1)
         book = re.search(reg_for_book, str)
         if book:
             book = book.group(2).strip()
@@ -521,30 +520,30 @@ class Rambam(object):
                     key = self._conv_table.keys(book)
                     book = self._conv_table[key[0]]
             except:
-                print "error mim, couldn't find this book name in table", book
+                print("error mim, couldn't find this book name in table", book)
                 mass.error_flag = "error mim, couldn't find this book name in table"
                 mass.write_shgia("error mim, couldn't find this book name in table" + book)
         # perek
-        perek = re.search(u'''פרק ([א-ת]"?[א-ת]?)|פ ?([א-ת]?"[א-ת])|ו?פ' ([א-ת]"?[א-ת])''', str) #u'''פרק ([א-ת]"?[א-ת]?)|פ([א-ת]?"[א-ת])|ו?פ' ([א-ת]"?[א-ת]?)'''
+        perek = re.search('''פרק ([א-ת]"?[א-ת]?)|פ ?([א-ת]?"[א-ת])|ו?פ' ([א-ת]"?[א-ת])''', str) #'''פרק ([א-ת]"?[א-ת]?)|פ([א-ת]?"[א-ת])|ו?פ' ([א-ת]"?[א-ת]?)'''
         if perek:
             perek = perek.group(1) or perek.group(2) or perek.group(3)
             perek = getGematriaVav(perek, mass)
 
         if combi:
-            str = re.sub(reg22, u'הלכה {}'.format(ur'\1'), str)
+            str = re.sub(reg22, 'הלכה {}'.format(r'\1'), str)
 
         # halacha
-        halacha = re.search(u'''{} (.+)'''.format(reg2), str) or re.search(u'''{}'''.format(reg22), str)
+        halacha = re.search('''{} (.+)'''.format(reg2), str) or re.search('''{}'''.format(reg22), str)
         if halacha:
-            hal21 = re.search(u'''({}) (.*)'''.format(reg21), str)  # todo: important! befor it was .+ what did this change ruin
-            hal22 = re.search(u'''הל?([א-ת]?"[א-ת])''', str)
+            hal21 = re.search('''({}) (.*)'''.format(reg21), str)  # todo: important! befor it was .+ what did this change ruin
+            hal22 = re.search('''הל?([א-ת]?"[א-ת])''', str)
             if hal21:
                 halacha = hal21.group(2)
                 if not halacha:
-                    mass.write_shgia(u'error mim, No halacha stated')
+                    mass.write_shgia('error mim, No halacha stated')
             elif hal22:
                 halacha = hal22.group(1)
-            elif re.search(u'ו?שם', str):
+            elif re.search('ו?שם', str):
                 halacha = None
             # else:
             #     print 'error mim, No halcha stated'
@@ -552,19 +551,19 @@ class Rambam(object):
 
         # clean halacha
         if halacha:
-            ayyen = re.split(u'''ועיין|ועי'?|וע"ש''', halacha)
+            ayyen = re.split('''ועיין|ועי'?|וע"ש''', halacha)
             if len(ayyen)>1:
                 halacha = ayyen[0]
-            halacha = re.sub(reg2, u'', halacha)  # todo: double check that this is not killing anything
-            halacha_split = re.split(u'''\sו?([א-ת]?"?[א-ת]'?)''', halacha.strip())
+            halacha = re.sub(reg2, '', halacha)  # todo: double check that this is not killing anything
+            halacha_split = re.split('''\sו?([א-ת]?"?[א-ת]'?)''', halacha.strip())
             halacha_split = filter(None, halacha_split)
             halacha = [getGematriaVav(i, mass) for i in halacha_split]
             # resolved = [self._tracker.resolve(book, [perek, hal]) for hal in halacha]
             resolved = [resolveExceptin(self._tracker, book, [perek, hal]) for hal in halacha]
             if len([item for item in resolved if not isinstance(item, Ref)]) > 0:
-                mass.write_shgia(u'error from ibid in Ref or table none problem')
+                mass.write_shgia('error from ibid in Ref or table none problem')
         else:  # halacha was sham
-            if perek and book and not re.search(u'ו?שם', str):
+            if perek and book and not re.search('ו?שם', str):
                 mass.write_shgia('error mim, No halacha stated')
             # resolved = self._tracker.resolve(book, [perek, halacha])
             resolved = resolveExceptin(self._tracker, book, [perek, halacha])
@@ -580,173 +579,173 @@ class Rambam(object):
 def rambam_name_table():
     names = library.get_indexes_in_category("Mishneh Torah")
     en_names = names
-    he_raw = [library.get_index(name).get_title(u'he') for name in names]
+    he_raw = [library.get_index(name).get_title('he') for name in names]
     he_names = []
     name_dict = pygtrie.CharTrie()
     for he, en in zip(he_raw, en_names):
-        s = re.split(u'''(?:הלכות|הלכה|הל'|הלכ)\s''', he)
+        s = re.split('''(?:הלכות|הלכה|הל'|הלכ)\s''', he)
         if len(s) > 1:
             he = s[1]
             he_names.append(he)
             name_dict[he] = en
-    name_dict[u'מלוה'] = name_dict[u'מלווה ולווה']
-    name_dict[u'מלוה ולוה'] = name_dict[u'מלווה ולווה']
-    name_dict[u'מלוה ולווה'] = name_dict[u'מלווה ולווה']
-    name_dict[u'תפלה'] = name_dict[u'תפילה וברכת כהנים']
-    name_dict[u'יו"ט'] = name_dict[u'שביתת יום טוב']
-    name_dict[u'י"ט'] = name_dict[u'שביתת יום טוב']
-    name_dict[u'יום טוב'] = name_dict[u'שביתת יום טוב']
-    name_dict[u'ת"ת'] = name_dict[u'תלמוד תורה']
-    name_dict[u'ע"ז']  = name_dict[u'עבודה זרה וחוקות הגויים']
-    name_dict[u'עכו"ם'] = name_dict[u'עבודה זרה וחוקות הגויים']
-    name_dict[u'ע"ג'] = name_dict[u'עבודה זרה וחוקות הגויים']
-    name_dict[u'עו"ג'] = name_dict[u'עבודה זרה וחוקות הגויים']
-    # name_dict[u'עבודה זרה'] = name_dict[u'עבודה זרה וחוקות הגויים']
-    name_dict[u'עבודת כוכבים'] = name_dict[u'עבודה זרה וחוקות הגויים']
-    name_dict[u'אבות הטומאה'] = name_dict[u'שאר אבות הטומאות']
-    name_dict[u'שאר אבות הטומאה'] = name_dict[u'שאר אבות הטומאות']
-    name_dict[u'שאר אבות הטומאות'] = name_dict[u'שאר אבות הטומאות']
-    name_dict[u'אבות הטומאות'] = name_dict[u'שאר אבות הטומאות']
-    name_dict[u'שאר א"ה'] = name_dict[u'שאר אבות הטומאות']
-    name_dict[u'טומאת משכב ומושב'] = name_dict[u'מטמאי משכב ומושב']
-    name_dict[u'מטמא משכב ומושב'] = name_dict[u'מטמאי משכב ומושב']
-    name_dict[u'משכב ומושב'] = name_dict[u'מטמאי משכב ומושב']
-    name_dict[u'צרעת'] = name_dict[u'טומאת צרעת']
-    # name_dict[u"שכני'"] = name_dict[u'שכנים']
-    # name_dict[u"שכני"] = name_dict[u'שכנים']
-    name_dict[u'ס"ת'] = name_dict[u'תפילין ומזוזה וספר תורה']
-    # name_dict[u'ציצית'] = name_dict[u'תפילין ומזוזה וספר תורה']
-    name_dict[u'ס"ת ומזוזה'] = name_dict[u'תפילין ומזוזה וספר תורה']
-    name_dict[u'ספר תורה'] = name_dict[u'תפילין ומזוזה וספר תורה']
-    name_dict[u'מזוזה'] = name_dict[u'תפילין ומזוזה וספר תורה']
-    name_dict[u'תפלין'] = name_dict[u'תפילין ומזוזה וספר תורה']
-    name_dict[u'תפילין וס"ת'] = name_dict[u'תפילין ומזוזה וספר תורה']
-    name_dict[u'אבידה'] = name_dict[u'גזילה ואבידה']
-    name_dict[u'גנבה'] = name_dict[u'גניבה']
-    # name_dict[u'שמיטין'] = name_dict[u'שמיטה ויובל']
-    name_dict[u'שמיטין ויובל'] = name_dict[u'שמיטה ויובל']
-    name_dict[u'שמיטה ויובלות'] = name_dict[u'שמיטה ויובל']
-    name_dict[u'שמיטין ויובלות'] = name_dict[u'שמיטה ויובל']
-    name_dict[u'שמטה ויובל'] = name_dict[u'שמיטה ויובל']
-    name_dict[u'יובל'] = name_dict[u'שמיטה ויובל']
-    name_dict[u'ביכורין'] = name_dict[u'ביכורים ושאר מתנות כהונה שבגבולין']
-    name_dict[u'בכורים'] = name_dict[u'ביכורים ושאר מתנות כהונה שבגבולין']
-    name_dict[u'זכיה ומתנה'] = name_dict[u'זכייה ומתנה']
-    # name_dict[u"מכיר'"] = name_dict[u'מכירה']
-    name_dict[u'שאר אבות הטומאה'] = name_dict[u'שאר אבות הטומאות']
-    name_dict[u'מעשה קרבנות'] = name_dict[u'מעשה הקרבנות']
-    name_dict[u'מעשה קרבן'] = name_dict[u'מעשה הקרבנות']
-    name_dict[u'מעה"ק'] = name_dict[u'מעשה הקרבנות'] # notice when there isn't the word "הלכה" the 'ה"' seems like an indication to halachah "ק"
-    name_dict[u'תענית'] = name_dict[u'תעניות']
-    name_dict[u'מקוואות'] = name_dict[u'מקואות']
-    name_dict[u'ערכין וחרמין'] = name_dict[u'ערכים וחרמין']
-    name_dict[u'ערכין'] = name_dict[u'ערכים וחרמין']
-    name_dict[u'שאלה ופקדון'] = name_dict[u'שאלה ופיקדון']
-    name_dict[u"שאל' ופקדון"] = name_dict[u'שאלה ופיקדון']
-    name_dict[u'פקדון'] = name_dict[u'שאלה ופיקדון']
-    # name_dict[u'מעשר שני'] = name_dict[u'מעשר שני ונטע רבעי']
-    name_dict[u'מ"ש ונטע רבעי'] = name_dict[u'מעשר שני ונטע רבעי']
-    name_dict[u'מעשר שני ונ"ר'] = name_dict[u'מעשר שני ונטע רבעי']
-    # name_dict[u'מע"ש'] = name_dict[u'מעשר שני ונטע רבעי'] # is this right? קכא ג מיי׳ פ״ה מהל׳ אישות הל׳ ה ופ״ג מהל׳ מע״ש הל׳ יז (ב"ק 112)
-    name_dict[u'מ"ש ונ"ר'] = name_dict[u'מעשר שני ונטע רבעי']
-    name_dict[u'מ"ש'] = name_dict[u'מעשר שני ונטע רבעי']
-    name_dict[u'נטע רבעי'] = name_dict[u'מעשר שני ונטע רבעי']
-    name_dict[u'מתנות ענים'] = name_dict[u'מתנות עניים']
-    name_dict[u'מ"ע'] = name_dict[u'מתנות עניים']
-    name_dict[u'טומאת אוכלין'] = name_dict[u'טומאת אוכלים']
-    name_dict[u'טומאות אוכלין'] = name_dict[u'טומאת אוכלים']
-    name_dict[u'טומאות מת'] = name_dict[u'טומאת מת']
-    name_dict[u'טומאת המת'] = name_dict[u'טומאת מת']
-    name_dict[u'גזילה ואבדה'] = name_dict[u'גזילה ואבידה']
-    name_dict[u'גזלה ואבדה'] = name_dict[u'גזילה ואבידה']
-    name_dict[u'גזלה ואבידה'] = name_dict[u'גזילה ואבידה']
-    name_dict[u'אבדה'] = name_dict[u'גזילה ואבידה']
-    name_dict[u'תמידין'] = name_dict[u'תמידים ומוספין']
-    name_dict[u'תמידין ומוספין'] = name_dict[u'תמידים ומוספין']
-    name_dict[u'איסורי מזבח'] = name_dict[u'איסורי המזבח']
-    name_dict[u'אסורי מזבח'] = name_dict[u'איסורי המזבח']
-    name_dict[u'א"מ'] = name_dict[u'איסורי המזבח']
-    name_dict[u'איס"ב'] = name_dict[u'איסורי ביאה']
-    name_dict[u'א"ב'] = name_dict[u'איסורי ביאה']
-    name_dict[u'אסורי ביאה'] = name_dict[u'איסורי ביאה']
-    name_dict[u'קידוש החדש'] = name_dict[u'קידוש החודש']
-    name_dict[u'קדוש החדש'] = name_dict[u'קידוש החודש']
-    name_dict[u'לולב'] = name_dict[u'שופר וסוכה ולולב']
-    name_dict[u'סוכה'] = name_dict[u'שופר וסוכה ולולב']
-    name_dict[u'סוכה ולולב'] = name_dict[u'שופר וסוכה ולולב']
-    name_dict[u'אבילות'] = name_dict[u'אבל']
-    name_dict[u'אבלות'] = name_dict[u'אבל']
-    name_dict[u'דיעות'] = name_dict[u'דעות']
-    name_dict[u'שלוחים ושותפין'] = name_dict[u'שלוחין ושותפין']
-    name_dict[u'שותפין'] = name_dict[u'שלוחין ושותפין']
-    name_dict[u'כלי מקדש'] = name_dict[u'כלי המקדש והעובדין בו']
-    # name_dict[u'כלי המקדש'] = name_dict[u'כלי המקדש והעובדין בו']
-    name_dict[u'ביאת המקדש'] = name_dict[u'ביאת מקדש']
-    name_dict[u'מ"א'] = name_dict[u'מאכלות אסורות']
-    name_dict[u'מא"ס'] = name_dict[u'מאכלות אסורות']
-    name_dict[u'אסורות'] = name_dict[u'מאכלות אסורות']
-    # name_dict[u"ממרי'"] = name_dict[u'ממרים']
-    # name_dict[u"שכירו'"] = name_dict[u'שכירות']
-    name_dict[u"תרומה"] = name_dict[u'תרומות']
-    # name_dict[u"סנהד'"] = name_dict[u'סנהדרין והעונשין המסורין להם']
-    name_dict[u'ק"ש'] = name_dict[u'קריאת שמע']
-    name_dict[u'יום הכפורים'] = name_dict[u'עבודת יום הכפורים'] # because it makes problems with my code...can be fixed by taking it step by step
-    name_dict[u'נ"כ'] = name_dict[u'תפילה וברכת כהנים']
-    name_dict[u'נשיאות כפים'] = name_dict[u'תפילה וברכת כהנים']
-    name_dict[u'נשיאת כפים'] = name_dict[u'תפילה וברכת כהנים']
-    name_dict[u'חנוכה'] = name_dict[u'מגילה וחנוכה']
-    name_dict[u'מצה'] = name_dict[u'חמץ ומצה']
-    name_dict[u'חמץ'] = name_dict[u'חמץ ומצה']
-    name_dict[u'חו"מ'] = name_dict[u'חמץ ומצה'] # note: this is also the r"t of חושן משפט not sopused to be a problem
-    name_dict[u'גרושין'] = name_dict[u'גירושין']
-    name_dict[u'נ"מ'] = name_dict[u'נזקי ממון']
-    name_dict[u'פסולי מוקדשין'] = name_dict[u'פסולי המוקדשין']
-    name_dict[u'פסולי המוקדשים'] = name_dict[u'פסולי המוקדשין']
-    name_dict[u'ק"פ'] = name_dict[u'קרבן פסח']
-    name_dict[u'רוצח וש"נ'] = name_dict[u'רוצח ושמירת נפש']
-    name_dict[u'שמירת הנפש'] = name_dict[u'רוצח ושמירת נפש']
-    name_dict[u'יבום'] = name_dict[u'יבום וחליצה']
-    name_dict[u'חליצה'] = name_dict[u'יבום וחליצה']
+    name_dict['מלוה'] = name_dict['מלווה ולווה']
+    name_dict['מלוה ולוה'] = name_dict['מלווה ולווה']
+    name_dict['מלוה ולווה'] = name_dict['מלווה ולווה']
+    name_dict['תפלה'] = name_dict['תפילה וברכת כהנים']
+    name_dict['יו"ט'] = name_dict['שביתת יום טוב']
+    name_dict['י"ט'] = name_dict['שביתת יום טוב']
+    name_dict['יום טוב'] = name_dict['שביתת יום טוב']
+    name_dict['ת"ת'] = name_dict['תלמוד תורה']
+    name_dict['ע"ז']  = name_dict['עבודה זרה וחוקות הגויים']
+    name_dict['עכו"ם'] = name_dict['עבודה זרה וחוקות הגויים']
+    name_dict['ע"ג'] = name_dict['עבודה זרה וחוקות הגויים']
+    name_dict['עו"ג'] = name_dict['עבודה זרה וחוקות הגויים']
+    # name_dict['עבודה זרה'] = name_dict['עבודה זרה וחוקות הגויים']
+    name_dict['עבודת כוכבים'] = name_dict['עבודה זרה וחוקות הגויים']
+    name_dict['אבות הטומאה'] = name_dict['שאר אבות הטומאות']
+    name_dict['שאר אבות הטומאה'] = name_dict['שאר אבות הטומאות']
+    name_dict['שאר אבות הטומאות'] = name_dict['שאר אבות הטומאות']
+    name_dict['אבות הטומאות'] = name_dict['שאר אבות הטומאות']
+    name_dict['שאר א"ה'] = name_dict['שאר אבות הטומאות']
+    name_dict['טומאת משכב ומושב'] = name_dict['מטמאי משכב ומושב']
+    name_dict['מטמא משכב ומושב'] = name_dict['מטמאי משכב ומושב']
+    name_dict['משכב ומושב'] = name_dict['מטמאי משכב ומושב']
+    name_dict['צרעת'] = name_dict['טומאת צרעת']
+    # name_dict["שכני'"] = name_dict['שכנים']
+    # name_dict["שכני"] = name_dict['שכנים']
+    name_dict['ס"ת'] = name_dict['תפילין ומזוזה וספר תורה']
+    # name_dict['ציצית'] = name_dict['תפילין ומזוזה וספר תורה']
+    name_dict['ס"ת ומזוזה'] = name_dict['תפילין ומזוזה וספר תורה']
+    name_dict['ספר תורה'] = name_dict['תפילין ומזוזה וספר תורה']
+    name_dict['מזוזה'] = name_dict['תפילין ומזוזה וספר תורה']
+    name_dict['תפלין'] = name_dict['תפילין ומזוזה וספר תורה']
+    name_dict['תפילין וס"ת'] = name_dict['תפילין ומזוזה וספר תורה']
+    name_dict['אבידה'] = name_dict['גזילה ואבידה']
+    name_dict['גנבה'] = name_dict['גניבה']
+    # name_dict['שמיטין'] = name_dict['שמיטה ויובל']
+    name_dict['שמיטין ויובל'] = name_dict['שמיטה ויובל']
+    name_dict['שמיטה ויובלות'] = name_dict['שמיטה ויובל']
+    name_dict['שמיטין ויובלות'] = name_dict['שמיטה ויובל']
+    name_dict['שמטה ויובל'] = name_dict['שמיטה ויובל']
+    name_dict['יובל'] = name_dict['שמיטה ויובל']
+    name_dict['ביכורין'] = name_dict['ביכורים ושאר מתנות כהונה שבגבולין']
+    name_dict['בכורים'] = name_dict['ביכורים ושאר מתנות כהונה שבגבולין']
+    name_dict['זכיה ומתנה'] = name_dict['זכייה ומתנה']
+    # name_dict["מכיר'"] = name_dict['מכירה']
+    name_dict['שאר אבות הטומאה'] = name_dict['שאר אבות הטומאות']
+    name_dict['מעשה קרבנות'] = name_dict['מעשה הקרבנות']
+    name_dict['מעשה קרבן'] = name_dict['מעשה הקרבנות']
+    name_dict['מעה"ק'] = name_dict['מעשה הקרבנות'] # notice when there isn't the word "הלכה" the 'ה"' seems like an indication to halachah "ק"
+    name_dict['תענית'] = name_dict['תעניות']
+    name_dict['מקוואות'] = name_dict['מקואות']
+    name_dict['ערכין וחרמין'] = name_dict['ערכים וחרמין']
+    name_dict['ערכין'] = name_dict['ערכים וחרמין']
+    name_dict['שאלה ופקדון'] = name_dict['שאלה ופיקדון']
+    name_dict["שאל' ופקדון"] = name_dict['שאלה ופיקדון']
+    name_dict['פקדון'] = name_dict['שאלה ופיקדון']
+    # name_dict['מעשר שני'] = name_dict['מעשר שני ונטע רבעי']
+    name_dict['מ"ש ונטע רבעי'] = name_dict['מעשר שני ונטע רבעי']
+    name_dict['מעשר שני ונ"ר'] = name_dict['מעשר שני ונטע רבעי']
+    # name_dict['מע"ש'] = name_dict['מעשר שני ונטע רבעי'] # is this right? קכא ג מיי׳ פ״ה מהל׳ אישות הל׳ ה ופ״ג מהל׳ מע״ש הל׳ יז (ב"ק 112)
+    name_dict['מ"ש ונ"ר'] = name_dict['מעשר שני ונטע רבעי']
+    name_dict['מ"ש'] = name_dict['מעשר שני ונטע רבעי']
+    name_dict['נטע רבעי'] = name_dict['מעשר שני ונטע רבעי']
+    name_dict['מתנות ענים'] = name_dict['מתנות עניים']
+    name_dict['מ"ע'] = name_dict['מתנות עניים']
+    name_dict['טומאת אוכלין'] = name_dict['טומאת אוכלים']
+    name_dict['טומאות אוכלין'] = name_dict['טומאת אוכלים']
+    name_dict['טומאות מת'] = name_dict['טומאת מת']
+    name_dict['טומאת המת'] = name_dict['טומאת מת']
+    name_dict['גזילה ואבדה'] = name_dict['גזילה ואבידה']
+    name_dict['גזלה ואבדה'] = name_dict['גזילה ואבידה']
+    name_dict['גזלה ואבידה'] = name_dict['גזילה ואבידה']
+    name_dict['אבדה'] = name_dict['גזילה ואבידה']
+    name_dict['תמידין'] = name_dict['תמידים ומוספין']
+    name_dict['תמידין ומוספין'] = name_dict['תמידים ומוספין']
+    name_dict['איסורי מזבח'] = name_dict['איסורי המזבח']
+    name_dict['אסורי מזבח'] = name_dict['איסורי המזבח']
+    name_dict['א"מ'] = name_dict['איסורי המזבח']
+    name_dict['איס"ב'] = name_dict['איסורי ביאה']
+    name_dict['א"ב'] = name_dict['איסורי ביאה']
+    name_dict['אסורי ביאה'] = name_dict['איסורי ביאה']
+    name_dict['קידוש החדש'] = name_dict['קידוש החודש']
+    name_dict['קדוש החדש'] = name_dict['קידוש החודש']
+    name_dict['לולב'] = name_dict['שופר וסוכה ולולב']
+    name_dict['סוכה'] = name_dict['שופר וסוכה ולולב']
+    name_dict['סוכה ולולב'] = name_dict['שופר וסוכה ולולב']
+    name_dict['אבילות'] = name_dict['אבל']
+    name_dict['אבלות'] = name_dict['אבל']
+    name_dict['דיעות'] = name_dict['דעות']
+    name_dict['שלוחים ושותפין'] = name_dict['שלוחין ושותפין']
+    name_dict['שותפין'] = name_dict['שלוחין ושותפין']
+    name_dict['כלי מקדש'] = name_dict['כלי המקדש והעובדין בו']
+    # name_dict['כלי המקדש'] = name_dict['כלי המקדש והעובדין בו']
+    name_dict['ביאת המקדש'] = name_dict['ביאת מקדש']
+    name_dict['מ"א'] = name_dict['מאכלות אסורות']
+    name_dict['מא"ס'] = name_dict['מאכלות אסורות']
+    name_dict['אסורות'] = name_dict['מאכלות אסורות']
+    # name_dict["ממרי'"] = name_dict['ממרים']
+    # name_dict["שכירו'"] = name_dict['שכירות']
+    name_dict["תרומה"] = name_dict['תרומות']
+    # name_dict["סנהד'"] = name_dict['סנהדרין והעונשין המסורין להם']
+    name_dict['ק"ש'] = name_dict['קריאת שמע']
+    name_dict['יום הכפורים'] = name_dict['עבודת יום הכפורים'] # because it makes problems with my code...can be fixed by taking it step by step
+    name_dict['נ"כ'] = name_dict['תפילה וברכת כהנים']
+    name_dict['נשיאות כפים'] = name_dict['תפילה וברכת כהנים']
+    name_dict['נשיאת כפים'] = name_dict['תפילה וברכת כהנים']
+    name_dict['חנוכה'] = name_dict['מגילה וחנוכה']
+    name_dict['מצה'] = name_dict['חמץ ומצה']
+    name_dict['חמץ'] = name_dict['חמץ ומצה']
+    name_dict['חו"מ'] = name_dict['חמץ ומצה'] # note: this is also the r"t of חושן משפט not sopused to be a problem
+    name_dict['גרושין'] = name_dict['גירושין']
+    name_dict['נ"מ'] = name_dict['נזקי ממון']
+    name_dict['פסולי מוקדשין'] = name_dict['פסולי המוקדשין']
+    name_dict['פסולי המוקדשים'] = name_dict['פסולי המוקדשין']
+    name_dict['ק"פ'] = name_dict['קרבן פסח']
+    name_dict['רוצח וש"נ'] = name_dict['רוצח ושמירת נפש']
+    name_dict['שמירת הנפש'] = name_dict['רוצח ושמירת נפש']
+    name_dict['יבום'] = name_dict['יבום וחליצה']
+    name_dict['חליצה'] = name_dict['יבום וחליצה']
 
     # for name in name_dict.keys():
     #     first = re.split('\s', name)
     #     if len(first) > 1:
     #         name_dict[first[0]] = name_dict[name]
-    # del name_dict[u'איסורי']
-    # del name_dict[u'טומאת']
-    name_dict[u'מעשר'] = name_dict[u'מעשרות']
+    # del name_dict['איסורי']
+    # del name_dict['טומאת']
+    name_dict['מעשר'] = name_dict['מעשרות']
     return name_dict
 
 
 def clean_line(line):
     line = strip_nikkud(line)
-    replace_dict = {u'[.:\?]': u'', u'[”״]': u'"', u'[’׳]': u"'"} #note put \. in the file/ how can i check if it is right?
+    replace_dict = {'[.:\?]': '', '[”״]': '"', '[’׳]': "'"} #note put \. in the file/ how can i check if it is right?
     line = multiple_replace(line, replace_dict, using_regex=True)
-    # line = re.sub(u'[:\?]', '', line)
-    # line = re.sub(u'”', u'"', line)
-    reg_parentheses = re.compile(u'\((.*?)\)')
-    reg_brackets = re.compile(u'\[(.*?)\]')
+    # line = re.sub('[:\?]', '', line)
+    # line = re.sub('”', '"', line)
+    reg_parentheses = re.compile('\((.*?)\)')
+    reg_brackets = re.compile('\[(.*?)\]')
     in_per = reg_parentheses.search(line)
     in_bra = reg_brackets.search(line)
-    reg_ayyen_tur = re.compile(u'''ו?(עיין|עי'|ע"ש) בטור''')
-    reg_lo_manu = re.compile(u'''(?P<a>(\u05d0\u05da )?\u05dc\u05d0 \u05de\u05e0(.*?))(\u05e1\u05de"?\u05d2|\u05e8\u05de\u05d1"?\u05dd|\u05d8\u05d5\u05e8|\n)''')
-    line = re.sub(u'\[.*?אלפס.*?\]', u'', line)
-    line = re.sub(u'טור ו?שו"ע', u'טוש"ע', line)
+    reg_ayyen_tur = re.compile('''ו?(עיין|עי'|ע"ש) בטור''')
+    reg_lo_manu = re.compile('''(?P<a>(\u05d0\u05da )?\u05dc\u05d0 \u05de\u05e0(.*?))(\u05e1\u05de"?\u05d2|\u05e8\u05de\u05d1"?\u05dd|\u05d8\u05d5\u05e8|\n)''')
+    line = re.sub('\[.*?אלפס.*?\]', '', line)
+    line = re.sub('טור ו?שו"ע', 'טוש"ע', line)
     f_ayyen = re.search(reg_ayyen_tur, line)
     f_lo_manu = re.search(reg_lo_manu, line)
 
     if f_ayyen:
         line = line[:f_ayyen.start()]
     if f_lo_manu:
-        line = re.sub(f_lo_manu.group('a'), u"", line)
+        line = re.sub(f_lo_manu.group('a'), "", line)
     if in_per:
         if in_bra:
-            clean = re.sub(reg_brackets, ur'\1', line)  # brackets are always correct
+            clean = re.sub(reg_brackets, r'\1', line)  # brackets are always correct
             clean = re.sub(reg_parentheses, '', clean)
         else:
-            clean = re.sub(reg_parentheses, ur'\1', line)
+            clean = re.sub(reg_parentheses, r'\1', line)
     elif in_bra:
-        clean = re.sub(reg_brackets, ur'\1', line)  # brackets are always correct
+        clean = re.sub(reg_brackets, r'\1', line)  # brackets are always correct
     else:
         clean = line
     return clean
@@ -755,13 +754,13 @@ def clean_line(line):
 # putting in casses of switching the letter order
 def getGematriaVav(str, mass):
     str = str.strip()
-    str = re.sub(u'''"|''', u'', str)
+    str = re.sub('''"|''', '', str)
     case_set = {270,272,274,275,298,304,344,670,672,698,744} # from trello card 'Letter transpositions'
-    if str[0] == u'ו' and (is_hebrew_number(str[1:]) or (getGematria(str[1:]) in case_set)):
+    if str[0] == 'ו' and (is_hebrew_number(str[1:]) or (getGematria(str[1:]) in case_set)):
         return getGematria(str[1:])
-    elif is_hebrew_number(str) or getGematria(str) in case_set: # and not re.search(u'''מד"ס'''): or re.search(u'''('|")''', str)
+    elif is_hebrew_number(str) or getGematria(str) in case_set: # and not re.search('''מד"ס'''): or re.search('''('|")''', str)
         return getGematria(str)
-    elif re.search(u'בהגהה?', str): # this is not gimatria but there is no need to send an error about it each time...
+    elif re.search('בהגהה?', str): # this is not gimatria but there is no need to send an error about it each time...
         return
     else:
         mass.write_shgia('error in pointer, not Gimatria...'+ str)
@@ -770,7 +769,7 @@ def is_hebrew_number(str):
     matches = re.findall(hebrew_number_regex(), str)
     if len(matches) == 0:
         return False
-    if str == u'שם':
+    if str == 'שם':
         return False
     return matches[0] == str
 
@@ -781,7 +780,7 @@ def hebrew_number_regex():
     :return string:
     \p{Hebrew} ~= [\u05d0–\u05ea]
     """
-    rx = ur"""                                    # 1 of 3 styles:
+    rx = r"""                                    # 1 of 3 styles:
     ((?=[\u05d0-\u05ea]+(?:"|\u05f4|'')[\u05d0-\u05ea])    # (1: ") Lookahead:  At least one letter, followed by double-quote, two single quotes, or gershayim, followed by  one letter
             \u05ea*(?:"|\u05f4|'')?                    # Many Tavs (400), maybe dbl quote
             [\u05e7-\u05ea]?(?:"|\u05f4|'')?        # One or zero kuf-tav (100-400), maybe dbl quote
@@ -802,11 +801,11 @@ def toCSV(filename, obj_list):
     list_dict = obj_list
     for row in list_dict:
         # erasing the error codes related to letters count
-        if row[u'problem'] == u'error missing little or big letter' or row[u'problem'] == u'error, cit with the perek/page counters':
-            row[u'problem'] = False
-    with open(u'{}.csv'.format(filename), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, [u'txt file line', u'Perek running counter', u'page running counter',
-                                u'Perek aprx', u'Page aprx', u'Rambam', u'Semag', u'Tur Shulchan Arukh', u'original', u'problem']) #fieldnames = obj_list[0].keys())
+        if row['problem'] == 'error missing little or big letter' or row['problem'] == 'error, cit with the perek/page counters':
+            row['problem'] = False
+    with open('{}.csv'.format(filename), 'w') as csv_file:
+        writer = csv.DictWriter(csv_file, ['txt file line', 'Perek running counter', 'page running counter',
+                                'Perek aprx', 'Page aprx', 'Rambam', 'Semag', 'Tur Shulchan Arukh', 'original', 'problem']) #fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(list_dict)
 
@@ -818,28 +817,28 @@ def fromCSV(fromcsv, newfile):
         for i, row in enumerate(file_reader):
             if not row:
                 continue
-            f.write(row[u'original'].strip() + u'\n')
+            f.write(row['original'].strip() + '\n')
 
 
 #  run to create csv from txt file for QA
 def run1(massechet_he = None, massechet_en = None, EM = True):
-    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en), EM = EM)
+    parse1 = parse_em('{}.txt'.format(massechet_he), 1, '{}_error'.format(massechet_en), EM = EM)
     toCSV(massechet_he, parse1)
     return parse1
 
 
 #  run to create the csv to get talmud matching
 def run2(massechet_he=None, massechet_en=None):
-    fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_en))
-    parse2 = parse_em(u'{}.txt'.format(massechet_en), 2, u'{}_error'.format(massechet_en))
-    toCSV(u'{}_little_letters'.format(massechet_en), parse2)
+    fromCSV('{}.csv'.format(massechet_he), '{}.txt'.format(massechet_en))
+    parse2 = parse_em('{}.txt'.format(massechet_en), 2, '{}_error'.format(massechet_en))
+    toCSV('{}_little_letters'.format(massechet_en), parse2)
     return parse2
 
 
 def run15(massechet_he=None, massechet_en=None):
-    fromCSV(u'{}.csv'.format(massechet_he), u'{}.txt'.format(massechet_he))  # reads from fixed ביצה.csv to egg.txt
-    parse1 = parse_em(u'{}.txt'.format(massechet_he), 1, u'{}_error'.format(massechet_en))  # egg.txt to screen output
-    toCSV(u'{}'.format(massechet_en), parse1)
+    fromCSV('{}.csv'.format(massechet_he), '{}.txt'.format(massechet_he))  # reads from fixed ביצה.csv to egg.txt
+    parse1 = parse_em('{}.txt'.format(massechet_he), 1, '{}_error'.format(massechet_en))  # egg.txt to screen output
+    toCSV('{}'.format(massechet_en), parse1)
     return parse1
 
 
@@ -848,20 +847,20 @@ def last_algo_run(withSegments, parsedData):
 
 
 def write_errfile(filename):
-    error = codecs.open(u'error_{}.txt'.format(filename), 'w', encoding = 'utf-8')
-    with codecs.open(u'error_main.txt', 'r', 'utf-8') as fp:
+    error = codecs.open('error_{}.txt'.format(filename), 'w', encoding = 'utf-8')
+    with codecs.open('error_main.txt', 'r', 'utf-8') as fp:
         lines = fp.readlines()
         # it = iter(lines)
         e = enumerate(lines)
         for i, line in e:
-            if re.search(u'error', line):
+            if re.search('error', line):
                 j, k = i, i
-                while not re.search(u'.txt', lines[j]):
+                while not re.search('.txt', lines[j]):
                     j -= 1
                 while (j < i):
                     error.write(lines[j])
                     j+=1
-                while not re.search(u'.txt', lines[k]):
+                while not re.search('.txt', lines[k]):
                     error.write(lines[k])
                     k+=1
                     e.next()
@@ -869,15 +868,15 @@ def write_errfile(filename):
 
 # from csv to txt
 def reverse_collapse(fromcsv, collapsed_file):
-    f = codecs.open(u'{}.txt'.format(collapsed_file), 'w', encoding='utf-8')
+    f = codecs.open('{}.txt'.format(collapsed_file), 'w', encoding='utf-8')
     with open(fromcsv, 'r') as csvfile:
         file_reader = csv.DictReader(csvfile)
         prev = None
         for i, row in enumerate(file_reader):
-            if prev != (row[u'original'].strip() + u'\n'):
-                f.write(row[u'original'].strip() + u'\n')
-            prev = (row[u'original'].strip() + u'\n')
-    run1(u'{}'.format(collapsed_file), u'{}'.format(collapsed_file))
+            if prev != (row['original'].strip() + '\n'):
+                f.write(row['original'].strip() + '\n')
+            prev = (row['original'].strip() + '\n')
+    run1('{}'.format(collapsed_file), '{}'.format(collapsed_file))
 
 
 def segment_column(segmentfile, reffile, massekhet, wikitext=False):
@@ -890,28 +889,28 @@ def segment_column(segmentfile, reffile, massekhet, wikitext=False):
             for segrow, refrow in zip(seg_reader, ref_reader):
                 i += 1
                 if not wikitext:
-                    daf, daf_line = segrow[u'Daf'], segrow[u'Line']
+                    daf, daf_line = segrow['Daf'], segrow['Line']
                 else:
-                    split = re.split(u'[\s:]', segrow[u'full line'])
+                    split = re.split('[\s:]', segrow['full line'])
                     daf, daf_line = split[1], split[2]
-                smg = convert_smg(refrow[u'Semag'])
-                letter_dict = {u'Segment': u'{}.{}.{}'.format(massekhet, daf, daf_line),
-                          u'Rambam': refrow[u'Rambam'],
-                          u'Semag': smg,
-                          u'Tur Shulchan Arukh': refrow[u'Tur Shulchan Arukh']}
+                smg = convert_smg(refrow['Semag'])
+                letter_dict = {'Segment': '{}.{}.{}'.format(massekhet, daf, daf_line),
+                          'Rambam': refrow['Rambam'],
+                          'Semag': smg,
+                          'Tur Shulchan Arukh': refrow['Tur Shulchan Arukh']}
                 final_list.append(letter_dict)
     return final_list
 
 
 def convert_smg(smg_str):
     conv_table = {
-    u'Sefer Mitzvot Gadol, Volume One ' : u'Sefer Mitzvot Gadol, Negative Commandments ',
-    u'Sefer Mitzvot Gadol, Volume Two ':u'Sefer Mitzvot Gadol, Positive Commandments ',
-    u'Sefer Mitzvot Gadol, Volume Two, Laws of Eruvin ': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Eruvin ',
-    u'Sefer Mitzvot Gadol, Volume Two, Laws of Mourning ': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Mourning ',
-    u"Sefer Mitzvot Gadol, Volume Two, Laws of Tisha B'Av ": u"Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Tisha B'Av ",
-    u'Sefer Mitzvot Gadol, Volume Two, Laws of Megillah ': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Megillah ',
-    u'Sefer Mitzvot Gadol, Volume Two, Laws of Chanukah ': u'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Chanukah '
+    'Sefer Mitzvot Gadol, Volume One ' : 'Sefer Mitzvot Gadol, Negative Commandments ',
+    'Sefer Mitzvot Gadol, Volume Two ':'Sefer Mitzvot Gadol, Positive Commandments ',
+    'Sefer Mitzvot Gadol, Volume Two, Laws of Eruvin ': 'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Eruvin ',
+    'Sefer Mitzvot Gadol, Volume Two, Laws of Mourning ': 'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Mourning ',
+    "Sefer Mitzvot Gadol, Volume Two, Laws of Tisha B'Av ": "Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Tisha B'Av ",
+    'Sefer Mitzvot Gadol, Volume Two, Laws of Megillah ': 'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Megillah ',
+    'Sefer Mitzvot Gadol, Volume Two, Laws of Chanukah ': 'Sefer Mitzvot Gadol, Rabbinic Commandments, Laws of Chanukah '
     }
 
     return multiple_replace(smg_str, conv_table, using_regex=True)
@@ -919,12 +918,12 @@ def convert_smg(smg_str):
 
 def needs_another_cycle(txtfile, mass_name):
     if os.stat(txtfile).st_size == 0:
-        print '\n' + mass_name + ' is empty from errors'
+        print('\n' + mass_name + ' is empty from errors')
     else:
         with codecs.open(txtfile, 'r', 'utf-8') as fp:
             lines = fp.readlines()
-        reg_letter_error = u'((error missing little or big letter)|(error, cit with the perek/page counters)|(error, missing))'
-        reg_missing_indicator = u'error, missing an indicator'
+        reg_letter_error = '((error missing little or big letter)|(error, cit with the perek/page counters)|(error, missing))'
+        reg_missing_indicator = 'error, missing an indicator'
         needs_c = 0
         indicator_c = 0
         for line in lines:
@@ -933,37 +932,37 @@ def needs_another_cycle(txtfile, mass_name):
             if re.search(reg_missing_indicator, line):
                 indicator_c  += 1
         if not needs_c and not indicator_c:
-            print '\n' + mass_name + ' is empty from errors'
+            print('\n' + mass_name + ' is empty from errors')
         else:
-            print '\n' + mass_name + '\n' \
+            print('\n' + mass_name + '\n' \
             +" indicator count " + str(indicator_c)\
-            +" other problem " + str(needs_c)
+            +" other problem " + str(needs_c))
 
 if __name__ == "__main__":
 #     # test = parse_em('test.txt')
-#     # filenames_he = [u'בבא מציעא', u'בבא בתרא', u'ראש השנה', u'ברכות', u'גיטין',  u'יבמות', u'יומא',
-#     #              u'כתובות', u'מועד קטן',  u'נדרים',   u'סנהדרין', u'עירובין', u'פסחים',
-#     #              u'קידושין',u'ראש השנה', u'שבועות', u'שבת']  #
-#     # # filenames_he = [u'נזיר', u'ביצה', u'סוכה',u'מכות',u'סוטה']
-#     # filenames_eg = [u'bm', u'bb', u'rh',  u'brachot', u'gittin',  u'yevamot', u'yoma',
-#     #              u'ktobot', u'moed',  u'nedarim', u'sanhedrim', u'eruvin', u'pesachim',
-#     #              u'kidushin',u'rh', u'shvuot', u'shabbat']  # u'nazir', u'egg', u'hagiga', u'sukka', u'makot', u'sota'
-#     # filenames_he = [u'נזיר', u'ביצה', u'סוכה', u'מכות', u'סוטה']
-#     # filenames_eg = [u'nazir', u'beitza', u'sukka', u'makot', u'sota']
+#     # filenames_he = ['בבא מציעא', 'בבא בתרא', 'ראש השנה', 'ברכות', 'גיטין',  'יבמות', 'יומא',
+#     #              'כתובות', 'מועד קטן',  'נדרים',   'סנהדרין', 'עירובין', 'פסחים',
+#     #              'קידושין','ראש השנה', 'שבועות', 'שבת']  #
+#     # # filenames_he = ['נזיר', 'ביצה', 'סוכה','מכות','סוטה']
+#     # filenames_eg = ['bm', 'bb', 'rh',  'brachot', 'gittin',  'yevamot', 'yoma',
+#     #              'ktobot', 'moed',  'nedarim', 'sanhedrim', 'eruvin', 'pesachim',
+#     #              'kidushin','rh', 'shvuot', 'shabbat']  # 'nazir', 'egg', 'hagiga', 'sukka', 'makot', 'sota'
+#     # filenames_he = ['נזיר', 'ביצה', 'סוכה', 'מכות', 'סוטה']
+#     # filenames_eg = ['nazir', 'beitza', 'sukka', 'makot', 'sota']
 #     # for m_en, m_he in zip(filenames_eg, filenames_he):
-#     #     parsed = run1(massechet_he=u'{}'.format(m_he), massechet_en= m_en)
+#     #     parsed = run1(massechet_he='{}'.format(m_he), massechet_en= m_en)
 #     #     parsed = run2(massechet_he=m_he, massechet_en= m_en)
-#     # parsed = run2(massechet_he=u'מועד קטן', massechet_en= u'mk_test')
-#     # reverse_collapse(u'mk.csv', u'mk')
-#     # test = run1(massechet_he=u'mk', massechet_en=u'test_david')
-#     # test = run1(massechet_he=u'test', massechet_en=u'testing')
+#     # parsed = run2(massechet_he='מועד קטן', massechet_en= 'mk_test')
+#     # reverse_collapse('mk.csv', 'mk')
+#     # test = run1(massechet_he='mk', massechet_en='test_david')
+#     # test = run1(massechet_he='test', massechet_en='testing')
 #
 #     # # final lines to get a dict
-#     # reverse_collapse(u'hagiga_done.csv', u'hgiga_test')
-#     # reverse_collapse(u'done/mk_fixed.csv', u'mk_tush_test')
-#     # parsed = run1(massechet_he=u'hagiga_collapsed', massechet_en=u'hg_test')
-#     # reverse_collapse(u'done/mk_fixed.csv', u'semag')
-#     # parsed = run2(massechet_he=u'test_collapsed', massechet_en=u'mk_fixed')
+#     # reverse_collapse('hagiga_done.csv', 'hgiga_test')
+#     # reverse_collapse('done/mk_fixed.csv', 'mk_tush_test')
+#     # parsed = run1(massechet_he='hagiga_collapsed', massechet_en='hg_test')
+#     # reverse_collapse('done/mk_fixed.csv', 'semag')
+#     # parsed = run2(massechet_he='test_collapsed', massechet_en='mk_fixed')
 #     # final_list = segment_column('Ein Mishpat - Moed Katan.csv', 'mk_test_done.csv','Moed_Katan')
 #
 #     ls = 'brachot.csv\
@@ -1004,28 +1003,28 @@ if __name__ == "__main__":
 #
 #     print filenames_he
 #     for m_he in filenames_he:
-#         parsed = run2(massechet_he=u'csvQA/{}'.format(m_he), massechet_en = u'csvQA/{}'.format(m_he))
+#         parsed = run2(massechet_he='csvQA/{}'.format(m_he), massechet_en = 'csvQA/{}'.format(m_he))
 #
 #
-#     # parsed = run15(massechet_he=u'repeating/{}'.format(ls[:-4]), massechet_en=u'repeating/{}'.format(ls[:-4]))
+#     # parsed = run15(massechet_he='repeating/{}'.format(ls[:-4]), massechet_en='repeating/{}'.format(ls[:-4]))
 #
 #
 #     for m_he in filenames_he:
-#         txtfile = u'csvQA/{}_error'.format(m_he)
+#         txtfile = 'csvQA/{}_error'.format(m_he)
 #         needs_another_cycle(txtfile, m_he)
 #
 #
-#     # txtfile = u'repeating/{}_error'.format(ls[:-4])
+#     # txtfile = 'repeating/{}_error'.format(ls[:-4])
 #     # needs_another_cycle(txtfile, ls[:-4])
 #         # print 'done'
 #
 #     # parsed = run15('done/mk_fixed', 'done/mk_fixed')
 #     # needs_another_cycle('done/mk_fixed_error', 'done/mk_fixed')
 
-    # parse_hagiga = run1(u'חגיגה', 'eh_testing')
+    # parse_hagiga = run1('חגיגה', 'eh_testing')
 
     # reverse_collapse('small_letters/hagiga.csv', 'small_letters/collapsed_hagiga')
-    # done = re.split(u'\s*', u'beitza_little_letters.csv \
+    # done = re.split('\s*', 'beitza_little_letters.csv \
     # bbabtra_little_letters.csv \
     # hagiga_little_letters.csv \
     # mk_fixed.csv \
@@ -1039,7 +1038,7 @@ if __name__ == "__main__":
     # clllapse_kidd = reverse_collapse('small_letters/kidushin_little_letters.csv', 'small_letters/collapsed_kidushin')
     # parsed = run2('csvQA/collapsed_megillah', 'csvQA/collapsed_megillah_little')
     # reverse_collapse('csvQA/megillah_little_letters.csv', 'csvQA/collapsed_megillah')
-    # run1(u'collapsed/lost_lines', u'collapsed/lost_lines') #avodah_zarah
+    # run1('collapsed/lost_lines', 'collapsed/lost_lines') #avodah_zarah
     # run1('/home/shanee/www/sefaria/Sefaria-Data/sources/Semak/citations', EM = False)
     for m in ['meilah']:#['keritot', 'niddah', 'temurah', 'arakhin', 'bekhorot', 'meilah', 'tamid']:
         run2("txtFiles/{}".format(m), "txtFiles/{}".format(m))

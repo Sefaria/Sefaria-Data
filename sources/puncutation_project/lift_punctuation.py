@@ -4,20 +4,23 @@ from __future__ import unicode_literals, print_function
 
 import re
 
-import sefaria_classes as sef
 import bleach
-from sefaria.utils.hebrew import strip_nikkud
-from data_utilities.dibur_hamatchil_matcher import match_text
-from data_utilities.util import WeightedLevenshtein
+import argparse
+from functools import reduce
+from bs4 import BeautifulSoup, Tag
 from collections import namedtuple
+from sefaria.utils.hebrew import strip_nikkud
+import sources.puncutation_project.sefaria_classes as sef
+from data_utilities.util import WeightedLevenshtein
+from data_utilities.dibur_hamatchil_matcher import match_text
 
 Quotation = namedtuple('Quotation', ['word_index', 'type'])
 
 
-# base_vtitle = 'William Davidson Edition - Aramaic'
-base_vtitle = 'William Davidson Edition - Vocalized Aramaic2'
+base_vtitle = 'William Davidson Edition - Aramaic'
+# base_vtitle = 'William Davidson Edition - Vocalized Aramaic2'
 elucidated_vtitle = 'William Davidson Edition - Hebrew'
-punctuated_vtitle = 'William Davidson Edition - Aramaic Punctuated2'
+punctuated_vtitle = 'William Davidson Edition - Aramaic Punctuated'
 WL = WeightedLevenshtein()
 
 
@@ -40,7 +43,7 @@ def best_match_word_match(base_words, punctuated_words, word_index):
     else:
         levenshteins = [WL.calculate(base_word, word_in_question, False) for base_word in base_words]
         distance_penalties = [1 + abs(0.2*(i-word_index)) for i in range(len(base_words))]
-        scores = [i*j for i, j in zip(levenshteins, distance_penalties)]
+        scores = [i+j for i, j in zip(levenshteins, distance_penalties)]
         return min(range(len(scores)), key=lambda x: scores[x])
 
 
@@ -116,7 +119,26 @@ def remove_enclosed_commas(text_to_clean):
     :param unicode text_to_clean:
     :return: unicode
     """
-    return re.sub(ur'\[[^\[\]]+\]', lambda x: x.group().replace(',', ''), text_to_clean)
+    return re.sub(r'\[[^\[\]]+\]', lambda x: x.group().replace(',', ''), text_to_clean)
+
+
+def consolidate_html(raw_string: str) -> str:
+    soup = BeautifulSoup(f'<root>{raw_string}</root>', 'xml')
+    elements = list(soup.root)
+    indices = []
+    for i, (current, follow) in enumerate(zip(elements[:-1], elements[1:])):
+        if isinstance(current, Tag) and isinstance(follow, Tag) and current.name == follow.name:
+            indices.append(i)
+
+    for i in reversed(indices):
+        elements[i+1].unwrap()
+        elements[i].append(elements[i+1])
+
+    return ''.join(str(e) for e in elements)
+
+
+class ModeledSegmentError(Exception):
+    pass
 
 
 class ModeledSegment(object):
@@ -143,9 +165,12 @@ class ModeledSegment(object):
                 self._ts_pairs.append(ts)
 
         # last one
-        ts = TalmudSteinsaltz.load_talmud_steinsaltz(
-            self._raw_segment, matches[-1].start(), matches[-1].end(), len(self._raw_segment)
-        )
+        try:
+            ts = TalmudSteinsaltz.load_talmud_steinsaltz(
+                self._raw_segment, matches[-1].start(), matches[-1].end(), len(self._raw_segment)
+            )
+        except IndexError:
+            raise ModeledSegmentError
         if ConnectedTalmud.is_connected(ts.talmud):
             self._ts_pairs.append(ConnectedTalmud(ts.talmud, ts.steinsaltz))
         else:
@@ -413,7 +438,7 @@ def build_maps(simple_segment, ellucidated_segment):
             current_loc = end
     else:
         mapping = match_text(words, [ts.get_talmud() for ts in ts_objects], overall=0)['matches']
-        mapping = map(lambda x: (x[0], x[1]+1), mapping)
+        mapping = list(map(lambda x: (x[0], x[1]+1), mapping))
 
         last_word = 0
         for i in range(len(mapping)):
@@ -464,31 +489,48 @@ logic can be here. The elucidation will always follow the Talmud. We'll want to 
 
 
 if __name__ == '__main__':
-    my_r = sef.Ref("Steinsaltz on Berakhot 2b.2")
-    base_r = sef.Ref("Berakhot 2b.2")
-    my_t = my_r.text('he', elucidated_vtitle).text
-    base_t = base_r.text('he', base_vtitle).text
-    ms = ModeledSegment(my_t)
-    stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
-    maps = build_maps(base_t, my_t)
-    partial_punctuation = maps.get_punctuated_talmud()
-    final_punctuation = extract_quotations(partial_punctuation, stein_without_stein)
-    print(base_t, my_t, partial_punctuation, final_punctuation, sep='\n\n')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b', '--base_vtitle', default='William Davidson Edition - Aramaic', type=str, help='versionTitle to which nikkud will be added')
+    parser.add_argument('-t', '--tractate', type=str, help='tractate on which to add nikkud')
+    args = parser.parse_args()
+    base_vtitle = args.base_vtitle
+    tractate = args.tractate
+    print(base_vtitle)
 
-    simple, elucidated = sef.Ref("Berakhot"), sef.Ref("Steinsaltz on Berakhot")
+    # tref = f'Shabbat 2b.11'
+    # my_r = sef.Ref(f"Steinsaltz on {tref}")
+    # base_r = sef.Ref(f"{tref}")
+    # my_t = my_r.text('he', elucidated_vtitle).text
+    # my_t = re.sub(r'</b>(\s*)<b>', r'\g<1>', my_t)
+    # base_t = base_r.text('he', base_vtitle).text
+    # ms = ModeledSegment(my_t)
+    # stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
+    # maps = build_maps(base_t, my_t)
+    # partial_punctuation = maps.get_punctuated_talmud()
+    # final_punctuation = extract_quotations(partial_punctuation, stein_without_stein)
+    # print(base_t, my_t, actual_bleach(my_t), partial_punctuation, final_punctuation, sep='\n\n')
+
+    simple, elucidated = sef.Ref(f"{tractate}"), sef.Ref(f"Steinsaltz on {tractate}")
     for simple_seg in simple.all_segment_refs():
         print(simple_seg.normal())
         elucidated_seg = sef.Ref("Steinsaltz on {}".format(simple_seg.normal()))
         assert simple_seg.sections == elucidated_seg.sections
         base_t, eluc_t = simple_seg.text('he', base_vtitle).text, elucidated_seg.text('he', elucidated_vtitle).text
+
+        # algorithm works better when bold tags are consolidated
+        eluc_t = re.sub(r'</b>(\s*)<b>', r'\g<1>', eluc_t)
+
         new_tc = simple_seg.text('he', punctuated_vtitle)
         if not eluc_t:
             new_tc.text = base_t
         else:
-            maps = build_maps(base_t, eluc_t)
-            punctuated_text = maps.get_punctuated_talmud()
-            ms = ModeledSegment(eluc_t)
-            stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
-            punctuated_text = extract_quotations(punctuated_text,stein_without_stein)
-            new_tc.text = punctuated_text
+            try:
+                maps = build_maps(base_t, eluc_t)
+                punctuated_text = maps.get_punctuated_talmud()
+                ms = ModeledSegment(eluc_t)
+                stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
+                punctuated_text = extract_quotations(punctuated_text, stein_without_stein)
+                new_tc.text = punctuated_text
+            except ModeledSegmentError:
+                new_tc.text = base_t
         new_tc.save()

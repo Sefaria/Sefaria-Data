@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
 import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
 import json 
 import pdb
 import os
 import sys
 from bs4 import BeautifulSoup
 import re
-p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, p)
-sys.path.insert(0,p+"/sources")
-os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
-from local_settings import *
-sys.path.append(p+"/data_utilities")
+from sources.local_settings import *
 from data_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 

@@ -9,7 +9,7 @@ import hebrew
 
 mas = str(sys.argv[1])
 shas = TextChunk(Ref("Tosafot on %s" %mas), "he").text
-print len(shas)
+print(len(shas))
 newShas =[]
 #try:
 for daf in shas:
@@ -18,7 +18,7 @@ for daf in shas:
         newLine=[]
         for DH in line:
             if "-" not in DH:
-                new_dh = re.sub(ur"\.", " -", DH, count = 1)
+                new_dh = re.sub(r"\.", " -", DH, count = 1)
             else:
                 new_dh =DH
             newLine.append(new_dh)

@@ -28,8 +28,8 @@ def creat_lexiconentry(data):
         senses = []
         for i in range(1, 24):
             temp_def = data['Alternate #{}'.format(i)]
-            temp_def = re.sub(ur'\([0-9]+\)',u'', temp_def)
-            temp_def = temp_def.replace(u'_',u' ').strip()
+            temp_def = re.sub(r'\([0-9]+\)','', temp_def)
+            temp_def = temp_def.replace('_',' ').strip()
             if len(temp_def) == 0:
                 break
             senses += [{
@@ -50,7 +50,7 @@ def read_source():
     csv = unicodecsv.DictReader(f)
     for i,row in enumerate(csv):
         if i % 100 == 0:
-            print "{}".format(i)
+            print("{}".format(i))
         create_wordform(row)
         creat_lexiconentry(row)
 

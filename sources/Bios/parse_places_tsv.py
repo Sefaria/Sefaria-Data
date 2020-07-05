@@ -6,7 +6,7 @@ import pymongo
 import geojson
 from sefaria.system.database import db
 from sefaria.model import *
-import unicodecsv as csv
+import csv
 
 
 """
@@ -20,7 +20,7 @@ try:
     db.place.create_index([("point", pymongo.GEOSPHERE)])
     db.place.create_index([("area", pymongo.GEOSPHERE)])
 except Exception as e:
-    print "Failed to create GEO index: {}".format(e)
+    print("Failed to create GEO index: {}".format(e))
 
 def _(p, attr, field):
     if field:
@@ -45,7 +45,7 @@ with open("Torah Commentators - Bios - Places.tsv") as tsv:
                 latlon = [float(_) for _ in l[2].split(",")]
             except Exception as e:
                 if l[2] != "#ERROR!":
-                    print "Failed to parse geo: {}. \n{}".format(l[2], e)
+                    print("Failed to parse geo: {}. \n{}".format(l[2], e))
                 continue
             if len(latlon) != 2:
                 continue

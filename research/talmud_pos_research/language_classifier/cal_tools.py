@@ -57,7 +57,7 @@ def cal2heb(calIn,withshinsin=True):
        return [cal2heb(tempCalIn,withshinsin) for tempCalIn in calIn]
     else:
         for char in calIn:
-            if char in cal2hebDic.keys():
+            if char in list(cal2hebDic.keys()):
                 if char in no_shinsin_dic and not withshinsin:
                     hebStr += no_shinsin_dic[char]
                 else:
@@ -65,17 +65,17 @@ def cal2heb(calIn,withshinsin=True):
             else:
                 hebStr += char
 
-    return unicode(hebStr,'utf-8')
+    return str(hebStr,'utf-8')
 
 def heb2cal(hebIn):
     calStr = ""
-    inv_map = {unicode(v,'utf-8'): k for k, v in cal2hebDic.iteritems() if not k == '$' and not k == '&'}
-    inv_map[u'ש'] = '$'
+    inv_map = {str(v,'utf-8'): k for k, v in cal2hebDic.items() if not k == '$' and not k == '&'}
+    inv_map['ש'] = '$'
     if type(hebIn) == list:
         return [heb2cal(tempHebIn) for tempHebIn in hebIn]
     else:
         for char in hebIn:
-            if char in inv_map.keys():
+            if char in list(inv_map.keys()):
                 calStr += inv_map[char]
             else:
                 calStr += char
@@ -244,7 +244,7 @@ def saveHeadwordHashtable(calFilename,outFilename):
                 tempSet.add(lineObj["word"])
                 hash[lineObj["head_word"]] = tempSet
     with open(outFilename,"w") as out:
-        keys = hash.keys()
+        keys = list(hash.keys())
         keys.sort()
         for key in keys:
             listStr = ""
@@ -266,9 +266,9 @@ def savePOSHashtable(calFilename,outFilename):
             except KeyError:
                 obj[lineObj["word"]] = [lineObj["POS"]]
 
-    posCountList = np.empty(shape=[len(obj.keys())])
+    posCountList = np.empty(shape=[len(list(obj.keys()))])
     with codecs.open(outFilename + ".txt","w",encoding="utf-8") as out:
-        keys = obj.keys()
+        keys = list(obj.keys())
         keys.sort()
         for i,key in enumerate(keys):
             listStr = ""
@@ -280,8 +280,8 @@ def savePOSHashtable(calFilename,outFilename):
             out.write("%s - %s\n" % (key,listStr))
 
     saveUTFStr(obj,outFilename + ".json")
-    print "AVG POS: %s" % np.mean(posCountList)
-    print "VAR POS: %s" % np.var(posCountList)
+    print("AVG POS: %s" % np.mean(posCountList))
+    print("VAR POS: %s" % np.var(posCountList))
 
 def saveJBAForms(outFilename):
     obj = {}
@@ -340,7 +340,7 @@ def fix_wrong_pos_in_dataset():
                 headWords = line.split(' ')[1:2][0].split('*-*')
                 newHeadPOSs = re.findall("XXX\s(.+)",line)[0].split(',')
                 if word in wordFixerDict:
-                    print 'oh no!'
+                    print('oh no!')
                 wordFixerDict[word] = {"headPOSs":headPOSs,"headWords":headWords,"newHeadPOSs":newHeadPOSs}
     for word in wordFixerDict:
         badPOSs = [pos for pos in wordFixerDict[word]["headPOSs"] if pos not in wordFixerDict[word]["newHeadPOSs"]]
@@ -364,7 +364,7 @@ def fix_wrong_pos_in_dataset():
     for new_line in newCalDb:
         ncaldb.write(new_line+'\n')
     ncaldb.close()
-    print numfixed
+    print(numfixed)
 
 
 def fixPNandGN():
@@ -391,14 +391,14 @@ def fixPNandGN():
                 lineObj["homograph"] = ''
 
                 new_line = writeCalLine(lineObj)
-                print new_line
+                print(new_line)
                 ncaldb.write(new_line + '\n')
                 numfixed +=1
             else:
                 ncaldb.write(writeCalLine(lineObj) + '\n')
 
     ncaldb.close()
-    print numfixed
+    print(numfixed)
 
 def split_training_set_into_mesechtot():
     mesechta_map = {71001:"Berakhot",71002:"Shabbat",71003:"Eruvin",71004:"Pesachim",71020:"Bava Kamma",71021:"Bava Metzia",71022:"Bava Batra"}

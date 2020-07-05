@@ -5,11 +5,11 @@ from research.talmud_pos_research.language_classifier import cal_tools
 from gensim.models import word2vec
 
 def tokenize_words(str):
-    str = str.replace(u"־"," ")
+    str = str.replace("־"," ")
     str = re.sub(r"</?[^>]+>","",str) #get rid of html tags
     str = re.sub(r"\([^\(\)]+\)","",str) #get rid of refs
     str = str.replace('"',"'")
-    word_list = filter(bool,re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]",str))
+    word_list = list(filter(bool,re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]",str)))
     return word_list
 
 
@@ -27,7 +27,7 @@ def make_training_set():
 
 def get_headword(word):
     similar = model.most_similar(word,topn=30)
-    print word, u'-'.join([s[0] for s in similar])
+    print(word, '-'.join([s[0] for s in similar]))
     for temp_sim,_ in similar:
         try:
             head_word = headword_hashtable[temp_sim]
@@ -53,7 +53,7 @@ text = [w for seg in TextChunk(r,'he').text for w in tokenize_words(seg)]
 for w in text:
     if w not in headword_hashtable:
         try:
-            print get_headword(w)
+            print(get_headword(w))
         except KeyError:
-            print w, "NOT IN VOCAB"
+            print(w, "NOT IN VOCAB")
 

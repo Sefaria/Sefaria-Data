@@ -57,8 +57,8 @@ class DiscreteHMM(_BaseHMM):
         '''
         self.B_map = numpy.zeros( (self.n,len(observations)), dtype=self.precision)
         
-        for j in xrange(self.n):
-            for t in xrange(len(observations)):
+        for j in range(self.n):
+            for t in range(len(observations)):
                 self.B_map[j][t] = self.B[j][observations[t]]
                 
     def _updatemodel(self,new_model):
@@ -93,11 +93,11 @@ class DiscreteHMM(_BaseHMM):
         # TBD: determine how to include eta() weighing
         B_new = numpy.zeros( (self.n,self.m) ,dtype=self.precision)
         
-        for j in xrange(self.n):
-            for k in xrange(self.m):
+        for j in range(self.n):
+            for k in range(self.m):
                 numer = 0.0
                 denom = 0.0
-                for t in xrange(len(observations)):
+                for t in range(len(observations)):
                     if observations[t] == k:
                         numer += gamma[t][j]
                     denom += gamma[t][j]

@@ -31,10 +31,10 @@ for en_tag in sorted_en_tags:
     translation = translate_client.translate(en_tag, target_language='iw', source_language='en')
     he_tag = strip_nikkud(translation['translatedText'])
     if en_tag == he_tag:
-        print u"Couldn't translate {}".format(en_tag)
+        print("Couldn't translate {}".format(en_tag))
         untranslated_en_tags += [en_tag]
         continue
-    print u"{}:{}".format(he_tag, en_tag)
+    print("{}:{}".format(he_tag, en_tag))
     translated_hebrew_tags[he_tag] += [en_tag]
 
 overall_counts = {he_tag: sum([original_tag_counter[en_tag] for en_tag in translated_hebrew_tags[he_tag]]) for he_tag in translated_hebrew_tags}
@@ -55,7 +55,7 @@ with open("untranslated_english_tags.csv", "w") as csvout:
     for en_term in untranslated_en_tags:
         csvout.writerow([en_term, original_tag_counter[en_term]])
 
-print "Number of Original English Tags: {}".format(len(sorted_en_tags))
-print "Number of Untranslatable English Tags: {}".format(len(untranslated_en_tags))
-print "Number of Translated Hebrew Tags: {}".format(len(translated_hebrew_tags))
-print "(Number of Original Hebrew Tags: {})".format(len(sorted_he_tags))
+print("Number of Original English Tags: {}".format(len(sorted_en_tags)))
+print("Number of Untranslatable English Tags: {}".format(len(untranslated_en_tags)))
+print("Number of Translated Hebrew Tags: {}".format(len(translated_hebrew_tags)))
+print("(Number of Original Hebrew Tags: {})".format(len(sorted_he_tags)))

@@ -4,7 +4,7 @@ from sefaria.model import *
 import codecs
 
 
-def word_count_by_ref(ref_name, lang=u'he', version=None):
+def word_count_by_ref(ref_name, lang='he', version=None):
     """
     Get a dictionary of words and the number of times they appear
     :param ref_name:
@@ -24,7 +24,7 @@ def word_count_by_ref(ref_name, lang=u'he', version=None):
     text = text.split()
 
     for word in text:
-        if word in counts.keys():
+        if word in list(counts.keys()):
             counts[word] += 1
         else:
             counts[word] = 1
@@ -40,7 +40,7 @@ def most_common_words(counts, n=-1):
     :return: List of tuples, tuples contain word and the number of times it appears
     """
 
-    result = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+    result = sorted(list(counts.items()), key=lambda x: x[1], reverse=True)
 
     if n == -1:
         return result
@@ -48,8 +48,8 @@ def most_common_words(counts, n=-1):
         return result[:n]
 
 
-ref_list = [u'Bava Kamma.83b-94a', u'Berakhot.2a-30b', u'Megillah.2a-17a', u'Megillah.25b-32a',
-            u'Shabbat.67b-76b']
+ref_list = ['Bava Kamma.83b-94a', 'Berakhot.2a-30b', 'Megillah.2a-17a', 'Megillah.25b-32a',
+            'Shabbat.67b-76b']
 
 for thing in ref_list:
     filename = 'Most common words in {}.txt'.format(thing)
@@ -59,6 +59,6 @@ for thing in ref_list:
     c = most_common_words(word_count_by_ref(thing), 150)
 
     for result in c:
-        outfile.write(u'{}: {}\n'.format(*result))
+        outfile.write('{}: {}\n'.format(*result))
 
     outfile.close()

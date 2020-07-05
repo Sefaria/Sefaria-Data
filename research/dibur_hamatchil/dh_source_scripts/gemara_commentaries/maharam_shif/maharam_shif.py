@@ -39,15 +39,15 @@ def split_daf_into_base_texts(rules, comment_tc):
 
     return splitted, oto_dibur_dict
 
-rules = [ur"(^ב?גמ)|(^ב?משנה)",ur'^.?רש"י',ur"^ב?תוס"]
+rules = [r"(^ב?גמ)|(^ב?משנה)",r'^.?רש"י',r"^ב?תוס"]
 
 def gemara_tokenizer(s):
-    s = s.replace(u"־", u" ")
-    s = s.replace(u"מתני' ",u'')
+    s = s.replace("־", " ")
+    s = s.replace("מתני' ",'')
     s = re.sub(r"</?.+>", "", s)  # get rid of html tags
     s = re.sub(r"\([^\(\)]+\)", "", s)  # get rid of refs
     s = s.replace("'", '"')
-    word_list = filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", s))
+    word_list = list(filter(bool, re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]", s)))
     return word_list
 
 def rashi_tokenizer(s):
@@ -60,32 +60,32 @@ def tosfos_tokenizer(s):
     return rashi_tokenizer(s)
 
 def dh(s):
-    s = re.sub(ur'\(.+?\)',u'',s)
+    s = re.sub(r'\(.+?\)','',s)
     stop_phrases = []
     for phrase in stop_phrases:
-        s = s.replace(phrase,u'')
-    bold_list = re.findall(ur'<b>(.+?)</b>',s)
+        s = s.replace(phrase,'')
+    bold_list = re.findall(r'<b>(.+?)</b>',s)
     if len(bold_list) > 0:
         bold = bold_list[0]
-        if u"וכו'" in bold:
-            bold = bold[:bold.index(u"וכו'")+1]
-        elif u"כו'" in bold:
-            bold = bold[:bold.index(u"כו'")+1]
-        bold = re.sub(ur'[\,\.\:\;]',u'',bold)
+        if "וכו'" in bold:
+            bold = bold[:bold.index("וכו'")+1]
+        elif "כו'" in bold:
+            bold = bold[:bold.index("כו'")+1]
+        bold = re.sub(r'[\,\.\:\;]','',bold)
         return bold
     else:
         return s
 
 def tos_dh(s):
-    s = re.sub(ur'\(.+?\)',u'',s)
-    s = re.sub(ur'ב' ur'?' ur'ד"ה', u'', s)
+    s = re.sub(r'\(.+?\)','',s)
+    s = re.sub(r'ב' r'?' r'ד"ה', '', s)
     stop_phrases = []
     for phrase in stop_phrases:
-        s = s.replace(phrase,u'')
-    bold_list = re.findall(ur'<b>(.+?)</b>',s)
+        s = s.replace(phrase,'')
+    bold_list = re.findall(r'<b>(.+?)</b>',s)
     if len(bold_list) > 0:
         bold = bold_list[0]
-        m = re.search(ur'ו' ur'?' u"כו'",bold)
+        m = re.search(r'ו' r'?' "כו'",bold)
         if m: # there's a chu. which side do you choose?
             if len(bold) - m.end() > m.start():
                 d = bold[m.end():]

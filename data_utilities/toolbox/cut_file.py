@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import urllib
-import urllib2
-from urllib2 import URLError, HTTPError
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+from urllib.error import URLError, HTTPError
 import json 
 import pdb
 import os
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     		if line.find(where)>=0:
     			where_pos = count
     			break
-    	print where_pos
+    	print(where_pos)
     	first_half = open(args.first_half, 'w')
     	second_half = open(args.second_half, 'w')
     	file.close()

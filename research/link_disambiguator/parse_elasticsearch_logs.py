@@ -11,6 +11,6 @@ with gzip.open('access.log.2.gz', 'rb') as fin:
         if parsed['status'] == '200' and parsed['request_header_user_agent__browser__family'] in good_user_agents:
             num_actual_users += 1
 
-print num_actual_users
+print(num_actual_users)
 
 

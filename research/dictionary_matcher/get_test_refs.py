@@ -17,7 +17,7 @@ out = []
 for rt in test_refs:
     ro = Ref(rt)
     text = TextChunk(ro,lang="he").text
-    assert isinstance(text, unicode)
+    assert isinstance(text, str)
     out += [{
         "ref": rt,
         "text": text
