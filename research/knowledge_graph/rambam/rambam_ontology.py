@@ -141,6 +141,9 @@ with open("research/knowledge_graph/rambam/rambam_ontology.csv", "r") as fin:
                     else:
                         leaf_topic_refs[curr_topic5].add(rr.normal())
 
+good_smag_refs = [(x[0], x[1][0]) for x in filter(lambda x: x[1][1] >= 3, [(k, max(v.items(), key=lambda x: x[1])) for k, v in smag_counts.items()])]
+for good_topic, good_ref in good_smag_refs:
+    leaf_topic_refs[good_topic].add(good_ref)
 node_set = create_node_set()
 
 rambam_ref_links = []

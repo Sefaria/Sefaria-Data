@@ -1,4 +1,4 @@
-import requests, re, codecs, json, os, django, shutil, unicodecsv
+import requests, re, codecs, json, os, django, shutil, unicodecsv, csv
 from collections import defaultdict
 from copy import deepcopy
 django.setup()
@@ -29,12 +29,12 @@ ROOT = "http://www.webshas.org/"
 class WebShasParser:
 
     def __init__(self):
-        self.all_links = set()
-        self.leftover_links = set()
-        self.visited_links = set()
-        self.file_tree = []
-        self.make_file_tree()
-        self.parse_file_tree()
+        # self.all_links = set()
+        # self.leftover_links = set()
+        # self.visited_links = set()
+        # self.file_tree = []
+        # self.make_file_tree()
+        # self.parse_file_tree()
         self.extract_topic_headers(4)
 
     def make_file_tree(self):
@@ -63,19 +63,50 @@ class WebShasParser:
             jin = json.load(fin)
         rows = self.extract_topic_headers_recurse(jin, [])
         # rows = filter(lambda x: len(x["indent"]) < max_indent, rows)
-        rows = [x for x in rows if len(x["refs"]) == 0]
+        # rows = [x for x in rows if len(x["refs"]) == 0]
         # combine parents
         max_depth = 0
+        ref_set = set()
+        total_refs = 0
         for r in rows:
+            if len(r['refs']) > 0:
+                ref_list = list(r['refs'].split(', '))
+                total_refs += len(ref_list)
+                ref_set |= set(ref_list)
             if len(r["parents"]) > max_depth:
                 max_depth = len(r["parents"])
             for i, p in enumerate(r["parents"]):
                 r["level {}".format(i+1)] = p
             del r["parents"]
-        with open("topic_headers.csv", "wb") as fout:
-            csv = unicodecsv.DictWriter(fout, ["level {}".format(i+1) for i in range(max_depth)] + ["refs"])
-            csv.writeheader()
-            csv.writerows(rows)
+        smaller_files = {}
+        for r in rows:
+            num_cols = 0
+            for k, v in r.items():
+                if len(v) > 0:
+                    num_cols += 1
+            if num_cols == 1 and len(r['level 1']) > 0:
+                smaller_files[r['level 1']] = []
+        for r in rows:
+            smaller_files[r['level 1']] += [r]
+        for f, small_rows in smaller_files.items():
+            temp_max_depth = 0
+            for r in small_rows:
+                num_cols = 0
+                for k, v in r.items():
+                    if len(v) > 0:
+                        num_cols += 1
+                if num_cols > temp_max_depth:
+                    temp_max_depth = num_cols
+            with open("small_parsed/webshas {}.csv".format(f.replace('/', ' - ')), 'w') as fout:
+                c = csv.DictWriter(fout, ["level {}".format(i+1) for i in range(temp_max_depth-1)] + ["refs"])
+                c.writeheader()
+                c.writerows(small_rows)
+        with open("topic_headers_with_refs.csv", "w") as fout:
+            c = csv.DictWriter(fout, ["level {}".format(i+1) for i in range(max_depth)] + ["refs"])
+            c.writeheader()
+            c.writerows(rows)
+        print("Total Refs", total_refs)
+        print("Unique Refs", len(ref_set))
 
     def extract_topic_headers_recurse(self, children, parents, indent=0):
         rows = []

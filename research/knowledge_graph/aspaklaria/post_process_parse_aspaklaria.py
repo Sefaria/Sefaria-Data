@@ -9,59 +9,6 @@ django.setup()
 from sefaria.model import *
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from research.knowledge_graph.sefer_haagada.main import disambiguate_ref_list
-<<<<<<< HEAD
-
-NONEXISTANT_BOOKS = {
-    u"רש\"ר הירש",
-    u"רשר\"ה",
-    u"ילקוט ראובני",
-    u"ילקוט המכירי",
-    u"אמונות ודעות",
-    u"תומר דבורה",
-    u"רמ\"ע מפאנו",
-    u"מכתב מאליהו",
-    u"יוסף לקח",
-    u"אגרת שמואל",
-    u"מגילת סתרים",
-    u"מגלת סתרים",
-    u"מהר\"י יעבץ",
-    u"מהר\"י יעב\"ץ",
-    u"חכמה ומוסר",
-    u"שערי קדושה",
-    u"רבינו ירוחם",
-    u"מנורת המאור",
-    u"ספר חרדים",
-    u"כוכבי אור",
-    u"גבור - גבורה",
-    u"מבעלי התוספות",
-    u"מבעלי תוספות",
-    u"דמשק",
-    u"שיעורי דעת",
-    u"רוח חיים",
-    u"בכור",
-    u"עקרים",
-    u"אגרת שמואל ומדרש שמואל",
-    u"יוסיף לקח",
-    u"תעלומות חכמה",
-    u"הע\"ד",
-    u"מסכת כותים",
-    u"פירוש המשניות",
-    u"דרשים",
-    u"ציבא",
-    u"צרור המור, לחם דמעה"
-}
-
-TODEALWITH = [
-    u"מוהר\"ן",
-    u"מדרש הגדול",
-    u"זהר",
-    u"מדרשים",
-    u"מדרש תדשא",
-    u"אותיות דר' עקיבא",
-    u"אותיות דרבי עקיבא",
-    u"אותיות דר\"ע",
-    u"אגרת תימן",
-=======
 from sefaria.settings import MONGO_HOST, MONGO_PORT
 from sefaria.system.exceptions import InputError
 client = MongoClient(MONGO_HOST, MONGO_PORT)
@@ -122,13 +69,11 @@ TODEALWITH = [
     "אותיות דרבי עקיבא",
     "אותיות דר\"ע",
     "אגרת תימן",
->>>>>>> ee3e267429908cfa662508d494f104c4254a2b7c
 
 
 
 ]
 
-<<<<<<< HEAD
 with codecs.open("aspaklaria_db.json", "rb", encoding="utf8") as fin:
     jin = json.load(fin)
 with codecs.open("aspaklaria_good.json", "rb", encoding="utf8") as fin:
@@ -247,12 +192,11 @@ with codecs.open("aspaklaria_good.json", "wb", encoding="utf8") as fout:
     json.dump(good, fout, ensure_ascii=False, indent=2)
 with codecs.open("aspaklaria_bad.json", "wb", encoding="utf8") as fout:
     json.dump(bad, fout, ensure_ascii=False, indent=2)
-=======
 
 def update_doc(doc, is_good):
     collection = db_aspaklaria.aspaklaria_good if is_good else db_aspaklaria.aspaklaria_bad
     del doc['_id']
-    collection.update({"topic": doc['topic'], "cnt": doc['cnt']}, doc, upsert=True)
+    collection.replace_one({"topic": doc['topic'], "cnt": doc['cnt']}, doc, upsert=True)
 
 
 def delete_doc(doc, is_good):
@@ -485,7 +429,7 @@ def doit_talmud():
 
 def doit_ellipses(num_divisions, position):
     pm_index_map = defaultdict(list)
-    for doc in tqdm(db_aspaklaria.aspaklaria_good.find({"text": re.compile(r"[\u05d0-\u05ea]\s*\.\.\.\s*[\u05d0-\u05ea]")})):
+    for doc in tqdm(db_aspaklaria.aspaklaria_good.find({"text": re.compile(r"[א-ת]\s*\.\.\.\s*[א-ת]")})):
         try:
             oref = Ref(doc['pm_ref'])
         except (KeyError, InputError):
@@ -563,7 +507,7 @@ def doit_pm_easy_again(num_divisions, position):
     total = len(pm_index_map.items())
     start = total / num_divisions * position
     end = total if (position == num_divisions - 1) else (start + total / num_divisions)  # ad v'lo ad b'chlal
-    for idoc, (index, doc_list) in tqdm(enumerate(pm_index_map.items()), leave=False, smoothing=0):
+    for idoc, (index, doc_list) in tqdm(list(enumerate(pm_index_map.items())), leave=False, smoothing=0):
         if start > count or count >= end:
             count += 1
             continue
@@ -604,16 +548,16 @@ def cleanup_time():
 
 
 if __name__ == "__main__":
-    args = argparse.ArgumentParser()
-    args.add_argument("-n", "--num_divisions", dest="num_divisions", default=None, help="you know...")
-    args.add_argument("-p", "--position", dest="position", default=None, help="duh")
-    user_args = args.parse_args()
-    # doit(int(user_args.num_divisions), int(user_args.position))
-    # doit_author_mapper(int(user_args.num_divisions), int(user_args.position))
+    # args = argparse.ArgumentParser()
+    # args.add_argument("-n", "--num_divisions", dest="num_divisions", default=None, help="you know...")
+    # args.add_argument("-p", "--position", dest="position", default=None, help="duh")
+    # user_args = args.parse_args()
+    # doit(1, 0)
+    # doit_author_mapper(1, 0)
     # cleanup_time()
     # doit_rashi()
     # doit_talmud()
     # doit_ellipses(int(user_args.num_divisions), int(user_args.position))
     doit_pm_easy_again(int(user_args.num_divisions), int(user_args.position))
 # print "Num Good {} Num Bad {}. Percent {}".format(len(good), len(bad), 1.0*len(good)/len(jin))
->>>>>>> ee3e267429908cfa662508d494f104c4254a2b7c
+    # doit_ellipses(1, 0)
