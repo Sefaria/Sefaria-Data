@@ -7,11 +7,11 @@ from sefaria.model import *
 def handle_bolding(string, masechet, address):
     start, end = tags_map['masechet']['bold'], tags_map['masechet']['unbold']
     temp = re.sub(start+' *[^<@ ]* *'+end, '', string)
-    string = re.sub(start+' *([^<@ ]*) *'+end, ' <b><big>\1</b></big> ', string)
+    string = re.sub(start+' *([^<@ ]*) *'+end, ' <b><big>\1</big></b> ', string)
     for unclosed in re.findall(start+' *([^<@ ]*) *', temp):
-        string = string.replace(start+unclosed, ' <b><big>'+unclosed+'</b></big> ')
+        string = string.replace(start+unclosed, ' <b><big>'+unclosed+'</big></b> ')
     for unopen in re.findall(' *([^<@ ]*) *'+end, temp):
-        string = string.replace(unclosed+end, ' <b><big>'+unopen+'</b></bg> ')
+        string = string.replace(unclosed+end, ' <b><big>'+unopen+'</big></b> ')
     if start in string or end in string:
         print('(un)bold tag in', masechet, address)
     return string
@@ -49,6 +49,8 @@ def handle_alt_tags(data, masechet):
                 if len(data[n-1]['page.section']) > 25: print('hadran too long', masechet, data[n-1]['page.section'])
             if '@00' in row['content']:
                 row['content'] = row['content'].replace('@00', '')
+                if masechet == 'Menachot':
+                    row['content'] = '<b><big>' + row['content'] + '</big></b>'
                 if len(row['content']) > 18:
                     print('chapter beginning too long', masechet, row['page.section'])
                     newdata.append(row) #not when short - we dont want the title in the text

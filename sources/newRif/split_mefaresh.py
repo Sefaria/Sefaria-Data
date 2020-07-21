@@ -37,16 +37,17 @@ def find_match(data, shut, masechet):
             match_location = best_match[0].a.location if best_match[0].a.mesechta == 'data' else best_match[0].b.location
         except IndexError:
             print('no match', text_to_find, 'in', text_search_in[:100])
+            break
         match_location = [fix_word_index(text_search_in, a, partial(base_tokenizer, masechet=masechet)) for a in match_location]
         #now finding just the start of the second page
-        matched_text = ' '.join(text_search_in.split()[match_location[0]:match_location[1]+3]) #+3 just for confidence
+        matched_text = ' '.join(text_search_in.split()[match_location[0]:match_location[0]+35]) #+3 just for confidence
         start_shut = ' '.join(shut[n+1].split()[:15])
         start_match_list = matcher.match([(matched_text, 'data'), (start_shut, 'shut')], return_obj=True)
         try:
             start_match_location = start_match_list[0].a.location if start_match_list[0].a.mesechta == 'data' else start_match_list[0].b.location
             location = match_location[0] + start_match_location[0] - 1
-            newdata += ' '.join(data.split()[:location-1]) + ' @@ '
-            data = ' '.join(data.split()[location:])
+            newdata += ' '.join(data.split()[:location+1]) + ' @@ '
+            data = ' '.join(data.split()[location+1:])
         except IndexError:
             print('no match2', matched_text, start_match_list, start_shut)
             break
