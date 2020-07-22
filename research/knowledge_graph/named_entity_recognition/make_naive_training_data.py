@@ -9,6 +9,25 @@ django.setup()
 from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import match_text
 
+def myunidecode(text):
+    # 'ăǎġḥḤḫḳḲŏṭżūŻāīēḗîìi̧'
+    table = {
+        "ḥ": "h",
+        "Ḥ": "H",
+        "ă": "a",
+        "ǎ": "a",
+        "ġ": "g",
+        "ḫ": "h",
+        "ḳ": "k",
+        "Ḳ": "K",
+        "ŏ": "o",
+        "ṭ": "t",
+        "ż": "z",
+        "Ż": "Z" 
+    }
+    for k, v in table.items():
+        text = text.replace(k, v)
+    return text
 
 class Row(object):
 
@@ -104,12 +123,13 @@ class Amud(object):
 
     @staticmethod
     def normalize_text(lang, text):
-        text = re.sub('<[^>]+>', ' ', text)
+        # text = re.sub('<[^>]+>', ' ', text)
         if lang == 'en':
-            text = unidecode(text)
-            text = re.sub('\([^)]+\)', ' ', text)
-            text = re.sub('\[[^\]]+\]', ' ', text)
-        text = ' '.join(text.split())
+            text = myunidecode(text)
+            # text = unidecode(text)
+            # text = re.sub('\([^)]+\)', ' ', text)
+            # text = re.sub('\[[^\]]+\]', ' ', text)
+        # text = ' '.join(text.split())
         return text
 
 
@@ -158,11 +178,19 @@ class TonORabanan(object):
 
 class NaiveNERTagger(object):
 
-    word_breakers = {' ', '.', ',', '"', '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§'}
+    word_breakers = {' ', '.', ',', '"', '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§', '<', '>'}
 
     def __init__(self):
         self.search_terms = self.generate_search_terms()
         self.unique_uncaught_rabbis = defaultdict(int)
+        self.sefaria_to_bonayich = self.init_sefaria_bonayich_map()
+
+    def init_sefaria_bonayich_map(self):
+        with open("research/knowledge_graph/named_entity_recognition/sefaria_bonayich_reconciliation - Sheet2.csv", "r") as fin:
+            rows = list(csv.DictReader(fin))
+        return {
+            r["Slug"]: int(r["bonayich"]) if r["bonayich"] != "null" else None for r in rows
+        }
 
     def tag_segment(self, text):
         entities = []
@@ -187,10 +215,10 @@ class NaiveNERTagger(object):
                     continue
                 # successful tag!
                 if text[term_end_ind:term_end_ind + 5] == ' bar ' and matches[0][1] == "PERSON":
-                    pass
-                    print('Son of a...', matches[0][0], term, text[term_end_ind:term_end_ind + 15])
+                    continue
+                    # print('Son of a...', matches[0][0], term, text[term_end_ind:term_end_ind + 15])
                 tagged_indexes |= temp_tagged_indexes
-                entities += [[term_start_ind, term_end_ind, matches[0][1]]]  # only use most popular term
+                entities += [[term_start_ind, term_end_ind, matches[0][1], matches[0][0], self.sefaria_to_bonayich.get(matches[0][0], None)]]  # only use most popular term
         return entities
 
     @staticmethod
@@ -203,28 +231,50 @@ class NaiveNERTagger(object):
             return [title.lower()]
 
         b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ']
+        # search_types = [
+        #     ('people', 'PERSON', rabbi_extra_keys),
+        #     ("geography", 'GPE', None),
+        #     ('history', 'EVENT', lambda x: [x.lower()]),
+        #     ('halachic-role-of-inanimate-object', 'PRODUCT', halachic_role_extra_keys),
+        #     ('halachic-role-of-person', 'PERSON', halachic_role_extra_keys),
+        #     ("halachic-quality", 'PRODUCT', halachic_role_extra_keys),
+        #     ('halachic-process', 'EVENT', halachic_role_extra_keys),
+        #     ('angels', 'PERSON', None),
+        #     ('holidays', 'DATE', None),
+        #     ('months', 'DATE', None),
+        #     ('texts', 'WORK_OF_ART', None),
+        #     ('group-of-people', 'NORP', None),
+        #     # topics to add
+        #     (['god', 'talmid-chacham'], 'PERSON', None),
+        #     (['gan-eden'], 'LOC', None),
+        #     (['tumah'], 'PRODUCT', halachic_role_extra_keys),
+        #     (['shemitah', 'jubilee', 'eve-of-shabbat', "the-conclusion-of-shabbat", "the-ten-days-of-repentance", "yom-tov", 'passover', 'shabbat'], 'DATE', halachic_role_extra_keys),
+        #     (["exile-of-the-jewish-people", "the-messianic-era", "egyptian-exile", "greek-exile", "babylonian-exile", "building-of-the-second-temple", "period-of-the-judges", "second-temple", "the-first-temple"], 'EVENT', halachic_role_extra_keys),
+        #     (["aron-habrit", 'mishkan','ohel-moed','beit-hamikdash', 'beer-lachai-roi', 'beit-midrash', 'the-lebanon-forest-house', 'synagogues', 'houses-of-a-walled-city', 'cemeteries', 'altars', 'chuppah', 'courtyards', 'cities-of-refuge', 'ramp-of-the-altar', 'altar', 'mikvah', 'tabernacle-courtyard', 'the-tabernacle-in-shiloh', 'the-gate-of-nikanor', 'sukkah', 'the-courtyard', 'walled-cities', 'town-squares', 'arks'], 'FAC', halachic_role_extra_keys),
+        #     # strings to add
+        #     ({
+        #          'Bar Hamdakh',
+        #          'Sekhavta',
+        #         'Mata Mehasya',
+        #      }, 'GPE', None),
+        #     ({
+        #         'Burnitz River',
+        #         'Bedita River',
+        #         'Shanvata',
+        #     }, 'LOC', None),
+        #     ({'Baraita', 'Seder Olam', 'Psalms'}, 'WORK_OF_ART', halachic_role_extra_keys),
+        #     ({'Torah law', 'rabbinic law'}, 'LAW', None),
+        #     ({'Aramaic', 'Greek'}, 'LANGUAGE', None),
+        #     ({'Ammonite', 'Moabite', 'Babylonian', 'Samaritan', 'Beit Hillel', 'Beit Shammai'}, 'NORP', None),
+        # ]
+        topics_to_skip = {'on-the-son-of-pelet', 'will', 'groups', 'entourages', 'peoplehood', 'nations', 'groupings',
+                          'generations', 'earlier-generations', 'groups-(אשישי)', 'the-early-pious-people', 'magicians',
+                          'craftsmen-and-guards', 'mules', 'land', "earth-(ארקא)", 'earth', 'fifth', 'killing',
+                          'hanging', "human-rights", 'mixtures', 'get'}
         search_types = [
-            ('people', 'PERSON', rabbi_extra_keys),
-            ("geography", 'GPE', None),
-            ('history', 'EVENT', lambda x: [x.lower()]),
-            ('halachic-role-of-inanimate-object', 'PRODUCT', halachic_role_extra_keys),
-            ('halachic-role-of-person', 'PERSON', halachic_role_extra_keys),
-            ("halachic-quality", 'PRODUCT', halachic_role_extra_keys),
-            ('halachic-process', 'EVENT', halachic_role_extra_keys),
-            ('angels', 'PERSON', None),
-            ('holidays', 'DATE', None),
-            ('months', 'DATE', None),
-            ('texts', 'WORK_OF_ART', None),
-            ('group-of-people', 'NORP', None),
-            # topics to add
-            (['god', 'talmid-chacham'], 'PERSON', None),
-            (['gan-eden'], 'LOC', None),
-            (['tumah'], 'PRODUCT', halachic_role_extra_keys),
-            (['shemitah', 'jubilee', 'eve-of-shabbat', "the-conclusion-of-shabbat", "the-ten-days-of-repentance", "yom-tov", 'passover', 'shabbat'], 'DATE', halachic_role_extra_keys),
-            (["exile-of-the-jewish-people", "the-messianic-era", "egyptian-exile", "greek-exile", "babylonian-exile", "building-of-the-second-temple", "period-of-the-judges", "second-temple", "the-first-temple"], 'EVENT', halachic_role_extra_keys),
-            (["aron-habrit", 'mishkan','ohel-moed','beit-hamikdash', 'beer-lachai-roi', 'beit-midrash', 'the-lebanon-forest-house', 'synagogues', 'houses-of-a-walled-city', 'cemeteries', 'altars', 'chuppah', 'courtyards', 'cities-of-refuge', 'ramp-of-the-altar', 'altar', 'mikvah', 'tabernacle-courtyard', 'the-tabernacle-in-shiloh', 'the-gate-of-nikanor', 'sukkah', 'the-courtyard', 'walled-cities', 'town-squares', 'arks'], 'FAC', halachic_role_extra_keys),
-            # strings to add
-            ({
+            ('talmudic-people', 'PERSON', rabbi_extra_keys),
+            ('mishnaic-people', 'PERSON', rabbi_extra_keys),
+       ({
                 'Rav Eina',
                 'Rav Sama b. Rav Mari',
                 'Rav Samma b. Rav Yirmeya',
@@ -405,25 +455,8 @@ class NaiveNERTagger(object):
                 'Rabbi Hanan',
                 'Rabbi Hiyya b. Ami',
              }, 'PERSON', rabbi_extra_keys),
-            ({
-                 'Bar Hamdakh',
-                 'Sekhavta',
-                'Mata Mehasya',
-             }, 'GPE', None),
-            ({
-                'Burnitz River',
-                'Bedita River',
-                'Shanvata',
-            }, 'LOC', None),
-            ({'Baraita', 'Seder Olam', 'Psalms'}, 'WORK_OF_ART', halachic_role_extra_keys),
-            ({'Torah law', 'rabbinic law'}, 'LAW', None),
-            ({'Aramaic', 'Greek'}, 'LANGUAGE', None),
-            ({'Ammonite', 'Moabite', 'Babylonian', 'Samaritan', 'Beit Hillel', 'Beit Shammai'}, 'NORP', None),
+             (['beit-hillel', 'beit-shammai'], 'NORP', None)
         ]
-        topics_to_skip = {'on-the-son-of-pelet', 'will', 'groups', 'entourages', 'peoplehood', 'nations', 'groupings',
-                          'generations', 'earlier-generations', 'groups-(אשישי)', 'the-early-pious-people', 'magicians',
-                          'craftsmen-and-guards', 'mules', 'land', "earth-(ארקא)", 'earth', 'fifth', 'killing',
-                          'hanging', "human-rights", 'mixtures', 'get'}
         search_terms = defaultdict(list)
         for slug, tag, extra_keys in tqdm(search_types, desc='init'):
             if isinstance(slug, list):
@@ -437,23 +470,26 @@ class NaiveNERTagger(object):
             elif isinstance(slug, set):
                 topics = [Topic({'slug': 'N/A', 'titles': [{'text': title, 'lang': 'en'}]}) for title in slug]
             else:
-                topics = Topic.init(slug).get_leaf_nodes('is-a')
+                topics = Topic.init(slug).topics_by_link_type_recursively('is-a', only_leaves=True)
             for topic in topics:
                 if topic.slug in topics_to_skip:
                     continue
-                value = (topic.slug, tag, getattr(topic, 'numSources', 0))
+                value = (topic.slug, tag, getattr(topic, 'numSources', 0), True)
+                inexact_value = list(value)
+                inexact_value[-1] = False
+                inexact_value = tuple(inexact_value)
                 for title in topic.titles:
                     if title['lang'] == 'en':
                         search_terms[title['text']] += [value]
                         if extra_keys is not None:
                             for extra in extra_keys(title['text']):
                                 # print('Extra', extra, title['text'])
-                                search_terms[extra] += [value]
+                                search_terms[extra] += [inexact_value]
                         if title['text'].startswith('The '):
                             search_terms[re.sub('^The ', 'the ', title['text'])] += [value]
         search_terms = sorted(list(search_terms.items()), key=lambda x: len(x[0]), reverse=True)
         for term, matches in search_terms:
-            matches.sort(key=lambda x: x[2], reverse=True)
+            matches.sort(key=lambda x: int(x[3])*1e7+x[2], reverse=True)
         return search_terms
 
     def check_for_missing_entities(self, text, entities):
@@ -471,19 +507,36 @@ class NaiveNERTagger(object):
 
     def tag_index(self, index):
         training = []
+        mentions = []
         for seg in tqdm(index.all_segment_refs(), desc='Segs'):
             text = Amud.normalize_text('en', seg.text('en').text)
             entities = self.tag_segment(text)
-            self.check_for_missing_entities(text, entities)
-            training += [[text, {"entities": entities}]]
-        return training
+            spacy_entities = [e[:3] for e in entities]
+            self.check_for_missing_entities(text, spacy_entities)
+            for ent in entities:
+                mentions += [{
+                    "Book": index.title,
+                    "Ref": seg.normal(),
+                    "Bonayich ID": ent[4],
+                    "Slug": ent[3],
+                    "Start": ent[0],
+                    "End": ent[1],
+                    "Mention": text[ent[0]:ent[1]]
+                }]
+            training += [[text, {"entities": spacy_entities}]]
+        return training, mentions
 
     def tag_all(self, start=0, end=None, category='Bavli'):
         talmud = library.get_indexes_in_category(category, full_records=True)
         training = []
+        mentions = []
         for mes in tqdm(talmud[start:end], desc='Books'):
-            training += self.tag_index(mes)
-        srsly.write_jsonl('training/naive_training.jsonl', training)
+            temp_training, temp_mentions = self.tag_index(mes)
+            training += temp_training
+            mentions += temp_mentions
+        srsly.write_jsonl('/home/nss/sefaria/datasets/ner/michael-sperling/en_training.jsonl', training)
+        srsly.write_jsonl('/home/nss/sefaria/datasets/ner/michael-sperling/en_mentions.jsonl', mentions)
+
 
 
 def convert_training_to_displacy(jsonl_loc):
@@ -503,14 +556,14 @@ def display_displacy(jsonl_loc):
 
 if __name__ == '__main__':
     tagger = NaiveNERTagger()
-    tagger.tag_all(start=0, end=1, category='Tanakh')
+    tagger.tag_all(category='Bavli')
     # with open('best_rabbis.csv', 'w') as fout:
     #     c = csv.DictWriter(fout, ['Rabbi', 'Count'])
     #     c.writeheader()
     #     rows = [{'Rabbi': r, 'Count': i} for r, i in tagger.unique_uncaught_rabbis.items()]
     #     c.writerows(rows)
-    convert_training_to_displacy('training/naive_training.jsonl')
-    display_displacy('training/naive_training.jsonl.displacy')
+    # convert_training_to_displacy('training/naive_training.jsonl')
+    # display_displacy('training/naive_training.jsonl.displacy')
     # with open('AllNameReferences.xlsx - Sheet1.csv', 'r') as fin:
     #     c = csv.DictReader(fin)
     #     rows = [Row(r) for r in c]
