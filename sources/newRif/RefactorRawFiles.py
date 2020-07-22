@@ -17,16 +17,20 @@ from sefaria.utils.hebrew import encode_hebrew_daf
 from rif_utils import tags_map, path, netlen, rif_files
 
 def paragraph_parser(page: str, new_sec: bool, masechet: str) -> list:
-    new = page.replace('.', '.A').replace(':', ':A').replace('\n', 'A') #replacing with A instead of spliting for next lines are simpler with string
+    new = page.replace('.', '.A').replace(':', ':A').replace('\n', 'A').replace('\u05c3', ':A') #replacing with A instead of spliting for next lines are simpler with string
     for note in re.findall(tags_map[masechet]['note_reg'], new): #now return colon and period which are in refs (and for that in notes)
         new = new.replace(note, note.replace('A', ''))
     suspected_note = r'(?:{}|{}|{})(?:(?!{}).)*[\.:]A'.format(*[tags_map[masechet][tag] for tag in ['gemara_refs', 'notes', 'tanakh_refs', 'end_tag']])
     for suspect in re.findall(suspected_note, new):
         #mark places when newline come after period/colon suspected as part of ref
         new = new.replace(suspect[:-1], suspect[:-1]+'@$')
+        print(masechet, suspect)
     for n, sec in enumerate(new.split('A')): #concut short lines
         if netlen(sec) < 6 and (n > 0 or new_sec) and sec != '':
             new = new.replace(sec+'A', sec)
+    if '@99' in new: #@99 is chapter end tag, with the hadran we want to be in his own line
+        new = re.sub(r'([^A])@99', r'\1A@99', new)
+        new = re.sub(r'(@99[^\n]*?)(@|<)', r'\1A\2', new)
     return [sec.strip() for sec in new.split('A') if sec.strip()!='']
 
 def parse_pages(doc_lines: list) -> list:
@@ -62,7 +66,7 @@ for en_masechet, heb_masechet, file in rif_files:
     text_output, parsing_state = [], ParseState()
     parsed_doc = ParsedDocument(en_masechet, heb_masechet, descriptors)
     parsed_doc.attach_state_tracker(parsing_state)
-    raw_file = (line for line in file.readlines())
+    raw_file = (line for line in file.split('\n'))
     parsed_doc.parse_document(raw_file)
     parsed_doc.filter_ja(prepare_output, text_output, parsing_state)
     with open(path+'/rif_segmented/rif_{}.txt'.format(en_masechet), 'w') as fp:

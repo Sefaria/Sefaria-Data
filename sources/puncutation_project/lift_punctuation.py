@@ -490,8 +490,8 @@ logic can be here. The elucidation will always follow the Talmud. We'll want to 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-b', '--base_vtitle', default='William Davidson Edition - Aramaic', type=str, help='versionTitle to which nikkud will be added')
-    parser.add_argument('-t', '--tractate', type=str, help='tractate on which to add nikkud')
+    parser.add_argument('-b', '--base_vtitle', default='William Davidson Edition - Aramaic', type=str, help='versionTitle to which punctuation will be added')
+    parser.add_argument('-t', '--tractate', type=str, help='tractate on which to add punctuation')
     args = parser.parse_args()
     base_vtitle = args.base_vtitle
     tractate = args.tractate
