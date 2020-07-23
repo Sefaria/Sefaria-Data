@@ -9,10 +9,12 @@ typ = ' Rabbi Type after Link'
 nam = ' Rabbi Name after Link'
 josh_id = 'bonayich'
 
-with open('AllNameReferences.xlsx - Sheet1.csv', 'r') as fin:
+DATA_LOC = "/home/nss/sefaria/datasets/ner/michael-sperling"
+
+with open(f'{DATA_LOC}/AllNameReferences.csv', 'r') as fin:
     mike = list(csv.DictReader(fin))
 
-with open('sefaria_bonayich_reconciliation - Sheet1.csv', 'r') as fin:
+with open('/home/nss/sefaria/data/research/knowledge_graph/named_entity_recognition/sefaria_bonayich_reconciliation - Sheet1.csv', 'r') as fin:
     josh = list(csv.DictReader(fin))
     josh_id_set = {j[josh_id] for j in josh}
 
@@ -25,12 +27,16 @@ for m in mike:
             'nam': m[nam]
         }
 
-prev_rabbi_set = set()
+prev_rabbi_set = {}
 ton_o_rabanan = []
 for j in tqdm(josh):
     ts = TopicSet({'titles.text': j['sefaria_key']})
     if ts.count() == 1:
-        prev_rabbi_set.add(list(ts)[0].slug)
+        j['Slug'] =  list(ts)[0].slug
+with open('sefaria_bonayich_reconciliation - Sheet2.csv', 'w') as fout:
+    c = csv.DictWriter(fout, josh[0].keys())
+    c.writeheader()
+    c.writerows(josh)
 itls = IntraTopicLinkSet({'linkType': 'is-a', 'toTopic': 'talmudic-people'})
 for l in tqdm(itls, total=itls.count()):
     if l.fromTopic in prev_rabbi_set:
