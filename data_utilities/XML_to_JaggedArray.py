@@ -17,7 +17,7 @@ from num2words import *
 from sources.functions import *
 from sefaria.model import *
 from base64 import b64decode, b64encode
-
+from _collections import OrderedDict
 
 class XML_to_JaggedArray:
 
@@ -105,28 +105,14 @@ class XML_to_JaggedArray:
                 child[0].text = self.dict_of_names[key]
             child = self.reorder_structure(child, False)
 
-        results = self.go_down_to_text(self.root, self.root.text)
+        results = self.go_down_to_text(self.root, self.root.text, True)
         #    results = self.handle_special_case(results)
         if self.print_bool:
             for row in self.versionInfo:
                 self.writer.writerow(row)
         self.interpret_and_post(results, self.title)
-        self.record_results_to_file()
 
 
-    def record_results_to_file(self):
-        if "Glazer" in self.title:
-            f = open("Raavad.csv", 'w')
-
-            writer = UnicodeWriter(f, encoding='utf-8')
-            for chapter in list(self.footnotes_within_footnotes.keys()):
-                for comment in self.footnotes_within_footnotes[chapter]:
-                    try:
-                        chapter = chapter.decode('utf-8')
-                        comment = comment.decode('utf-8')
-                    except UnicodeEncodeError:
-                        pass
-                    writer.writerow([chapter, comment])
 
 
     def process_footnote_for_MT(self, comment_text, chapter, ftnote_text, ftnote_key):
@@ -443,11 +429,12 @@ class XML_to_JaggedArray:
         #     child.text = re.sub(" \(D.*?\)", "", child.text)
         elif child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
             tags = re.findall("<sup>.*?</sup>", child.text)
-            child.text = str(roman_to_int(child.text.split()[-1]))
+            if len(child.text.split()) == 2:
+                child.text = str(roman_to_int(child.text.split()[-1]))
             #child.text = str(self.word_to_num.parse(child.text.split(" ")[-1])) #  Chapter Two => 2
 
-    def go_down_to_text(self, element, parent):
-        text = {}
+    def go_down_to_text(self, element, parent, element_is_root=False):
+        text = OrderedDict() if element_is_root else {}
         text["text"] = []
         text["subject"] = []
         prev_footnote = False #need this flag for when footnote is broken up into ftnote tags and p tags
@@ -485,7 +472,10 @@ class XML_to_JaggedArray:
                         still_titles = False
                         text["text"][-1] += self.cleanText(child.xpath("string()").replace("\n\n", " "))
                     else:
-                        text["text"] += [self.cleanText(child.xpath("string()").replace("\n\n", " "))]
+                        new_line = self.cleanText(child.xpath("string()").replace("\n\n", " "))
+                        if re.search("h\d+", child.tag):
+                            new_line = "<b>"+new_line+"</b>"
+                        text["text"] += [new_line]
         return text
 
 
@@ -526,23 +516,23 @@ class XML_to_JaggedArray:
                 num_dicts_found += 1
                 array.append(self.convertManyIntoOne(x['text'], "{} {}".format(node_name, num_dicts_found)))
             else:
-                num_and_text = re.search("^(\d+)\.? (.*?)$", x)
-                if num_and_text:
-                    found_any_numbers = True
-                    num = int(num_and_text.group(1))
-                    for i in range(num-prev_num-1):
-                        array.append("")
-                    if num <= prev_num:
-                        raise AssertionError
-                    prev_num = num
-                    text = num_and_text.group(2)
-                    array.append(text)
-                elif not array:
-                    array.append(x)
-                elif not x[0].isdigit() and found_any_numbers:
-                    array[-1] += u"<br/>{}".format(x)
-                else:
-                    array.append(x)
+                # num_and_text = re.search("^(\d+)\.? (.*?)$", x)
+                # if num_and_text:
+                #     found_any_numbers = True
+                #     num = int(num_and_text.group(1))
+                #     for i in range(num-prev_num-1):
+                #         array.append("")
+                #     if num <= prev_num:
+                #         raise AssertionError
+                #     prev_num = num
+                #     text = num_and_text.group(2)
+                #     array.append(text)
+                # elif not array:
+                #     array.append(x)
+                # elif not x[0].isdigit() and found_any_numbers:
+                #     array[-1] += u"<br/>{}".format(x)
+                # else:
+                array.append(x)
 
 
         if len(array) > 1 and not isinstance(array[0], list) and isinstance(array[1], list): #array[0] is title
@@ -619,15 +609,10 @@ class XML_to_JaggedArray:
     def interpret_and_post(self, node, running_ref, prev="string"):
         if self.assertions:
             assert Ref(running_ref), running_ref
-        sorted_keys = sorted(node.keys())#, key=self.sort_by_book_order)
-        last_key = sorted_keys[len(sorted_keys) - 1]
         not_last_key = True
-        for i, key in enumerate(sorted_keys):
+        for i, key in enumerate(node.keys()):
             if key == '\n':
                 continue
-
-            if last_key == key:
-                not_last_key = False
 
             if key != "text" and key != "subject":
                 new_running_ref = "%s, %s" % (running_ref, key)

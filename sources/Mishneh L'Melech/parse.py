@@ -128,8 +128,8 @@ for major_division in text.keys():
                 "base_text_mapping": "many_to_one",
                 "collective_title": "Mishneh LaMelech"
             }
-            add_category(en_major_division, index["categories"], server="http://melech.sandbox.sefaria.org")
-            post_index(index, server="http://melech.sandbox.sefaria.org")
+            add_category(en_major_division, index["categories"], server="https://www.sefaria.org")
+            post_index(index, server="https://www.sefaria.org")
             for perek in text[major_division][hilchot]:
                 text[major_division][hilchot][perek] = convertDictToArray(text[major_division][hilchot][perek])
             text[major_division][hilchot] = convertDictToArray(text[major_division][hilchot])
@@ -139,7 +139,7 @@ for major_division in text.keys():
                 "versionTitle": "Warsaw, 1881",
                 "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH001763900/NLI"
             }
-            post_text("Mishneh LaMelech on {}".format(en_full_name), send_text, index_count="on", server="http://melech.sandbox.sefaria.org")
+            post_text("Mishneh LaMelech on {}".format(en_full_name), send_text, index_count="on", server="https://www.sefaria.org")
 
 #         arr = """Hiring
 # Creditor and Debtor
