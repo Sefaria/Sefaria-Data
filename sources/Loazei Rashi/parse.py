@@ -23,7 +23,7 @@ class Laaz:
         return first_line+second_line+third_line
 
 
-def get_best_pair(ref, en, he, recurse=True):
+def get_best_pair(ref, en, he):
     curr_max = {"en": 85, "he": 85}
     curr_best = {"he": set(), "en": set()}
     ref = Ref(ref)
@@ -46,10 +46,6 @@ def get_best_pair(ref, en, he, recurse=True):
     if curr_best["en"] != curr_best["he"]:
         retval = curr_best["he"] or curr_best["en"]
         return retval
-    # elif recurse:
-    #     neighbors = [ref.prev_segment_ref().normal(), ref.next_segment_ref().normal()]
-    #     return curr_best["en"] or get_best_pair(neighbors[0], en, he, recurse=False) \
-    #            or get_best_pair(neighbors[1], en, he, recurse=False)
     else:
         return curr_best["en"]
 
@@ -75,33 +71,13 @@ with open("Laaz-Rashi-Bible.txt", 'r') as f:
             dhs[ref].append((french_en, french_he))
             laazim[ref].append(laaz)
 
-dhs_by_segment = {}
-for ref in dhs.keys():
-    book = Ref(ref).index.title
-    for i, dh in enumerate(dhs[ref]):
-        en, he = dh
-        m = get_best_pair(ref, en, he)
-        if book not in dhs_by_segment:
-            dhs_by_segment[book] = []
-        dhs_by_segment[book].append(m)
-
-
-count = 0
-total_found = 0
-total = 0
-for ref, matches in dhs_by_segment.items():
-    found = len([m for m in matches if m])
-    total += len(matches)
-    total_found += found
-    percent = int(100.0*float(found)/len(matches))
-    print("{}: {}%".format(ref, percent))
-    # laazim_in_ref = laazim[ref]
-    # for laaz, match in zip(laazim_in_ref, matches):
-    #     print(laaz.french_en)
-    #     if not match:
-    #         print(match + " " + ref)
-    #     else:
-    #         print(match)
-    #     print()
-print(total)
-print(total_found)
+with open("loazei.csv", 'w') as f:
+    writer = csv.writer(f)
+    writer.writerow(["French Word (en)", "French Word (he)", "Tanakh Ref", "Rashi Matches"])
+    for ref in dhs.keys():
+        book = Ref(ref).index.title
+        for i, dh in enumerate(dhs[ref]):
+            en, he = dh
+            m = get_best_pair(ref, en, he)
+            m = [el.normal() for el in list(m)]
+            writer.writerow([en, he, ref.split(" on ")[-1], m])

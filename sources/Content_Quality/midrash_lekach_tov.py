@@ -2,7 +2,7 @@ from sources.functions import *
 import json
 import time
 #links = get_links("Midrash Lekach Tov", "https://www.sefaria.org")
-with open('links_midrash_lekach_tov', 'r') as f:
+with open('../../../Downloads/links_midrash_lekach_tov', 'r') as f:
     links_f = json.load(f)
 books = set()
 links_to_post = []
@@ -21,11 +21,11 @@ for link in links_f:
     if link["inline_reference"]:
         data_comms.add(link["inline_reference"]["data-commentator"])
 print(data_comms)
-counter = 0
+counter = 1900
 print(len(links_to_post))
 while counter < len(links_to_post):
-    amt = 1000
-    post_link(links_to_post[counter:counter+amt], server="http://rosh.sandbox.sefaria.org")
+    amt = 400
+    post_link(links_to_post[counter:counter+amt], server="https://www.sefaria.org")
     counter += amt
     print(counter)
     time.sleep(30)

@@ -752,6 +752,14 @@ def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST"):
         print(result)
     return result
 
+@weak_connection
+def delete_link(id_or_ref, server=SEFARIA_SERVER, VERBOSE=False):
+    id_or_ref = id_or_ref.replace(" ", "_")
+    url = server + "/api/links/{}".format(id_or_ref)
+    result = http_request(url, body={'apikey': API_KEY}, json_payload=url, method="DELETE")
+    if VERBOSE:
+        print(result)
+    return result
 
 def post_link_weak_connection(info, repeat=10):
     url = SEFARIA_SERVER + '/api/links/'
@@ -785,7 +793,7 @@ def post_link_weak_connection(info, repeat=10):
 
 def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method):
     generated_by_str = Ref(base_ref).index.title + "_" + comm_ref.split(",")[0]
-    links = {}
+    links = []
     base = TextChunk(Ref(base_ref), lang='he')
     matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)
     for n, match in enumerate(matches["matches"]):
@@ -795,9 +803,7 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
             curr_base_ref = match.normal()
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
                         "type": "Commentary", "auto": True}
-            links[curr_comm_ref] = curr_base_ref
-        else:
-            links[curr_comm_ref] = None
+            links.append(match)
     return links
 
 
