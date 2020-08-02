@@ -1,6 +1,7 @@
 # encoding=utf-8
 
 import re
+import sys
 import django
 django.setup()
 from sefaria.model import *
@@ -47,15 +48,21 @@ def merge_segment(punctuated: str, vocalized: str) -> str:
     return ' '.join(vocal_split)
 
 
-base_ref = Ref("Shabbat 2a-36a")
-segments = base_ref.all_segment_refs()
-for segment in segments:
-    punc, voc = segment.text('he', PUNC_VTITLE).text, segment.text('he', VOC_VTITLE).text
+if __name__ == '__main__':
     try:
-        merged = merge_segment(punc, voc)
-    except AssertionError:
-        print(f'mismatched length at {segment.normal()}')
-        merged = voc
-    merged_tc = segment.text('he', MERGED_VTITLE)
-    merged_tc.text = merged
-    merged_tc.save()
+        book_title = sys.argv[1]
+    except IndexError:
+        print("Please add name of Tractate")
+        sys.exit(0)
+    base_ref = Ref("Eruvin")
+    segments = base_ref.all_segment_refs()
+    for segment in segments:
+        punc, voc = segment.text('he', PUNC_VTITLE).text, segment.text('he', VOC_VTITLE).text
+        try:
+            merged = merge_segment(punc, voc)
+        except AssertionError:
+            print(f'mismatched length at {segment.normal()}')
+            merged = voc
+        merged_tc = segment.text('he', MERGED_VTITLE)
+        merged_tc.text = merged
+        merged_tc.save()

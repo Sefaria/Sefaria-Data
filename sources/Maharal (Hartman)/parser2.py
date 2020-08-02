@@ -6,6 +6,7 @@ from os import walk
 from sefaria.model.schema import TitleGroup
 import re
 from sefaria.model import *
+from sefaria.system.exceptions import InputError
 from sources.functions import *
 
 ftnote_counter = 0
@@ -32,14 +33,28 @@ versions = [ner_mitzvah_version, derech_chaim_version, beer_hagolah_version, gev
 
 def get_footnotes(document):
     text = []
-    for ftnote in document.footnotes[0][0][0]:
+    prev_found_ftnote = False
+    ftnotes = list(document.footnotes[0][0][0])
+    new_ftnotes = []
+    counter = -1
+    for ftnote in ftnotes:
+        if not ftnote:
+            continue
         ftnote = re.sub("&(.*?)\^(.*?)", "<b>\g<1></b>\g<2>", ftnote)
-        start = ftnote.find("<>")
-        if start > -1:
-            text.append(ftnote[start+2:])
-        elif ftnote and not ftnote.startswith("footnote"):
-            text.append(ftnote)
-    return text
+        ftnote = re.sub("@(.*?)\^(.*?)", "<b>\g<1></b>\g<2>", ftnote)
+        ftnote = ftnote.replace("<> ", "")
+        if ftnote.startswith("footnote"):
+            counter += 1
+            new_ftnotes.append("")
+        elif not ftnote.startswith("%"):
+            new_ftnotes[counter] += ftnote + " "
+        else:
+            counter += 2
+            new_ftnotes.append(ftnote)
+            new_ftnotes.append("")
+    if new_ftnotes[0] == "":
+        new_ftnotes = new_ftnotes[1:]
+    return new_ftnotes
 #
 # def process_footnotes(document, file, ftnote_counter):
 #     actual_footnotes = {0: []}
@@ -82,8 +97,11 @@ def parse_body(document, title, ftnotes, start_at=0):
     first_ftnote_found = False
     first_ftnote = 0
     for comment in body:
+        if not comment:
+            continue
         finds = list(re.finditer("----footnote(\d+)----", comment))
         comment = re.sub("#(.*?)=(.*?)", "<b>\g<1></b>\g<2>", comment)
+        comment = re.sub("@(.*?)\^(.*?)", "<b>\g<1></b>\g<2>", comment)
         comment = re.sub("&(.*?)\^(.*?)", "<b>\g<1></b>\g<2>", comment)
         comment = re.sub("\s(\S{,15})\^\s", " <b>\g<1></b> ", comment).replace("<b>\\", "<b>")
         for match in finds:
@@ -107,6 +125,8 @@ def process_depth_3(depth_2_arr, file):
     mishnah = 1
     prev_mishnah = (None, 0)
     for n, line in enumerate(depth_2_arr):
+        if not line.strip():
+            continue
         poss_match = re.search("%.*?\[(.*?)\]", line)
         if poss_match:
             poss_match = poss_match.group(1).replace("משנה", "").replace("המשך", "").replace("משניות", "")
@@ -118,7 +138,7 @@ def process_depth_3(depth_2_arr, file):
             if n > 0 and ((mishnah - prev_mishnah_num) < 0 or (mishnah - prev_mishnah_num) > 10):
                 print("{}: {} {}\n".format(file, line, prev_mishnah[0]))
                 mishnah = prev_mishnah[1]
-            else:
+            elif mishnah not in mishnayot:
                 mishnayot[mishnah] = []
             prev_mishnah = (line, mishnah)
         else:
@@ -142,13 +162,14 @@ def create_new_indices():
         root.append(kol_mishnah)
         root.append(default)
         root.validate()
-        post_index({"title": "Derech Chaim", "schema": root.serialize(), "categories": ["Philosophy", "Maharal"]})
+        # post_index({"title": "Derech Chaim", "schema": root.serialize(), "categories": ["Mishnah", "Commentary"],
+        #             "dependence": "Commentary", "base_text_titles": ["Pirkei Avot"], "base_text_mapping": ""})
     def beer():
         root = SchemaNode()
         root.add_primary_titles("Be'er HaGolah", 'באר הגולה')
         root.key = "Be'er HaGolah"
         intro = JaggedArrayNode()
-        intro.add_shared_term("Introduction")
+        intro.add_primary_titles("Introduction to Be'er HaGolah", "הקדמה")
         intro.add_structure(["Paragraph"])
         intro.key = "Introduction"
         root.append(intro)
@@ -196,7 +217,17 @@ def create_footnotes_indices(title):
                 node["addressTypes"] = ["Integer"] * 2
                 node["sectionNames"] = ["Chapter", "Paragraph"]
     contents["categories"] = ["Philosophy", "Maharal", "Commentary"]
-    post_index(contents)
+    if title == "Ohr Chadash":
+        node = contents["schema"]["nodes"][2]
+        node["depth"] = 3
+        node["addressTypes"] = ["Integer"] * 3
+        node["sectionNames"] = ["Chapter", "Verse", "Paragraph"]
+
+    if title == "Derech Chaim":
+        contents["categories"] = ["Mishnah", "Commentary"]
+    contents["dependence"] = "Commentary"
+    contents["base_text_titles"] = [title]
+    #post_index(contents)
 
 
 def alter_schema(schema, new_index_title, new_index_he_title):
@@ -237,15 +268,17 @@ def alter_contents(new_contents, new_index_title, book_term):
 
     return new_contents
 
-def get_intro(title):
+def get_intro(title, key):
+    if key.startswith("Second") and title.startswith("Ohr"):
+        return "Preface"
     if title.startswith("Netivot"):
-        intro = "Introduction to Netivot Olam"
+        intro = "{} to Netivot Olam".format(key)
     elif title.startswith("Derech Chaim"):
-        intro = "Introduction"
+        intro = key
     elif title.startswith("Be'er"):
-        intro = "Introduction"
+        intro = "{} to Be'er HaGolah".format(key)
     else:
-        intro = "Introduction to {}".format(title)
+        intro = "{} to {}".format(key, title)
     return intro
 
 
@@ -259,21 +292,20 @@ def post_derech_chaim(nodes, version):
     ref_and_text = [("Footnotes and Annotations on Derech Chaim", footnotes),
                     ("Derech Chaim", nodes)]
     for ref, text in ref_and_text:
+        if ref.startswith("Foot"):
+            continue
         nodes = []
         for n, node in text.items():
             if isinstance(n, str) and n.startswith("Kol Yisrael"):
                 send_text = {"versionTitle": version.vtitle,
                              "versionSource": version.vsource,
-                             "text": node,
+                             "text": insert_count(node, 0),
                              "language": "he"}
+                print(len(str(send_text["text"])))
                 post_text("{}, Kol Yisrael; The Opening Mishna".format(ref), send_text)
             else:
                 node = process_depth_3(node, "Derech Chaim {}".format(n))
                 nodes.append(node)
-        send_text = {"versionTitle": version.vtitle,
-                     "versionSource": version.vsource,
-                     "text": nodes,
-                     "language": "he"}
         for n, ch in enumerate(nodes):
             nodes[n] = [el for el in nodes[n] if el]
             count = 0
@@ -294,80 +326,169 @@ def post_derech_chaim(nodes, version):
                              "versionSource": version.vsource,
                              "text": nodes[n],
                              "language": "he"}
+                print(len(str(send_text["text"])))
                 post_text("{} {}".format(ref, n+1), send_text)
     return nodes
 
 
 def post_beer_hagolah(nodes, version):
     title = "Be'er HaGolah"
-    for well_num in nodes:
-        well = "Well {}".format(well_num)
-        node = process_depth_3(nodes[well_num], well)
-        send_text = {"versionTitle": version.vtitle,
-                     "versionSource": version.vsource,
-                     "text": node,
-                     "language": "he"}
-        post_text("{}, {}".format(title, well), send_text, index_count="on")
-        ftnote_text = nodes["Footnotes"][well_num]
-        ftnote_text = insert_count(ftnote_text)
-        send_text["text"] = ftnote_text
-        post_text("Footnotes and Annotations on {}, {}".format(title, well), send_text, index_count="on")
-
+    footnotes = nodes["Footnotes"]
+    nodes.pop("Footnotes")
+    ref_and_text = [("Footnotes and Annotations on {}".format(title), footnotes),
+                    (title, nodes)]
+    for ref, text in ref_and_text:
+        for well_num in text:
+            count = 0
+            well = "Well {}".format(well_num)
+            node = process_depth_3(text[well_num], well)
+            for m, mishnah in enumerate(node):
+                if ref.startswith("Footnotes"):
+                    node[m] = insert_count(mishnah, start_at=count)
+                    count += len(mishnah)
+            send_text = {"versionTitle": version.vtitle,
+                         "versionSource": version.vsource,
+                         "text": node,
+                         "language": "he"}
+            post_text("{}, {}".format(ref, well), send_text, index_count="on")
 
 def insert_count(ftnote_text, start_at=0):
     for n, line in enumerate(ftnote_text):
         ftnote_text[n] = "({}) {}".format(n+1+start_at, line)
     return ftnote_text
 
+
+def post_ohr_chadash(nodes):
+    ftnotes = nodes.pop("Footnotes")
+    text = {1: {1: []}}
+    ftnotes_text = {1: {1: []}}
+    found_prev = False
+    for ch, node in nodes.items():
+        perek = 1
+        pasuk = 1
+        ftnotes_ch = ftnotes[ch]
+        for i, para in enumerate(node):
+            dh = re.search('^<b>"(.*?)\((.*?)\)', para)
+            if dh:
+                verse = dh.group(2)
+                try:
+                    verse = verse.replace('"', "")
+                    verse = verse.replace('למעלה ', '').replace('להלן ', '')
+                    if re.search("^.{1,2}, .{1,2}$", verse):
+                        verse = "מגילה " + verse
+                    ref = Ref(verse)
+                    is_esther = ref.index.title == "Esther"
+                    poss_perek = ref.sections[0]
+                    poss_pasuk = ref.sections[1] if len(ref.sections) > 1 else 0
+                    if is_esther and poss_perek > perek:
+                        perek = poss_perek
+                        pasuk = poss_pasuk if poss_pasuk > 0 else pasuk
+                    elif is_esther and poss_perek == perek and poss_pasuk > pasuk:
+                        pasuk = poss_pasuk
+                except InputError as e:
+                    if verse.startswith("פסוק") and len(verse.split()) == 2:
+                        poss_pasuk = getGematria(verse.split()[-1])
+                        if poss_pasuk > pasuk:
+                            pasuk = poss_pasuk
+                    else:
+                        print(verse)
+                dh = dh.group(1)
+            soup = BeautifulSoup(para)
+            i_tags = soup.find_all("i")
+            ftnotes_in_para = [ftnotes_ch[int(el.attrs["data-label"])-1] for el in i_tags]
+
+            if perek not in text:
+                text[perek] = {}
+                ftnotes_text[perek] = {}
+            if pasuk not in text[perek]:
+                text[perek][pasuk] = []
+                ftnotes_text[perek][pasuk] = []
+            num_ftnotes_already = len(ftnotes_text[perek][pasuk])
+            count = 0
+            for i_tag in i_tags:
+                count += 1
+                para = para.replace(i_tag.attrs["data-label"], str(num_ftnotes_already+count))
+            text[perek][pasuk].append(para)
+            for ftnote in ftnotes_in_para:
+                ftnotes_text[perek][pasuk].append(ftnote)
+    for perek in text:
+        text[perek] = convertDictToArray(text[perek])
+        ftnotes_text[perek] = convertDictToArray(ftnotes_text[perek])
+    text = convertDictToArray(text)
+    ftnotes_text = convertDictToArray(ftnotes_text)
+    return text, ftnotes_text
+
 def post(text):
     for title, nodes in text.items():
-        if title not in ["Derech Chaim"]:
+        if "Be'er HaGolah" not in title:
             continue
         title = title.replace("Netivot Olam", "Netivot Olam, Netiv Hatorah")
         print(title)
         version = [v for v in versions if v.title == title][0]
-        if nodes["Introduction"]:
-            intro = get_intro(title)
+        intro_nodes = [node for node in nodes.keys() if isinstance(node, str) and "Introduction" in node]
+        for intro_node in intro_nodes:
+            intro = get_intro(title, intro_node)
             send_text = {"versionTitle": version.vtitle,
                          "versionSource": version.vsource,
-                         "text": nodes["Introduction"],
+                         "text": nodes[intro_node],
                          "language": "he"}
 
-            post_text(title+", {}".format(intro), send_text, index_count="on")
+            intro_title = "Netivot Olam" if title.startswith("Netivot Olam") else title
+            post_text(intro_title + ", {}".format(intro), send_text, index_count="on")
+            nodes["Footnotes"][intro_node] = insert_count(nodes["Footnotes"][intro_node], 0)
             send_text = {"versionTitle": version.vtitle,
                          "versionSource": version.vsource,
-                         "text": nodes["Footnotes"]["Introduction"],
+                         "text": nodes["Footnotes"][intro_node],
                          "language": "he"}
-            post_text("Footnotes and Annotations on {}, {}".format(title, intro), send_text, index_count="on")
-
+            post_text("Footnotes and Annotations on {}, {}".format(intro_title, intro), send_text, index_count="on")
+            nodes.pop(intro_node)
+            nodes["Footnotes"].pop(intro_node)
         if title == "Be'er HaGolah":
             post_beer_hagolah(nodes, version)
         elif title == "Derech Chaim":
             post_derech_chaim(nodes, version)
+        elif title == "Ohr Chadash":
+            body, footnotes = post_ohr_chadash(nodes)
+            for i, ch in enumerate(footnotes):
+                send_text = {"versionTitle": version.vtitle,
+                         "versionSource": version.vsource,
+                         "text": ch,
+                         "language": "he"}
+                post_text("Footnotes and Annotations on Ohr Chadash {}".format(i+1), send_text)
+            for i, ch in enumerate(body):
+                send_text = {"versionTitle": version.vtitle,
+                             "versionSource": version.vsource,
+                             "text": ch,
+                             "language": "he"}
+                post_text("Ohr Chadash {}".format(i+1), send_text)
         else:
+            footnotes = nodes["Footnotes"]
+            nodes.pop("Footnotes")
             body = convertDictToArray(nodes)
 
-            send_text = {"versionTitle": version.vtitle,
-                        "versionSource": version.vsource,
-                        "text": body,
-                    "language": "he"}
-            post_text(title, send_text, index_count="on")
-
-            footnotes = nodes["Footnotes"]
             for n, footnote_ch in footnotes.items():
                 footnotes[n] = [el for el in footnote_ch if el]
                 send_text = {"versionTitle": version.vtitle,
                              "versionSource": version.vsource,
-                             "text": footnotes[n],
-                             "language": "he"}
+                                 "text": footnotes[n],
+                                 "language": "he"}
                 try:
                     ref = "Footnotes and Annotations on {}, {}".format(title, n)
                     post_text(ref, send_text, index_count="on")
                 except Exception as e:
                     print("CANT post {}: {}".format(title, e))
+                    send_text = {"versionTitle": version.vtitle,
+                         "versionSource": version.vsource,
+                         "text": body,
+                         "language": "he"}
+            send_text = {"versionTitle": version.vtitle,
+                         "versionSource": version.vsource,
+                         "text": body,
+                         "language": "he"}
+            post_text(title, send_text, index_count="on")
 
 
-def get_match(header, prev_beer_match):
+def get_match(header, prev_beer_match, prev_match):
     if header.find('הקדמ') >= 0 or header.find("פתיחה") >= 0:
         curr_node = "Introduction"
         if curr_node in text[index.title]:
@@ -376,6 +497,7 @@ def get_match(header, prev_beer_match):
             curr_node = "Third Introduction"
         return curr_node, prev_beer_match
     else:
+        match = None
         p_match = re.search('פ.{,1}"\S', header)
         perek_match = re.search('פרק\s(.*?)\s', header)
         beer_match = re.search('באר\s(.*?)\s', header)
@@ -388,6 +510,8 @@ def get_match(header, prev_beer_match):
                 match = 2
             elif beer_match.group(0) != prev_beer_match.group(0):
                 match = prev_match + 1
+            else:
+                match = prev_match
             prev_beer_match = beer_match
         elif header == 'דרך חיים ס"פ ו, עמוד ד   ':
             match = prev_match
@@ -414,12 +538,12 @@ if __name__ == "__main__":
     last_ftnote_found = 0
     text = {}
     for (dirpath, dirnames, filenames) in walk(path):
-        filenames = [file for file in filenames if file.endswith(".docx")]
+        filenames = [file for file in filenames if file.endswith(".docx") and not "~$" in file]
         filenames = sorted(filenames, key=lambda f: int(re.search("\d+", f).group(0)))
         create_footnotes_indices(dirpath)
         counter = 0
         for f in filenames:
-            if "DH" not in f:
+            if "BH" not in f.upper():
                 continue
             docx_file = dirpath+"/"+f
             index = library.get_index(dirpath.split("/")[1])
@@ -429,7 +553,7 @@ if __name__ == "__main__":
             ftnotes = get_footnotes(document)
             header = document.header[0][0][0][0]
 
-            match, prev_beer_match = get_match(header, prev_beer_match)
+            match, prev_beer_match = get_match(header, prev_beer_match, prev_match)
             if match not in text[index.title]:
                 text[index.title][match] = []
                 text[index.title]["Footnotes"][match] = []

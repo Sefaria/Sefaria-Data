@@ -150,7 +150,9 @@ def create_simple_index_commentary(en_title, he_title, base_title, categories, a
     post_index(index, server=server)
 
 
-def create_complex_index_torah_commentary(en_title, he_title, intro_structure=["Paragraph"], server=SEFARIA_SERVER):
+def create_complex_index_torah_commentary(en_title, he_title,
+                                        intro_structure=["Paragraph"],
+                                        path=["Tanakh", "Commentary"], server=SEFARIA_SERVER):
     '''
     Creates a complex index commentary on the Torah.
     :param en_title: English name of commentator
@@ -160,10 +162,9 @@ def create_complex_index_torah_commentary(en_title, he_title, intro_structure=["
     :param server: server to post to
     :return:
     '''
-    path = ["Tanakh", "Commentary", en_title]
     root = SchemaNode()
     full_title = "{} on Torah".format(en_title)
-    he_full_title = "{} על תורה".format(he_title)
+    he_full_title = "{} על התורה".format(he_title)
     root.add_primary_titles(full_title, he_full_title)
     root.key = en_title
 
@@ -182,9 +183,12 @@ def create_complex_index_torah_commentary(en_title, he_title, intro_structure=["
 
     root.validate()
     post_index({
+        "collective_title": en_title,
         "title": full_title,
         "schema": root.serialize(),
-        "categories": path
+        "categories": path,
+        "dependence": "Commentary",
+        "base_text_titles": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]
     }, server=server)
 
 
@@ -575,6 +579,8 @@ def http_request(url, params=None, body=None, json_payload=None, method="GET"):
         response = requests.get(url)
     elif method == "POST":
         response = requests.post(url, params=params, data=body)
+    elif method == "DELETE":
+        response = requests.delete(url, params=params, data=body)
     else:
         raise ValueError("Cannot handle HTTP request method {}".format(method))
 
@@ -608,6 +614,7 @@ def make_title(text):
     #first clean up text
     text = text.strip()
 
+
     #just make sure there aren't double spaces in the name or code below fails
     text = text.replace("  ", " ")
     stop_words = ["a", "the", "on", "is", "of", "in", "to", "and", "by", "or", "within", "other", "their", "who"]
@@ -619,7 +626,7 @@ def make_title(text):
     new_text = text.split(" ")[0] + " "
 
     #capitalize non-stopwords
-    for word in text.split(" ")[1:]:
+    for word in text.split()[1:]:
         is_roman_numeral = [x for x in word if x not in roman_letters] == ""
         if is_roman_numeral:
             new_text += word.upper() + " "
@@ -738,13 +745,21 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_link(info, server=SEFARIA_SERVER, VERBOSE = False):
+def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST"):
     url = server+'/api/links/'
-    result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method="POST")
+    result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method=method)
     if VERBOSE:
         print(result)
     return result
 
+@weak_connection
+def delete_link(id_or_ref, server=SEFARIA_SERVER, VERBOSE=False):
+    id_or_ref = id_or_ref.replace(" ", "_")
+    url = server + "/api/links/{}".format(id_or_ref)
+    result = http_request(url, body={'apikey': API_KEY}, json_payload=url, method="DELETE")
+    if VERBOSE:
+        print(result)
+    return result
 
 def post_link_weak_connection(info, repeat=10):
     url = SEFARIA_SERVER + '/api/links/'
@@ -780,16 +795,17 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
     generated_by_str = Ref(base_ref).index.title + "_" + comm_ref.split(",")[0]
     links = []
     base = TextChunk(Ref(base_ref), lang='he')
-    matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)["matches"]
-    for n, match in enumerate(matches):
-        if match:
-            curr_comm_ref = "{} {}".format(comm_ref, n+1)
+    matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)
+    for n, match in enumerate(matches["matches"]):
+        len_match_text = len(matches["match_text"][n][0]) + len(matches["match_text"][n][1])
+        curr_comm_ref = "{}:{}".format(comm_ref, n + 1)
+        if match and len_match_text > 4:
             curr_base_ref = match.normal()
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
                         "type": "Commentary", "auto": True}
-            links.append(new_link)
-
+            links.append(match)
     return links
+
 
 
 
@@ -871,7 +887,7 @@ def first_word_with_period(str):
     return len(str.split(" "))
 
 @weak_connection
-def post_text(ref, text, index_count="on", skip_links=False, server=SEFARIA_SERVER):
+def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
     """
     :param ref:
     :param text:
