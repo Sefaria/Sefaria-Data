@@ -20,7 +20,7 @@ def dh_by_keyword(string: str, keyword: str, max: int, included=True) -> str:
         if included: dh += keyword
         if len(dh.split()) < max+1: return dh
 
-def find_dh(par, report=False):
+def find_dh(par, report=True):
     dot_split = par.split('.')[:-1]
     for n, dot in enumerate(dot_split):
         dh = '.'.join(dot_split[:n+1]) + '.'
@@ -32,8 +32,8 @@ def find_dh(par, report=False):
     if report: REPORT.append(par)
     return ''
 
-def cleaned_dh(par):
-    return re.sub(" וכו'| כו'", '', find_dh(par, report=True)
+def split_dh(dh):
+    return re.split(" וכו'| כו'", dh)
 
 def base_tokenizer(string):
     string = remove_metadata(string, MASECHET)
@@ -83,21 +83,24 @@ def parse_paragraphs(page: str) -> list:
     if rif_text.text == []: print(daf)
     links = []
     if pars != ['']:
-        matches = match_ref(rif_text, pars, base_tokenizer, dh_extract_method=cleaned_dh)["matches"]
+        matches = match_ref(rif_text, pars, base_tokenizer, dh_extract_method=find_dh, char_threshold=0.24, dh_split=split_dh)["matches"]
         for n, match in enumerate(matches):
-            links.append({
-            "refs": ["{} {}:{}".format(title, daf, n+1), match.tref if match else match],
-            "type": "Commentary",
-            "auto": True,
-            "generated_by": 'rif mefaresh matcher'
-            })
+            if match:
+                links.append({
+                "refs": ["{} {}:{}".format(title, daf, n+1), match.tref],
+                "type": "Commentary",
+                "auto": True,
+                "generated_by": 'rif mefaresh matcher'
+                })
+            else:
+                links.append({})
     else:
         links.append({})
 
     pars = [{'text': pair[0], 'link': pair[1]} for pair in zip(pars, links)]
 
     for n, par in enumerate(pars):
-        dh = find_dh(par['text'])
+        dh = find_dh(par['text'], report=False)
         if dh != '':
             dh = dh.strip()
             if '.' not in dh:
