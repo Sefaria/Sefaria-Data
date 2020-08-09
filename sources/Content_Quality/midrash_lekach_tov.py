@@ -21,11 +21,12 @@ for link in links_f:
     if link["inline_reference"]:
         data_comms.add(link["inline_reference"]["data-commentator"])
 print(data_comms)
-counter = 1900
+counter = 17800
 print(len(links_to_post))
 while counter < len(links_to_post):
-    amt = 400
-    post_link(links_to_post[counter:counter+amt], server="https://www.sefaria.org")
+    amt = 1250
+    result = post_link(links_to_post[counter:counter+amt], server="https://www.sefaria.org")
+    print(links_to_post[counter])
     counter += amt
     print(counter)
-    time.sleep(30)
+    time.sleep(180)
