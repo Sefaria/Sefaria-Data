@@ -9,6 +9,8 @@ django.setup()
 from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import match_text
 
+DATA_LOC = "/home/nss/sefaria/datasets/ner/michael-sperling"
+
 def myunidecode(text):
     # 'ăǎġḥḤḫḳḲŏṭżūŻāīēḗîìi̧'
     table = {
@@ -23,159 +25,33 @@ def myunidecode(text):
         "ŏ": "o",
         "ṭ": "t",
         "ż": "z",
-        "Ż": "Z" 
+        "Ż": "Z" ,
+        "’": "'",
+        '\u05f3': "'",
+        "\u05f4": '"',
+        "”": '"',
     }
     for k, v in table.items():
         text = text.replace(k, v)
     return text
 
-class Row(object):
+NORMALIZING_REG = r"\s*<[^>]+>\s*"
+NORMALIZING_REP = " "
 
-    def __init__(self, d):
-        self.masechet = None
-        self.begin_offset = None
-        self.end_offset = None
-        self.amud = None
-        self.snippet = None
-        self.seg_ref = None
-        self.rid = None
-        for k, v in d.items():
-            if k == ' Amud':
-                v = v.lower()
-            if k == ' Masechet':
-                v = Ref(v).normal()
-            if k == ' Rabbi ID after Link':
-                k = 'rid'
-                v = int(v)
-            setattr(self, k.strip().lower().replace(' ', '_'), v)
+def normalize_text(lang, s):
+    # text = re.sub('<[^>]+>', ' ', text)
+    if lang == 'en':
+        s = myunidecode(s)
+        s = re.sub(NORMALIZING_REG, NORMALIZING_REP, s)
+        # text = unidecode(text)
+        # text = re.sub('\([^)]+\)', ' ', text)
+        # text = re.sub('\[[^\]]+\]', ' ', text)
+    # text = ' '.join(text.split())
+    return s
 
-    def index_of(self, search_text: str) -> int:
-        """
-        Return index of start of `self.snippet`
-        :param str search_text: search text
-        :return: index of start of `self.snippet`. None if doesn't exist
-        """
-        try:
-            return search_text.index(self.text)
-        except ValueError:
-            return None
-
-    def get_text(self):
-        return self.snippet.replace('~', '')
-
-    def get_ref(self):
-        return Ref("{} {}".format(self.masechet, self.amud))
-
-    def get_name_pos(self):
-        start = self.snippet.index('~')
-        end = self.snippet.index('~', start+1) - 1
-        return start, end
-
-    def get_name_word_pos(self):
-        start, end = None, None
-        for i, w in enumerate(self.snippet.split()):
-            if w.startswith('~') and start is None:
-                start = i
-            elif w.endswith('~') and end is None:
-                end = i+1
-        return start, end
-
-    def get_name(self):
-        start, end = self.name_pos
-        return self.text[start:end]
-
-    ref = property(get_ref)
-    text = property(get_text)
-    name_pos = property(get_name_pos)
-    name_word_pos = property(get_name_word_pos)
-    name = property(get_name)
-
-
-class Amud(object):
-
-    def __init__(self, book_name, amud_name, rows):
-        self.ref = Ref("{} {}".format(book_name, amud_name))
-        self.he = self.init_text('he')
-        self.en = self.init_text('en')
-        self.rows = rows
-
-    def init_text(self, lang):
-        vtitle = None if lang == 'en' else 'William Davidson Edition - Aramaic'
-        return self.normalize_text(lang, self.ref.text(lang, vtitle=vtitle).as_string())
-
-    def find_names(self):
-        ind_list, ref_list, total_len, text_list = self.ref.text('he', 'William Davidson Edition - Aramaic').text_index_map(lambda x: self.normalize_text('he', x).split(), ret_ja=True)
-        matches = match_text(self.he.split(), [r.text for r in self.rows], with_num_abbrevs=False)
-        for (m_start, m_end), m_text, row in zip(matches['matches'], matches['match_text'], self.rows):
-            if m_start == -1:
-                continue
-            try:
-                letter_ind = m_text[0].index(row.name)  # assumes name only appears once in row...
-            except ValueError:
-                print(row.name, 'not found in', m_text[0])
-                continue
-            word_lens = reduce(lambda a, b: a + [a[-1] + len(b) + 1], m_text[0].split(' '), [0])
-            word_ind = bisect_right(word_lens, letter_ind) - 1
-            full_word_ind = word_ind + m_start
-            ref_ind = bisect_right(ind_list, full_word_ind) - 1
-            ref = ref_list[ref_ind]
-            setattr(row, 'seg_ref', ref)
-
-    @staticmethod
-    def normalize_text(lang, text):
-        # text = re.sub('<[^>]+>', ' ', text)
-        if lang == 'en':
-            text = myunidecode(text)
-            # text = unidecode(text)
-            # text = re.sub('\([^)]+\)', ' ', text)
-            # text = re.sub('\[[^\]]+\]', ' ', text)
-        # text = ' '.join(text.split())
-        return text
-
-
-class Book(object):
-
-    def __init__(self, name, rows):
-        self.name = name
-        rows.sort(key=lambda x: int(x.begin_offset))
-        amud_dict = defaultdict(list)
-        for r in rows:
-            amud_dict[r.amud] += [r]
-        self.amuds = [Amud(self.name, k, v) for k, v in amud_dict.items()]
-
-
-class Rav(object):
-
-    def __init__(self):
-        pass
-
-
-class TonORabanan(object):
-
-    def __init__(self, rows):
-        self.bon_sef_map = {}
-        rabbi_topics = {t.fromTopic for t in IntraTopicLinkSet({'linkType': 'is-a', '$or': [{'toTopic': 'mishnaic-people'}, {'toTopic': 'talmudic-people'}]})}
-        with open('sefaria_bonayich_reconciliation - Sheet1.csv', 'r') as fin:
-            c = csv.DictReader(fin)
-            for cc in tqdm(list(c)):
-                if cc['bonayich'] == 'null':
-                    continue
-                query = {'slug': cc['sefaria_key'][1:]} if cc['sefaria_key'].startswith('#') else {"titles.text": cc['sefaria_key']}
-                topic_set = [t for t in TopicSet(query) if t.slug in rabbi_topics]
-                if len(topic_set) > 1 or len(topic_set) == 0:
-                    # print('Len', len(topic_set), cc['sefaria_key'])
-                    continue
-                self.bon_sef_map[int(cc['bonayich'])] = topic_set[0]
-        count = 0
-        for r in rows:
-            if r.rid in self.bon_sef_map:
-                count += 1
-        print('Percent matched', count, len(rows), count/len(rows))
-
-    def __getitem__(self, item):
-        return self.bon_sef_map.get(item, None)
-
-
+def find_text_to_remove(s):
+    return [(m, NORMALIZING_REP) for m in re.finditer(NORMALIZING_REG, s)]
+        
 class NaiveNERTagger(object):
 
     word_breakers = {' ', '.', ',', '"', '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§', '<', '>'}
@@ -231,6 +107,7 @@ class NaiveNERTagger(object):
             return [title.lower()]
 
         b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ']
+        starting_replacements = ['Ben', 'Bar', 'The']
         # search_types = [
         #     ('people', 'PERSON', rabbi_extra_keys),
         #     ("geography", 'GPE', None),
@@ -271,16 +148,30 @@ class NaiveNERTagger(object):
                           'generations', 'earlier-generations', 'groups-(אשישי)', 'the-early-pious-people', 'magicians',
                           'craftsmen-and-guards', 'mules', 'land', "earth-(ארקא)", 'earth', 'fifth', 'killing',
                           'hanging', "human-rights", 'mixtures', 'get'}
+        with open(f"{DATA_LOC}/sperling_en_and_he.csv", "r") as fin:
+            sperling_rabbis = {}
+            sperling_norps = {}
+            c = csv.DictReader(fin)
+            for row in c:
+                en1 = row["En 1"].strip()
+                if len(en1) == 0 or en1 == "N/A" or en1 == "MM":
+                    continue
+                bid = row['Bonayich ID']
+                titles = []
+                for i in range(3):
+                    temp_en = row[f'En {i+1}']
+                    if len(temp_en) == 0:
+                        continue
+                    titles += [temp_en]
+                if len(row["Is Group"]) > 0:
+                    sperling_norps[bid] = titles
+                else:
+                    sperling_rabbis[bid] = titles
         search_types = [
             ('talmudic-people', 'PERSON', rabbi_extra_keys),
             ('mishnaic-people', 'PERSON', rabbi_extra_keys),
        ({
-                'Rav Eina',
-                'Rav Sama b. Rav Mari',
-                'Rav Samma b. Rav Yirmeya',
                 'Rav Samma b. Rav Asi',
-                'Rav Zevid of Neharde\'a',
-                'Rav Yosef Tzidoni',
                 'Rabbi Yitzhak b. Rav Ya\'akov b.Rav Tahlifa b. Avudimi Giyyorei',
                 'Rav Hiyya b. Avin',
                 'Rabbi Hiyya b. Avin',
@@ -455,7 +346,10 @@ class NaiveNERTagger(object):
                 'Rabbi Hanan',
                 'Rabbi Hiyya b. Ami',
              }, 'PERSON', rabbi_extra_keys),
-             (['beit-hillel', 'beit-shammai'], 'NORP', None)
+             (sperling_rabbis, 'PERSON', rabbi_extra_keys),
+             (sperling_norps, 'NORP', rabbi_extra_keys),
+             (['beit-hillel', 'beit-shammai'], 'NORP', None),
+            
         ]
         search_terms = defaultdict(list)
         for slug, tag, extra_keys in tqdm(search_types, desc='init'):
@@ -469,8 +363,10 @@ class NaiveNERTagger(object):
                     topics += [temp_topic]
             elif isinstance(slug, set):
                 topics = [Topic({'slug': 'N/A', 'titles': [{'text': title, 'lang': 'en'}]}) for title in slug]
+            elif isinstance(slug, dict):
+                topics = [Topic({'slug': f'ID:{bid}', 'titles': [{'text': title, 'lang': 'en'} for title in titles]}) for bid, titles in slug.items()]
             else:
-                topics = Topic.init(slug).topics_by_link_type_recursively('is-a', only_leaves=True)
+                topics = Topic.init(slug).topics_by_link_type_recursively(only_leaves=True)
             for topic in topics:
                 if topic.slug in topics_to_skip:
                     continue
@@ -485,34 +381,46 @@ class NaiveNERTagger(object):
                             for extra in extra_keys(title['text']):
                                 # print('Extra', extra, title['text'])
                                 search_terms[extra] += [inexact_value]
-                        if title['text'].startswith('The '):
-                            search_terms[re.sub('^The ', 'the ', title['text'])] += [value]
+                        for starting_replacement in starting_replacements:
+                            if title['text'].startswith(f'{starting_replacement} '):
+                                uncapitalized = title['text'][0].lower() + title['text'][1:]
+                                search_terms[uncapitalized] += [value]                   
+                    
         search_terms = sorted(list(search_terms.items()), key=lambda x: len(x[0]), reverse=True)
         for term, matches in search_terms:
             matches.sort(key=lambda x: int(x[3])*1e7+x[2], reverse=True)
         return search_terms
 
-    def check_for_missing_entities(self, text, entities):
+    def check_for_missing_entities(self, string, entities):
         tagged_index_set = {i for start, end, tag in entities for i in range(start, end)}
         rabbi_re = r'^[A-Z][a-z\']+(?: (?:bar|ben|, son of) [A-Z][a-z\']+)?(?=\W|$)'
-        for match in re.finditer('(?:Rabbi|Rav) ', text):
-            temp_match = re.search(rabbi_re, text[match.end():])
+        for match in re.finditer('(?:Rabbi|Rav) ', string):
+            temp_match = re.search(rabbi_re, string[match.end():])
             if not temp_match:
                 continue
             has_untagged = any([i not in tagged_index_set for i in range(temp_match.start(), temp_match.end()-1)])
-            if match.start() in tagged_index_set and (match.end()) < len(text) and has_untagged:
-                uncaught_rabbi = text[match.start():match.end() + temp_match.end()]
+            if match.start() in tagged_index_set and (match.end()) < len(string) and has_untagged:
+                uncaught_rabbi = string[match.start():match.end() + temp_match.end()]
                 uncaught_rabbi = re.sub("'s$", '', uncaught_rabbi)
                 self.unique_uncaught_rabbis[uncaught_rabbi] += 1
 
     def tag_index(self, index):
+        from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
         training = []
         mentions = []
         for seg in tqdm(index.all_segment_refs(), desc='Segs'):
-            text = Amud.normalize_text('en', seg.text('en').text)
-            entities = self.tag_segment(text)
+            unnorm_text = seg.text('en').text
+            norm_text = normalize_text('en', unnorm_text)
+
+            entities = self.tag_segment(norm_text)
+            ent_indices = [(ent[0], ent[1]) for ent in entities]
+            norm_map = get_mapping_after_normalization(unnorm_text, find_text_to_remove)
+            ent_indices = convert_normalized_indices_to_unnormalized_indices(ent_indices, norm_map)
+            for ent, unnorm_index in zip(entities, ent_indices):
+                ent[0] = unnorm_index[0]
+                ent[1] = unnorm_index[1]
             spacy_entities = [e[:3] for e in entities]
-            self.check_for_missing_entities(text, spacy_entities)
+            self.check_for_missing_entities(unnorm_text, spacy_entities)
             for ent in entities:
                 mentions += [{
                     "Book": index.title,
@@ -521,9 +429,9 @@ class NaiveNERTagger(object):
                     "Slug": ent[3],
                     "Start": ent[0],
                     "End": ent[1],
-                    "Mention": text[ent[0]:ent[1]]
+                    "Mention": unnorm_text[ent[0]:ent[1]]
                 }]
-            training += [[text, {"entities": spacy_entities}]]
+            training += [[unnorm_text, {"entities": spacy_entities}]]
         return training, mentions
 
     def tag_all(self, start=0, end=None, category='Bavli'):
@@ -556,14 +464,14 @@ def display_displacy(jsonl_loc):
 
 if __name__ == '__main__':
     tagger = NaiveNERTagger()
-    tagger.tag_all(category='Bavli')
+    tagger.tag_all(category='Bavli', start=18, end=19)
     # with open('best_rabbis.csv', 'w') as fout:
     #     c = csv.DictWriter(fout, ['Rabbi', 'Count'])
     #     c.writeheader()
     #     rows = [{'Rabbi': r, 'Count': i} for r, i in tagger.unique_uncaught_rabbis.items()]
     #     c.writerows(rows)
-    # convert_training_to_displacy('training/naive_training.jsonl')
-    # display_displacy('training/naive_training.jsonl.displacy')
+    convert_training_to_displacy('/home/nss/sefaria/datasets/ner/michael-sperling/en_training.jsonl')
+    display_displacy('/home/nss/sefaria/datasets/ner/michael-sperling/en_training.jsonl.displacy')
     # with open('AllNameReferences.xlsx - Sheet1.csv', 'r') as fin:
     #     c = csv.DictReader(fin)
     #     rows = [Row(r) for r in c]

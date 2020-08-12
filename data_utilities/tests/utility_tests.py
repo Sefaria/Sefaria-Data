@@ -191,3 +191,9 @@ def test_restructure_file():
 
     assert fixed == 'foo!\nbar!\n'
     os.remove('test_file.txt')
+
+def test_get_mapping_after_normalization():
+    text = "a###b##c"
+    find_text_to_remove = lambda x: re.finditer(r"#+", x)
+    rm = util.get_mapping_after_normalization(text, find_text_to_remove)
+    assert rm == {1: 3, 2: 5}
