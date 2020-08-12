@@ -3,7 +3,7 @@ from sefaria.model import *
 import re
 generated_by = "maharal_i_tags_"
 LinkSet({"generated_by": generated_by}).delete()
-titles = ["Be'er HaGolah", "Netivot Olam"] #"Netivot Olam", "Gevurot Hashem",
+titles = ["Ohr Chadash"] #"Netivot Olam", "Gevurot Hashem",
 for title in titles:
     ftnote_count = 0
     for ref in library.get_index(title).all_segment_refs():

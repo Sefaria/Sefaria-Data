@@ -180,7 +180,7 @@ def create_new_indices():
             well.key = "Well {}".format(i+1)
             root.append(well)
         root.validate()
-        post_index({"title": "Be'er HaGolah", "schema": root.serialize(), "categories": ["Philosophy", "Maharal"]})
+        #post_index({"title": "Be'er HaGolah", "schema": root.serialize(), "categories": ["Philosophy", "Maharal"]})
     beer()
     derech()
 
@@ -270,7 +270,7 @@ def alter_contents(new_contents, new_index_title, book_term):
 
 def get_intro(title, key):
     if key.startswith("Second") and title.startswith("Ohr"):
-        return "Preface"
+        return "Second Introduction to Ohr Chadash"
     if title.startswith("Netivot"):
         intro = "{} to Netivot Olam".format(key)
     elif title.startswith("Derech Chaim"):
@@ -358,61 +358,115 @@ def insert_count(ftnote_text, start_at=0):
     return ftnote_text
 
 
+def process_esther_links(links, text):
+    def post_links_esther(links):
+        links = [{"refs": link, "generated_by": "Esther_to_Ohr_Chadash", "type": "Commentary",
+                  "auto": True} for link in links]
+        post_link(links)
+    prev = ""
+    len_links = len(links)
+    for l, link in enumerate(reversed(links)):
+        esther, ohr = link
+        if esther == prev:
+            start_ref = Ref(link[1].replace("Ohr Chadash", "Rashi on Genesis"))
+            end_ref = Ref(links[len_links-l][1]).starting_ref()
+            end_ref_sections = end_ref.sections
+            end_ref_prev = end_ref.prev_segment_ref()
+            assert end_ref_prev.sections[:-1] == end_ref_sections[:-1]
+            link[1] = start_ref.to(end_ref_prev).normal()
+        else:
+            perek, pasuk = Ref(esther).sections
+            para = len(text[perek][pasuk])
+            link[1] = link[1].replace("Ohr Chadash", "Rashi on Genesis")
+            link[1] = Ref(link[1]).to(Ref("Rashi on Genesis {}:{}:{}".format(perek, pasuk, para))).normal()
+        prev = esther
+    post_links_esther([[link[0], link[1].replace("Rashi on Genesis", "Ohr Chadash")] for link in links])
+
 def post_ohr_chadash(nodes):
     ftnotes = nodes.pop("Footnotes")
     text = {1: {1: []}}
     ftnotes_text = {1: {1: []}}
     found_prev = False
+    esther_links = []
+    verses = []
+    pasuk = 1
     for ch, node in nodes.items():
-        perek = 1
+        perek = ch
         pasuk = 1
+        num_ftnotes_already = 0
+        if perek not in text:
+            text[perek] = {}
+            ftnotes_text[perek] = {}
+        if pasuk not in text[perek]:
+            text[perek][pasuk] = []
+            ftnotes_text[perek][pasuk] = []
+        curr_esther_link = "{}:{}:1".format(perek, pasuk)
         ftnotes_ch = ftnotes[ch]
         for i, para in enumerate(node):
-            dh = re.search('^<b>"(.*?)\((.*?)\)', para)
+            dh = re.search('^<b>"(.*?)</b>.{,15}\((.*?)\)', para)
             if dh:
                 verse = dh.group(2)
                 try:
-                    verse = verse.replace('"', "")
                     verse = verse.replace('למעלה ', '').replace('להלן ', '')
                     if re.search("^.{1,2}, .{1,2}$", verse):
-                        verse = "מגילה " + verse
+                        verse = "אסתר " + verse
                     ref = Ref(verse)
                     is_esther = ref.index.title == "Esther"
                     poss_perek = ref.sections[0]
                     poss_pasuk = ref.sections[1] if len(ref.sections) > 1 else 0
+                    if is_esther:
+                        verses.append(verse)
                     if is_esther and poss_perek > perek:
+                        assert poss_perek == perek + 1
                         perek = poss_perek
                         pasuk = poss_pasuk if poss_pasuk > 0 else pasuk
-                    elif is_esther and poss_perek == perek and poss_pasuk > pasuk:
+                    elif is_esther and poss_perek == perek:
+                        if poss_pasuk < pasuk or poss_pasuk == 0:
+                            print("{} before {}".format(verses[-2], verses[-1]))
+                            pasuk = poss_pasuk
+                            continue
                         pasuk = poss_pasuk
                 except InputError as e:
                     if verse.startswith("פסוק") and len(verse.split()) == 2:
                         poss_pasuk = getGematria(verse.split()[-1])
                         if poss_pasuk > pasuk:
                             pasuk = poss_pasuk
-                    else:
-                        print(verse)
                 dh = dh.group(1)
+                if perek not in text:
+                    text[perek] = {}
+                    ftnotes_text[perek] = {}
+                if pasuk not in text[perek]:
+                    text[perek][pasuk] = []
+                    ftnotes_text[perek][pasuk] = []
+
+                curr_esther_link = "{}:{}:{}".format(perek, pasuk, len(text[perek][pasuk]) + 1)
+                orig = Ref("Rashi on Genesis {}".format(curr_esther_link))
+                new = Ref("Rashi on Genesis {}:{}:{}".format(perek, pasuk, len(text[perek][pasuk]) + 1))
+
+                ohr_chadash = orig.to(new).normal() if pasuk == int(curr_esther_link.split(":")[1]) else new.normal()
+                ohr_chadash = ohr_chadash.replace("Rashi on Genesis", "Ohr Chadash")
+                esther_links.append(["Esther {}:{}".format(perek, pasuk), ohr_chadash])
+
             soup = BeautifulSoup(para)
             i_tags = soup.find_all("i")
             ftnotes_in_para = [ftnotes_ch[int(el.attrs["data-label"])-1] for el in i_tags]
 
-            if perek not in text:
-                text[perek] = {}
-                ftnotes_text[perek] = {}
-            if pasuk not in text[perek]:
-                text[perek][pasuk] = []
-                ftnotes_text[perek][pasuk] = []
-            num_ftnotes_already = len(ftnotes_text[perek][pasuk])
-            count = 0
+
+
             for i_tag in i_tags:
-                count += 1
-                para = para.replace(i_tag.attrs["data-label"], str(num_ftnotes_already+count))
+                num_ftnotes_already += 1
+                para = para.replace(i_tag.attrs["data-label"], str(num_ftnotes_already))
             text[perek][pasuk].append(para)
             for ftnote in ftnotes_in_para:
                 ftnotes_text[perek][pasuk].append(ftnote)
+
+    esther_links = process_esther_links(esther_links, text)
     for perek in text:
         text[perek] = convertDictToArray(text[perek])
+        count = 0
+        for pasuk in ftnotes_text[perek]:
+            ftnotes_text[perek][pasuk] = insert_count(ftnotes_text[perek][pasuk], count)
+            count += len(ftnotes_text[perek][pasuk])
         ftnotes_text[perek] = convertDictToArray(ftnotes_text[perek])
     text = convertDictToArray(text)
     ftnotes_text = convertDictToArray(ftnotes_text)
@@ -420,7 +474,7 @@ def post_ohr_chadash(nodes):
 
 def post(text):
     for title, nodes in text.items():
-        if "Be'er HaGolah" not in title:
+        if "Ohr Chadash" not in title:
             continue
         title = title.replace("Netivot Olam", "Netivot Olam, Netiv Hatorah")
         print(title)
@@ -440,7 +494,7 @@ def post(text):
                          "versionSource": version.vsource,
                          "text": nodes["Footnotes"][intro_node],
                          "language": "he"}
-            post_text("Footnotes and Annotations on {}, {}".format(intro_title, intro), send_text, index_count="on")
+            #post_text("Footnotes and Annotations on {}, {}".format(intro_title, intro), send_text, index_count="on")
             nodes.pop(intro_node)
             nodes["Footnotes"].pop(intro_node)
         if title == "Be'er HaGolah":
@@ -543,7 +597,7 @@ if __name__ == "__main__":
         create_footnotes_indices(dirpath)
         counter = 0
         for f in filenames:
-            if "BH" not in f.upper():
+            if "OH" not in f:
                 continue
             docx_file = dirpath+"/"+f
             index = library.get_index(dirpath.split("/")[1])
