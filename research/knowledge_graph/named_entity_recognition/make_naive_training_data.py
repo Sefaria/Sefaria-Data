@@ -100,8 +100,7 @@ class NaiveNERTagger(object):
     @staticmethod
     def generate_search_terms():
         def rabbi_extra_keys(title):
-            return ([re.sub(' b\. ', replac, title) for replac in b_replacements] + [
-                title[:title.find(' b. ')]]) if ' b. ' in title else []
+            return ([re.sub(' b\. ', replac, title) for replac in b_replacements]) if ' b. ' in title else []  #  + [title[:title.find(' b. ')]]
 
         def halachic_role_extra_keys(title):
             return [title.lower()]
@@ -307,44 +306,15 @@ class NaiveNERTagger(object):
                 "Rav Ami",
                 "Rav Shmuel b. Rav",
                 'Rabbi Simai',
-                'Rav Ḥiyya from Yostiniyya',
-                'Rav Pinehas',
-                'Rabbi Aha b. Hanina',
-                'Rav Yitzhak b. Shmuel',
-                'Rabbi Shimon b. Yehotzadak',
-                'Rav Aha b. Rav',
-                'Rav Shimi b. Hiyya',
-                'Rabbi Shmuel b. Rav',
-                'Rav Sherevya',
-                'Rabbi Mani',
-                'Rav Nahman b. Rav',
-                'Rabbi Hiyya b. Ashi',
-                'Rav Shimi',
-                'Rabbi Binyamin b. Yefet',
-                'Rabbi Elazar b. Perata',
-                'Rabbi Dostai',
-                'Rav Sheizevi',
-                'Rav Sheizvi',
-                'Rabbi Zekharya',
-                'Rabbi Ahai',
-                'Rav Aha b. Huna',
-                'Rabbi Elazar b. Rabbi',
-                'Zunin',
-                'Rabbi Yosei b. Rabbi',
-                'Rabbi Yosei b. Shaul',
-                'Rabbi Yehuda b. Teima',
-                'Rav Yitzhak b. Avudimi',
-                'Rabbi Menahem',
-                'Rabbi Yosef',
-                'Rabbi Yehuda b. Agra',
-                'Rabbi Yirmeya b. Elazar',
-                'Rav Beruna',
-                'Rabbi Hananya b. Gamliel',
-                'Rabbi Hananya',
-                'Rabbi Yosei b. Zimra',
-                'Rabbi Ahiyya',
-                'Rabbi Hanan',
-                'Rabbi Hiyya b. Ami',
+                'Rav Hiyya from Yostiniyya',
+                'Rabbi Shmuel b. Rav', #NA
+                'Rav Nahman b. Rav', # NA
+                'Rav Shimi', # NA
+                'Rabbi Elazar b. Perata', # NA
+                'Rabbi Dostai', # NA
+                'Rabbi Elazar b. Rabbi', # NA
+                'Rabbi Yosei b. Rabbi', # NA
+                'Rabbi Yehuda b. Teima', # NA
              }, 'PERSON', rabbi_extra_keys),
              (sperling_rabbis, 'PERSON', rabbi_extra_keys),
              (sperling_norps, 'NORP', rabbi_extra_keys),

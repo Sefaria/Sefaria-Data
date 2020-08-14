@@ -125,5 +125,29 @@ def convert_final_en_names_to_csv():
         c.writeheader()
         c.writerows(rows)
 
+def find_ambiguous_rabbis():
+    ambiguous_topics = {t.slug for t in TopicSet({"titles.disambiguation": {"$exists": True}})}
+    rabbis = Topic.init('talmudic-people').topics_by_link_type_recursively(only_leaves=True) + Topic.init('mishnaic-people').topics_by_link_type_recursively(only_leaves=True)
+    ambiguous_rabbis = list(filter(lambda x: x.slug in ambiguous_topics, rabbis))
+    for r in ambiguous_rabbis:
+        print(r.slug)
+
+def check_rabbi_yehuda_hanasi():
+    bad = 0
+    with open(f"{DATA_LOC}/rabbi_yehuda_hanasi.csv", "r") as fin:
+        rows = list(csv.DictReader(fin))
+    with open(f"{DATA_LOC}/rabbi_yehuda_hanasi_bad.txt", "w") as fout:
+        for row in rows:
+            ref = row["Segment"]
+            try:
+                seg_text = " ".join(re.sub(r"<[^>]+>", " ", Ref(ref).text("en").text).split())
+            except:
+                print("BAD REF", ref)
+            if not re.search(r"Rabbi Yehuda HaNasi", seg_text):
+                bad+=1
+                fout.write(f"{ref}\n{seg_text}\n")
+    print(bad)
 if __name__ == "__main__":
-    convert_final_en_names_to_csv()
+    # convert_final_en_names_to_csv()
+    # find_ambiguous_rabbis()
+    check_rabbi_yehuda_hanasi()

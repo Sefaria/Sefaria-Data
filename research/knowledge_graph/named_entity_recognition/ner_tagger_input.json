@@ -1,0 +1,40 @@
+{
+    "namedEntities": [
+        {
+            "id": "talmudic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "MANUAL:Rabbi Zeira",
+            "idIsSlug": false,
+            "manualTitles": [
+                {
+                    "lang": "en",
+                    "text": "Rabbi Zeira"
+                },
+                {
+                    "lang": "he",
+                    "text": "רבי זעירא"
+                }
+            ]
+        }
+    ],
+    "corpus": [
+        {
+            "title": "Meilah",
+            "type": "index",
+            "versions": [
+                {
+                    "language": "en",
+                    "versionTitle": "William Davidson Edition - English"
+                }
+            ]
+        }
+    ]
+}
