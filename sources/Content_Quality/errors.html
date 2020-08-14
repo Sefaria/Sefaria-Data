@@ -1,77 +1,109 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en-US"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en-US"> <!--<![endif]-->
 <head>
-  <meta http-equiv="content-type" content="text/html; charset=utf-8">
-  <meta name="robots" content="NONE,NOARCHIVE">
-  <title>403 Forbidden</title>
-  <style type="text/css">
-    html * { padding:0; margin:0; }
-    body * { padding:10px 20px; }
-    body * * { padding:0; }
-    body { font:small sans-serif; background:#eee; }
-    body>div { border-bottom:1px solid #ddd; }
-    h1 { font-weight:normal; margin-bottom:.4em; }
-    h1 span { font-size:60%; color:#666; font-weight:normal; }
-    #info { background:#f6f6f6; }
-    #info ul { margin: 0.5em 4em; }
-    #info p, #summary p { padding-top:10px; }
-    #summary { background: #ffc; }
-    #explanation { background:#eee; border-bottom: 0px none; }
-  </style>
+
+
+<title>www.sefaria.org | 502: Bad gateway</title>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" id="cf_styles-css" href="/cdn-cgi/styles/cf.errors.css" type="text/css" media="screen,projection" />
+<!--[if lt IE 9]><link rel="stylesheet" id='cf_styles-ie-css' href="/cdn-cgi/styles/cf.errors.ie.css" type="text/css" media="screen,projection" /><![endif]-->
+<style type="text/css">body{margin:0;padding:0}</style>
+
+
+
+
 </head>
 <body>
-<div id="summary">
-  <h1>Forbidden <span>(403)</span></h1>
-  <p>CSRF verification failed. Request aborted.</p>
+<div id="cf-wrapper">
 
-
-  <p>You are seeing this message because this site requires a CSRF cookie when submitting forms. This cookie is required for security reasons, to ensure that your browser is not being hijacked by third parties.</p>
-  <p>If you have configured your browser to disable cookies, please re-enable them, at least for this site, or for &#39;same-origin&#39; requests.</p>
-
-</div>
-
-<div id="info">
-  <h2>Help</h2>
-    
-    <p>Reason given for failure:</p>
-    <pre>
-    CSRF cookie not set.
-    </pre>
     
 
-  <p>In general, this can occur when there is a genuine Cross Site Request Forgery, or when
-  <a
-  href="https://docs.djangoproject.com/en/1.11/ref/csrf/">Django's
-  CSRF mechanism</a> has not been used correctly.  For POST forms, you need to
-  ensure:</p>
-
-  <ul>
-    <li>Your browser is accepting cookies.</li>
-
-    <li>The view function passes a <code>request</code> to the template's <a
-    href="https://docs.djangoproject.com/en/dev/topics/templates/#django.template.backends.base.Template.render"><code>render</code></a>
-    method.</li>
-
-    <li>In the template, there is a <code>{% csrf_token
-    %}</code> template tag inside each POST form that
-    targets an internal URL.</li>
-
-    <li>If you are not using <code>CsrfViewMiddleware</code>, then you must use
-    <code>csrf_protect</code> on any views that use the <code>csrf_token</code>
-    template tag, as well as those that accept the POST data.</li>
-
-    <li>The form has a valid CSRF token. After logging in in another browser
-    tab or hitting the back button after a login, you may need to reload the
-    page with the form, because the token is rotated after a login.</li>
-  </ul>
-
-  <p>You're seeing the help section of this page because you have <code>DEBUG =
-  True</code> in your Django settings file. Change that to <code>False</code>,
-  and only the initial error message will be displayed.  </p>
-
-  <p>You can customize this page using the CSRF_FAILURE_VIEW setting.</p>
+    <div id="cf-error-details" class="cf-error-details-wrapper">
+        <div class="cf-wrapper cf-error-overview">
+            <h1>
+              
+              <span class="cf-error-type">Error</span>
+              <span class="cf-error-code">502</span>
+              <small class="heading-ray-id">Ray ID: 5bcea5023e87ada3 &bull; 2020-08-03 08:25:21 UTC</small>
+            </h1>
+            <h2 class="cf-subheadline">Bad gateway</h2>
+        </div><!-- /.error-overview -->
+        
+        <div class="cf-section cf-highlight cf-status-display">
+            <div class="cf-wrapper">
+                <div class="cf-columns cols-3">
+                  
+<div id="cf-browser-status" class="cf-column cf-status-item cf-browser-status ">
+  <div class="cf-icon-error-container">
+    <i class="cf-icon cf-icon-browser"></i>
+    <i class="cf-icon-status cf-icon-ok"></i>
+  </div>
+  <span class="cf-status-desc">You</span>
+  <h3 class="cf-status-name">Browser</h3>
+  <span class="cf-status-label">Working</span>
 </div>
 
+<div id="cf-cloudflare-status" class="cf-column cf-status-item cf-cloudflare-status ">
+  <div class="cf-icon-error-container">
+    <i class="cf-icon cf-icon-cloud"></i>
+    <i class="cf-icon-status cf-icon-ok"></i>
+  </div>
+  <span class="cf-status-desc">Tel Aviv</span>
+  <h3 class="cf-status-name">Cloudflare</h3>
+  <span class="cf-status-label">Working</span>
+</div>
+
+<div id="cf-host-status" class="cf-column cf-status-item cf-host-status cf-error-source">
+  <div class="cf-icon-error-container">
+    <i class="cf-icon cf-icon-server"></i>
+    <i class="cf-icon-status cf-icon-error"></i>
+  </div>
+  <span class="cf-status-desc">www.sefaria.org</span>
+  <h3 class="cf-status-name">Host</h3>
+  <span class="cf-status-label">Error</span>
+</div>
+
+                </div>
+              
+            </div>
+        </div><!-- /.status-display -->
+
+        <div class="cf-section cf-wrapper">
+            <div class="cf-columns two">
+                <div class="cf-column">
+                    <h2>What happened?</h2>
+                    <p>The web server reported a bad gateway error.</p>
+                </div>
+              
+                <div class="cf-column">
+                    <h2>What can I do?</h2>
+                    <p>Please try again in a few minutes.</p>
+                </div>
+            </div>
+              
+        </div><!-- /.section -->
+
+        <div class="cf-error-footer cf-wrapper">
+  <p>
+    <span class="cf-footer-item">Cloudflare Ray ID: <strong>5bcea5023e87ada3</strong></span>
+    <span class="cf-footer-separator">&bull;</span>
+    <span class="cf-footer-item"><span>Your IP</span>: 147.236.152.175</span>
+    <span class="cf-footer-separator">&bull;</span>
+    <span class="cf-footer-item"><span>Performance &amp; security by</span> <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=error_footer" id="brand_link" target="_blank">Cloudflare</a></span>
+    
+  </p>
+</div><!-- /.error-footer -->
+
+
+    </div><!-- /#cf-error-details -->
+</div><!-- /#cf-wrapper -->
 </body>
 </html>
+

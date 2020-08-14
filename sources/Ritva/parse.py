@@ -1,22 +1,7 @@
-# -*- coding: utf-8 -*-
-import urllib2
-import urllib
-from urllib2 import URLError, HTTPError
-import pdb
-import glob
-import os
-import sys
-
-p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, p)
-os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
-import data_utilities.util
-from data_utilities import util, sanity_checks
-from data_utilities.sanity_checks import TagTester
-from data_utilities.dibur_hamatchil_matcher import *
+import django
+django.setup()
 from sources.functions import *
 from sefaria.model import *
-from sefaria.model.schema import AddressTalmud
 
 
 def createIndex(enTitle):
@@ -46,29 +31,30 @@ def createIndex(enTitle):
     post_index(index)
 
 
-def dealWithDaf(line, current_daf):
+def dealWithDaf(line, crrent_daf):
     orig_line = line
+    line = " ".join(line.split()[0:3])
     line = line.replace(" ", "").replace("\xe2\x80\x9d", '"')
-    line = line.replace("@22", "").replace('ע"א','').replace('דף', '').replace('\r', '').replace(' ', '').replace('.', '').replace("\xe2\x80", "").replace("\xac", "").replace("\xaa", "")
+    line = line.replace("@88", "").replace('ע"א','').replace('דף', '').replace('\r', '').replace(' ', '').replace('.', '').replace("\xe2\x80", "").replace("\xac", "").replace("\xaa", "")
     if len(line.replace('ע"ב','').replace(' ','').replace('[', '').replace(']', '').replace('(', '').replace(')', '')) == 0:
-        return current_daf + 1
+        return crrent_daf + 1
     elif line.find('ע"ב') >= 0:
         line = line.replace('ע"ב', '')
         poss_daf = getGematria(line) * 2
-        if poss_daf <= current_daf:
-            print 'daf prob'
-            pdb.set_trace()
+        if poss_daf <= crrent_daf:
+            print(orig_line)
         return poss_daf
+    elif 'שם' in line:
+        return crrent_daf
     else:
         poss_daf = (getGematria(line) * 2) - 1
-        if poss_daf <= current_daf:
-            print 'daf prob'
-            pdb.set_trace()
+        if poss_daf <= crrent_daf:
+            print(orig_line)
         return poss_daf
 
 '''
 Objective:  Need to get all the image file names in order, get the encoding, then go through and replace in order
-Regular expression will find all occurrences
+Regular expression will find all occrrences
 '''
 def getBase64(text):
     found = False
@@ -91,22 +77,22 @@ def parse(file):
     header = ""
     text = {}
     dhs = {}
-    current_daf = 0
+    crrent_daf = 0
     for line in open(file):
         line = line.replace('\n', '')
-        if line.find("@22") >= 0:
+        if line.find("@88") >= 0:
             end = len(line) if line.find("@11") == -1 else line.find("@11")
-            current_daf = dealWithDaf(line[:end], current_daf)
-            text[current_daf] = []
+            crrent_daf = dealWithDaf(line[:end], crrent_daf)
+            text[crrent_daf] = []
         if line.find("@11") >= 0:
             line = line.replace("@11", "").replace("@33", "")
             dh, comment, found_dh = getDHComment(line, file)
             comment, found_img = getBase64(comment)
-            if current_daf in dhs:
-                dhs[current_daf].append(dh.decode('utf-8'))
+            if crrent_daf in dhs:
+                dhs[crrent_daf].append(dh)
             else:
-                dhs[current_daf] = []
-                dhs[current_daf].append(dh.decode('utf-8'))
+                dhs[crrent_daf] = []
+                dhs[crrent_daf].append(dh)
             if found_dh == True:
                 line = "<b>"+dh+"</b>"+comment
             elif found_img == True:
@@ -116,7 +102,7 @@ def parse(file):
                 header = ""
             if found_img == False:
                 line = removeAllTags(line)
-            text[current_daf].append(line.decode('utf-8'))
+            text[crrent_daf].append(line)
         elif line.find("@00") >= 0:
             header = line.replace("@00", "")
     return text, dhs
@@ -152,16 +138,17 @@ def getDHComment(each_line, file):
 
 def splitText(text, num_words):
     num_words = num_words if len(text.split(" ")) > 20 else len(text.split(" "))/4
+    num_words = round(num_words)
     text_arr = text.split(" ", num_words)
     before = " ".join(text_arr[0:num_words])
     after = text_arr[num_words]
     return before, after
-
+    
 
 def match_and_link(dhs, masechet):
     def base_tokenizer(str):
-        str = re.sub(ur"\([^\(\)]+\)", u"", str)
-        word_list = re.split(ur"\s+", str)
+        str = re.sub(r"\([^\(\)]+\)", u"", str)
+        word_list = re.split(r"\s+", str)
         word_list = [w for w in word_list if w]  # remove empty strings
         return word_list
     links = []
@@ -195,17 +182,18 @@ if __name__ == "__main__":
     versionTitle['Ketubot'] = "Chiddushei haRitva, Munkatch, 1908."
     versionTitle['Pesachim'] = "Chiddushei haRitva, Warsaw 1864"
     versionTitle['Chullin'] = "Chiddushei haRitva, Lemberg 1861"
-    files = ["Chullin"]
+    versionTitle["Shevuot"] = "Chiddushei haRitva, Lemberg, 1827"
+    files = ["Shevuot"]
     not_yet = True
     for file in files:
         createIndex(file)
-        print file
+        print(file)
         text, dhs = parse(file+".txt")
         text_array = convertDictToArray(text)
         send_text = {
         "text": text_array,
         "language": "he",
-        "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001096758",
+        "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH990019308220205171/NLI",
         "versionTitle": versionTitle[file]
         }
         post_text("Ritva on "+file, send_text, index_count="on")

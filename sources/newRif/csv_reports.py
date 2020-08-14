@@ -34,7 +34,7 @@ def check_len(section: str) -> str:
 
 for masechet in tags_map:
     file_data = []
-    with open(path+'/rif_csv/rif'+masechet+'.csv', encoding='utf-8', newline='') as file:
+    with open(path+'/rif_csv/rif_'+masechet+'.csv', encoding='utf-8', newline='') as file:
         file_data = list(csv.DictReader(file))
 
     new = []
@@ -46,7 +46,7 @@ for masechet in tags_map:
         #if check_tag_balance(line, masechet) != []:
             #row['tag balance'] = ';'.join(check_tag_balance(line, masechet))
         length_check = check_len(line)
-        if lenght_check: row['length'] = length_check
+        if length_check: row['length'] = length_check
         new.append(row)
 
     with open(path+'/csv_reports/report_{}.csv'.format(masechet), 'w', encoding='utf-8', newline='') as fp:

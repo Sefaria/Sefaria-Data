@@ -46,36 +46,44 @@ for f in os.listdir("./Tanakh Sedarim alt toc "):
     try:
         titles = [library.get_index(f[:-4]).title]
     except Exception as e:
-        if f == 'תרי עשר.csv':
-            titles = "Hoshea, Yoel, Amos, Ovadiah, Yonah, Micha, Nahum, Chabakuk, Tzefania, Chaggai, Zecharia, Malachi".split(", ")
-        else:
-            titles = [f.split(".csv")[0] + " " + el for el in ["I", "II"]]
-    title_counter = 0
-    nodes[titles[title_counter]] = []
+        continue
+        # if f == 'תרי עשר.csv':
+        #     titles = "Hoshea, Yoel, Amos, Ovadiah, Yonah, Micha, Nahum, Habakuk, Zephaniah, Haggai, Zechariah, Malachi".split(", ")
+        # else:
+        #     continue
+    title_counter = -1
+
     with open("Tanakh Sedarim alt toc /"+f) as open_csv:
         rows = list(csv.reader(open_csv))
         for row in rows[1:]:
             seder, start, end = row
+            if start == "1:1":
+                title_counter += 1
+                nodes[titles[title_counter]] = []
             try:
                 wholeRef = Ref("{} {}".format(titles[title_counter], start)).to(Ref("{} {}".format(titles[title_counter], end)))
                 alt_node = create_node(wholeRef)
                 nodes[titles[title_counter]].append(alt_node.serialize())
             except InputError as e:
-                endingRef = Ref("{} {}".format(titles[title_counter], start)).to(Ref(titles[title_counter]).last_segment_ref())
-                alt_node = create_node(endingRef)
-                nodes[titles[title_counter]].append(alt_node.serialize())
-                title_counter += 1
-                startingRef = Ref(titles[title_counter]).first_available_section_ref().to(Ref("{} {}".format(titles[title_counter], end)))
-                alt_node = create_node(startingRef)
-                nodes[titles[title_counter]] = []
-                nodes[titles[title_counter]].append(alt_node.serialize())
+                try:
+                    endingRef = Ref("{} {}".format(titles[title_counter], start)).to(Ref(titles[title_counter]).last_segment_ref())
+                    alt_node = create_node(endingRef)
+                    nodes[titles[title_counter]].append(alt_node.serialize())
+                    title_counter += 1
+                    startingRef = Ref(titles[title_counter]).first_available_section_ref().to(Ref("{} {}".format(titles[title_counter], end)))
+                    alt_node = create_node(startingRef)
+                    nodes[titles[title_counter]] = []
+                    nodes[titles[title_counter]].append(alt_node.serialize())
+                except IndexError as e:
+                    print(e)
 
 
 
 for title, node in nodes.items():
-    index = get_index_api(title, server="https://www.sefaria.org")
-    curr_alt_struct = index["alt_structs"] if "alt_structs" in index else {}
-    curr_alt_struct["Seder"] = {"nodes": node}
-    index['alt_structs'] = curr_alt_struct
-    #post_index(index)
+    if library.get_index(title).categories[-1] == "Writings":
+        index = get_index_api(title, server="https://www.sefaria.org")
+        curr_alt_struct = index["alt_structs"] if "alt_structs" in index else {}
+        curr_alt_struct["Seder"] = {"nodes": node}
+        index['alt_structs'] = curr_alt_struct
+        post_index(index)
 

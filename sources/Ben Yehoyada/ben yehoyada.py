@@ -50,7 +50,8 @@ if __name__ == "__main__":
         with open("new masechtot/{}".format(title)) as file:
             reader = csv.reader(file)
             title = title[:-4]
-            rows = list(reader)
+            rows = list(reader)[2:]
+            prev_ref = ""
             for row in rows:
                 ref, text = row
                 text = text.replace('""', '%')
@@ -61,24 +62,29 @@ if __name__ == "__main__":
                 text = text.replace('\0', "")
 
                     #BELOW CONVERTS FORMAT SHMUEL GAVE ME
-                if ref not in ["", "page"]:
-                    if title != "Eduyot":
-                        daf = getGematria(ref)*2
-                        if "." in ref:
-                            daf -= 1
-                        dappim[daf] += 1
-                        if daf not in text_dict:
-                            text_dict[daf] = []
-                        text_dict[daf].append(text)
-                        ref = "Ben Yehoyada on {} {}:{}".format(title, daf, dappim[daf])
-                    else:
-                        perek, mishnah = ref.split(",")
-                        perek = getGematria(perek)
-                        mishnah = getGematria(mishnah)
-                        if perek not in text_dict:
-                            text_dict[perek] = {}
-                        text_dict[perek][mishnah] = text
-                        ref = "Ben Yehoyada on {} {}:{}".format(title, perek, mishnah)
+                if ref == "":
+                    ref = prev_ref
+                prev_ref = ref
+                if title != "Eduyot":
+                    daf = getGematria(ref)*2
+                    if "." in ref:
+                        daf -= 1
+                    dappim[daf] += 1
+                    if daf not in text_dict:
+                        text_dict[daf] = []
+                    text_dict[daf].append(text)
+                    ref = "Ben Yehoyada on {} {}:{}".format(title, daf, dappim[daf])
+                else:
+                    perek, mishnah = ref.split(",")
+                    perek = getGematria(perek)
+                    mishnah = getGematria(mishnah)
+                    if perek not in text_dict:
+                        text_dict[perek] = {}
+                    if mishnah not in text_dict[perek]:
+                        text_dict[perek][mishnah] = ""
+                    text_dict[perek][mishnah] += text+"\n"
+                    ref = "Ben Yehoyada on {} {}:{}".format(title, perek, mishnah)
+
 
         if title == "Eduyot":
             for perek in text_dict.keys():
@@ -90,7 +96,7 @@ if __name__ == "__main__":
             "versionSource": "http://beta.nli.org.il/he/books/NNL_ALEPH001933802/NLIl",
             "language": "he"
         }
-        #post_text("Ben Yehoyada on {}".format(title), send_text, index_count="on")
+        post_text("Ben Yehoyada on {}".format(title), send_text, index_count="on")
         for daf, text in text_dict.items():
             daf = AddressTalmud.toStr("en", daf) if title != "Eduyot" else daf
             try:
@@ -107,7 +113,7 @@ if __name__ == "__main__":
             except:
                 print(base)
         print(len(links))
-        #post_link(links, server=SEFARIA_SERVER)
+        post_link(links, server=SEFARIA_SERVER)
         with codecs.open("{}_Sefaria_structure.csv".format(title), 'w', encoding='utf-8') as f:
             f.write(new_csv)
 
