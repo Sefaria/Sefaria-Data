@@ -13,7 +13,7 @@ inputs
                             "text": <STRING>
                         }
                     ],
-                    "getLeaves": <BOOL> (if True, include all leaves of this topic), 
+                    "getLeaves": <BOOL> (if True, include all leaves of this topic),
                 }
             ],
             "corpus": [
@@ -65,7 +65,7 @@ from sefaria.model import *
 from collections import defaultdict
 
 class Mention:
-    
+
     def __init__(self, start, end, mention, id_matches, ref, vtitle, lang):
         self.start = start
         self.end = end
@@ -86,7 +86,34 @@ class Mention:
             "lang": self.lang
         }
 
-class NERTagger:
+class AbstractNamedEntityRecognizer:
+    """
+    Generic NER classifier
+    Subclasses implement specific ner strategies
+    """
+    def __init__(self, named_entities):
+        raise Exception("AbstractNamedEntityRecognizer should not be instantiated. Instantiate a subclass.")
+
+    def fit(self):
+        pass
+
+    def predict(self, text):
+        """
+        Tags `text` with named entities
+        Returns list of `Mentions`
+        """
+        pass
+
+class NaiveNamedEntityRecognizer(NERClassifier):
+
+    def __init__(self, named_entities):
+        pass
+
+class EntityLinker:
+    pass
+
+
+class CorpusManager:
 
     def __init__(self, tagging_params_file, output_file):
         self.output_file = output_file
@@ -108,11 +135,11 @@ class NERTagger:
                 pass  # TODO read Mentions from pretaggedFile
             else:
                 version = Version(version_query)
-                version.walk_thru_contents(self.tag_segment)
+                version.walk_thru_contents(self.recognize_named_entities_in_segment)
 
-    def tag_segment(self, segment_text, en_tref, he_tref, version):
+    def recognize_named_entities_in_segment(self, segment_text, en_tref, he_tref, version):
         pass
- 
+
     @staticmethod
     def create_named_entities(raw_named_entities):
         named_entities = []

@@ -230,3 +230,6 @@ with open('research/knowledge_graph/rambam/sa.csv', 'w') as fout:
     c = csv.DictWriter(fout, ['Ref', 'Topics'])
     c.writeheader()
     c.writerows(sa_rows)
+
+
+# TODO export RAMBAM ontology and rerun all 3 scripts
