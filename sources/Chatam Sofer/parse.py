@@ -17,6 +17,24 @@ def parse_daf(text, daf, prev_daf, amud, line):
     text[curr_daf] = []
     return curr_daf, prev_daf
 
+
+def insert_bold(text, links, dhs):
+    dealt_with = set()
+    for link in links:
+        chidushei_ref, base_ref = link['refs']
+        segment = int(chidushei_ref.split(":")[-1])
+        assert segment-1 not in dealt_with
+        comment = text[segment-1]
+        dh = dhs[segment-1]
+        assert dh in comment
+        comment = comment.replace(dh, "")
+        comment = "<b>{}</b>{}".format(dh, comment)
+        text[segment-1] = comment
+        dealt_with.add(segment-1)
+    return text
+
+
+
 def fix_daf(text, daf, prev, amud):
     if daf > prev + 1 and text.startswith("ד") and len(text) in [3, 4]:
         return (getGematria(text[1:]) * 2) - amud
@@ -108,7 +126,6 @@ def create_index(en_title, title):
     post_index(indx)
 
 if __name__ == "__main__":
-    i = get_index_api("Esther Rabbah")
     links = []
     files = os.listdir(".")
     links_per_masechtot = {}
@@ -140,9 +157,21 @@ if __name__ == "__main__":
                 else:
                     daf_as_num = prev_daf_as_num
 
-                dh = comment.split(".")[0]
-                if dh.count(" ") > 10:
-                    dh = ""
+                delims = """וכו'
+                            הקשו תוס'
+                            פי'
+                            פירש"י
+                            כתב
+                            עיין""".splitlines()
+                delims.append(".")
+                first_ten = " ".join(comment.split()[:15])
+                dh = ""
+                for delim in delims:
+                    if delim in first_ten:
+                        dh = first_ten.split(delim)[0]
+                        break
+                else:
+                    dh = " ".join(comment.split()[:7])
                 if daf_as_num not in text:
                     text[daf_as_num] = []
                     dhs[daf_as_num] = []
@@ -150,21 +179,25 @@ if __name__ == "__main__":
                 if "@99" in comment:
                     comment = "<b>"+removeAllTags(comment)+"</b>"
                     text[daf_as_num].append(comment)
+                    dhs[daf_as_num].append("")
                 elif "@11" in comment:
-                    comment = removeAllTags(comment)
+                    comment = removeAllTags(" ".join(comment.split()))
                     dhs[daf_as_num].append(removeAllTags(dh))
                     text[daf_as_num].append(comment)
 
                 prev_daf_as_num = daf_as_num
-            for daf, comments in dhs.items():
+            for daf, dhs in dhs.items():
+                daf_as_num = daf
+                comments = text[daf_as_num]
                 daf = AddressTalmud.toStr("en", daf)
                 comm_ref = "Chidushei Chatam Sofer on {} {}".format(en_title, daf)
                 base_ref = "{} {}".format(en_title, daf) if "Mahadura" not in en_title else "{} {}".format(en_title.split(",")[0], daf)
-                new_links = match_ref_interface(base_ref, comm_ref, comments, lambda x: x.split(), lambda x: x)
+                new_links = match_ref_interface(base_ref, comm_ref, dhs, lambda x: x.split(), lambda x: x)
                 links += new_links
+                text[daf_as_num] = insert_bold(comments, new_links, dhs)
                 links_per_masechtot[en_title] += len(new_links)
-                links_per_daf[en_title][comm_ref] = "{}/{}".format(len(new_links), len(comments))
-                comments_per_masechtot[en_title] += len(comments)
+                links_per_daf[en_title][comm_ref] = "{}/{}".format(len(new_links), len(dhs))
+                comments_per_masechtot[en_title] += len(dhs)
             text = convertDictToArray(text)
             send_text = {
                 "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH002036613/NLI",
@@ -172,15 +205,16 @@ if __name__ == "__main__":
                 "text": text,
                 "language": "he"
             }
-            # if "Mahadura" not in en_title:
-            #     create_index(en_title, title)
-            #post_text("Chidushei Chatam Sofer on {}".format(en_title), send_text, index_count="on")
+            if "Mahadura" not in en_title:
+                create_index(en_title, title)
+            post_text("Chidushei Chatam Sofer on {}".format(en_title), send_text, index_count="on")
 
-    # print("Len links is {}".format(len(links)))
-    # for i in range(2000, 2274, 200):
-    #     print("Posting {} through {}".format(i, 200+i))
-    #     post_link(links[i:200+i])
-    #     time.sleep(2)
+    print("Len links is {}".format(len(links)))
+    amt = 4000
+    for i in range(0, 4000, amt):
+        print("Posting {} through {}".format(i, amt+i))
+        post_link(links[i:amt+i])
+        time.sleep(2)
     with open("links_per_masechta.csv", 'w') as f:
         masechta_writer = csv.writer(f)
         masechta_writer.writerow(["Masechet",  "Links", "Total segments"])
