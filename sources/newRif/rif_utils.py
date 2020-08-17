@@ -8,9 +8,8 @@ from sefaria.model import *
 path = os.path.dirname(os.path.abspath("top_level_file.txt"))
 
 def cleanspaces(string):
-    while any(space in string for space in ['  ', '( ', ' )', ' :', ' .']):
-        for space in ['  ', '( ', ' )', ' :', ' .']:
-            string = string.replace(space, space.replace(' ', '', 1))
+    string = re.sub (' +', ' ', string)
+    string = re.sub(r' ([\)\]:.])|([\(\[]) ', r'\1\2', string)
     return string.strip()
 
 def removeinbetween(stringtoclean, sub1, sub2):
@@ -21,7 +20,7 @@ def remove_notes(string, masechet):
         string = removeinbetween(string, note_tag, tags_map[masechet]['end_tag'])
     return string
 
-def hebrewplus(string_to_clean, letters_to_remain=''):
+def hebrewplus(string_to_clean, letters_to_remain=''): #note addimg \ for letters which need that
     return re.sub(r"[^א-ת "+letters_to_remain+"]", '', string_to_clean)
 
 def remove_metadata(string, masechet):
@@ -43,7 +42,7 @@ def get_hebrew_masechet(masechet):
     return Ref(masechet).index.get_title('he')
 
 def open_rif_file(masechet, path='/rif'):
-    with open(root+'/rif_'+masechet+'.txt', encoding = 'utf-8') as fp:
+    with open(os.getcwd()+path+'/rif_'+masechet+'.txt', encoding = 'utf-8') as fp:
         data = fp.read()
     return data
 
@@ -56,6 +55,7 @@ def unite_ref(refs: list) -> list:
     :return: list of trefs withno overlapping, refering to range of lines when possible
     '''
 
+    if refs == []: return []
     refs = [ref.tref if type(ref)==Ref else ref for ref in refs]
     base_ref = refs[0].split(':')[0]
     lines = set()
@@ -83,6 +83,11 @@ def unite_ref(refs: list) -> list:
             start = 0
 
     return new_ref_lines
+
+def main_mefaresh(masechet):
+    for mefaresh in ['Ran', 'Nimukei Yosef', 'Talmidei Rabenu Yonah', 'R. Yehonatan of Lunel']:
+        if tags_map[masechet][mefaresh] == 'Digitized' or tags_map[masechet][mefaresh] == 'shut':
+            return mefaresh
 
 tags_map = {}
 with open('map.csv', newline='', encoding = 'utf-8') as file:

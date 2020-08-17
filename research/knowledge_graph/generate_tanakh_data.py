@@ -65,9 +65,9 @@ def create_html():
         mentions_by_ref = json.load(fin)
     text_by_ref = {}
     all_refs = []
-    for index in library.get_indexes_in_category("Tanakh", full_records=True):
+    for index in library.get_indexes_in_category("Tanakh", full_records=True)[:5]:
         he = Ref(index.title).text("he").text
-        en = Ref(index.title).text("en").text
+        en = Ref(index.title).text("en", vtitle="Metsudah Chumash, Metsudah Publications, 2009").text
         all_refs += [r.normal() for r in index.all_segment_refs()]
         for iperek, perek in enumerate(he):
             for ipasuk, he_pasuk in enumerate(perek):
@@ -122,7 +122,7 @@ def create_html():
             topics = mention["Topics"].split()
             disambiguated_topic = topics[0]  # TODO actually disambiguate
             titles = sorted(tanakh_topics[disambiguated_topic].get_titles(lang='en', with_disambiguation=False), key=lambda x: len(x), reverse=True)
-            en_text = re.sub(fr'(?<!/)({"|".join(titles)})(?=[\s,.:;"\'’()\[\]!?—\-<]|$)', fr'<a href="https://www.sefaria.org/topics/{disambiguated_topic}">\1</a>', en_text)
+            en_text = re.sub(fr'(?<!/)({"|".join(titles)})(?=[\s,.:;"\'’”()\[\]!?—\-<]|$)', fr'<a href="https://www.sefaria.org/topics/{disambiguated_topic}">\1</a>', en_text)
             he_text = re.sub(fr'(?<!>)({mention["Form"]})', fr'<a href="https://www.sefaria.org/topics/{disambiguated_topic}">\1</a>', he_text)
         he_found += he_text.count('<a ')
         en_found += en_text.count('<a ')
