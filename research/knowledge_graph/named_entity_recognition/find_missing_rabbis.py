@@ -147,7 +147,34 @@ def check_rabbi_yehuda_hanasi():
                 bad+=1
                 fout.write(f"{ref}\n{seg_text}\n")
     print(bad)
+
+def convert_final_en_names_to_ner_tagger_input():
+    with open(f"{DATA_LOC}/sperling_en_and_he.csv", "r") as fin:
+        sperling_entities = []
+        c = csv.DictReader(fin)
+        for row in c:
+            en1 = row["En 1"].strip()
+            if len(en1) == 0 or en1 == "N/A" or en1 == "MM":
+                continue
+            bid = row['Bonayich ID']
+            en_titles = []
+            for i in range(3):
+                temp_en = row[f'En {i+1}']
+                if len(temp_en) == 0:
+                    continue
+                en_titles += [temp_en]
+            tag = "NORP" if len(row["Is Group"]) > 0 else "PERSON"
+            sperling_entities += [{
+                "tag": tag,
+                "id": f"BONAYICH:{bid}",
+                "idIsSlug": False,
+                "manualTitles": [{"text": title, "lang": "en"} for title in en_titles] + [{"text": row["He"], "lang": "he"}]
+            }]
+        with open(f"{DATA_LOC}/sperling_ner_tagger_input.json", "w") as fout:
+            json.dump(sperling_entities, fout, ensure_ascii=False, indent=2)
+
 if __name__ == "__main__":
     # convert_final_en_names_to_csv()
     # find_ambiguous_rabbis()
-    check_rabbi_yehuda_hanasi()
+    # check_rabbi_yehuda_hanasi()
+    convert_final_en_names_to_ner_tagger_input()
