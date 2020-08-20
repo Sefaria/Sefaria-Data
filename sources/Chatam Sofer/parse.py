@@ -5,7 +5,27 @@ from sources.functions import *
 import os
 import re
 import time
+import json
 from data_utilities.dibur_hamatchil_matcher import *
+
+def get_dh(comment):
+    first_ten = " ".join(comment.split()[:17])
+    if "." in first_ten:
+        return (first_ten.split(".")[0], ".")
+    else:
+        delim = find_in_delims(first_ten)
+        if delim == "":
+            dh = first_ten
+        else:
+            dh = first_ten.split(delim)[0]
+        return (dh, delim)
+
+def find_in_delims(str):
+    for delim in delims:
+        if " {} ".format(delim) in str:
+            return delim
+    return ""
+
 def parse_daf(text, daf, prev_daf, amud, line):
     amud = getGematria(amud)
     if amud not in [1, 2, 71, 72]:
@@ -25,10 +45,15 @@ def insert_bold(text, links, dhs):
         segment = int(chidushei_ref.split(":")[-1])
         assert segment-1 not in dealt_with
         comment = text[segment-1]
-        dh = dhs[segment-1]
-        assert dh in comment
-        comment = comment.replace(dh, "")
-        comment = "<b>{}</b>{}".format(dh, comment)
+        dh, delim = get_dh(comment)
+        assert dh in comment and dh == dhs[segment-1]
+        if delim in ["וכו'", "."]:
+            modified_comment = comment.replace(dh, "")
+            comment = "<b>{}{}</b> {}".format(dh, modified_comment.split()[0], " ".join(modified_comment.split()[1:]))
+        elif delim:
+            modified_comment = comment.replace(dh+delim, "")
+            comment = "<b>{}</b>{}{}".format(dh, delim, modified_comment)
+
         text[segment-1] = comment
         dealt_with.add(segment-1)
     return text
@@ -125,20 +150,43 @@ def create_index(en_title, title):
     }
     post_index(indx)
 
+delims = """וכו'
+הקשו תוס'
+פי'
+פירש"י
+כתב
+עיין""".splitlines()
+delims.append(".")
+
 if __name__ == "__main__":
+    # with open("links.json") as f:
+    #     links = json.load(f)
+    #     amt = 400
+    #     for i in range(0, 4000, amt):
+    #         print("Posting {} through {}".format(i, amt + i))
+    #         result = post_link(links[i:amt + i])
+    #         time.sleep(5)
+
     links = []
     files = os.listdir(".")
     links_per_masechtot = {}
     links_per_daf = {}
     comments_per_masechtot = {}
+    start = True
+    start_when = "Chullin"
     for f in files:
         if not f.endswith("tsv"):
             continue
+
         title = f.split(".")[0].split(" - ")[-1]
         try:
             en_title = library.get_index(title).title
         except:
             en_title = title
+        if en_title == start_when:
+            start = True
+        if not start:
+            continue
         text = {}
         links_per_masechtot[en_title] = 0
         links_per_daf[en_title] = {}
@@ -157,21 +205,8 @@ if __name__ == "__main__":
                 else:
                     daf_as_num = prev_daf_as_num
 
-                delims = """וכו'
-                            הקשו תוס'
-                            פי'
-                            פירש"י
-                            כתב
-                            עיין""".splitlines()
-                delims.append(".")
-                first_ten = " ".join(comment.split()[:15])
-                dh = ""
-                for delim in delims:
-                    if delim in first_ten:
-                        dh = first_ten.split(delim)[0]
-                        break
-                else:
-                    dh = " ".join(comment.split()[:7])
+                var = """בד"א שיודעין"""
+                dh, delim = get_dh(comment)
                 if daf_as_num not in text:
                     text[daf_as_num] = []
                     dhs[daf_as_num] = []
@@ -205,15 +240,17 @@ if __name__ == "__main__":
                 "text": text,
                 "language": "he"
             }
-            if "Mahadura" not in en_title:
-                create_index(en_title, title)
+            # if "Mahadura" not in en_title:
+            #     create_index(en_title, title)
             post_text("Chidushei Chatam Sofer on {}".format(en_title), send_text, index_count="on")
 
     print("Len links is {}".format(len(links)))
-    amt = 4000
+    amt = 500
+    with open('links.json', 'w') as fp:
+        json.dump(links, fp)
     for i in range(0, 4000, amt):
         print("Posting {} through {}".format(i, amt+i))
-        post_link(links[i:amt+i])
+        result = post_link(links[i:amt+i])
         time.sleep(2)
     with open("links_per_masechta.csv", 'w') as f:
         masechta_writer = csv.writer(f)

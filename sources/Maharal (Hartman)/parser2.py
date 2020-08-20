@@ -180,7 +180,7 @@ def create_new_indices():
             well.key = "Well {}".format(i+1)
             root.append(well)
         root.validate()
-        #post_index({"title": "Be'er HaGolah", "schema": root.serialize(), "categories": ["Philosophy", "Maharal"]})
+        post_index({"title": "Be'er HaGolah", "schema": root.serialize(), "categories": ["Philosophy", "Maharal"]})
     beer()
     derech()
 
@@ -227,7 +227,7 @@ def create_footnotes_indices(title):
         contents["categories"] = ["Mishnah", "Commentary"]
     contents["dependence"] = "Commentary"
     contents["base_text_titles"] = [title]
-    #post_index(contents)
+    post_index(contents)
 
 
 def alter_schema(schema, new_index_title, new_index_he_title):
@@ -474,8 +474,6 @@ def post_ohr_chadash(nodes):
 
 def post(text):
     for title, nodes in text.items():
-        if "Ohr Chadash" not in title:
-            continue
         title = title.replace("Netivot Olam", "Netivot Olam, Netiv Hatorah")
         print(title)
         version = [v for v in versions if v.title == title][0]
@@ -492,9 +490,9 @@ def post(text):
             nodes["Footnotes"][intro_node] = insert_count(nodes["Footnotes"][intro_node], 0)
             send_text = {"versionTitle": version.vtitle,
                          "versionSource": version.vsource,
-                         "text": nodes["Footnotes"][intro_node],
+                         "text": insert_count(nodes["Footnotes"][intro_node], 0),
                          "language": "he"}
-            #post_text("Footnotes and Annotations on {}, {}".format(intro_title, intro), send_text, index_count="on")
+            post_text("Footnotes and Annotations on {}, {}".format(intro_title, intro), send_text, index_count="on")
             nodes.pop(intro_node)
             nodes["Footnotes"].pop(intro_node)
         if title == "Be'er HaGolah":
@@ -524,17 +522,13 @@ def post(text):
                 footnotes[n] = [el for el in footnote_ch if el]
                 send_text = {"versionTitle": version.vtitle,
                              "versionSource": version.vsource,
-                                 "text": footnotes[n],
+                                 "text": insert_count(footnotes[n]),
                                  "language": "he"}
                 try:
                     ref = "Footnotes and Annotations on {}, {}".format(title, n)
                     post_text(ref, send_text, index_count="on")
                 except Exception as e:
                     print("CANT post {}: {}".format(title, e))
-                    send_text = {"versionTitle": version.vtitle,
-                         "versionSource": version.vsource,
-                         "text": body,
-                         "language": "he"}
             send_text = {"versionTitle": version.vtitle,
                          "versionSource": version.vsource,
                          "text": body,
@@ -597,7 +591,7 @@ if __name__ == "__main__":
         create_footnotes_indices(dirpath)
         counter = 0
         for f in filenames:
-            if "OH" not in f:
+            if "NT" not in f:
                 continue
             docx_file = dirpath+"/"+f
             index = library.get_index(dirpath.split("/")[1])
