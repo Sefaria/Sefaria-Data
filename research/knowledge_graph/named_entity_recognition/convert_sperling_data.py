@@ -228,11 +228,37 @@ def display_displacy(jsonl_loc):
     jsonl_data = list(filter(lambda x: len(x['text']) > 0, srsly.read_jsonl(jsonl_loc)))
     spacy.displacy.serve(jsonl_data, style='ent', manual=True)
 
+def convert_to_mentions_file():
+    import json
+
+    sef_id_map = {}
+    with open("research/knowledge_graph/named_entity_recognition/sefaria_bonayich_reconciliation - Sheet2.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            try:
+                sef_id_map[int(row["bonayich"])] = row["Slug"]
+            except ValueError:
+                continue
+
+    new_mentions = []
+    for mention in srsly.read_jsonl(f"{DATA_LOC}/he_mentions.jsonl"):
+        slug = sef_id_map.get(int(mention['Bonayich ID']), None)
+        new_mentions += [{
+            "start": mention["Start"],
+            "end": mention["End"],
+            "mention": mention["Mention"],
+            "ref": mention["Ref"],
+            "id_matches": [f"BONAYICH:{mention['Bonayich ID']}" if slug is None else slug]
+        }]
+    with open("research/knowledge_graph/named_entity_recognition/sperling_mentions.json", "w") as fout:
+        json.dump(new_mentions, fout, ensure_ascii=False, indent=2)
+
 if __name__ == "__main__":
-    rows_by_mas = get_rows_by_mas()
-    rabbi_mentions = get_rabbi_mention_segments(rows_by_mas)
-    spacy_formatted, rabbi_mentions = convert_to_spacy_format(rabbi_mentions)
-    srsly.write_jsonl(f'{DATA_LOC}/he_mentions.jsonl', rabbi_mentions)
-    srsly.write_jsonl(f'{DATA_LOC}/he_training.jsonl', spacy_formatted)
-    display_displacy(f"{DATA_LOC}/he_training.jsonl")
+    # rows_by_mas = get_rows_by_mas()
+    # rabbi_mentions = get_rabbi_mention_segments(rows_by_mas)
+    # spacy_formatted, rabbi_mentions = convert_to_spacy_format(rabbi_mentions)
+    # srsly.write_jsonl(f'{DATA_LOC}/he_mentions.jsonl', rabbi_mentions)
+    # srsly.write_jsonl(f'{DATA_LOC}/he_training.jsonl', spacy_formatted)
+    # display_displacy(f"{DATA_LOC}/he_training.jsonl")
     
+    convert_to_mentions_file()

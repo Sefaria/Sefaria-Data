@@ -11,28 +11,22 @@
             "getLeaves": true
         },
         {
-            "id": "MANUAL:Rabbi Zeira",
-            "idIsSlug": false,
-            "manualTitles": [
-                {
-                    "lang": "en",
-                    "text": "Rabbi Zeira"
-                },
-                {
-                    "lang": "he",
-                    "text": "רבי זעירא"
-                }
-            ]
+            "namedEntityFile": "research/knowledge_graph/named_entity_recognition/sperling_named_entities.json"
         }
     ],
     "corpus": [
         {
-            "title": "Meilah",
-            "type": "index",
+            "title": "Bavli",
+            "type": "category",
             "versions": [
                 {
                     "language": "en",
                     "versionTitle": "William Davidson Edition - English"
+                },
+                {
+                    "language": "he",
+                    "versionTitle":"William Davidson Edition - Aramaic",
+                    "pretaggedFile": "research/knowledge_graph/named_entity_recognition/sperling_mentions.json"
                 }
             ]
         }
