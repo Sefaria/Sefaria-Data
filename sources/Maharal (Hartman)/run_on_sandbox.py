@@ -6,11 +6,16 @@ LinkSet({"generated_by": generated_by}).delete()
 titles = ["Ohr Chadash"] #"Netivot Olam", "Gevurot Hashem",
 for title in titles:
     ftnote_count = 0
-    for ref in library.get_index(title).all_segment_refs():
+    i = library.get_index(title)
+    vs = [v for v in i.versionSet() if "with footnotes and annotations by Rabbi Yehoshua" in v.versionTitle]
+    assert len(vs) in [1, 0]
+    vtitle = vs[0].versionTitle
+    for ref in i.all_segment_refs():
         try:
             if ref.sections[-1] == 1:
                 ftnote_count = 0
-            for i_tag in re.findall("<i .*?></i>", ref.text('he').text):
+            tc = TextChunk(ref, lang='he', vtitle=vtitle)
+            for i_tag in re.findall("<i .*?></i>", tc.text):
                 ftnote_count += 1
                 data = BeautifulSoup(i_tag).find("i")
                 data = data.attrs
