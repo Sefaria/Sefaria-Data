@@ -457,10 +457,11 @@ class PartialMesorahMatch:
 
 def default_calculate_score(words_a, words_b):
     best_match = get_maximum_dh(words_a, words_b, min_dh_len=len(words_b)-1, max_dh_len=len(words_b))
+    length_factor = len(words_b)
     if best_match:
-        return -best_match.score
+        return -best_match.score/length_factor
     else:
-        return -ComputeLevenshteinDistanceByWord(" ".join(words_a), " ".join(words_b))
+        return -ComputeLevenshteinDistanceByWord(" ".join(words_a), " ".join(words_b))/length_factor
 
 
 class ParallelMatcher:

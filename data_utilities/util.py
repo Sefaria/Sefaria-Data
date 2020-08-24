@@ -1351,3 +1351,32 @@ def change_array(ja, callback):
             raise TypeError
 
     return new_array
+
+def get_mapping_after_normalization(text, find_text_to_remove):
+    """
+    Example.
+        text = "a###b##c" normalizer = lambda x: re.finditer(r"#"+, x)
+        will return {1: 3, 2: 5}
+        then if you have a range (0,3) in the normalized string "abc" you will know that maps to (0, 8) in the original string
+    """
+    removal_list = find_text_to_remove(text)
+    total_removed = 0
+    removal_map = {}
+    for removal, subst in removal_list:
+        normalized_text_index = (removal.start() - total_removed)
+        total_removed += (removal.end() - removal.start() - len(subst))
+        removal_map[normalized_text_index] = total_removed
+    return removal_map
+
+def convert_normalized_indices_to_unnormalized_indices(normalized_indices, removal_map):
+    from bisect import bisect_right
+    removal_keys = sorted(removal_map.keys())
+    unnormalized_indices = []
+    for start, end in normalized_indices:
+        unnorm_start_index = bisect_right(removal_keys, start) - 1
+        unnorm_end_index = bisect_right(removal_keys, end-1) - 1
+
+        unnorm_start = start if unnorm_start_index < 0 else start + removal_map[removal_keys[unnorm_start_index]]
+        unnorm_end = end if unnorm_end_index < 0 else end + removal_map[removal_keys[unnorm_end_index]]
+        unnormalized_indices += [(unnorm_start, unnorm_end)]
+    return unnormalized_indices

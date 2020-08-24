@@ -1,0 +1,42 @@
+{
+    "namedEntities": [
+        {
+            "id": "talmudic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "namedEntityFile": "research/knowledge_graph/named_entity_recognition/sperling_named_entities.json"
+        },
+        {
+            "id": "beit-hillel",
+            "idIsSlug": true
+        },
+        {
+            "id": "beit-shammai",
+            "idIsSlug": true
+        }
+    ],
+    "corpus": [
+        {
+            "title": "Bavli",
+            "type": "category",
+            "versions": [
+                {
+                    "language": "en",
+                    "versionTitle": "William Davidson Edition - English"
+                },
+                {
+                    "language": "he",
+                    "versionTitle":"William Davidson Edition - Aramaic",
+                    "pretaggedFile": "research/knowledge_graph/named_entity_recognition/sperling_mentions.json"
+                }
+            ]
+        }
+    ]
+}
