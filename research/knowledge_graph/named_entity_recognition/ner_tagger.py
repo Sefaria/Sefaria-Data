@@ -123,7 +123,7 @@ class TextNormalizer:
                 for b_replacement in cls.b_replacements:
                     expansions += [expansion.replace(cls.b_token, b_replacement)]
         return expansions
-    
+
     @classmethod
     def myunidecode(cls, text):
         for k, v in cls.unidecode_table.items():
@@ -346,7 +346,7 @@ class CorpusManager:
         self.corpus_segments += [CorpusSegment(segment_text, version.language, version.versionTitle, en_tref)]
 
     @staticmethod
-    def create_named_entities(raw_named_entities):               
+    def create_named_entities(raw_named_entities):
         named_entities = []
         for ne in raw_named_entities:
             if ne.get("idIsSlug", False):
@@ -394,7 +394,7 @@ class CorpusManager:
             rabbi_dict[m.start] = (text[m.start:m.end], m.id_matches)
             char_list[m.start:m.end] = list(dummy_char*(m.end-m.start))
         dummy_text = "".join(char_list)
-        
+
         # assert len(dummy_text) == len(text), f"DUMMY {dummy_text}\nREAL {text}"
 
         def repl(match):
@@ -412,7 +412,7 @@ class CorpusManager:
             return link
         linked_text = re.sub(r"\$+", repl, dummy_text)
         return linked_text
-    
+
     def generate_html_file(self):
         mentions_by_ref = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         for mention in tqdm(self.mentions, desc="html group by ref"):
@@ -581,16 +581,16 @@ class CorpusManager:
 
 if __name__ == "__main__":
     corpus_manager = CorpusManager(
-        "research/knowledge_graph/named_entity_recognition/ner_tagger_input.json",
-        "/home/nss/sefaria/datasets/ner/sefaria/ner_output.json",
-        "/home/nss/sefaria/datasets/ner/sefaria/html"
+        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_tanakh.json",
+        "/Users/nss/Documents/Sefaria-Docs/ner/ner_output_tanakh.json",
+        "/Users/nss/Documents/Sefaria-Docs/ner/html"
     )
     corpus_manager.tag_corpus()
     corpus_manager.save_mentions()
     corpus_manager.generate_html_file()
 
     # corpus_manager.load_mentions()
-    corpus_manager.cross_validate_mentions_by_lang("/home/nss/sefaria/datasets/ner/sefaria/cross_validated_by_language.csv", "/home/nss/sefaria/datasets/ner/sefaria/cross_validated_by_language_common_mistakes.csv")
+    corpus_manager.cross_validate_mentions_by_lang("/Users/nss/Documents/Sefaria-Docs/ner/cross_validated_by_language.csv", "/Users/nss/Documents/Sefaria-Docs/ner/cross_validated_by_language_common_mistakes.csv")
 
 
 """
@@ -601,4 +601,3 @@ for each sugya
     he_ids = set(ids in he mentions)
 
 """
-
