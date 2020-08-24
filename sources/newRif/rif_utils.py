@@ -30,13 +30,18 @@ def remove_metadata(string, masechet):
     string = hebrewplus(string, '"\'')
     return cleanspaces(string)
 
+def remove_meta_and_html(string, masechet):
+    string = re.sub('<sup>.*?</i>', '', string)
+    return remove_metadata(string, masechet)
+
 def netlen(string): #length in words without oher text
     for tag in '346':
         string = removeinbetween(string, '@1'+tag, '@77')
     return len(hebrewplus(string).split())
 
 def netlen2(string, masechet): #a better version.
-    return len(remove_metadata(string, masechet).split())
+    string = re.sub(' . ', '', remove_metadata(string, masechet))
+    return len(string.split())
 
 def get_hebrew_masechet(masechet):
     return Ref(masechet).index.get_title('he')

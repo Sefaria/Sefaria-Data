@@ -60,7 +60,7 @@ def parse_pages(doc: str) -> list:
         print('@@ in middle of page', middles)
         for middle in middles:
             if '@@@@' not in middle: #that probably mean a one dh on 3 pages, so we need one empty page
-                doc = re.sub(middle+'(.*?@@)', middle.replace('@@', '')+r'\1', doc)
+                doc = re.sub(middle+'(.*?@@)', middle.replace('@@', '')+r'\1@@', doc)
 
     pages = doc.split('@@')
     while pages[0] == '': pages.pop(0)
@@ -120,8 +120,8 @@ descriptors = [
 for MASECHET in tags_map:
     print(MASECHET)
     REPORT.append(MASECHET)
-    MEFARESH = [mef for mef in ['Ran', 'Nimmukei Yosef', 'Rabbi Yehonatan of Lunel', 'Talmidei Rabenu Yonah'] if tags_map[MASECHET][mef] == 'Digitized' or tags_map[MASECHET][mef] == 'shut'][0]
-    hmefarshim = {'Ran': 'ר"ן', 'Nimmukei Yosef': 'נימוקי יוסף', 'Rabbi Yehonatan of Lunel': "ר' יהונתן מלוניל", 'Talmidei Rabenu Yonah': 'תלמידי רבינו יונה'}
+    MEFARESH = [mef for mef in ['Ran', 'Nimmukei Yosef', 'Rabbenu Yehonatan of Lunel', 'Rabbenu Yonah'] if tags_map[MASECHET][mef] == 'Digitized' or tags_map[MASECHET][mef] == 'shut'][0]
+    hmefarshim = {'Ran': 'ר"ן', 'Nimmukei Yosef': 'נימוקי יוסף', 'Rabbenu Yehonatan of Lunel': "ר' יהונתן מלוניל", 'Rabbenu Yonah': 'תלמידי רבינו יונה'}
     hmasechet = get_hebrew_masechet(MASECHET)
     hmefaresh = hmefarshim[MEFARESH]
     title = '{} on Rif {}'.format(MEFARESH, MASECHET)
