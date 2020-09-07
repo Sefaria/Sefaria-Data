@@ -51,6 +51,10 @@ gematria['ר'] = 200
 gematria['ש'] = 300
 gematria['ת'] = 400
 
+inv_gematria = {}
+for key in list(gematria.keys()):
+    inv_gematria[gematria[key]] = key
+
 wordToNumber = {}
 wordToNumber['ראשון'] = 1
 wordToNumber['שני'] = 2
@@ -1345,7 +1349,7 @@ def change_array(ja, callback):
 
         elif isinstance(item, str):
             new_array.append(callback(item))
-            
+
         else:
             print('Jagged array contains unknown type')
             raise TypeError
