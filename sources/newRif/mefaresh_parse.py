@@ -44,7 +44,7 @@ def base_tokenizer(string):
 def parse_pages(doc: str) -> list:
     doc = doc.replace('\u05c3', ':')
     doc = re.sub('[\xa0\u2003\t]', ' ', doc)
-    doc = re.sub('@66[א-ת]\)', '', doc)
+    doc = re.sub('\(\*\)|\*\)|@66[א-ת]\)', '', doc)
     doc = re.sub(r'@88\[([^\]]*)\]@55', r'\(\1)', doc) #@88 mark refs in brackets in some files
     doc = hebrewplus(doc, r'\(\)\[\].:,"\'#@0')
     for brac in set(re.findall(r'\[([^\]]*)\]', doc)): #handling in bracked refs in other files
@@ -53,7 +53,8 @@ def parse_pages(doc: str) -> list:
     doc = cleanspaces(doc)
     doc = doc.replace(': @@', ':@@').replace(':', ':A')
     doc = re.sub('0([^A@]*)@', r'\1A@', doc) #hadran has no colon but marks new segment
-    doc = re.sub(r'([\(\[][^\)\]]*)A([^\)\]]*[\)\]])', r'\1\2', doc) #colon in parens or brackets is part of ref
+    while re.search(r'([\(\[][^\)\]]*)A([^\)\]]*[\)\]])', doc):
+        doc = re.sub(r'([\(\[][^\)\]]*)A([^\)\]]*[\)\]])', r'\1\2', doc) #colon in parens or brackets is part of ref
     doc = re.sub('([^A])@@(?![^A]*@@)([^A]*A)', r'\1\2@@', doc) #splitted dh shuld be in its first page
     middles = re.findall('.{0,10}[^A@]@@..', doc)
     if middles != []:
@@ -61,6 +62,8 @@ def parse_pages(doc: str) -> list:
         for middle in middles:
             if '@@@@' not in middle: #that probably mean a one dh on 3 pages, so we need one empty page
                 doc = re.sub(middle+'(.*?@@)', middle.replace('@@', '')+r'\1@@', doc)
+
+    doc = doc.replace('@@', '@@##') #the ## tag for the printed pages which the mefarshim tags numbering depends on
 
     pages = doc.split('@@')
     while pages[0] == '': pages.pop(0)

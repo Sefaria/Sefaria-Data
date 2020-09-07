@@ -19,7 +19,7 @@ def add_gemara_links(links):
     for item in links:
         for link in Ref(item['refs'][1]).linkset():
             if link.generated_by == 'rif gemara matcher':
-                g_text = Ref(link.refs[1]).text('he')
+                g_text = Ref(link.refs[0]).text('he')
                 m_text = Ref(item['refs'][0]).text('he')
                 g_matches = match_ref(g_text, m_text, partial(base_tokenizer, masechet=masechet), dh_extract_method=find_dh, char_threshold=0.24, dh_split=split_dh)["matches"]
                 for g_match in g_matches:

@@ -9,8 +9,8 @@ from sources import functions
 from sefaria.utils.talmud import daf_to_section, section_to_daf
 from rif_utils import tags_map, path, get_hebrew_masechet
 
-server = 'http://localhost:8000'
-#server = 'https://glazner.cauldron.sefaria.org'
+#server = 'http://localhost:8000'
+server = 'https://glazner.cauldron.sefaria.org'
 
 def housekeep(string):
     string = re.sub(r'\s', ' ', string)
@@ -21,7 +21,7 @@ def housekeep(string):
     string = re.sub(' +', ' ', string)
     return string
 
-def post_rif(masechtot=list(tags_map), index=True, text=True, links=True, delete=True):
+def post_rif(masechtot=list(tags_map), index=True, text=True, links=True, delete=True, server = 'http://localhost:8000'):
     for masechet in masechtot:
         title = 'Rif ' + masechet
         if delete:
@@ -56,7 +56,7 @@ def post_rif(masechtot=list(tags_map), index=True, text=True, links=True, delete
             }
             functions.post_text(title, text_version, server=server)
 
-def post_mefaresh(masechtot=list(tags_map), index=True, text=True, links=True):
+def post_mefaresh(masechtot=list(tags_map), index=True, text=True, links=True, server = 'http://localhost:8000'):
     for masechet in masechtot:
         mefaresh = [mef for mef in ['Ran', 'Nimmukei Yosef', 'Rabbenu Yehonatan of Lunel', 'Rabbenu Yonah'] if tags_map[masechet][mef] == 'Digitized' or tags_map[masechet][mef] == 'shut'][0]
         hmefarshim = {'Ran': 'ר"ן', 'Nimmukei Yosef': 'נימוקי יוסף', 'Rabbenu Yehonatan of Lunel': "רבינו יהונתן מלוניל", 'Rabbenu Yonah': 'רבינו יונה'}
@@ -74,14 +74,10 @@ def post_mefaresh(masechtot=list(tags_map), index=True, text=True, links=True):
             if mefaresh == 'Ran' or mefaresh == 'Nimmukei Yosef':
                 categories.append(c_title)
                 functions.add_category(c_title, categories, server=server)
-            record = SchemaNode()
+            record = JaggedArrayNode()
             record.add_primary_titles(title, htitle)
-            node = JaggedArrayNode()
-            node.key = 'default'
-            node.default = True
-            node.add_structure(['Daf', 'Comment'])
-            node.addressTypes = ["Talmud", "Integer"]
-            record.append(node)
+            record.add_structure(['Daf', 'Comment'])
+            record.addressTypes = ["Talmud", "Integer"]
             record.validate()
             index_dict = {'collective_title': c_title,
                 'title': title,
@@ -110,4 +106,4 @@ def post_mefaresh(masechtot=list(tags_map), index=True, text=True, links=True):
 
 if __name__ == '__main__':
     #post_rif(delete=False)
-    post_mefaresh(index=False,text=False)
+    post_mefaresh(index=True,text=True)
