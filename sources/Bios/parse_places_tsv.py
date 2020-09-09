@@ -33,6 +33,7 @@ with open("Torah Commentators - Bios - Places.tsv") as tsv:
         if not l[0]:
             continue
         key = l[0]
+        print(key)
         p = Place().load({"key": key}) or Place()
         p.key = key
         p.name_group.add_title(l[0], "en", primary=True, replace_primary=True)
