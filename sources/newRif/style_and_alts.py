@@ -5,6 +5,7 @@ from rif_utils import tags_map, path
 from sefaria.model import *
 
 def handle_bolding(string, masechet, address):
+    if masechet == 'Bava Kamma': string = string.replace('@77', '@77 ') #problem because of manual work
     start, end = tags_map[masechet]['bold'], tags_map[masechet]['unbold']
     temp = re.sub(start+' *[^<@ ]* *'+end, '', string)
     string = re.sub(start+' *([^<@ ]*) *'+end, r' <b><big>\1</big></b> ', string)
@@ -57,6 +58,7 @@ def handle_alt_tags(data, masechet):
                         newdata.append(row)
                 else: #if not פרק it's tag of new הלכות
                     row['content'] = re.sub('(@00[^@]*)', r'<b><big>\1</big></b>', row['content'])
+                    newdata.append(row)
             else:
                 print('no @00 in chapter beginning', masechet, row['page.section'])
                 newdata.append(row)

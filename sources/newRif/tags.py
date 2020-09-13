@@ -73,7 +73,7 @@ def rif_tags(masechet):
         tags_map[masechet]['Nuschaot Ktav Yad']: 7,
         tags_map[masechet]['Rabbenu Efrayim']: 8,
         tags_map[masechet]['Ravad on Rif']: 9}
-    for tag in [r'\(.\)', r'\[.\]', '(?:^| )[א-ת](?:$| )']:
+    for tag in [r'\(.\)', r'\[.\]', '(?:^| )[א-ת](?:$| )(?![^\(]*\))']:
         if tag not in mefarshim_tags:
             mefarshim_tags[tag] = 0 #0 for unknown
 
@@ -92,7 +92,7 @@ def rif_tags(masechet):
         if value['gimatric number'] == 0: print('gimatria 0', value)
         tag = identify_tag(value['original'], list(mefarshim_tags))
         value['referred text'] = mefarshim_tags[tag]
-        value['style'] = 1 if '(' in tag else 2 if '[' in tag else 3
+        value['style'] = 1 if '(' in value['original'] else 2 if '[' in value['original'] else 3
 
     return newdata, tags_dict
 
@@ -100,11 +100,12 @@ def mefaresh_tags(masechet):
     with open(path+'/Mefaresh/json/{}.json'.format(masechet)) as fp:
         data = json.load(fp)
     #resplit the data by the original pages
+    data_len = len(data)
     data = '@G'.join(['@R'.join(l) for l in data])
     data = [l.split('@R') for l in data.split('##')]
-    if len(data)!=l: data.pop(0)
+    if len(data) != data_len: data.pop(0), len(data), data_len
 
-    mefarshim_tags = {r'\(.\)': 3, r'\[.\]': 5, r' [א-ת] ': 0}
+    mefarshim_tags = {r'\(.\)': 3, r'\[.\]': 5, '%22.': 1}
     if any(masechet == m for m in ['Shabbat', 'Eruvin', 'Pesachim', 'Megillah', 'Moed Katan', 'Kiddushin', 'Bava Kamma', 'Bava Batra', 'Sanhedrin', 'Makkot', 'Shevuot', 'Avodah Zarah']):
         mefarshim_tags[r'\(\*.\)'] = 2
     if masechet == 'Moed Katan' or masechet == 'Bava Batra':
