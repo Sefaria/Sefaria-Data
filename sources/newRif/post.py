@@ -21,14 +21,9 @@ def housekeep(string):
     string = re.sub(' +', ' ', string)
     return string
 
-def post_rif(masechtot=list(tags_map), index=True, text=True, links=True, delete=True, server = 'http://localhost:8000'):
+def post_rif(masechtot=list(tags_map), index=True, text=True, links=True, server = 'http://localhost:8000'):
     for masechet in masechtot:
         title = 'Rif ' + masechet
-        if delete:
-            try:
-                library.get_index(title).delete()
-            except:
-                print(f'cant delete {title}')
         if index:
             with open(f'{path}/alts/{masechet}.json') as fp:
                 alts = json.load(fp)
@@ -56,7 +51,7 @@ def post_rif(masechtot=list(tags_map), index=True, text=True, links=True, delete
             }
             functions.post_text(title, text_version, server=server)
 
-def post_mefaresh(masechtot=list(tags_map), index=True, text=True, links=True, delete=False, server = 'http://localhost:8000'):
+def post_mefaresh(masechtot=list(tags_map), index=True, text=True, links=True, server = 'http://localhost:8000'):
     for masechet in masechtot:
         mefaresh = [mef for mef in ['Ran', 'Nimmukei Yosef', 'Rabbenu Yehonatan of Lunel', 'Rabbenu Yonah'] if tags_map[masechet][mef] == 'Digitized' or tags_map[masechet][mef] == 'shut'][0]
         hmefarshim = {'Ran': 'ר"ן', 'Nimmukei Yosef': 'נימוקי יוסף', 'Rabbenu Yehonatan of Lunel': "רבינו יהונתן מלוניל", 'Rabbenu Yonah': 'רבינו יונה'}
@@ -66,11 +61,6 @@ def post_mefaresh(masechtot=list(tags_map), index=True, text=True, links=True, d
         hc_title = '{} על רי"ף'.format(hmefaresh)
         title = '{} {}'.format(c_title, masechet)
         htitle = '{} {}'.format(hc_title, hmasechet)
-        if delete:
-            try:
-                library.get_index(title).delete()
-            except:
-                print(f'cant delete {title}')
         if index:
             categories = ["Talmud", "Bavli", "Commentary", "Rif", "Commentary"]
             functions.add_category("Commentary", categories, server=server)
@@ -110,4 +100,4 @@ def post_mefaresh(masechtot=list(tags_map), index=True, text=True, links=True, d
 
 if __name__ == '__main__':
     #post_rif(delete=False)
-    post_mefaresh(index=True,text=True)
+    post_mefaresh(text=True)

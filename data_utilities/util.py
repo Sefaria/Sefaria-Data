@@ -51,9 +51,7 @@ gematria['ר'] = 200
 gematria['ש'] = 300
 gematria['ת'] = 400
 
-inv_gematria = {}
-for key in list(gematria.keys()):
-    inv_gematria[gematria[key]] = key
+inv_gematria = {value: key for key, value in gematria.items()}
 
 wordToNumber = {}
 wordToNumber['ראשון'] = 1
