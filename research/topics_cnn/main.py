@@ -4,6 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import tensorflow as tf
 import tensorview as tv
+from tensorflow import keras
 from tensorflow.keras import preprocessing, datasets, layers, models, optimizers, losses, metrics, callbacks, initializers, backend, constraints
 from tensorflow.python.platform import gfile
 from sklearn.model_selection import train_test_split
@@ -20,12 +21,14 @@ session = InteractiveSession(config=config)
 
 # constants
 DATA = "/home/nss/Documents/Forks/Yishai-Sefaria-Project/ML/data/concat_english_prefix_hebrew.csv"
-EMBEDDING = "/home/nss/sefaria/datasets/text classification/fasttext_he_no_prefixes_20.bin"
+EMBEDDING_HE = "/home/nss/sefaria/datasets/text classification/fasttext_he_no_prefixes_20.bin"
+EMBEDDING_EN = "/home/nss/sefaria/datasets/text classification/fasttext_en_no_prefixes_20.bin"
+
 MAX_DOCUMENT_LENGTH = 100
 EMBEDDING_SIZE = 20
 WINDOW_SIZE = EMBEDDING_SIZE
 STRIDE = int(WINDOW_SIZE/2)
-N_EPOCHS = 120
+N_EPOCHS = 150
 BATCH_SIZE = 2**11
 TEST_SIZE = 0.3
 RANDOM_SEED = 613
@@ -86,6 +89,53 @@ class CnnClf:
             tv.train.PlotMetricsOnEpoch(metrics_name=[f'Loss {self.klass_name}', 'Accuracy', 'Recall', 'Precision'], cell_size=(6,4), columns=4, iter_num=N_EPOCHS, wait_num=N_EPOCHS),
         ]
 
+class CnnClfEnsemble:
+    def __init__(self, model_name, klass_name, embedding_matrix_dict, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH):
+        self.klass_name = klass_name
+
+        he_inputs = keras.Input(shape=(input_length,), name="hebrew")        
+        en_inputs = keras.Input(shape=(input_length,), name="english")
+
+        he_outputs = self.get_body_model(embedding_matrix_dict["hebrew"], embedding_size, input_length)(he_inputs)
+        en_outputs = self.get_body_model(embedding_matrix_dict["english"], embedding_size, input_length)(en_inputs)
+        x = layers.Concatenate()([he_outputs, en_outputs])
+        outputs = layers.Dense(2, activation='softmax', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        self.model = keras.Model(inputs=[he_inputs, en_inputs], outputs=outputs)
+        self.model.compile(optimizer=optimizers.Adam(), #learning_rate=0.001), 
+                    loss=losses.CategoricalCrossentropy(from_logits=False), 
+                    metrics=[metrics.CategoricalAccuracy(), metrics.Recall(class_id=0), metrics.Precision(class_id=0)])
+
+    @staticmethod
+    def get_body_model(embedding_matrix, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH):
+        inputs = keras.Input(shape=(input_length,))
+        x = layers.Embedding(embedding_matrix.shape[0], embedding_size, input_length=input_length, embeddings_initializer=initializers.Constant(embedding_matrix), trainable=False)(inputs)
+        x = layers.Dropout(0.1)(x)
+        x = layers.Convolution1D(16, kernel_size=4, activation='relu', strides=1, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        x = layers.Dropout(0.5)(x)
+        x = layers.Convolution1D(12, kernel_size=8, activation='relu', strides=2, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        x = layers.Dropout(0.5)(x)
+        x = layers.Convolution1D(8, kernel_size=16, activation='relu', strides=2, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        x = layers.Dropout(0.5)(x)
+        x = layers.Flatten()(x)
+        x = layers.Dense(128, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        x = layers.Dropout(0.5)(x)
+        x = layers.Dense(64, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        outputs = layers.Dropout(0.5)(x)
+        # outputs = layers.Dense(2, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        return keras.Model(inputs, outputs)
+
+    def fit(self, x_train, y_train, **kwargs):
+        return self.model.fit(x_train, y_train, callbacks=self.get_callbacks(), **kwargs)
+
+    def evaluate(self, x_test, y_test, **kwargs):
+        return self.model.evaluate(x_test, y_test, **kwargs)
+
+    def get_callbacks(self):
+        return [
+            #keras.callbacks.ModelCheckpoint(filepath= str(c2c_path / 'checkpoints/model_{epoch}'), save_best_only=True, verbose=1),
+            tv.train.PlotMetricsOnEpoch(metrics_name=[f'Loss {self.klass_name}', 'Accuracy', 'Recall', 'Precision'], cell_size=(6,4), columns=4, iter_num=N_EPOCHS, wait_num=N_EPOCHS),
+        ]
+
 class BinaryRelevance:
     def __init__(self, clf_klass, klasses, clf_params=None):
         self.clf_klass = clf_klass
@@ -119,11 +169,12 @@ class BinaryRelevance:
     
 class DataManager:
 
-    def __init__(self, data_file, embedding_file, embedding_size):
+    def __init__(self, data_file, embedding_file_he, embedding_file_en, embedding_size):
         X, Y = self.load_data(data_file)
         self.X = X
         self.Y = Y
-        self.embedding_model = fasttext.load_model(embedding_file)
+        self.embedding_model_he = fasttext.load_model(embedding_file_he)
+        self.embedding_model_en = fasttext.load_model(embedding_file_en)
         self.embedding_size = embedding_size
         self.toc_mapping = self.get_toc_mapping()
 
@@ -154,32 +205,36 @@ class DataManager:
         Y = pos_Y + neg_Y
         return X, Y
 
-    def get_train_test_sets(self, X, Y):
+    def get_train_test_sets(self, X, Y, lang, random_state):
         tokenizer = preprocessing.text.Tokenizer(oov_token="<UNK>")
         tokenizer.fit_on_texts(X)
-        embedding_matrix = self.get_embedding_matrix(tokenizer)
+        embedding_matrix = self.get_embedding_matrix(tokenizer, lang)
         X_seq = tokenizer.texts_to_sequences(X)
         X_seq = preprocessing.sequence.pad_sequences(X_seq, maxlen=MAX_DOCUMENT_LENGTH, padding='post', truncating='post')
-        X_train, X_test, Y_train, Y_test = train_test_split(X_seq, np.asarray(Y), test_size=TEST_SIZE)
+        X_train, X_test, Y_train, Y_test = train_test_split(X_seq, np.asarray(Y), test_size=TEST_SIZE, random_state=random_state)
         return X_train, X_test, Y_train, Y_test, embedding_matrix
 
     @staticmethod
     def get_training_x(row):
-        return DataManager.clean_text(row["He_prefixed"])
+        return {"hebrew": DataManager.clean_text(row["He_prefixed"], 'he'), "english": DataManager.clean_text(row["En"], 'en')}
 
     @staticmethod
     def get_training_y(row):
         return row["Topics"].split()
 
     @staticmethod
-    def normalize(s):
+    def normalize(s, lang):
         for k, v in unidecode_table.items():
             s = s.replace(k, v)
         s = re.sub(r"<[^>]+>", " ", s)
         s = re.sub(r'־', ' ', s)
-        s = re.sub(r'\([^)]+\)', '', s)
-        s = re.sub(r'\[[^\]]+\]', '', s)
-        s = re.sub(r'[^ \u05d0-\u05ea"\'״׳]', '', s)
+        s = re.sub(r'\([^)]+\)', ' ', s)
+        s = re.sub(r'\[[^\]]+\]', ' ', s)
+        if lang == 'he':
+            s = re.sub(r'[^ \u05d0-\u05ea"\'״׳]', '', s)
+        elif lang == 'en':
+            s = re.sub(r'[^ a-zA-Z"\'״׳]', ' ', s)
+
         # remove are parenthetical text
         s = " ".join(re.sub(r'^["\'״׳]+', "", re.sub(r'["\'״׳]+$', "", word)) for word in s.split()).strip()
         return s
@@ -193,13 +248,16 @@ class DataManager:
         return normalized
 
     @staticmethod
-    def clean_text(s):
-        return DataManager.normalize(DataManager.remove_prefixes(s))
+    def clean_text(s, lang):
+        if lang == 'he':
+            s = DataManager.remove_prefixes(s)
+        return DataManager.normalize(s, lang)
 
-    def get_embedding_matrix(self, tokenizer):
+    def get_embedding_matrix(self, tokenizer, lang):
+        embedding_model = getattr(self, f"embedding_model_{lang}")
         embedding_matrix = np.zeros((len(tokenizer.word_index)+1, self.embedding_size))
         for word, i in tqdm(tokenizer.word_index.items(), desc="Filling in embedding matrix"):
-            embedding = self.embedding_model.get_word_vector(word)
+            embedding = embedding_model.get_word_vector(word)
             embedding_matrix[i] = embedding
         return embedding_matrix
 
@@ -225,6 +283,15 @@ class DataManager:
         X, Y = self.get_binary_dataset_for_slug_set(set(sub_topics), 4)
         return self.get_train_test_sets(X, Y)
 
+    def get_ensemble_dataset_for_super_topic(self, super_topic):
+        sub_topics = self.toc_mapping[super_topic]
+        X, Y = self.get_binary_dataset_for_slug_set(set(sub_topics), 4)
+        random_state = RANDOM_SEED
+        X_train_he, X_test_he, Y_train, Y_test, embedding_matrix_he = self.get_train_test_sets([x["hebrew"] for x in X], Y, "he", random_state)
+        X_train_en, X_test_en, Y_train, Y_test, embedding_matrix_en = self.get_train_test_sets([x["english"] for x in X], Y, "en", random_state)
+
+        return {"hebrew": X_train_he, "english": X_train_en}, {"hebrew": X_test_he, "english": X_test_en}, Y_train, Y_test, {"hebrew": embedding_matrix_he, "english": embedding_matrix_en}
+
     def get_super_topics(self):
         return list(self.toc_mapping.keys())
 
@@ -235,13 +302,26 @@ def get_data_for_classes(slug_set, X, Y):
     return new_X, new_Y
 
 
+def get_data_for_classes_ensemble(slug_set, X, Y):
+    new_X, new_Y = zip(*list(filter(lambda x: len(set(x[1]) & slug_set) == 1, zip(X, Y))))
+    new_Y = [list(set(temp_y) & slug_set)[0] for temp_y in new_Y]
+    return new_X, new_Y
+
+
 
 if __name__ == "__main__":
 
-    dm = DataManager(DATA, EMBEDDING, EMBEDDING_SIZE)
+    # dm = DataManager(DATA, EMBEDDING, EMBEDDING_SIZE)
+    # print(dm.get_super_topics())
+    # super_topic_clf = BinaryRelevance(CnnClf, dm.get_super_topics())
+    # super_topic_clf.fit_class(1, "philosophy", dm.get_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
+
+    # ensemble
+    dm = DataManager(DATA, EMBEDDING_HE, EMBEDDING_EN, EMBEDDING_SIZE)
     print(dm.get_super_topics())
-    super_topic_clf = BinaryRelevance(CnnClf, dm.get_super_topics())
-    super_topic_clf.fit_class(1, "philosophy", dm.get_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
+    super_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_super_topics())
+    super_topic_clf.fit_class(1, "stories", dm.get_ensemble_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
+
     # super_topic_clf.fit(dm.get_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
     # super_topic_clf.evaluate(dm.get_dataset_for_super_topic, batch_size=BATCH_SIZE, verbose=1, return_dict=True)
     # results = cnn.evaluate(X_test, Y_test, batch_size=BATCH_SIZE, verbose=1, return_dict=True)
