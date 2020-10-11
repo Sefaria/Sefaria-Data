@@ -1037,10 +1037,10 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
     textJSON = json.dumps(flags)
     version['ref'] = version['ref'].replace(' ', '_')
     url = server+'/api/version/flags/{}/{}/{}'.format(
-        urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']), urllib.parse.quote(version['vtitle'])
+        urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']), urllib.parse.quote(version['vtitle']).encode('utf-8')
     )
     values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.parse.urlencode(values)
+    data = urllib.parse.urlencode(values).encode('utf-8')
     req = urllib.request.Request(url, data)
     try:
         response = urllib.request.urlopen(req)
@@ -1050,7 +1050,7 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
             return "error"
     except HTTPError as e:
         with open('errors.html', 'w') as errors:
-            errors.write(e.read())
+            errors.write(str(e.read()))
 
 
 @weak_connection
