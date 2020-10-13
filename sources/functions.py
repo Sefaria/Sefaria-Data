@@ -654,7 +654,10 @@ def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key = API_KEY
         return response
 
 @weak_connection
-def post_index(index, server=SEFARIA_SERVER, method="POST"):
+def post_index(index, server=SEFARIA_SERVER, method="POST", dump_json=False):
+    if dump_json:
+        with open('index_json.json', 'w') as fp:
+            json.dump(index, fp)
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     return http_request(url, body={'apikey': API_KEY}, json_payload=index, method=method)
     # indexJSON = json.dumps(index)
@@ -745,7 +748,11 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST"):
+def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST", dump_json=False):
+    if dump_json:
+        with open('links_dump.json', 'w') as fp:
+            json.dump(info, fp)
+
     url = server+'/api/links/'
     result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method=method)
     if VERBOSE:
@@ -887,7 +894,7 @@ def first_word_with_period(str):
     return len(str.split(" "))
 
 @weak_connection
-def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
+def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER, dump_json=False):
     """
     :param ref:
     :param text:
@@ -896,6 +903,9 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
     :param server:
     :return:`
     """
+    if dump_json:
+        with open('text_dump.json', 'w') as fp:
+            json.dump(text, fp)
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     url = server+'/api/texts/'+ref
