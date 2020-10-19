@@ -31,9 +31,16 @@ def paragraph_tags(text: str, regex: str, id6dig: str, tokenizer=lambda x: x.spl
     #word range is safe to adjust
     tags_dict = {}
     n = 0
+    new_par = 9900
     while re.search(regex, text):
         id8dig = id6dig + str(n).zfill(2)
         a, b = re.split(regex, text, 1)
+        change_page = re.findall(r'%-?\d{1,2}%', b[:5]) #that marks the tag should be moved to another page
+        if change_page:
+            new_p = int(id8dig[1:4]) + int(change_page[0][1: -1]) #1:-1 because of the % signs
+            id8dig = id8dig[0] + str(new_p).zfill(3) + str(new_par)  #9900 or more for identifying
+            new_par += 1
+            b = re.sub(r'%-?\d{1,2}%', '', b, 1)
         a, b = tokenizer(a), tokenizer(b)
         context = ' '.join(a[-word_range:] + b[:word_range])
         word_index = len(a)
@@ -73,7 +80,7 @@ def rif_tags(masechet):
         tags_map[masechet]['Nuschaot Ktav Yad']: 7,
         tags_map[masechet]['Rabbenu Efrayim']: 8,
         tags_map[masechet]['Ravad on Rif']: 9}
-    for tag in [r'\(.\)', r'\[.\]', '(?:^| )[א-ת](?:$| )(?![^\(]*\))']:
+    for tag in [r'\(.\)', r'\[.\]', r'(?:^| )[א-ת](?:$| )(?![^<]*<\/i>)(?![^\(]*\))']:
         if tag not in mefarshim_tags:
             mefarshim_tags[tag] = 0 #0 for unknown
 
@@ -92,7 +99,7 @@ def rif_tags(masechet):
         if value['gimatric number'] == 0: print('gimatria 0', value)
         tag = identify_tag(value['original'], list(mefarshim_tags))
         value['referred text'] = mefarshim_tags[tag]
-        value['style'] = 1 if '(' in value['original'] else 2 if '[' in value['original'] else 3
+        value['style'] = 1 if '(' in value['original'] else 2 if '[' in value['original'] else 4 if ']' in value['original'] else 3
 
     return newdata, tags_dict
 
@@ -103,12 +110,15 @@ def mefaresh_tags(masechet):
     data_len = len(data)
     data = '@G'.join(['@R'.join(l) for l in data])
     data = [l.split('@R') for l in data.split('##')]
-    if len(data) != data_len: data.pop(0), len(data), data_len
+    if len(data) != data_len and masechet != 'Pesachim': #in Pesachin there's an empty page
+        data.pop(0)
+    elif masechet == 'Pesachim':
+        data = data[:35] + [''] + data[35:]
 
     mefarshim_tags = {r'\(.\)': 3, r'\[.\]': 5, '%22.': 1}
-    if any(masechet == m for m in ['Shabbat', 'Eruvin', 'Pesachim', 'Megillah', 'Moed Katan', 'Kiddushin', 'Bava Kamma', 'Bava Batra', 'Sanhedrin', 'Makkot', 'Shevuot', 'Avodah Zarah']):
+    if any(masechet == m for m in ['Shabbat', 'Eruvin', 'Pesachim', 'Sukkah', 'Megillah', 'Moed Katan', 'Yevamot', 'Kiddushin', 'Bava Kamma', 'Bava Batra', 'Sanhedrin', 'Makkot', 'Shevuot', 'Avodah Zarah']):
         mefarshim_tags[r'\(\*.\)'] = 2
-    if masechet == 'Moed Katan' or masechet == 'Bava Batra':
+    if masechet in ['Yoma', 'Moed Katan', 'Bava Batra']:
         mefarshim_tags[r'\(#.\)'] = 4
     if any(masechet == m for m in ['Shabbat', 'Gittin', 'Sanhedrin', 'Makkot', 'Avodah Zarah']):
         mefarshim_tags[r'\(#.\)'] = 3
@@ -116,6 +126,8 @@ def mefaresh_tags(masechet):
             mefarshim_tags[r'\(.\)'] = 2
         else:
             mefarshim_tags[r'\(.\)'] = 4
+    if masechet == 'Yevamot':
+        mefarshim_tags[tags_map[masechet]['Nuschaot Ktav Yad']] = 7
 
     newdata, tags_dict = [], {}
     for n, page in enumerate(data):
@@ -126,7 +138,40 @@ def mefaresh_tags(masechet):
         tags_dict.update(tags)
 
     newdata = '##'.join(['@R'.join(l) for l in newdata])
-    newdata = [l.split('@R') for l in newdata.split('@P')]
+    newdata = [l.split('@R') for l in newdata.split('@G')]
+
+    for value in tags_dict.values():
+        value['status'] = 1 #1 for base text
+        value['gimatric number'] = getGematria(value['original'])
+        if value['gimatric number'] == 0: print('gimatria 0', value)
+        value['style'] = 1 if '(' in value['original'] else 2 if '[' in value['original'] else 3
+        tag = identify_tag(value['original'], list(mefarshim_tags))
+        value['referred text'] = mefarshim_tags[tag]
+
+    return newdata, tags_dict
+
+def sg_tags(masechet):
+    with open(path+'/commentaries/json/SG_{}.json'.format(masechet)) as fp:
+        data = json.load(fp)
+
+    mefarshim_tags = {tags_map[masechet]['sg_in_tag']: 3, r'\[.\]': 5}
+    try:
+        mefarshim_tags[''] #i.e. there's a bach tag
+        mefarshim_tags[r'\(.\)'] = 3
+    except KeyError:
+        mefarshim_tags[r'\(.\)'] = 4
+    if not tags_map[masechet]['Hagaot meAlfas Yashan']:
+        mefarshim_tags[r'\[.\]'] = 0
+    if masechet == 'Shabat':
+        mefarshim_tags[r'@77\[.\]|\[.\]'] = 5
+
+    newdata, tags_dict = [], {}
+    for n, page in enumerate(data):
+        id4dig = '3' + str(n).zfill(3) #3 for sg
+        page, tags = page_tags(page, [tag for tag in mefarshim_tags if tag], id4dig, tokenizer=mefaresh_tokenizer)
+        newdata.append(page)
+        check_duplicate(tags_dict, tags)
+        tags_dict.update(tags)
 
     for value in tags_dict.values():
         value['status'] = 1 #1 for base text
@@ -145,12 +190,18 @@ def execute():
         mefaresh, mtags = mefaresh_tags(masechet)
         check_duplicate(tags, mtags)
         tags.update(mtags)
+        if masechet != 'Nedarim':
+            sg, sgtags = sg_tags(masechet)
+            check_duplicate(tags, sgtags)
+            tags.update(sgtags)
         print(len(tags))
 
         with open(path+'/tags/rif_{}.json'.format(masechet), 'w') as fp:
             json.dump(rif, fp)
         with open(path+'/tags/mefaresh_{}.json'.format(masechet), 'w') as fp:
             json.dump(mefaresh, fp)
+        with open(path+'/tags/sg_{}.json'.format(masechet), 'w') as fp:
+            json.dump(sg, fp)
         with open(path+'/tags/tags_{}.json'.format(masechet), 'w') as fp:
             json.dump(tags, fp)
 

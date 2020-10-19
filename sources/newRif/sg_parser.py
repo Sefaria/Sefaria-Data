@@ -33,10 +33,10 @@ def parse_sg_pars(data, masechet):
     data = re.sub(r'[\[\{]\*\)([^\]\}]*)[\]\}]', r' <sup>*</sup><i class="footnote">\1</i>', data)
     data = re.sub('(">|i>) ', r'\1', data)
     data = re.sub(' (</)', r'\1', data)
-
     letter_tag = tags_map[masechet]['sg letter']
     title_tag = tags_map[masechet]['sg_title']
     data = [letter_tag + par for par in data.split(letter_tag)]
+
     if not tags_map[masechet]['sg_page']: #on masechtot with data tag, the first piece can be part of the next page
         if len(data) == 1:
             print('no letter tag', data)
@@ -75,7 +75,7 @@ def parse_sg_pars(data, masechet):
                 par = ''
             else:
                 par = re.sub(letter_tag, '', par)
-        elif letter != []:
+        else:
             gim = getGematria(letter[0])
             if gim != 1 and gim != next_gem(prev):
                 print(f'{gim} after {prev}, {par}')
@@ -96,6 +96,7 @@ def execute():
         print(masechet)
         with open(path+'/commentaries/SG_{}.txt'.format(masechet), encoding='utf-8') as fp:
             data = fp.read()
+
         page_tag = tags_map[masechet]['sg_page']
         letter_tag = tags_map[masechet]['sg letter']
         tags = tags_by_criteria(masechet, value=lambda x: x['referred text']==1)
@@ -148,7 +149,6 @@ def execute():
                 page_text.append(par)
             lengths.append(cou)
             splitted.append(page_text)
-
             newtags, counter = compare_tags_nums(tags, lengths, unknowns, 1)
             tags.update(newtags)
             save_tags(tags, masechet)
@@ -161,6 +161,7 @@ def execute():
         check_sequence(newdata, letter_tag)
         save_tags(tags, masechet)
 
+        newdata = [[re.sub(' +', ' ', re.sub(letter_tag+'.|@', '', par)).strip() for par in page] for page in newdata]
         with open(path+'/commentaries/json/SG_{}.json'.format(masechet), 'w') as fp:
             json.dump(newdata, fp)
 

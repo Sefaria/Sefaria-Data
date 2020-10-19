@@ -90,13 +90,21 @@ def unite_ref(refs: list) -> list:
     return new_ref_lines
 
 def main_mefaresh(masechet):
-    for mefaresh in ['Ran', 'Nimukei Yosef', 'Talmidei Rabenu Yonah', 'R. Yehonatan of Lunel']:
+    for mefaresh in ['Ran', 'Nimmukei Yosef', 'Rabbenu Yonah', 'Rabbenu Yehonatan of Lunel']:
         if tags_map[masechet][mefaresh] == 'Digitized' or tags_map[masechet][mefaresh] == 'shut':
             return mefaresh
 
 tags_map = {}
 with open('map.csv', newline='', encoding = 'utf-8') as file:
     tags_map = {row['masechet']: row for row in csv.DictReader(file)}
+
+commentaries = {}
+with open('commentaries.csv', newline='', encoding = 'utf-8') as file:
+    commentaries = {row['num']: row for row in csv.DictReader(file)}
+
+maor_tags = {}
+with open('maor_tags.csv', newline='', encoding = 'utf-8') as file:
+    maor_tags = {row['masechet']: row for row in csv.DictReader(file)}
 
 for masechet in list(tags_map):
     tags_map[masechet]['note_reg'] = r'(?:{}|{}|{}).*?{}'.format(*[tags_map[masechet][tag] for tag in ['gemara_refs', 'notes', 'tanakh_refs', 'end_tag']])

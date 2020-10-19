@@ -31,7 +31,8 @@ def next_gem(gem, cycle=True):
 
 def open_tags(masechet):
     with open(path+'/tags/tags_{}.json'.format(masechet)) as fp:
-        return json.load(fp)
+        data = json.load(fp)
+    return data
 
 def save_tags(tags, masechet):
     old = open_tags(masechet)
@@ -70,6 +71,7 @@ def out_of_orders(lis: list):
     for n, num in enumerate(lis):
         if gem_to_num(exp_lis[n+gap]) - gem_to_num(exp_lis[n+gap-2]) == 1 and num != exp_lis[n+gap] and num != exp_lis[n+gap-2]:
             if n == 0 and num == 1: continue #in this case it can be just omission of the first
+            if n == len(lis)-1 and num >= lis[-2]: continue # when > it can be omission before the last (especiall when Ran has one tag with gap of tags in Rashi). When = we can't know what tag is the redundant
             out_indexes.append(n)
             exp_lis.pop(n+gap-1)
             gap -= 1
@@ -128,7 +130,7 @@ def check_sequence(tags_dict):
                 ), tag)
         prev = tags_dict[tag]['gimatric number']
 
-if __name__ == '__main__':
+def execute():
     for masechet in tags_map:
         print(masechet)
         data = open_tags(masechet)
@@ -137,3 +139,6 @@ if __name__ == '__main__':
         for subdict in generate_mefaresh_and_page(data, range(1,10)):
             check_sequence(subdict)
         save_tags(data, masechet)
+
+if __name__ == '__main__':
+    execute()

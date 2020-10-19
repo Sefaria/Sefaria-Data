@@ -73,7 +73,7 @@ def handle_tanakh_refs(string, masechet, prev):
                 ref = newref
             except:
                 if ref == 'שם':
-                    string = string.replace(ref, prev, 1)
+                    string = string.replace(tanakh_ref+ref+end_tag, tanakh_ref+prev+end_tag, 1)
                     ref = prev
                 else:
                     try:
@@ -83,7 +83,7 @@ def handle_tanakh_refs(string, masechet, prev):
                             book = ' '.join(prev.split()[:2])
                         newref = ref.replace('שם', book)
                         Ref(newref)
-                        string = string.replace(ref, newref)
+                        string = string.replace(tanakh_ref+ref+end_tag, tanakh_ref+newref+end_tag)
                         ref = newref
                     except InputError:
                         print(masechet, 'not a ref', ref)

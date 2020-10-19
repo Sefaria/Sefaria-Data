@@ -15,7 +15,7 @@ EMPTIES = {'Pesachim': ['18b'], 'Nedarim': ['4a'], 'Avodah Zarah': ['36a'], 'Men
 PARSING_STATE = ParseState()
 
 def dh_by_keyword(string: str, keyword: str, max: int, included=True) -> str:
-    if keyword in string:
+    if keyword in string and string.index(keyword) > 2:
         dh = string.split(keyword, 1)[0]
         if included: dh += keyword
         if len(dh.split()) < max+1: return dh
@@ -45,11 +45,12 @@ def parse_pages(doc: str) -> list:
     doc = doc.replace('\u05c3', ':')
     doc = re.sub('[\xa0\u2003\t]', ' ', doc)
     doc = re.sub('\(\*\)|\*\)|@66[א-ת]\)', '', doc)
-    doc = re.sub(r'@88\[([^\]]*)\]@55', r'\(\1)', doc) #@88 mark refs in brackets in some files
-    doc = hebrewplus(doc, r'\(\)\[\].:,"\'#@0%2')
-    for brac in set(re.findall(r'\[([^\]]*)\]', doc)): #handling in bracked refs in other files
+    doc = re.sub(r'@88\[([^\]]*)\]@55', r'\(\1\)', doc) #@88 mark refs in brackets in some files
+    doc = hebrewplus(doc, r'\(\)\[\].:,"\'#@%0123456789\-\*')
+    for brac in set(re.findall(r'\[([^\[\]]*)\]', doc)): #handling in bracked refs in other files
         if library.get_refs_in_string('(' + brac.replace('דף', '') + ')') != []:
             doc = doc.replace('['+brac+']', '('+brac+')')
+    doc = doc.replace('@@', '@@##') #the ## tag for the printed pages which the mefarshim tags numbering depends on
     doc = cleanspaces(doc)
     doc = doc.replace(': @@', ':@@').replace(':', ':A')
     doc = re.sub('0([^A@]*)@', r'\1A@', doc) #hadran has no colon but marks new segment
@@ -63,16 +64,17 @@ def parse_pages(doc: str) -> list:
             if '@@@@' not in middle: #that probably mean a one dh on 3 pages, so we need one empty page
                 doc = re.sub(middle+'(.*?@@)', middle.replace('@@', '')+r'\1@@', doc)
 
-    doc = doc.replace('@@', '@@##') #the ## tag for the printed pages which the mefarshim tags numbering depends on
-
     pages = doc.split('@@')
     while pages[0] == '': pages.pop(0)
     while pages[-1] == '': pages.pop()
     if MASECHET in EMPTIES: #mefaresh on page without rif is a continiuos dh from prev. page
-        for daf in reversed(EMPTIES[MASECHET]): #reverse for consicutive empty pages
-            daf = daf_to_section(daf) - 1
-            pages[daf-1] += ' ' + pages[daf]
-            pages[daf] = ''
+        if MASECHET == 'Pesachim': #page also has no mefaresh
+            pages = pages[:35] + [''] + pages[35:]
+        else:
+            for daf in reversed(EMPTIES[MASECHET]): #reverse for consicutive empty pages
+                daf = daf_to_section(daf) - 1
+                pages[daf-1] += ' ' + pages[daf]
+                pages[daf] = ''
     return pages
 
 def parse_paragraphs(page: str) -> list:
@@ -99,13 +101,15 @@ def parse_paragraphs(page: str) -> list:
                 links.append({})
     else:
         links.append({})
+    while len(pars) > len(links): #a bug in match_ref
+        print(daf, len(pars), len(links), matches)
+        links.append({}) #temporal patch for the text. lnks stll can be off
 
     pars = [{'text': pair[0], 'link': pair[1]} for pair in zip(pars, links)]
 
     for n, par in enumerate(pars):
-        dh = find_dh(par['text'], report=False)
+        dh = find_dh(par['text'], report=False).strip()
         if dh != '':
-            dh = dh.strip()
             if '.' not in dh:
                 pars[n]['text'] = pars[n]['text'].replace(dh, '<b>'+dh+'.</b>')
             else:
