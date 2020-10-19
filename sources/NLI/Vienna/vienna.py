@@ -16,7 +16,7 @@ from sources.functions import weak_connection
 from functools import partial
 from sources.NLI.database import Database
 from concurrent.futures import ThreadPoolExecutor
-from external_data import *
+from sources.NLI.Vienna.external_data import *
 
 import django
 django.setup()
@@ -150,9 +150,9 @@ def pull_tile(tile_data, attempt=0):
 
     with global_lock:
         tile_num[0] += 1
-        print tile_num[0],
+        print(tile_num[0])
         if tile_num[0] % 20 == 0:
-            print '\n'
+            print('\n')
 
     for _ in range(10):
         try:
@@ -160,7 +160,7 @@ def pull_tile(tile_data, attempt=0):
             break
         except (ConnectTimeout, ReadTimeoutError, ReadTimeout):
             with global_lock:
-                print "Retrying connection"
+                print("Retrying connection")
     else:
         raise ConnectTimeout
 
@@ -200,7 +200,7 @@ def download_image(image_data):
             try:
                 Image.open(tile['filename'])
             except IOError:
-                print "attempting to re-pull tile"
+                print("attempting to re-pull tile")
                 success = False
                 pull_tile(tile)
         if success:
@@ -247,7 +247,7 @@ def combine_rows_for_image(image_dict):
         new_im.paste(im, (0,y_offset))
         y_offset += im.size[1]
 
-    if isinstance(image_dict['image_ref'], basestring):
+    if isinstance(image_dict['image_ref'], str):
         filename = u'./images/{}.jpg'.format(image_dict['image_ref'])
     else:
         filename = u'./images/{}.jpg'.format(u' - '.join(image_dict['image_ref']))
@@ -273,7 +273,7 @@ def collect_image_dimensions(image_data, weak_network=True):
 
     with global_lock:
         image_num[0] += 1
-        print "loaded image data for image {}".format(image_num[0])
+        print("loaded image data for image {}".format(image_num[0]))
 
 
 def bulk_image_dimensions(image_data_list):
@@ -297,7 +297,7 @@ def derive_ref_from_row(row_data):
 
     tref = re.sub(u'|'.join(mapping.keys()), lambda x: mapping[x.group()], row_data['Im_Title'])
 
-    raw_split = re.split(ur'\s*-\s*', tref)
+    raw_split = re.split(r'\s*-\s*', tref)
     if len(raw_split) != 2:
         with codecs.open('bad_refs.txt', 'a', 'utf-8') as fp:
             fp.write(u'{}\n'.format(row_data['Im_Title']))
@@ -366,7 +366,7 @@ if __name__ == '__main__':
     for im in full_image_data:
         image_file = u'./images/{}.jpg'.format(u' - '.join(im['image_ref']))
         if os.path.exists(image_file):
-            if isinstance(im['image_ref'], basestring):
+            if isinstance(im['image_ref'], str):
                 os.rename(image_file, u'./images/{}.jpg'.format(im['image_ref']))
             else:
                 os.rename(image_file, u'./images/{}.jpg'.format(u' - '.join(im['image_ref'])))
@@ -377,7 +377,7 @@ if __name__ == '__main__':
     bulk_image_dimensions(full_image_data)
 
     for i, im in enumerate(full_image_data):
-        if isinstance(im['image_ref'], basestring):
+        if isinstance(im['image_ref'], str):
             correct_image_file = u'./images/{}.jpg'.format(im['image_ref'])
         else:
             correct_image_file = u'./images/{}.jpg'.format(u' - '.join(im['image_ref']))
@@ -385,7 +385,7 @@ if __name__ == '__main__':
         successful_download = False
         while not successful_download:
 
-            print u'\nimage {}: {}\n'.format(i, im['image_ref'])
+            print('\nimage {}: {}\n'.format(i, im['image_ref']))
             if os.path.exists(correct_image_file):
                 successful_download = True
                 continue
@@ -394,7 +394,7 @@ if __name__ == '__main__':
                 download_image(im)
                 combine_rows_for_image(im)
             except IOError:
-                print "attempting to download image {} again".format(i)
+                print("attempting to download image {} again".format(i))
             else:
                 successful_download = True
 

@@ -7,7 +7,7 @@ import unicodecsv
 from threading import Lock as threadLock
 from collections import defaultdict
 from concurrent.futures.thread import ThreadPoolExecutor
-from path_to_db_file import DB_FILE_LOCATION
+from sources.NLI.path_to_db_file import DB_FILE_LOCATION
 
 
 class Database(object):
@@ -51,7 +51,7 @@ class Database(object):
         try:
             self.cursor.execute('DROP TABLE aggregation')
         except sqlite3.OperationalError as e:
-            print e
+            print(e)
 
         self.cursor.execute("CREATE TABLE aggregation (Book_Type, Tractate, Chapter, Verse, image_start, image_end, "
                             "Manuscript, Im_Run, Filename, Library, Manuscript_Description, "

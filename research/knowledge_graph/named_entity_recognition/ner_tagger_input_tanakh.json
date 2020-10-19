@@ -1,0 +1,45 @@
+{
+    "namedEntities": [
+        {
+            "id": "biblical-figures",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+          "id": "MANUAL:judah",
+          "manualTitles": [
+            {
+              "text": "Judah",
+              "lang": "en"
+            }
+          ]
+        }
+    ],
+    "rules": [
+      {
+        "rule": {
+          "maxRef": "Exodus 1:1"
+        },
+        "namedEntities": ["judah"],
+        "name": "tribeLimit",
+        "comment": "Limit tribes as names to Genesis. Tribes as tribes appear throughout rest of Tanakh."
+      }
+    ],
+    "corpus": [
+        {
+            "title": "Tanakh",
+            "type": "category",
+            "versions": [
+                {
+                    "language": "en",
+                    "versionTitle": "Tanakh: The Holy Scriptures, published by JPS"
+                },
+                {
+                    "language": "he",
+                    "versionTitle":"Tanach with Ta'amei Hamikra",
+                    "pretaggedFile": "research/knowledge_graph/named_entity_recognition/he_tanakh_mentions.json"
+                }
+            ]
+        }
+    ]
+}

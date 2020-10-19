@@ -655,7 +655,10 @@ def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key = API_KEY
         return response
 
 @weak_connection
-def post_index(index, server=SEFARIA_SERVER, method="POST"):
+def post_index(index, server=SEFARIA_SERVER, method="POST", dump_json=False):
+    if dump_json:
+        with open('index_json.json', 'w') as fp:
+            json.dump(index, fp)
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     return http_request(url, body={'apikey': API_KEY}, json_payload=index, method=method)
     # indexJSON = json.dumps(index)
@@ -746,10 +749,11 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST", profile=False):
+def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST", dump_json=False):
+    if dump_json:
+        with open('links_dump.json', 'w') as fp:
+            json.dump(info, fp)
     url = server+'/api/links/'
-    if profile:
-        url += "?prof"
     result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method=method)
     if VERBOSE:
         print(result)
@@ -941,7 +945,7 @@ def first_word_with_period(str):
     return len(str.split(" "))
 
 @weak_connection
-def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
+def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER, dump_json=False):
     """
     :param ref:
     :param text:
@@ -950,6 +954,9 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
     :param server:
     :return:`
     """
+    if dump_json:
+        with open('text_dump.json', 'w') as fp:
+            json.dump(text, fp)
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     url = server+'/api/texts/'+ref
@@ -1091,10 +1098,10 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
     textJSON = json.dumps(flags)
     version['ref'] = version['ref'].replace(' ', '_')
     url = server+'/api/version/flags/{}/{}/{}'.format(
-        urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']), urllib.parse.quote(version['vtitle'])
+        urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']), urllib.parse.quote(version['vtitle']).encode('utf-8')
     )
     values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.parse.urlencode(values)
+    data = urllib.parse.urlencode(values).encode('utf-8')
     req = urllib.request.Request(url, data)
     try:
         response = urllib.request.urlopen(req)
@@ -1104,7 +1111,7 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
             return "error"
     except HTTPError as e:
         with open('errors.html', 'w') as errors:
-            errors.write(e.read())
+            errors.write(str(e.read()))
 
 
 @weak_connection

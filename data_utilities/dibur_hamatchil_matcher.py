@@ -460,7 +460,7 @@ class GemaraDaf:
                 if sub_dhs:
                     new_comments += [comment for _ in sub_dhs]
                     dh_list += sub_dhs
-                    self.dh_map += [dh for _ in sub_dhs]
+                    self.dh_map += [f"{dh}|{i}" for _ in sub_dhs]  # use dh + index to create unique ids for each dh so they can be remapped to their original dh that they came from
                 else:
                     new_comments.append(comment)
                     dh_list.append(dh)

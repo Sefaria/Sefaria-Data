@@ -8,7 +8,7 @@ import shutil
 import requests
 from bs4 import BeautifulSoup
 from functools import partial
-from urlparse import urlparse
+from urllib.parse import urlparse
 from collections import defaultdict
 from threading import Lock as threadLock
 from concurrent.futures import ThreadPoolExecutor
@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 import django
 django.setup()
 
-from database import Database
+from sources.NLI.database import Database
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
 
@@ -61,11 +61,11 @@ def get_rows_from_db():
 
     nli_db = Database()
 
-    nli_db.cursor.execute(u'SELECT im.Im_File url, im.Im_Title refs FROM TblImages im '
-                          u'JOIN ('
-                          u'    SELECT Ma_ID FROM TblManuscripts ma '
-                          u'    JOIN TblLibraries li ON ma.Ma_LibID = li.Li_ID WHERE li.Li_ID = 8 '
-                          u') man_map ON man_map.Ma_ID = im.Im_Ms')
+    nli_db.cursor.execute('SELECT im.Im_File url, im.Im_Title refs FROM TblImages im '
+                          'JOIN ('
+                          '    SELECT Ma_ID FROM TblManuscripts ma '
+                          '    JOIN TblLibraries li ON ma.Ma_LibID = li.Li_ID WHERE li.Li_ID = 8 '
+                          ') man_map ON man_map.Ma_ID = im.Im_Ms')
 
     rows = [r for r in nli_db.cursor.fetchall()]
     ref_map = defaultdict(list)
@@ -73,7 +73,7 @@ def get_rows_from_db():
         if r['refs'] is None:
             continue
 
-        start, end = re.split(ur'\s?-\s?', r['refs'])
+        start, end = re.split(r'\s?-\s?', r['refs'])
         if not Ref.is_ref(start) or not Ref.is_ref(end):
             ref_map[r['refs']].append(r['url'])
         else:
@@ -124,6 +124,7 @@ def write_image_to_file(image_url_mapping, file_mapping, tref):
             })
 
         if not os.path.exists(filename):
+            print(f'downloading ${filename}')
             response = requests.get(image_url, stream=True)
             if response.status_code == 200:
                 with open(filename, 'wb') as fp:
@@ -138,19 +139,20 @@ def write_image_to_file(image_url_mapping, file_mapping, tref):
     return
 
 
-html_map, image_map, file_map = get_rows_from_db(), defaultdict(list), []
+if __name__ == '__main__':
+    html_map, image_map, file_map = get_rows_from_db(), defaultdict(list), []
 
-get_image_url_p = partial(get_image_url, html_map, image_map)
-write_image_to_file_p = partial(write_image_to_file, image_map, file_map)
+    get_image_url_p = partial(get_image_url, html_map, image_map)
+    write_image_to_file_p = partial(write_image_to_file, image_map, file_map)
 
-with ThreadPoolExecutor() as executor:
-    executor.map(get_image_url_p, html_map.keys())
+    with ThreadPoolExecutor() as executor:
+        executor.map(get_image_url_p, html_map.keys())
 
-counter[0] = 0
-print("Finished collecting html. Starting to assemble images")
+    counter[0] = 0
+    print("Finished collecting html. Starting to assemble images")
 
-with ThreadPoolExecutor() as executor:
-    executor.map(write_image_to_file_p, image_map.keys())
+    with ThreadPoolExecutor() as executor:
+        executor.map(write_image_to_file_p, image_map.keys())
 
-with open('munich_filemap.json', 'w') as fp:
-    json.dump(file_map, fp)
+    with open('munich_filemap.json', 'w') as fp:
+        json.dump(file_map, fp)

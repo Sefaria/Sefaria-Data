@@ -230,6 +230,7 @@ def display_displacy(jsonl_loc):
 
 def convert_to_mentions_file():
     import json
+    from research.knowledge_graph.named_entity_recognition.ner_tagger import Mention
 
     sef_id_map = {}
     with open("research/knowledge_graph/named_entity_recognition/sefaria_bonayich_reconciliation - Sheet2.csv", "r") as fin:
@@ -240,18 +241,27 @@ def convert_to_mentions_file():
             except ValueError:
                 continue
 
-    new_mentions = []
+    new_mentions = set()
     for mention in srsly.read_jsonl(f"{DATA_LOC}/he_mentions.jsonl"):
         slug = sef_id_map.get(int(mention['Bonayich ID']), None)
-        new_mentions += [{
+        new_mentions.add(Mention().add_metadata(**{
             "start": mention["Start"],
             "end": mention["End"],
             "mention": mention["Mention"],
             "ref": mention["Ref"],
             "id_matches": [f"BONAYICH:{mention['Bonayich ID']}" if slug is None else slug]
+        }))
+    new_new_mentions = []
+    for mention in new_mentions:
+        new_new_mentions += [{
+            "start": mention.start,
+            "end": mention.end,
+            "mention": mention.mention,
+            "ref": mention.ref,
+            "id_matches": mention.id_matches
         }]
     with open("research/knowledge_graph/named_entity_recognition/sperling_mentions.json", "w") as fout:
-        json.dump(new_mentions, fout, ensure_ascii=False, indent=2)
+        json.dump(new_new_mentions, fout, ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
     # rows_by_mas = get_rows_by_mas()
