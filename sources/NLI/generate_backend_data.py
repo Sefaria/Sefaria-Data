@@ -4,7 +4,7 @@ import re
 import os
 import json
 import codecs
-from database import Database
+from sources.NLI.database import Database
 from bs4 import BeautifulSoup
 
 import django
@@ -14,7 +14,7 @@ from sefaria.model import *
 
 def generate_qa_document(data_list, outfile='image_qa.html'):
     # todo: add sefaria text for each ref
-    soup = BeautifulSoup(u'', 'html5lib')
+    soup = BeautifulSoup('', 'html5lib')
     style = soup.new_tag('style')
     style.string = '''
     table,
@@ -63,7 +63,7 @@ def generate_qa_document(data_list, outfile='image_qa.html'):
             oref = Ref(tref)
 
             sefaria_link = soup.new_tag('a')
-            sefaria_link['href'] = u'https://www.sefaria.org/{}'.format(oref.url())
+            sefaria_link['href'] = 'https://www.sefaria.org/{}'.format(oref.url())
             sefaria_link['target'] = '_blank'
             sefaria_link.string = tref
             tref_cell.append(sefaria_link)
@@ -74,7 +74,7 @@ def generate_qa_document(data_list, outfile='image_qa.html'):
         columns[1].append(ref_table)
 
         thumbnail = soup.new_tag('img')
-        thumbnail['src'] = re.sub(ur'\.jpg', u'_thumbnail.jpg', data_obj['image_url'])
+        thumbnail['src'] = re.sub(r'\.jpg', '_thumbnail.jpg', data_obj['image_url'])
         columns[2].append(thumbnail)
 
         image_url = soup.new_tag('a')
@@ -86,22 +86,22 @@ def generate_qa_document(data_list, outfile='image_qa.html'):
             table_row.append(column)
 
     with codecs.open(outfile, 'w', 'utf-8') as fp:
-        fp.write(unicode(soup))
+        fp.write(str(soup))
 
 
 def expand_refs_from_image_title(image_title, ref_enhancement=None):
     # assuming all titles can be split by - and have no skips (;) (appears true for 1723)
 
-    if re.search(ur';\s+', image_title):
-        title_sections = re.split(ur';\s+', image_title)
+    if re.search(r';\s+', image_title):
+        title_sections = re.split(r';\s+', image_title)
         expansions = []
         for section in title_sections:
             expansions.extend(expand_refs_from_image_title(section, ref_enhancement))
         return expansions
 
-    def enhance_ref(tref): return u'{} {}'.format(ref_enhancement, tref)
+    def enhance_ref(tref): return '{} {}'.format(ref_enhancement, tref)
 
-    tr1, tr2 = re.split(ur'\s*-\s*', image_title)
+    tr1, tr2 = re.split(r'\s*-\s*', image_title)
     if ref_enhancement:
         tr1, tr2 = enhance_ref(tr1), enhance_ref(tr2)
     if not Ref.is_ref(tr1) or not Ref.is_ref(tr2):
@@ -126,10 +126,10 @@ def expand_refs_from_image_title(image_title, ref_enhancement=None):
 
 
 def leningrad_segments(tref):
-    ref_portions = re.split(ur'\s*;\s*', tref)
+    ref_portions = re.split(r'\s*;\s*', tref)
 
     if any(not Ref.is_ref(portion) for portion in ref_portions):
-        print u"could not resolve {}".format(tref)
+        print("could not resolve {}".format(tref))
         return []
 
     segments = []
@@ -165,8 +165,8 @@ def category_ref_sort_key(category_list):
 
 
 if __name__ == '__main__':
-    filenames = sorted([f_name for f_name in os.listdir(u'./kaufman')
-                        if not re.search(ur'thumbnail\.jpg$', f_name)])
+    filenames = sorted([f_name for f_name in os.listdir('./kaufman')
+                        if not re.search(r'thumbnail\.jpg$', f_name)])
 
     db = Database()
     db.cursor.execute('Select * FROM TblImages WHERE Im_Ms=1723 AND Im_Title IS NOT NULL')
@@ -177,13 +177,13 @@ if __name__ == '__main__':
     filenames.pop(251)
     filenames.pop(251)
     # print (images[0])
-    print len(filenames) - len(images)
-    print len(images)
+    print(len(filenames) - len(images))
+    print(len(images))
 
     image_data_list = [{
-        'image_content': u'{} / {} / {}'.format(f_name, im_title, image_num),
-        'expanded_refs': expand_refs_from_image_title(im_title, ref_enhancement=u'משנה'),
-        'image_url': u'https://storage.googleapis.com/sefaria-manuscripts/kaufman_a_50/{}'.format(f_name)
+        'image_content': '{} / {} / {}'.format(f_name, im_title, image_num),
+        'expanded_refs': expand_refs_from_image_title(im_title, ref_enhancement='משנה'),
+        'image_url': 'https://storage.googleapis.com/sefaria-manuscripts/kaufman_a_50/{}'.format(f_name)
     } for image_num, (f_name, im_title) in enumerate(zip(filenames, images))]
     # qa_images = image_data_list[::50]
     # qa_images.append(image_data_list[-1])
@@ -194,22 +194,22 @@ if __name__ == '__main__':
     with open('./munich_images/munich_filemap.json') as fp:
         munich_filemap = json.load(fp)
 
-    munich_images = [f for f in os.listdir(u'./munich_images') if re.search(ur'(?<!thumbnail)\.jpg$', f)]
+    munich_images = [f for f in os.listdir('./munich_images') if re.search(r'(?<!thumbnail)\.jpg$', f)]
     ref_expansion = {}
     for munich_file in munich_filemap:
         assert munich_file['image_file'] not in ref_expansion
         ref_expansion[munich_file['image_file']] = munich_file['expaned_refs']
 
     for munich_image in munich_images:
-        full_file_path = os.path.join(u'munich_images', munich_image)
+        full_file_path = os.path.join('munich_images', munich_image)
 
         image_data = {
             'image_content': munich_image,
             'expanded_refs': ref_expansion.get(full_file_path, []),
-            'image_url': u'https://storage.googleapis.com/sefaria-manuscripts/munich-manuscript/{}'.format(munich_image)
+            'image_url': 'https://storage.googleapis.com/sefaria-manuscripts/munich-manuscript/{}'.format(munich_image)
 
         }
-        if os.path.join(u'munich_images', munich_image) in ref_expansion:
+        if os.path.join('munich_images', munich_image) in ref_expansion:
             munich_image_data_list.append(image_data)
 
         else:
@@ -231,7 +231,7 @@ if __name__ == '__main__':
         {
             'image_content': l_value,
             'expanded_refs': leningrad_segments(l_value),
-            'image_url': u'https://storage.googleapis.com/sefaria-manuscripts/Leningrad/{}'.format(l_key)
+            'image_url': 'https://storage.googleapis.com/sefaria-manuscripts/Leningrad/{}'.format(l_key)
         }
         for l_key, l_value in leningrad_map.items()
     ]
