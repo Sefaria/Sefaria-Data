@@ -181,8 +181,58 @@ def create_new_indices():
             root.append(well)
         root.validate()
         post_index({"title": "Be'er HaGolah", "schema": root.serialize(), "categories": ["Philosophy", "Maharal"]})
-    beer()
-    derech()
+    def ner_mitzvah():
+        alt_toc_dict = {}
+        with open("Ner Mitzvah.csv") as f:
+            for row in csv.reader(f):
+                if row[0].startswith("Ner Mitzvah"):
+                    if row[2]:
+                        he, en = row[2], row[3]
+                        ref = row[0]
+                        alt_toc_dict[(en, he)] = ref
+        root = SchemaNode()
+        root.add_primary_titles("Ner Mitzvah", "נר מצוה")
+        vol = JaggedArrayNode()
+        vol.add_primary_titles("Volume I", "חלק א")
+        vol.add_structure(["Paragraph"])
+        vol.key = "Volume I"
+        vol2 = JaggedArrayNode()
+        vol2.add_primary_titles("Volume II", "חלק ב")
+        vol2.add_structure(["Paragraph"])
+        vol2.key = "Volume II"
+        root.append(vol)
+        root.append(vol2)
+        #Index({"title": "Ner Mitzvah", "schema": root.serialize(), "categories": ["Philosophy", "Maharal"]}).save()
+        alt_struct = SchemaNode()
+        alt_struct.add_shared_term("Topic")
+        for tuple, ref in alt_toc_dict.items():
+            child = ArrayMapNode()
+            child.add_primary_titles(tuple[0], tuple[1])
+            child.refs = []
+            child.wholeRef = ref
+            child.depth = 0
+            child.validate()
+            alt_struct.append(child)
+        alt_struct.key = "Topic"
+        alt_struct.validate()
+        post_index({"title": "Ner Mitzvah", "schema": root.serialize(), "categories": ["Philosophy", "Maharal"],
+                    "alt_structs": {"Topic": {"nodes": alt_struct.serialize()["nodes"]}}})
+        print()
+        # for tuple in alt_struct_nodes:
+        #     he, en = tuple
+        #     child_node = ArrayMapNode()
+        #     child_node.add_primary_titles(en, he)
+        #     child_node.depth = 0
+        #     child_node.refs = []
+        #     child_node.wholeRef = ""
+        #     parsha_node.append(child_node)
+        #     parsha_node.validate()
+        #     nodes.append(parsha_node.serialize())
+        #index["alt_structs"] = {"Parasha": {"nodes": nodes}}
+
+    # beer()
+    # derech()
+    ner_mitzvah()
 
 def create_new_node_derech_chaim():
     new_node_en, new_node_he = "Kol Yisrael; The Opening Mishna / משנת 'כל ישראל'".split(" / ")
@@ -198,12 +248,15 @@ def create_footnotes_indices(title):
         return
     title = title.split("/")[1]
     index = library.get_index(title)
-    contents = index.contents(v2=True)
+    contents = get_index_api("Ner Mitzvah", server=SEFARIA_SERVER) if title == 'נר מצוה' else index.contents(v2=True)
+    if title != 'נר מצוה':
+        return
     title = index.get_title('en')
     en_full_title = "Footnotes and Annotations on {}".format(title)
     he_title = index.get_title('he')
     he_full_title = "הערות ומקורות ל{}".format(he_title)
     term = Term().load({"name": "Footnotes and Annotations"})
+    contents["heTitle"] = he_title
     contents = alter_contents(contents, en_full_title, term)
     if title == "Derech Chaim":
         contents["schema"]["nodes"][0] = create_intro().serialize()
@@ -490,9 +543,9 @@ def post(text):
             nodes["Footnotes"][intro_node] = insert_count(nodes["Footnotes"][intro_node], 0)
             send_text = {"versionTitle": version.vtitle,
                          "versionSource": version.vsource,
-                         "text": insert_count(nodes["Footnotes"][intro_node], 0),
+                         "text": nodes["Footnotes"][intro_node],
                          "language": "he"}
-            post_text("Footnotes and Annotations on {}, {}".format(intro_title, intro), send_text, index_count="on")
+            #post_text("Footnotes and Annotations on {}, {}".format(intro_title, intro), send_text, index_count="on")
             nodes.pop(intro_node)
             nodes["Footnotes"].pop(intro_node)
         if title == "Be'er HaGolah":
@@ -513,22 +566,46 @@ def post(text):
                              "text": ch,
                              "language": "he"}
                 post_text("Ohr Chadash {}".format(i+1), send_text)
-        else:
+        elif title.startswith("Ner"):
             footnotes = nodes["Footnotes"]
             nodes.pop("Footnotes")
-            body = convertDictToArray(nodes)
-
+            for node in ["Volume I", "Volume II"]:
+                send_text = {"versionTitle": version.vtitle,
+                             "versionSource": version.vsource,
+                             "text": nodes[node],
+                             "language": "he"}
+                post_text("Ner Mitzvah, {}".format(node), send_text, index_count="on")
             for n, footnote_ch in footnotes.items():
                 footnotes[n] = [el for el in footnote_ch if el]
                 send_text = {"versionTitle": version.vtitle,
                              "versionSource": version.vsource,
                                  "text": insert_count(footnotes[n]),
                                  "language": "he"}
-                try:
-                    ref = "Footnotes and Annotations on {}, {}".format(title, n)
-                    post_text(ref, send_text, index_count="on")
-                except Exception as e:
-                    print("CANT post {}: {}".format(title, e))
+                ref = "Footnotes and Annotations on {}, {}".format(title, n)
+                post_text(ref, send_text, index_count="on")
+
+        else:
+            footnotes = nodes["Footnotes"]
+            nodes.pop("Footnotes")
+            body = convertDictToArray(nodes)
+            ftnotes = convertDictToArray(footnotes)[46]
+            send_text = {"versionTitle": version.vtitle,
+                         "versionSource": version.vsource,
+                         "text": ftnotes,
+                         "language": "he"}
+            #post_text("Footnotes and Annotations on {} 47".format(title), send_text, index_count="on")
+
+            # for n, footnote_ch in footnotes.items():
+            #     footnotes[n] = [el for el in footnote_ch if el]
+            #     send_text = {"versionTitle": version.vtitle,
+            #                  "versionSource": version.vsource,
+            #                      "text": insert_count(footnotes[n]),
+            #                      "language": "he"}
+            #     try:
+            #         ref = "Footnotes and Annotations on {} {}".format(title, n)
+            #         post_text(ref, send_text, index_count="on")
+            #     except Exception as e:
+            #         print("CANT post {}: {}".format(title, e))
             send_text = {"versionTitle": version.vtitle,
                          "versionSource": version.vsource,
                          "text": body,
@@ -565,6 +642,10 @@ def get_match(header, prev_beer_match, prev_match):
             match = prev_match
         elif header == '		משנת "כל ישראל", עמוד ד':
             match = "Kol Yisrael; The Opening Mishna"
+        elif header == '		נר מצוה ב, עמוד סח':
+            match = "Volume II"
+        elif header == '		נר מצוה, עמוד ג				':
+            match = "Volume I"
         else:
             match = 1
         return match, prev_beer_match
@@ -591,7 +672,7 @@ if __name__ == "__main__":
         create_footnotes_indices(dirpath)
         counter = 0
         for f in filenames:
-            if "NT" not in f:
+            if "GH" not in f:
                 continue
             docx_file = dirpath+"/"+f
             index = library.get_index(dirpath.split("/")[1])

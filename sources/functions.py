@@ -10,6 +10,7 @@ import os
 import sys
 import codecs
 import re
+import bleach
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
 sys.path.insert(0, "../")
@@ -745,8 +746,10 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST"):
+def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST", profile=False):
     url = server+'/api/links/'
+    if profile:
+        url += "?prof"
     result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method=method)
     if VERBOSE:
         print(result)
@@ -791,10 +794,10 @@ def post_link_weak_connection(info, repeat=10):
 
 
 
-def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method):
+def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle=""):
     generated_by_str = Ref(base_ref).index.title + "_to_" + comm_ref.split()[0]
     links = []
-    base = TextChunk(Ref(base_ref), lang='he')
+    base = TextChunk(Ref(base_ref), lang='he', vtitle=vtitle) if vtitle else TextChunk(Ref(base_ref), lang='he', vtitle=vtitle)
     matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)
     for n, match in enumerate(matches["matches"]):
         len_match_text = len(matches["match_text"][n][0]) + len(matches["match_text"][n][1])
@@ -807,6 +810,57 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
     return links
 
 
+def resegment_X_based_on_Y(ref, X, Y):
+    #X and Y are TextChunks with Ref = ref but different version titles
+
+    def fix(results, i, X_words):
+        if i == 0:
+            return (0, 0, "GUESS")
+        if i == len(results) - 1:
+            return (results[i - 1][1] + 1, len(X_words), "GUESS")
+        return (results[i - 1][1] + 1, results[i + 1][1] - 1, "GUESS")
+
+    def dher(str):
+        dh_num = 10
+        str = str.replace("<b>", "").replace("</b>", "")
+        str = str.split(".")[-1]
+        if str.count(" ") > dh_num:
+            return " ".join(str.split()[-1 * dh_num:])
+        else:
+            return str
+
+    resegmented_X = []
+    resegmented_X = ["" for line in Y.text]
+
+    Y_modified = [bleach.clean(line, strip=True) for line in Y.text]
+    results = match_ref(X, Y_modified, base_tokenizer=lambda x: x.split(),
+                        dh_extract_method=dher,
+                        with_abbrev_matches=True, place_consecutively=True, strict_boundaries=True)
+
+    X_words = " ".join(X.text).split()
+    len_results = len(results["match_word_indices"])
+
+    #get rid of (-1, -1)s
+    for i, tuple in enumerate(reversed(results["match_word_indices"])):
+        prev = results["match_word_indices"][len_results - i - 2] if i < len_results - 1 else (1, 1)
+        curr = tuple[1]
+        if curr == -1 and prev[1] == -1:
+            pass
+        elif curr == -1:
+            results["match_word_indices"][len_results - i - 1] = fix(results["match_word_indices"], len_results - i - 1,
+                                                                     X_words)
+        elif prev == -1:
+            results["match_word_indices"][len_results - i - 2] = fix(results["match_word_indices"], len_results - i - 2,
+                                                                     X_words)
+
+    #use match_word_indices to resegment X_words
+    for i, tuple in enumerate(reversed(results["match_word_indices"])):
+        prev = results["match_word_indices"][len_results - i - 2] if i < len_results - 1 else (-1, -1)
+        curr = tuple[1]
+        # if curr == -1 and prev[1] == -1:
+        #     pass
+        resegmented_X[len_results - 1 - i] = " ".join(X_words[prev[1] + 1:tuple[1] + 1])
+    return resegmented_X
 
 
 def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, talmud=True, lang='he', word_threshold=0.27, server="", rashi_filter=None, dh_extract_method=lambda x: x):
