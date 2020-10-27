@@ -46,7 +46,7 @@ def parse_pages(doc: str) -> list:
     doc = re.sub('[\xa0\u2003\t]', ' ', doc)
     doc = re.sub('\(\*\)|\*\)|@66[א-ת]\)', '', doc)
     doc = re.sub(r'@88\[([^\]]*)\]@55', r'\(\1\)', doc) #@88 mark refs in brackets in some files
-    doc = hebrewplus(doc, r'\(\)\[\].:,"\'#@%0123456789\-\*')
+    doc = hebrewplus(doc, r'\(\)\[\].:,"\'#@%0123456789\-\*\$')
     for brac in set(re.findall(r'\[([^\[\]]*)\]', doc)): #handling in bracked refs in other files
         if library.get_refs_in_string('(' + brac.replace('דף', '') + ')') != []:
             doc = doc.replace('['+brac+']', '('+brac+')')

@@ -1,5 +1,6 @@
 from collections import Counter, OrderedDict
 from tags_fix_and_check import tags_by_criteria, gem_to_num
+from sources.functions import getGematria
 
 class OrderedCounter(Counter, OrderedDict):
      #Counter that remembers the order elements are first encountered
@@ -72,9 +73,10 @@ def compare_tags_nums(tags_dict, lengths, unknowns, mefaresh, maxim=False):
     if mefaresh == 3:
         for page in tags_pages:
             letters = [value['original'] for value in tags_by_criteria(tags_dict, key=lambda x: x[1:4]==page).values()]
-            if 'ת' in letters:
+            letters = [getGematria(letter) for letter in letters]
+            if 400 in letters:
                 try:
-                    tags_pages[page] = gem_to_num(max(getGematria(letter) for letter in letters if letters.count(letter) > 1))
+                    tags_pages[page] = gem_to_num(max(letter for letter in letters if letters.count(letter) > 1)) + 22
                 except ValueError: #ת is the last in the page
                     tags_pages[page] = 22
             else:
@@ -101,7 +103,7 @@ def compare_tags_nums(tags_dict, lengths, unknowns, mefaresh, maxim=False):
             if not compare_with_anchors(tags_pages, lengths, up=anchor_length):
                 print('not equal anchors', len(highs_tags), len(highs_lengths))
                 if compare_with_anchors(with_unk_pages, lengths):
-                    print('same anchors number with unknowns', anchor_length, up=anchor_length)
+                    print('same anchors number with unknowns', anchor_length)
                     failed = False
             else:
                 failed = False
@@ -123,7 +125,7 @@ def compare_tags_nums(tags_dict, lengths, unknowns, mefaresh, maxim=False):
             compare_tags_nums(tags_dict2, lengths2, unknowns2, 1)
     return {}, {}
 
-def compare_tags(tags_dict, lengths, unknowns, mefaresh, maxim=False):
+def compare_tags(tags_dict, lengths, unknowns, mefaresh, maxim=False, exceptions=False):
     #assume len of dict and lengths is equal
     tags_pages = OrderedCounter(sorted([key[1:4] for key in tags_dict]))
     if maxim:
@@ -132,9 +134,10 @@ def compare_tags(tags_dict, lengths, unknowns, mefaresh, maxim=False):
     if mefaresh == 3:
         for page in tags_pages:
             letters = [value['original'] for value in tags_by_criteria(tags_dict, key=lambda x: x[1:4]==page).values()]
-            if 'ת' in letters:
+            letters = [getGematria(letter) for letter in letters]
+            if 400 in letters:
                 try:
-                    tags_pages[page] = gem_to_num(max(getGematria(letter) for letter in letters if letters.count(letter) > 1))
+                    tags_pages[page] = gem_to_num(max(letter for letter in letters if letters.count(letter) > 1)) + 22
                 except ValueError: #ת is the last in the page
                     tags_pages[page] = 22
             else:
@@ -159,6 +162,8 @@ def compare_tags(tags_dict, lengths, unknowns, mefaresh, maxim=False):
             else:
                 break
         if tags_pages[page] != length:
-            print(f'page {int(page)+1}: {tags_pages[page]} in rif and {length} in mefaresh')
+            pri = f'page {int(page)+1}: {tags_pages[page]} in rif and {length} in mefaresh'
+            if not exceptions or pri not in exceptions:
+                print(pri)
             if length==3 and tags_pages[page]==5 and int(page)+1==37: print(tags_by_criteria(tags_dict, key=lambda x: x[1:4]==page))
     return tags_dict

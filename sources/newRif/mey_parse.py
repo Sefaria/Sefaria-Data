@@ -45,7 +45,6 @@ def parse_regular_masechet(data, masechet, tags, unknowns):
 def execute():
     for masechet in tags_map:
         if not tags_map[masechet]['mey_letter']: continue
-        if 'shut' in tags_map[masechet].values(): continue
         print(masechet)
         with open(path+'/commentaries/mey_{}.txt'.format(masechet), encoding='utf-8') as fp:
             data = fp.read()

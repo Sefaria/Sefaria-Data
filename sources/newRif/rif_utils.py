@@ -111,3 +111,9 @@ for masechet in list(tags_map):
 
 rif_files = ([masechet, get_hebrew_masechet(masechet), open_rif_file(masechet)] for masechet in list(tags_map))
 segmented_rif_files = ([masechet, get_hebrew_masechet(masechet), open_rif_file(masechet, '/rif_segmented')] for masechet in tags_map)
+
+def maor_godel(masechet):
+    if masechet in library.get_indexes_in_category(["Talmud", "Bavli", "Seder Nashim"])+library.get_indexes_in_category(["Talmud", "Bavli", "Seder Nezikin"]):
+        return 'HaGadol', 'הגדול'
+    else:
+        return 'HaKatan', 'הקטן'

@@ -7,7 +7,7 @@ from functools import partial
 from collections import Counter
 from sources.functions import getGematria
 from sefaria.utils.talmud import daf_to_section, section_to_daf
-from rif_utils import tags_map, remove_meta_and_html, path
+from rif_utils import tags_map, remove_meta_and_html, path, maor_tags
 
 def sort_tags(tags_list):
     return sorted(tags_list, key=lambda x: True if any(s not in x for s in '@#*') else False)
@@ -116,14 +116,18 @@ def mefaresh_tags(masechet):
         data = data[:35] + [''] + data[35:]
 
     mefarshim_tags = {r'\(.\)': 3, r'\[.\]': 5, '%22.': 1}
-    if any(masechet == m for m in ['Shabbat', 'Eruvin', 'Pesachim', 'Sukkah', 'Megillah', 'Moed Katan', 'Yevamot', 'Kiddushin', 'Bava Kamma', 'Bava Batra', 'Sanhedrin', 'Makkot', 'Shevuot', 'Avodah Zarah']):
+    if any(masechet == m for m in ['Berakhot', 'Shabbat', 'Eruvin', 'Pesachim', 'Sukkah', 'Rosh Hashanah', 'Beitzah', 'Taanit', 'Megillah', 'Moed Katan', 'Yevamot', 'Ketubot', 'Kiddushin', 'Bava Kamma', 'Bava Metzia', 'Bava Batra', 'Sanhedrin', 'Makkot', 'Shevuot', 'Avodah Zarah', 'Menachot']):
         mefarshim_tags[r'\(\*.\)'] = 2
     if masechet in ['Yoma', 'Moed Katan', 'Bava Batra']:
         mefarshim_tags[r'\(#.\)'] = 4
-    if any(masechet == m for m in ['Shabbat', 'Gittin', 'Sanhedrin', 'Makkot', 'Avodah Zarah']):
+    if any(masechet == m for m in ['Berakhot', 'Shabbat', 'Rosh Hashanah', 'Beitzah', 'Taanit', 'Gittin', 'Bava Kamma', 'Bava Metzia', 'Sanhedrin', 'Makkot', 'Avodah Zarah', 'Menachot']):
         mefarshim_tags[r'\(#.\)'] = 3
+        mefarshim_tags[r'\(\$.\)'] = 4
+        mefarshim_tags[r'\[#.\]'] = 5
         if masechet == 'Gittin':
             mefarshim_tags[r'\(.\)'] = 2
+        elif masechet == 'Bava Kamma':
+            mefarshim_tags[r'\(.\)'] = 3
         else:
             mefarshim_tags[r'\(.\)'] = 4
     if masechet == 'Yevamot':
@@ -183,6 +187,51 @@ def sg_tags(masechet):
 
     return newdata, tags_dict
 
+def maor_milchemet(masechet, mefaresh):
+    with open(f'{path}/commentaries/json/{mefaresh}_{masechet}.json') as fp:
+        data = json.load(fp)
+    data = ' @G '.join([' @R '.join(l) for l in data])
+    data = data.split('##')
+    pre, data = data[0], data[1:]
+    last = daf_to_section(data[-1].split()[0])
+    newdata = ['' for _ in range(last)]
+    for page in data:
+        num = daf_to_section(page.split()[0]) - 1
+        newdata[num] = page
+    data = [page.split(' @R ') for page in newdata]
+
+    if mefaresh == 'maor':
+        mefarshim_tags = {maor_tags[masechet]['bach']: 3, maor_tags[masechet]['ravad']: 9}
+        data = [[' ' + par for par in page] for page in data] #for catching ravad tags in paragraph start
+    else:
+        mefarshim_tags = {maor_tags[masechet]['bach tag in milchemet']: 3}
+    mefarshim_tags[r'\(.\)'] = 3
+
+    newdata, tags_dict = [], {}
+    i0 = '4' if mefaresh == 'maor' else '5'
+    for n, page in enumerate(data):
+        if page:
+            id4dig = i0 + str(n).zfill(3) #4 for maor 5 for milchemet
+            page, tags = page_tags(page, [tag for tag in mefarshim_tags if tag], id4dig, tokenizer=mefaresh_tokenizer)
+            newdata.append(page)
+            check_duplicate(tags_dict, tags)
+            tags_dict.update(tags)
+
+    for value in tags_dict.values():
+        value['status'] = 1 #1 for base text
+        value['gimatric number'] = getGematria(value['original'])
+        if value['gimatric number'] == 0: print('gimatria 0', value)
+        value['style'] = 1 if '(' in value['original'] else 4
+        tag = identify_tag(value['original'], list(mefarshim_tags))
+        value['referred text'] = mefarshim_tags[tag]
+
+    newdata = [page for page in newdata if page]
+    newdata = pre + '##'.join([' @R '.join(l) for l in newdata])
+    newdata = [l.split(' @R ') for l in newdata.split(' @G ')]
+    newdata = [[re.sub('##+', '##', par) for par in page] for page in newdata]
+
+    return newdata, tags_dict
+
 def execute():
     for masechet in tags_map:
         print(masechet)
@@ -194,6 +243,13 @@ def execute():
             sg, sgtags = sg_tags(masechet)
             check_duplicate(tags, sgtags)
             tags.update(sgtags)
+        if masechet not in ['Nedarim', 'Menachot']:
+            maor, maortags = maor_milchemet(masechet, mefaresh='maor')
+            check_duplicate(tags, maortags)
+            tags.update(maortags)
+            mil, miltags = maor_milchemet(masechet, mefaresh='milchemet')
+            check_duplicate(tags, miltags)
+            tags.update(miltags)
         print(len(tags))
 
         with open(path+'/tags/rif_{}.json'.format(masechet), 'w') as fp:
@@ -202,6 +258,10 @@ def execute():
             json.dump(mefaresh, fp)
         with open(path+'/tags/sg_{}.json'.format(masechet), 'w') as fp:
             json.dump(sg, fp)
+        with open(path+'/tags/maor_{}.json'.format(masechet), 'w') as fp:
+            json.dump(maor, fp)
+        with open(path+'/tags/milchemet_{}.json'.format(masechet), 'w') as fp:
+            json.dump(mil, fp)
         with open(path+'/tags/tags_{}.json'.format(masechet), 'w') as fp:
             json.dump(tags, fp)
 

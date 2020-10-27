@@ -161,7 +161,7 @@ def execute():
         check_sequence(newdata, letter_tag)
         save_tags(tags, masechet)
 
-        newdata = [[re.sub(' +', ' ', re.sub(letter_tag+'.|@', '', par)).strip() for par in page] for page in newdata]
+        newdata = [[re.sub(' +', ' ', re.sub(letter_tag+'.', '', par)).strip() for par in page] for page in newdata]
         with open(path+'/commentaries/json/SG_{}.json'.format(masechet), 'w') as fp:
             json.dump(newdata, fp)
 

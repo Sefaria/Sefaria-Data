@@ -109,26 +109,46 @@ def add_from_unknowns(tags_dict):
                 prev_key = int(tag)
     return tags_dict
 
-def check_sequence(tags_dict):
+def check_sequence(tags_dict, masechet):
+    with open(f'{path}/tags_exceptions.txt', encoding='utf-8') as fp:
+        exceptions = fp.read()
+    exceptions = exceptions.split('&')
+    exceptions = [e for e in exceptions if masechet in e]
+    if exceptions: exceptions = exceptions[0]
     tags_dict = OrderedDict(sorted(tags_dict.items(), key=lambda x: int(x[0])))
     prev = 0
     check = True
     for tag in tags_dict:
         if tag[0] == '2' and tags_dict[tag]['num_in_page'] == 1: #jump between if and mefaresh is allowed (for Rashi)
             if tags_dict[tag]['gimatric number'] <= prev:
-                print('page {} last tag in Rif is {} and first in mefaresh is {} (mefaresh={})'.format(
-                section_to_daf(int(tag[1:4])+1), prev, tags_dict[tag]['gimatric number'], tags_dict[tag]['referred text']
-                ))
+                p = 'page {} last tag in Rif is {} and first in mefaresh is {} (mefaresh={})'.format(
+                    section_to_daf(int(tag[1:4])+1), prev, tags_dict[tag]['gimatric number'], tags_dict[tag]['referred text'])
+                if p not in exceptions:
+                    print(p)
         elif tags_dict[tag]['gimatric number'] != next_gem(prev):
             if prev == 0:
-                print('page {} first tag is {} tag {} (mefaresh={})'.format(
-                section_to_daf(int(tag[1:4])+1), tags_dict[tag]['gimatric number'], tags_dict[tag]['original'], tags_dict[tag]['referred text']
-                ), tag)
+                p = 'page {} first tag is {} tag {} (mefaresh={}) {}'.format(
+                    section_to_daf(int(tag[1:4])+1), tags_dict[tag]['gimatric number'], tags_dict[tag]['original'], tags_dict[tag]['referred text'], tag)
+                if p not in exceptions:
+                    print(p)
             else:
-                print('page {}: {} comes after {} in {} tag  {} (mefaresh={})'.format(
-                section_to_daf(int(tag[1:4])+1), tags_dict[tag]['gimatric number'], prev, 'Rif' if tag[0]=='1' else 'SG' if tag[0]=='3' else 'mefaresh', tags_dict[tag]['original'], tags_dict[tag]['referred text']
-                ), tag)
+                p = 'page {}: {} comes after {} in {} tag  {} (mefaresh={}) {}'.format(
+                    section_to_daf(int(tag[1:4])+1), tags_dict[tag]['gimatric number'], prev, 'Rif' if tag[0]=='1' else 'SG' if tag[0]=='3' else 'mefaresh', tags_dict[tag]['original'], tags_dict[tag]['referred text'], tag)
+                if p not in exceptions:
+                    print(p)
         prev = tags_dict[tag]['gimatric number']
+
+def ad_hocs(tags, masechet):
+    for tag in tags_by_criteria(tags, value=lambda x: x['referred text']==0 and x['style']==2):
+        tags[tag]['referred text'] = 5
+    if masechet == 'Sukkah':
+        tags['30040100']['referred text'] = 3
+    elif masechet == 'Beitzah':
+        tags['30049900']['referred text'] = 3
+        tags['30059900']['referred text'] = 3
+    elif masechet == 'Yevamot':
+        tags['40480000']['referred text'] = 3
+    return tags
 
 def execute():
     for masechet in tags_map:
@@ -137,7 +157,8 @@ def execute():
         data = exclude_redundant(data)
         data = add_from_unknowns(data)
         for subdict in generate_mefaresh_and_page(data, range(1,10)):
-            check_sequence(subdict)
+            check_sequence(subdict, masechet)
+        data = ad_hocs(data, masechet)
         save_tags(data, masechet)
 
 if __name__ == '__main__':
