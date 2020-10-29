@@ -14,6 +14,8 @@ import csv
 import os
 import pickle
 
+Rif = True
+
 class Massekhet(object):
 
     def __init__(self,errorfilename):
@@ -130,20 +132,24 @@ def parse_em(filename, passing, errorfilename, EM = True):
         pre_lines = fp.readlines()
     # pattern = r'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור)'''
     pattern = r'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור|ו?ה?רמב"ם|@11)'''
-    lines = []
-    previous = ''
-    for pl in pre_lines:
-        if not pl:
-            continue
-        if len(pl) <= 2:
-            continue
-        if re.match('@11', pl):
-            previous = pl
-        elif not re.match('.*[:.][\s\n]*?$', pl):
-            previous = previous + pl
-        else:
-            line = previous + pl
-            lines.append(line.replace('\n', ' '))
+    if EM == 'Rif':
+        lines = []
+        previous = ''
+        for pl in pre_lines:
+            if not pl:
+                continue
+            if len(pl) <= 2:
+                continue
+            if re.match('@11', pl):
+                previous = pl
+            elif not re.match('.*[:.][\s\n]*?$', pl):
+                previous = previous + pl
+            else:
+                line = previous + pl if previous.strip() != pl.strip() else pl
+                lines.append(line.replace('\n', ' '))
+                previous = ''
+    else:
+        lines = pre_lines
 
     for line in lines:
         mass.error_flag = False
@@ -582,7 +588,10 @@ class Rambam(object):
             if perek and book and not re.search('ו?שם', str):
                 mass.write_shgia('error mim, No halacha stated')
             # resolved = self._tracker.resolve(book, [perek, halacha])
-            resolved = resolveExceptin(self._tracker, book, [perek, halacha])
+            if Rif:
+                resolved = resolveExceptin(self._tracker, book, [perek])
+            else:
+                resolved = resolveExceptin(self._tracker, book, [perek, halacha])
 
 
         if isinstance(resolved, list):
@@ -956,5 +965,7 @@ def needs_another_cycle(txtfile, mass_name):
             +" other problem " + str(needs_c))
 
 if __name__ == "__main__":
-    run1('EM_Rif', 'Rif', EM=True)
+    # run1('EM_Rif', 'Rif', EM='Rif')
+    i = 1
+    run15('EM_Rif_{}'.format(i), 'EM_Rif_{}'.format(i+1))
 

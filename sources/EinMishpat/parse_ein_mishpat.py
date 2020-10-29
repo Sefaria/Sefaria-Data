@@ -87,8 +87,9 @@ from sefaria.helper.link import create_link_cluster
 if __name__ == "__main__":
     massekhet = 'Rif'
     # final_list = segment_column(u'done/niddah_little_letters.csv', u'done/niddah_little_letters.csv', massekhet, wikitext=False)
-    # print final_list
-    # validation = validity_and_cluster(final_list)
-    # save_links_local(final_list, massekhet)
+    final_list = segment_column(u'EM_Rif.csv', u'EM_Rif.csv', massekhet, wikitext=False)
+    print(final_list)
+    validation = validity_and_cluster(final_list)
+    save_links_local(final_list, massekhet)
     links = post_ein_mishpat(massekhet)
     print('done')
