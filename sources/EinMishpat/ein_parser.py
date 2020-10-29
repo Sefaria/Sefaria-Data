@@ -9,7 +9,8 @@ import pygtrie
 from data_utilities.util import getGematria, multiple_replace
 from data_utilities.ibid import BookIbidTracker, IbidKeyNotFoundException, IbidRefException
 from sefaria.utils.hebrew import strip_nikkud
-import unicodecsv as csv
+# import unicodecsv as csv
+import csv
 import os
 import pickle
 
@@ -134,8 +135,12 @@ def parse_em(filename, passing, errorfilename, EM = True):
     for pl in pre_lines:
         if not pl:
             continue
+        if len(pl) <= 2:
+            continue
         if re.match('@11', pl):
             previous = pl
+        elif not re.match('.*[:.][\s\n]*?$', pl):
+            previous = previous + pl
         else:
             line = previous + pl
             lines.append(line.replace('\n', ' '))
@@ -412,7 +417,7 @@ class TurSh(object):
                         next_part = next(str_it)
                     except StopIteration:
                         hasnext = False
-                    if hasnext and (re.search(reg_seif,next_part) or re.search(reg_sham, next_part)):
+                    if hasnext and (re.search(reg_seif, next_part) or re.search(reg_sham, next_part)):
                         if re.search(reg_combined, next_part):
                             combined = re.search(reg_combined, next_part)
                             seif = getGematriaVav(combined.group(1), mass)
@@ -816,7 +821,7 @@ def toCSV(filename, obj_list):
         if row['problem'] == 'error missing little or big letter' or row['problem'] == 'error, cit with the perek/page counters':
             row['problem'] = False
     with open('{}.csv'.format(filename), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, ['txt file line', 'Perek running counter', 'page running counter',
+        writer = csv.DictWriter(csv_file, fieldnames = ['txt file line', 'Perek running counter', 'page running counter',
                                 'Perek aprx', 'Page aprx', 'Rambam', 'Semag', 'Tur Shulchan Arukh', 'original', 'problem']) #fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(list_dict)
