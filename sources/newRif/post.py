@@ -117,7 +117,7 @@ def post_mefaresh(masechtot=list(tags_map), index=True, text='first', links=True
             functions.post_link(data, server = server)
             LS+=len(data)
 
-def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,3,5,7,8,9], index=True, text=True, links=True, server = 'http://localhost:8000'):
+def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,2,3,4,5,7,8,9,10], index=True, text=True, links=True, server = 'http://localhost:8000'):
     global TS
     global LS
     for num in mefarshim:
@@ -126,14 +126,17 @@ def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,3,5,7,8,9], index=Tru
         hmefaresh = commentaries[str(num)]['h_title']
         fmefaresh = commentaries[str(num)]['f_name']
         c_title = commentaries[str(num)]['c_title']
-        hc_title = '{} על רי"ף'.format(hmefaresh)
+        if num == 10:
+            hc_title = 'כתוב שם'
+        else:
+            hc_title = '{} על רי"ף'.format(hmefaresh)
         functions.add_term(c_title, hc_title, server=server)
         if num not in [7, 8]:
             categories.append(c_title)
             functions.add_category(c_title, categories, server=server)
 
         for masechet in masechtot:
-            if num in [1, 9]:
+            if num in [1, 2, 9]:
                 try:
                     with open(path+f'/tags/topost/{fmefaresh}_{masechet}.json') as fp:
                         data = json.load(fp)
@@ -173,6 +176,10 @@ def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,3,5,7,8,9], index=Tru
                     index_dict['base_text_titles'].append(f"HaMaor {maor_godel(masechet)[0]} on {masechet}")
                 if tags_by_criteria(masechet, key=lambda x: x[0]=='5', value=lambda x: x['referred text']==num):
                     index_dict['base_text_titles'].append(f"Milchemet Hashem on {masechet}")
+                if tags_by_criteria(masechet, key=lambda x: x[0]=='6', value=lambda x: x['referred text']==num):
+                    index_dict['base_text_titles'].append(f"{commentaries['2']['c_title']} {masechet}")
+                if num == 10:
+                    index_dict['base_text_titles'] = [f"HaMaor {maor_godel(masechet)[0]} on {masechet}"]
                 functions.post_index(index_dict, server = server)
 
             if text:
@@ -185,11 +192,12 @@ def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,3,5,7,8,9], index=Tru
                 functions.post_text(title, text_version, server=server, skip_links=True)
                 TS+=1
 
-            if links:
-                with open(path+'/tags/topost/inline_links_{}.json'.format(masechet)) as fp:
-                    data = json.load(fp)
-                functions.post_link(data, server = server)
-                LS+=len(data)
+    if links:
+        for masechet in masechtot:
+            with open(path+'/tags/topost/inline_links_{}.json'.format(masechet)) as fp:
+                data = json.load(fp)
+            functions.post_link(data, server = server)
+            LS+=len(data)
 
 def post_maor(masechtot=list(maor_tags)+['intro'], mefarshim=['maor', 'milchemet'], index=True, text=True, links=True, server = 'http://localhost:8000'):
     global TS
@@ -257,7 +265,8 @@ def post_maor(masechtot=list(maor_tags)+['intro'], mefarshim=['maor', 'milchemet
                 }
                 functions.post_text(title, text_version, server=server, skip_links=True)
                 TS+=1
-        if links:
+    if links:
+        for masechet in masechtot:
             if masechet != 'intro':
                 with open(path+f'/commentaries/json/maor_links_{masechet}.json') as fp:
                     data = json.load(fp)
@@ -267,8 +276,8 @@ def post_maor(masechtot=list(maor_tags)+['intro'], mefarshim=['maor', 'milchemet
 if __name__ == '__main__':
     server = 'http://localhost:8000'
     #server = 'https://glazner.cauldron.sefaria.org'
-    post_rif(index=False,text=True,server=server)
-    post_mefaresh(index=False,text=True,category=False,server=server)
-    post_mefareshim(index=False,server=server)
-    post_maor(index=False)
+    #post_rif(index=False,text=True)
+    #post_mefaresh(index=False,text=True)
+    #post_maor(index=False)
+    post_mefareshim(index=False,text=False)
     print(f'{TS} texts {LS} links')

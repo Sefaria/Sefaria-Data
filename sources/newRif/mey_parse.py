@@ -43,11 +43,16 @@ def parse_regular_masechet(data, masechet, tags, unknowns):
     return newdata, tags, lengths
 
 def execute():
+    with open(f'{path}/mey_exceptions.txt', encoding='utf-8') as fp:
+        exceptions = fp.read()
+    exceptions = exceptions.split('@')
     for masechet in tags_map:
         if not tags_map[masechet]['mey_letter']: continue
         print(masechet)
         with open(path+'/commentaries/mey_{}.txt'.format(masechet), encoding='utf-8') as fp:
             data = fp.read()
+        excep = [e for e in exceptions if masechet in e]
+        if excep: excep = excep[0]
         data = re.sub('\ufeff|\u200f', '', data)
         page_tag = tags_map[masechet]['mey_page']
         letter_tag = tags_map[masechet]['mey_letter']
@@ -137,7 +142,7 @@ def execute():
             tags.update(part_tags)
             lengths += part_leng
 
-        tags.update(compare_tags(tags, lengths, unknowns, 5, maxim=True))
+        tags.update(compare_tags(tags, lengths, unknowns, 5, maxim=True, exceptions=excep))
         check_sequence(newdata, letter_tag+r'\[')
         save_tags(tags, masechet)
 

@@ -44,7 +44,7 @@ def paragraph_tags(text: str, regex: str, id6dig: str, tokenizer=lambda x: x.spl
         a, b = tokenizer(a), tokenizer(b)
         context = ' '.join(a[-word_range:] + b[:word_range])
         word_index = len(a)
-        tags_dict[id8dig] = {'word_index': word_index, 'context': context, 'original': re.search(regex, text).group()}
+        tags_dict[id8dig] = {'word_index': word_index, 'context': context, 'original': re.search(regex, text).group(), 'used': False}
         text = re.sub(regex, f' ${id8dig} ', text, 1)
         n+=1
     return text, tags_dict
@@ -115,10 +115,10 @@ def mefaresh_tags(masechet):
     elif masechet == 'Pesachim':
         data = data[:35] + [''] + data[35:]
 
-    mefarshim_tags = {r'\(.\)': 3, r'\[.\]': 5, '%22.': 1}
+    mefarshim_tags = {r'\(.\)': 3, r'\[.\]': 5, '%22.': 1, r'\(.\]': 2}
     if any(masechet == m for m in ['Berakhot', 'Shabbat', 'Eruvin', 'Pesachim', 'Sukkah', 'Rosh Hashanah', 'Beitzah', 'Taanit', 'Megillah', 'Moed Katan', 'Yevamot', 'Ketubot', 'Kiddushin', 'Bava Kamma', 'Bava Metzia', 'Bava Batra', 'Sanhedrin', 'Makkot', 'Shevuot', 'Avodah Zarah', 'Menachot']):
         mefarshim_tags[r'\(\*.\)'] = 2
-    if masechet in ['Yoma', 'Moed Katan', 'Bava Batra']:
+    if masechet in ['Yoma', 'Moed Katan', 'Ketubot', 'Kiddushin', 'Bava Batra', 'Chullin']:
         mefarshim_tags[r'\(#.\)'] = 4
     if any(masechet == m for m in ['Berakhot', 'Shabbat', 'Rosh Hashanah', 'Beitzah', 'Taanit', 'Gittin', 'Bava Kamma', 'Bava Metzia', 'Sanhedrin', 'Makkot', 'Avodah Zarah', 'Menachot']):
         mefarshim_tags[r'\(#.\)'] = 3
@@ -132,6 +132,7 @@ def mefaresh_tags(masechet):
             mefarshim_tags[r'\(.\)'] = 4
     if masechet == 'Yevamot':
         mefarshim_tags[tags_map[masechet]['Nuschaot Ktav Yad']] = 7
+        mefarshim_tags[r'\(\$.\)'] = 4
 
     newdata, tags_dict = [], {}
     for n, page in enumerate(data):
@@ -201,7 +202,7 @@ def maor_milchemet(masechet, mefaresh):
     data = [page.split(' @R ') for page in newdata]
 
     if mefaresh == 'maor':
-        mefarshim_tags = {maor_tags[masechet]['bach']: 3, maor_tags[masechet]['ravad']: 9}
+        mefarshim_tags = {maor_tags[masechet]['bach']: 3, maor_tags[masechet]['ravad']: 10} #10 for ravad n maor
         data = [[' ' + par for par in page] for page in data] #for catching ravad tags in paragraph start
     else:
         mefarshim_tags = {maor_tags[masechet]['bach tag in milchemet']: 3}
@@ -232,6 +233,33 @@ def maor_milchemet(masechet, mefaresh):
 
     return newdata, tags_dict
 
+def ansh_tags(masechet):
+    with open(path+'/commentaries/json/ansh_{}.json'.format(masechet)) as fp:
+        data = json.load(fp)
+    mefarshim_tags = {r'\(.\)': 4, r'\[.\]': 5}
+    if tags_map[masechet]['choi in ansh']:
+        mefarshim_tags[tags_map[masechet]['choi in ansh']]: 4
+    if tags_map[masechet]['mey in ansh']:
+        mefarshim_tags[tags_map[masechet]['mey in ansh']]: 4
+    newdata, tags_dict = [], {}
+
+    for n, page in enumerate(data):
+        id4dig = '6' + str(n).zfill(3) #6 for ansh
+        page, tags = page_tags(page, [tag for tag in mefarshim_tags if tag], id4dig, tokenizer=mefaresh_tokenizer)
+        newdata.append(page)
+        check_duplicate(tags_dict, tags)
+        tags_dict.update(tags)
+
+    for value in tags_dict.values():
+        value['status'] = 1 #1 for base text
+        value['gimatric number'] = getGematria(value['original'])
+        if value['gimatric number'] == 0: print('gimatria 0', value)
+        value['style'] = 1 if '(' in value['original'] else 2 if '[' in value['original'] else 3
+        tag = identify_tag(value['original'], list(mefarshim_tags))
+        value['referred text'] = mefarshim_tags[tag]
+
+    return newdata, tags_dict
+
 def execute():
     for masechet in tags_map:
         print(masechet)
@@ -250,6 +278,10 @@ def execute():
             mil, miltags = maor_milchemet(masechet, mefaresh='milchemet')
             check_duplicate(tags, miltags)
             tags.update(miltags)
+        if masechet != 'Nedarim' and masechet not in ['Yoma', 'Beitzah']: #tha and is temp.
+            ansh, anshtags = ansh_tags(masechet)
+            check_duplicate(tags, anshtags)
+            tags.update(anshtags)
         print(len(tags))
 
         with open(path+'/tags/rif_{}.json'.format(masechet), 'w') as fp:
@@ -262,6 +294,8 @@ def execute():
             json.dump(maor, fp)
         with open(path+'/tags/milchemet_{}.json'.format(masechet), 'w') as fp:
             json.dump(mil, fp)
+        with open(path+'/tags/ansh_{}.json'.format(masechet), 'w') as fp:
+            json.dump(ansh, fp)
         with open(path+'/tags/tags_{}.json'.format(masechet), 'w') as fp:
             json.dump(tags, fp)
 

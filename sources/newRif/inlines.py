@@ -3,7 +3,7 @@ import re
 import django
 django.setup()
 from rif_utils import tags_map, path, commentaries, main_mefaresh, maor_godel
-from tags_fix_and_check import tags_by_criteria, gem_to_num
+from tags_fix_and_check import tags_by_criteria, gem_to_num, save_tags
 from sefaria.utils.talmud import section_to_daf
 from data_utilities.util import getGematria
 from sefaria.model import *
@@ -17,17 +17,22 @@ def find_tag_in_bach(masechet, comment):
     else:
         print(f'no tag in bach {masechet}: {comment}')
 
-def bach_order(masechet, tags, page):
-    old = 0
-    gap = 0
-    orders = []
-    with open(path+f'/commentaries/json/bach_{masechet}.json') as fp:
-        data = json.load(fp)
+def sort_tags(tags):
     tags_list = list(tags)
     if (masechet, page) in [('Eruvin', 1), ('Kiddushin', 35)]: #in these page maor and milchemt tags numbered before sg tags
         tags_list = sorted(tags_list, key=lambda x: '6' if x[0]=='3' else x)
     elif (masechet, page) in [('Yevamot', 48)]:
         tags_list = sorted(tags_list, key=lambda x: '6' if x[0]=='4' else x)
+    return tags_list
+
+def bach_order(masechet, tags, page, ravad=False):
+    #this function uses also for ravad on pesachim
+    old = 0
+    gap = 0
+    orders = []
+    with open(path+f'/commentaries/json/bach_{masechet}.json') as fp:
+        data = json.load(fp)
+    tags_list = sort_tags(tags)
     for tag in tags_list:
         new = gem_to_num(getGematria(tags[tag]['original']))
         if old + 1 == new + gap:
@@ -51,6 +56,8 @@ def bach_order(masechet, tags, page):
             gap += 22
         elif masechet == 'Menachot' and new == 1 and old == 2:
             gap = 22
+        elif ravad:
+            gap = old + 1 - new
         else:
             print(f'{new} comes after {old} in {masechet} p. {page}')
         old = new + gap
@@ -71,7 +78,9 @@ for masechet in tags_map:
         maor = json.load(fp)
     with open(path+f'/tags/milchemet_{masechet}.json') as fp:
         milchemet = json.load(fp)
-    for mefaresh in [1,3,5,7,8,9]:
+    with open(path+f'/tags/ansh_{masechet}.json') as fp:
+        ansh = json.load(fp)
+    for mefaresh in [1,2,3,4,5,7,8,9,10]:
         c_title = commentaries[str(mefaresh)]['c_title']
         if mefaresh == 9:
             try:
@@ -87,7 +96,10 @@ for masechet in tags_map:
             tags = tags_by_criteria(masechet, key=lambda x: int(x[1:4])==page, value=lambda x: x['referred text']==mefaresh)
             if mefaresh == 3:
                 orders = bach_order(masechet, tags, page)
-            for tag in tags:
+            elif mefaresh == 10 and masechet == 'Pesachim':
+                orders = bach_order(masechet, tags, page, ravad=True)
+            tags_list = sort_tags(tags)
+            for tag in tags_list:
                 if tag[0] == '1':
                     data = rif
                     btext = 'Rif'
@@ -103,6 +115,9 @@ for masechet in tags_map:
                 elif tag[0] == '5':
                     data = milchemet
                     btext = 'Milchemet Hashem on'
+                elif tag[0] == '6':
+                    data = ansh
+                    btext = commentaries['2']['c_title']
                 else:
                     print('problem with first digit', tag)
                     continue
@@ -122,7 +137,7 @@ for masechet in tags_map:
                         print(f'tag {tag} with {len(with_tag)} relevant tags in ravad')
                         continue
 
-                if mefaresh == 3: #bach has double letters
+                if mefaresh == 3 or (mefaresh == 10 and masechet == 'Pesachim'): #bach has double letters
                     order = orders.pop(0)
 
                 if int(tag[4:]) > 8999:
@@ -139,8 +154,11 @@ for masechet in tags_map:
                     if n > page:
                         print('tag isnt in the expected place', tag)
                         continue
-                elif tag in data[page][section]:
+                elif len(data[page]) > section and tag in data[page][section]:
                     bpage = page
+                elif masechet == 'Chullin' and tag == '20850100' and tag in data[84][5]:
+                    bpage = 84
+                    section = 5
                 else:
                     for n in range(1, 4):#when the tag belongs to continous dh from prev. page. max known is 3
                         if tag in data[page-n][-1]:
@@ -148,7 +166,14 @@ for masechet in tags_map:
                             section = len(data[bpage]) - 1
                             break
                         if n == 3:
-                            print('tag isnt in the expected place', tag)
+                            if len(data[page]) >= section and tag in data[page][section-1]:
+                                bpage = page
+                                section = section - 1
+                            elif len(data[page]) >= section and tag in data[page][section-2]:
+                                bpage = page
+                                section = section - 2
+                            else:
+                                print('tag isnt in the expected place', tag)
 
                 data[bpage][section] = data[bpage][section].replace(f'${tag}', f'<i data-commentator="{c_title}" data-label="{label}" data-order="{order}"></i>', 1)
                 data[bpage][section] = re.sub('(</i>) +', r'\1', data[bpage][section])
@@ -159,6 +184,7 @@ for masechet in tags_map:
                         'type': 'commentary',
                         'inline_reference': {'data-commentator': c_title, 'data-order': order, 'data-label': label},
                         'generated_by': 'rif inline commentaries'})
+                        tags[tag]['used'] = True
                     else:
                         print(f'{tag} ref to null {ref}')
                 except InputError: #when running before post
@@ -166,6 +192,7 @@ for masechet in tags_map:
                     'type': 'commentary',
                     'inline_reference': {'data-commentator': c_title, 'data-order': order, 'data-label': label},
                     'generated_by': 'rif inline commentaries'})
+            save_tags(tags, masechet)
 
         if mefaresh == 9:
             with open(path+'/tags/topost/ravad_{}.json'.format(masechet), 'w') as fp:
@@ -183,3 +210,5 @@ for masechet in tags_map:
         json.dump(maor, fp)
     with open(path+'/tags/topost/milchemet_{}.json'.format(masechet), 'w') as fp:
         json.dump(milchemet, fp)
+    with open(path+'/tags/topost/ansh_{}.json'.format(masechet), 'w') as fp:
+        json.dump(ansh, fp)

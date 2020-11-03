@@ -141,13 +141,19 @@ def check_sequence(tags_dict, masechet):
 def ad_hocs(tags, masechet):
     for tag in tags_by_criteria(tags, value=lambda x: x['referred text']==0 and x['style']==2):
         tags[tag]['referred text'] = 5
-    if masechet == 'Sukkah':
+    if masechet == 'Pesachim':
+        tags['20341000']['referred text'] = 2
+    elif masechet == 'Sukkah':
         tags['30040100']['referred text'] = 3
     elif masechet == 'Beitzah':
         tags['30049900']['referred text'] = 3
         tags['30059900']['referred text'] = 3
     elif masechet == 'Yevamot':
         tags['40480000']['referred text'] = 3
+    elif masechet == 'Kiddushin':
+        tags['30089900']['referred text'] = 3
+    elif masechet == 'Bava Kamma':
+        tags['20431000']['referred text'] = 2
     return tags
 
 def execute():
@@ -156,7 +162,7 @@ def execute():
         data = open_tags(masechet)
         data = exclude_redundant(data)
         data = add_from_unknowns(data)
-        for subdict in generate_mefaresh_and_page(data, range(1,10)):
+        for subdict in generate_mefaresh_and_page(data, range(1,11)):
             check_sequence(subdict, masechet)
         data = ad_hocs(data, masechet)
         save_tags(data, masechet)

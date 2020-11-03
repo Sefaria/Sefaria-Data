@@ -3,7 +3,7 @@ django.setup()
 import re
 import json
 from data_utilities.util import getGematria
-from rif_utils import path, tags_map
+from rif_utils import path, tags_map, maor_tags
 from tags_fix_and_check import tags_by_criteria, save_tags
 from tags_compare import compare_tags_nums, compare_tags, OrderedCounter
 from sg_parser import check_sequence
@@ -16,7 +16,7 @@ def parse_pages(data, letter_tag):
     lengths = []
     cou = 0
     for par in data:
-        if letter_tag + 'א' in par:
+        if letter_tag + 'א' in par and letter_tag + 'א]&' not in par:
             if cou:
                 lengths.append(cou)
                 splitted.append(page_text)
@@ -30,13 +30,15 @@ def parse_pages(data, letter_tag):
     splitted.append(page_text)
     return splitted, lengths
 
-def nky_yevamot():
-    with open(path+'/commentaries/nky_Yevamot.txt', encoding='utf-8') as fp:
+def nky_bmravad(mefaresh, masechet):
+    with open(path+f'/commentaries/{mefaresh}_{masechet}.txt', encoding='utf-8') as fp:
         data = fp.read().replace('\xa0', ' ').replace('\ufeff', '')
-    data = ['@11' + par for par in data.split('@11')[1:]]
-    data, lengths = parse_pages(data, '@11')
-    tags = tags_by_criteria('Yevamot', value=lambda x: x['referred text']==7)
-    newtags, counter = compare_tags_nums(tags, lengths, {}, 7)
+    letter = '@11' if mefaresh == 'nky' else '@22'
+    data = [letter + par for par in data.split(letter)[1:]]
+    data, lengths = parse_pages(data, letter)
+    num = 7 if mefaresh == 'nky' else 10
+    tags = tags_by_criteria(masechet, value=lambda x: x['referred text']==num)
+    newtags, counter = compare_tags_nums(tags, lengths, {}, num)
     tags.update(newtags)
     if len(counter) > 0:
         newdata = [[] for _ in range(max([int(page) for page in counter]) + 1)]
@@ -44,15 +46,16 @@ def nky_yevamot():
             newdata[int(page)] = data.pop(0)
     else:
         print('no pages in tags')
-    tags.update(compare_tags(tags, lengths, {}, 7))
-    save_tags(tags, 'Yevamot')
+        return
+    tags.update(compare_tags(tags, lengths, {}, num))
+    save_tags(tags, masechet)
     try:
-        check_sequence(newdata, '@11')
+        check_sequence(newdata, letter)
     except UnboundLocalError:
         print('no newdata')
 
     newdata = [[re.sub(' +', ' ', re.sub('@11.\]|@|\d', '', par)).strip() for par in page] for page in newdata]
-    with open(path+'/commentaries/json/nky_Yevamot.json', 'w') as fp:
+    with open(path+f'/commentaries/json/{mefaresh}_{masechet}.json', 'w') as fp:
         json.dump(newdata, fp)
 
 
@@ -125,12 +128,16 @@ def efrayim_bk():
 
 def execute():
     print('nky yevamot')
-    nky_yevamot()
+    nky_bmravad('nky', 'Yevamot')
     for masechet in ['Ketubot', 'Gittin', 'Bava Kamma']:
         print('ravad', masechet)
         ravad(masechet)
     print('r efrayim bk')
     efrayim_bk()
+    for masechet in maor_tags:
+        if maor_tags[masechet]['ravad in tag']:
+            print('bm ravad', masechet)
+            nky_bmravad('bmravad', masechet)
 
 if __name__ == '__main__':
     execute()

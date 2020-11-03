@@ -25,7 +25,6 @@ def parse_regular_masechet(data, masechet, tags, unknowns):
             if cou:
                 lengths.append(cou)
                 splitted.append(page_text)
-                letters_page = []
             cou = 1
             page_text = []
         else:
@@ -35,7 +34,7 @@ def parse_regular_masechet(data, masechet, tags, unknowns):
     splitted.append(page_text)
     newtags, counter = compare_tags_nums(tags, lengths, unknowns, 3)
     tags.update(newtags)
-    #save_tags(tags, masechet)
+    save_tags(tags, masechet)
     if len(counter) > 0:
         newdata = [[] for _ in range(max([int(page) for page in counter]) + 1)]
         for page in counter:
@@ -59,9 +58,6 @@ def execute():
         letter_tag = tags_map[masechet]['bach_letter']
         tags = tags_by_criteria(masechet, value=lambda x: x['referred text']==3)
         unknowns = tags_by_criteria(masechet, value=lambda x: x['referred text']==0 and x['style']==1)
-        #if masechet == 'Yevamot':
-        #    tags['40480000'] = unknowns['40480000']
-        #    tags['40480000']['referred text'] = 3
         lengths = []
         newdata = []
 

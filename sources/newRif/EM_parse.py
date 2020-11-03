@@ -5,11 +5,42 @@ from data_utilities.util import getGematria
 from tags_fix_and_check import tags_by_criteria, save_tags, next_gem
 from tags_compare import compare_tags_nums, compare_tags, OrderedCounter
 from sg_parser import check_sequence
+from sources.EinMishpat.ein_parser import parse_em
 
 def parse_em_pars(data, masechet):
     data = re.sub('\ufeff|\u200f', '', data)
     letter_tag = tags_map[masechet]['em_letter']
     data = [letter_tag + par for par in data.split(letter_tag)][1:]
+    return data
+
+def fix_file(string):
+    replacing = [('פ"ק', 'פ"א'),
+        ('טו?ח"מ', 'טור ח"מ'),
+        ('טו?או?"ח', 'טור א"ח"'),
+        ('טו?י"ד', 'טור י"ד'),
+        ('טו?א"ה', 'טור א"ה'),
+        ("מאכלו'", 'מאכלות'),
+        ('יסודי תורה', 'יסודי התורה'),
+        ('א"ת', 'א"ח'),
+        ('א"ח"', 'א"ח'),
+        ('א"כ', 'א"ח'),
+        ('א"ח', 'טור א"ח'),
+        ('טור טור', 'טור')]
+    for a, b in replacing:
+        string = re.sub(a, b, string)
+    string = re.sub("עיי'? פ", "מיי' פ", string)
+    string = re.sub(r'\([^\)]{1,5}\) \[([^\]]{1,5})\]', r'\1', string)
+    return [line for line in string.split('@P') if line]
+
+def find_refs(data):
+    newdata = '@P'.join(['@P'.join(page) for page in data if page])
+    newdata = fix_file(newdata)
+    newdata = parse_em(f'EM', 1, 'emerrors.txt', em_list=newdata)
+    newdata = [{'Rambam': item['Rambam'], 'Semag': item['Semag'], 'Tur Shulchan Arukh': item['Tur Shulchan Arukh']} for item in newdata]
+    for n, page in enumerate(data):
+        if page:
+            for m, _ in enumerate(page):
+                data[n][m] = newdata.pop(0)
     return data
 
 def execute():
@@ -75,7 +106,7 @@ def execute():
         check_sequence(newdata, letter_tag)
         save_tags(tags, masechet)
 
-
+        newdata = find_refs(newdata)
 
         with open(path+'/commentaries/json/EM_{}.json'.format(masechet), 'w') as fp:
             json.dump(newdata, fp)

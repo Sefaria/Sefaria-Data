@@ -53,10 +53,11 @@ def parse_pages(doc: str) -> list:
     doc = doc.replace('@@', '@@##') #the ## tag for the printed pages which the mefarshim tags numbering depends on
     doc = cleanspaces(doc)
     doc = doc.replace(': @@', ':@@').replace(':', ':A')
-    doc = re.sub('0([^A@]*)@', r'\1A@', doc) #hadran has no colon but marks new segment
+    doc = re.sub('(0[^A@]*)@', r'\1A@', doc) #hadran has no colon but marks new segment
     while re.search(r'([\(\[][^\)\]]*)A([^\)\]]*[\)\]])', doc):
         doc = re.sub(r'([\(\[][^\)\]]*)A([^\)\]]*[\)\]])', r'\1\2', doc) #colon in parens or brackets is part of ref
     doc = re.sub('([^A])@@(?![^A]*@@)([^A]*A)', r'\1\2@@', doc) #splitted dh shuld be in its first page
+    doc = re.sub(r'@@ ?(0[^A@\d]*[A])', r'\1@@', doc) #hadran shouldnt open a page
     middles = re.findall('.{0,10}[^A@]@@..', doc)
     if middles != []:
         print('@@ in middle of page', middles)
