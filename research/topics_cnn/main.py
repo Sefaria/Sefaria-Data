@@ -1,7 +1,8 @@
-import django, json, csv, re, sklearn, sys, fasttext, random
+import django, json, csv, re, sklearn, sys, fasttext, random, pickle
 django.setup()
 import numpy as np
 from tqdm import tqdm
+from collections import defaultdict
 import tensorflow as tf
 import tensorview as tv
 from tensorflow import keras
@@ -93,9 +94,12 @@ class CnnClf:
         ]
 
 class CnnClfEnsemble:
-    def __init__(self, model_name, klass_name, embedding_matrix_dict, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
+    def __init__(self, klass_name):
         self.klass_name = klass_name
 
+    def build_model(self, embedding_matrix_dict, tokenizer_dict, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
+        self.embedding_matrix_dict = embedding_matrix_dict
+        self.tokenizer_dict = tokenizer_dict
         he_inputs = keras.Input(shape=(input_length,), name="hebrew")        
         en_inputs = keras.Input(shape=(input_length,), name="english")
         link_inputs = keras.Input(shape=(link_input_length,), name="links")
@@ -109,11 +113,11 @@ class CnnClfEnsemble:
         x = layers.Dense(64, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
         outputs = layers.Dropout(0.5)(x)
         outputs = layers.Dense(2, activation='softmax', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
-        self.model = keras.Model(inputs=[he_inputs, en_inputs], outputs=outputs)  # link_inputs
+        self.model = keras.Model(inputs=[he_inputs, en_inputs], outputs=outputs, name=self.klass_name)  # link_inputs
         self.model.compile(optimizer=optimizers.Adam(), #learning_rate=0.001), 
                     loss=losses.CategoricalCrossentropy(from_logits=False), 
                     metrics=[metrics.CategoricalAccuracy(), metrics.Recall(class_id=0), metrics.Precision(class_id=0)])
-        self.model.summary()
+        # self.model.summary()
 
     @staticmethod
     def get_link_model(link_embedding_matrix, link_embedding_size, link_input_length):
@@ -145,12 +149,42 @@ class CnnClfEnsemble:
         return keras.Model(inputs, outputs)
 
     def fit(self, x_train, y_train, **kwargs):
-        return self.model.fit(x_train, y_train, callbacks=self.get_callbacks(), **kwargs)
+        return self.model.fit(x_train, y_train, callbacks=self.get_callbacks(kwargs.get('verbose', 0)), **kwargs)
 
     def evaluate(self, x_test, y_test, **kwargs):
         return self.model.evaluate(x_test, y_test, **kwargs)
 
-    def get_callbacks(self):
+    def save(self, folder):
+        # weights
+        self.model.save_weights(f'{folder}/{self.klass_name}/{self.klass_name}')
+        # embeddings
+        matrix_out = {}
+        for key, matrix in self.embedding_matrix_dict.items():
+            matrix_out[key] = matrix.tolist()
+        with open(f'{folder}/{self.klass_name}/{self.klass_name}.embedding', 'w') as fout:
+            json.dump(matrix_out, fout, ensure_ascii=False)
+        # tokenizer
+        with open(f'{folder}/{self.klass_name}/{self.klass_name}.tokenizer', 'wb') as fout:
+            pickle.dump(self.tokenizer_dict, fout, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load(self, folder, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
+        # embeddings
+        with open(f'{folder}/{self.klass_name}/{self.klass_name}.embedding', 'r') as fin:
+            matrix_in = json.load(fin)
+        self.embedding_matrix_dict = {}
+        for key, matrix in matrix_in.items():
+            self.embedding_matrix_dict[key] = np.array(matrix)
+        # tokenizer
+        with open(f'{folder}/{self.klass_name}/{self.klass_name}.tokenizer', 'rb') as fin:
+            self.tokenizer_dict = pickle.load(fin)
+        # weights
+        self.build_model(self.embedding_matrix_dict, self.tokenizer_dict, embedding_size, input_length, link_embedding_size, link_input_length)
+        self.model.load_weights(f'{folder}/{self.klass_name}/{self.klass_name}')
+
+
+    def get_callbacks(self, verbose):
+        if verbose == 0:
+            return []
         return [
             #keras.callbacks.ModelCheckpoint(filepath= str(c2c_path / 'checkpoints/model_{epoch}'), save_best_only=True, verbose=1),
             tv.train.PlotMetricsOnEpoch(metrics_name=[f'Loss {self.klass_name}', 'Accuracy', 'Recall', 'Precision'], cell_size=(6,4), columns=4, iter_num=N_EPOCHS, wait_num=N_EPOCHS),
@@ -164,34 +198,57 @@ class BinaryRelevance:
         self.klasses = klasses
         self.models = {}
         self.test_sets = {}
+        self.results = {}
+
+    def load_models(self, folder):
+        for klass in tqdm(self.klasses, desc="load models"):
+            temp_clf = self.clf_klass(klass, **self.clf_params)
+            temp_clf.load(folder)
+            self.models[klass] = temp_clf
     
     def fit(self, get_dataset_for_klass, **clf_fit_kwargs):
-        for iklass, klass in enumerate(self.klasses):
-            print("KLASS", klass)
+        for iklass, klass in tqdm(enumerate(self.klasses), total=len(self.klasses)):
             self.fit_class(iklass, klass, get_dataset_for_klass, **clf_fit_kwargs)
 
     def fit_class(self, iklass, klass, get_dataset_for_klass, **clf_fit_kwargs):
-        X_train, X_test, Y_train, Y_test, embedding_matrix = get_dataset_for_klass(klass)
+        X_train, X_test, Y_train, Y_test, embedding_matrix, tokenizer = get_dataset_for_klass(klass)
         self.test_sets[klass] = (X_test, Y_test)
-        temp_clf = self.clf_klass(str(iklass), klass, embedding_matrix, **self.clf_params)
+        temp_clf = self.clf_klass(klass, **self.clf_params)
+        temp_clf.build_model(embedding_matrix, tokenizer)
         results = temp_clf.fit(X_train, Y_train, validation_data=(X_test, Y_test), **clf_fit_kwargs)
+        temp_clf.save('research/topics_cnn/cnn_models')
         self.models[klass] = temp_clf
 
     def evaluate(self, get_dataset_for_klass, **clf_evaluate_kwargs):
         for iklass, klass in enumerate(self.klasses):
-            print("KLASS", klass)
             X_test, Y_test = self.test_sets[klass]
             #_, X_test, _, Y_test, _ = get_dataset_for_klass(klass)
             temp_clf = self.models[klass]
             results = temp_clf.evaluate(X_test, Y_test, **clf_evaluate_kwargs)
+            results['f1'] = 2*(results['precision']*results['recall'])/(results['precision']+results['recall'])
+            results['weight'] = X_test.shape[1]
             print("RESULTS", klass, results)
-            # TODO what to do with results?
+            self.results[klass] = results
+        f1_mean = sum([r['f1']*r['weight'] for r in self.results.values()])/sum([r['weight'] for r in self.results.values()])
+        recall_mean = sum([r['recall']*r['weight'] for r in self.results.values()])/sum([r['weight'] for r in self.results.values()])
+        precision_mean = sum([r['precision']*r['weight'] for r in self.results.values()])/sum([r['weight'] for r in self.results.values()])
+
+        out = {
+            'f1_mean': f1_mean,
+            'recall_mean': recall_mean,
+            'precision_mean': precision_mean,
+            'results_by_class': self.results
+        }
+        with open('research/topics_cnn/cnn_models/results.json', 'w') as fout:
+            json.dump(out, fout, ensure_ascii=False, indent=2)
+
     
 class DataManager:
 
     def __init__(self, data_file, get_training_x=None, get_training_y=None):
         self.get_training_x = get_training_x or self.get_training_x_default
         self.get_training_y = get_training_y or self.get_training_y_default
+        self.topic_counts = defaultdict(int)
         X, Y = self.load_data(data_file)
         self.X = X
         self.Y = Y
@@ -217,7 +274,9 @@ class DataManager:
                 if not temp_x:
                     continue
                 X += [temp_x]
-                Y += [temp_y]            
+                Y += [temp_y]
+                for y in temp_y:
+                    self.topic_counts[y] += 1         
         return X, Y
 
     def get_binary_dataset_for_slug_set(self, slug_set, neg_pos_ratio):
@@ -251,7 +310,7 @@ class DataManager:
         tokenizer, X_seq = self.get_sequenced_text(X, LINK_INPUT_LENGTH if data_type == "links" else MAX_DOCUMENT_LENGTH, minimal_tokenization=data_type == "links")
         embedding_matrix = self.get_embedding_matrix(tokenizer, data_type)
         X_train, X_test, Y_train, Y_test = train_test_split(X_seq, np.asarray(Y), test_size=TEST_SIZE, random_state=random_state)
-        return X_train, X_test, Y_train, Y_test, embedding_matrix
+        return X_train, X_test, Y_train, Y_test, embedding_matrix, tokenizer
 
     @staticmethod
     def get_training_x_default(row):
@@ -296,7 +355,7 @@ class DataManager:
         embedding_model = getattr(self, f"embedding_model_{data_type}")
         embedding_matrix = np.zeros((len(tokenizer.word_index)+1, self.link_embedding_size if data_type == "links" else self.embedding_size))
         num_unknown = 0
-        for word, i in tqdm(tokenizer.word_index.items(), desc="Filling in embedding matrix"):
+        for word, i in tokenizer.word_index.items():
             if word == '<UNK>':
                 num_unknown += 1
             if data_type == "links":
@@ -304,7 +363,6 @@ class DataManager:
             else:
                 embedding = embedding_model.get_word_vector(word)
             embedding_matrix[i] = embedding
-        print("NUM UNKNOWN", data_type, num_unknown)
         return embedding_matrix
 
     @staticmethod
@@ -340,14 +398,15 @@ class DataManager:
 
     def get_ensemble_dataset(self, X, Y):
         random_state = RANDOM_SEED
-        X_train_he, X_test_he, Y_train, Y_test, embedding_matrix_he = self.get_train_test_sets([x["hebrew"] for x in X], Y, "he", random_state)
-        X_train_en, X_test_en, Y_train, Y_test, embedding_matrix_en = self.get_train_test_sets([x["english"] for x in X], Y, "en", random_state)
-        X_train_links, X_test_links, Y_train, Y_test, embedding_matrix_links = self.get_train_test_sets([x["links"] for x in X], Y, "links", random_state)
+        X_train_he, X_test_he, Y_train, Y_test, embedding_matrix_he, tokenizer_he = self.get_train_test_sets([x["hebrew"] for x in X], Y, "he", random_state)
+        X_train_en, X_test_en, Y_train, Y_test, embedding_matrix_en, tokenizer_en = self.get_train_test_sets([x["english"] for x in X], Y, "en", random_state)
+        X_train_links, X_test_links, Y_train, Y_test, embedding_matrix_links, tokenizer_links = self.get_train_test_sets([x["links"] for x in X], Y, "links", random_state)
         return (
             {"hebrew": X_train_he, "english": X_train_en, "links": X_train_links},
             {"hebrew": X_test_he, "english": X_test_en, "links": X_test_links},
             Y_train, Y_test,
-            {"hebrew": embedding_matrix_he, "english": embedding_matrix_en, "links": embedding_matrix_links}
+            {"hebrew": embedding_matrix_he, "english": embedding_matrix_en, "links": embedding_matrix_links},
+            {"hebrew": tokenizer_he, "english": tokenizer_en, "links": tokenizer_links}
         )
 
     def get_super_topics(self):
@@ -356,6 +415,14 @@ class DataManager:
     def get_sub_topics(self, super_topic):
         return self.toc_mapping[super_topic]
 
+    def get_topics_above_count(self, count):
+        return [x[0] for x in filter(lambda x: x[1] >= count, self.topic_counts.items())]
+
+    @staticmethod
+    def get_ensemble_input_for_inference(X_he, X_en, clf):
+        _, X_he_seq = DataManager.get_sequenced_text(X_he, pretrained_tokenizer=clf.tokenizer_dict['hebrew'])
+        _, X_en_seq = DataManager.get_sequenced_text(X_en, pretrained_tokenizer=clf.tokenizer_dict['english'])
+        return {"hebrew": X_he_seq, "english": X_en_seq}
 
 def get_data_for_classes(slug_set, X, Y):
     new_X, new_Y = zip(*list(filter(lambda x: len(set(x[1]) & slug_set) == 1, zip(X, Y))))
@@ -381,10 +448,17 @@ if __name__ == "__main__":
     dm = DataManager(DATA)
     dm.load_embeddings(EMBEDDING_HE, EMBEDDING_EN, EMBEDDING_LINKS, EMBEDDING_SIZE, LINK_EMBEDDING_SIZE)
 
+
     # super_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_super_topics())
     # super_topic_clf.fit_class(1, "biblical-figures", dm.get_ensemble_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
-    sub_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_sub_topics("biblical-figures"))
-    sub_topic_clf.fit_class(1, "abraham", dm.get_ensemble_dataset_for_sub_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
+    
+    all_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_topics_above_count(100))
+    # all_topic_clf.load_models('research/topics_cnn/cnn_models')
+    all_topic_clf.fit(dm.get_ensemble_dataset_for_sub_topic, epochs=N_EPOCHS, verbose=0, batch_size=BATCH_SIZE)
+    all_topic_clf.evaluate(dm.get_ensemble_dataset_for_sub_topic, verbose=0, batch_size=BATCH_SIZE, return_dict=True)
+
+
+    # sub_topic_clf.fit_class(1, "abraham", dm.get_ensemble_dataset_for_sub_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
 
 
     # super_topic_clf.fit(dm.get_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
