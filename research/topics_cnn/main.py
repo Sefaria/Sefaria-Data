@@ -23,9 +23,12 @@ session = InteractiveSession(config=config)
 DATA = "/home/nss/Documents/Forks/Yishai-Sefaria-Project/ML/data/concat_english_prefix_hebrew.csv"
 EMBEDDING_HE = "/home/nss/sefaria/datasets/text classification/fasttext_he_no_prefixes_20.bin"
 EMBEDDING_EN = "/home/nss/sefaria/datasets/text classification/fasttext_en_no_prefixes_20.bin"
+EMBEDDING_LINKS = "/home/nss/sefaria/datasets/text classification/link_embeddings_he.json"
 
 MAX_DOCUMENT_LENGTH = 100
 EMBEDDING_SIZE = 20
+LINK_EMBEDDING_SIZE = 50
+LINK_INPUT_LENGTH = 30
 WINDOW_SIZE = EMBEDDING_SIZE
 STRIDE = int(WINDOW_SIZE/2)
 N_EPOCHS = 150
@@ -90,23 +93,44 @@ class CnnClf:
         ]
 
 class CnnClfEnsemble:
-    def __init__(self, model_name, klass_name, embedding_matrix_dict, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH):
+    def __init__(self, model_name, klass_name, embedding_matrix_dict, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
         self.klass_name = klass_name
 
         he_inputs = keras.Input(shape=(input_length,), name="hebrew")        
         en_inputs = keras.Input(shape=(input_length,), name="english")
+        link_inputs = keras.Input(shape=(link_input_length,), name="links")
 
-        he_outputs = self.get_body_model(embedding_matrix_dict["hebrew"], embedding_size, input_length)(he_inputs)
-        en_outputs = self.get_body_model(embedding_matrix_dict["english"], embedding_size, input_length)(en_inputs)
-        x = layers.Concatenate()([he_outputs, en_outputs])
+        he_outputs = self.get_text_model(embedding_matrix_dict["hebrew"], embedding_size, input_length)(he_inputs)
+        en_outputs = self.get_text_model(embedding_matrix_dict["english"], embedding_size, input_length)(en_inputs)
+        # link_outputs = self.get_link_model(embedding_matrix_dict["links"], link_embedding_size, link_input_length)(link_inputs)
+        x = layers.Concatenate()([he_outputs, en_outputs])  # link_outputs
+        x = layers.Dense(128, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        x = layers.Dropout(0.5)(x)
+        x = layers.Dense(64, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        outputs = layers.Dropout(0.5)(x)
         outputs = layers.Dense(2, activation='softmax', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
-        self.model = keras.Model(inputs=[he_inputs, en_inputs], outputs=outputs)
+        self.model = keras.Model(inputs=[he_inputs, en_inputs], outputs=outputs)  # link_inputs
         self.model.compile(optimizer=optimizers.Adam(), #learning_rate=0.001), 
                     loss=losses.CategoricalCrossentropy(from_logits=False), 
                     metrics=[metrics.CategoricalAccuracy(), metrics.Recall(class_id=0), metrics.Precision(class_id=0)])
+        self.model.summary()
 
     @staticmethod
-    def get_body_model(embedding_matrix, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH):
+    def get_link_model(link_embedding_matrix, link_embedding_size, link_input_length):
+        inputs = keras.Input(shape=(link_input_length,))
+        x = layers.Embedding(link_embedding_matrix.shape[0], link_embedding_size, input_length=link_input_length, embeddings_initializer=initializers.Constant(link_embedding_matrix), trainable=False)(inputs)
+        x = layers.Dropout(0.1)(x)
+        x = layers.Convolution1D(16, kernel_size=4, activation='relu', strides=1, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        x = layers.Dropout(0.5)(x)
+        x = layers.Convolution1D(12, kernel_size=8, activation='relu', strides=2, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        x = layers.Dropout(0.5)(x)
+        x = layers.Convolution1D(8, kernel_size=16, activation='relu', strides=2, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        x = layers.Dropout(0.5)(x)
+        outputs = layers.Flatten()(x)
+        return keras.Model(inputs, outputs)
+ 
+    @staticmethod
+    def get_text_model(embedding_matrix, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH):
         inputs = keras.Input(shape=(input_length,))
         x = layers.Embedding(embedding_matrix.shape[0], embedding_size, input_length=input_length, embeddings_initializer=initializers.Constant(embedding_matrix), trainable=False)(inputs)
         x = layers.Dropout(0.1)(x)
@@ -116,11 +140,7 @@ class CnnClfEnsemble:
         x = layers.Dropout(0.5)(x)
         x = layers.Convolution1D(8, kernel_size=16, activation='relu', strides=2, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
         x = layers.Dropout(0.5)(x)
-        x = layers.Flatten()(x)
-        x = layers.Dense(128, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
-        x = layers.Dropout(0.5)(x)
-        x = layers.Dense(64, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
-        outputs = layers.Dropout(0.5)(x)
+        outputs = layers.Flatten()(x)
         # outputs = layers.Dense(2, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
         return keras.Model(inputs, outputs)
 
@@ -169,23 +189,31 @@ class BinaryRelevance:
     
 class DataManager:
 
-    def __init__(self, data_file, embedding_file_he, embedding_file_en, embedding_size):
+    def __init__(self, data_file, get_training_x=None, get_training_y=None):
+        self.get_training_x = get_training_x or self.get_training_x_default
+        self.get_training_y = get_training_y or self.get_training_y_default
         X, Y = self.load_data(data_file)
         self.X = X
         self.Y = Y
-        self.embedding_model_he = fasttext.load_model(embedding_file_he)
-        self.embedding_model_en = fasttext.load_model(embedding_file_en)
-        self.embedding_size = embedding_size
         self.toc_mapping = self.get_toc_mapping()
 
+    def load_embeddings(self, embedding_file_he, embedding_file_en, embedding_file_links=None, embedding_size=None, link_embedding_size=None):
+        self.embedding_model_he = fasttext.load_model(embedding_file_he)
+        self.embedding_model_en = fasttext.load_model(embedding_file_en)
+        if embedding_file_links is not None:
+            with open(embedding_file_links, "r") as fin:
+                self.embedding_model_links = {x['ref'].replace(" ", "_"): x['embedding'] for x in json.load(fin)}
+            
+        self.embedding_size = embedding_size
+        self.link_embedding_size = link_embedding_size
 
     def load_data(self, data_file):
         X, Y = [], []
         with open(data_file, "r") as fin:
             c = csv.DictReader(fin)
             for row in c:
-                temp_x = DataManager.get_training_x(row)
-                temp_y = DataManager.get_training_y(row)
+                temp_x = self.get_training_x(row)
+                temp_y = self.get_training_y(row)
                 if not temp_x:
                     continue
                 X += [temp_x]
@@ -205,21 +233,32 @@ class DataManager:
         Y = pos_Y + neg_Y
         return X, Y
 
-    def get_train_test_sets(self, X, Y, lang, random_state):
-        tokenizer = preprocessing.text.Tokenizer(oov_token="<UNK>")
-        tokenizer.fit_on_texts(X)
-        embedding_matrix = self.get_embedding_matrix(tokenizer, lang)
+    @staticmethod
+    def get_sequenced_text(X, max_len=MAX_DOCUMENT_LENGTH, minimal_tokenization=False, pretrained_tokenizer=None):
+        if pretrained_tokenizer is None:
+            if minimal_tokenization:
+                tokenizer = preprocessing.text.Tokenizer(oov_token="<UNK>", filters='', lower=False)
+            else:
+                tokenizer = preprocessing.text.Tokenizer(oov_token="<UNK>")
+            tokenizer.fit_on_texts(X)
+        else:
+            tokenizer = pretrained_tokenizer
         X_seq = tokenizer.texts_to_sequences(X)
-        X_seq = preprocessing.sequence.pad_sequences(X_seq, maxlen=MAX_DOCUMENT_LENGTH, padding='post', truncating='post')
+        X_seq = preprocessing.sequence.pad_sequences(X_seq, maxlen=max_len, padding='post', truncating='post')
+        return tokenizer, X_seq
+ 
+    def get_train_test_sets(self, X, Y, data_type, random_state):
+        tokenizer, X_seq = self.get_sequenced_text(X, LINK_INPUT_LENGTH if data_type == "links" else MAX_DOCUMENT_LENGTH, minimal_tokenization=data_type == "links")
+        embedding_matrix = self.get_embedding_matrix(tokenizer, data_type)
         X_train, X_test, Y_train, Y_test = train_test_split(X_seq, np.asarray(Y), test_size=TEST_SIZE, random_state=random_state)
         return X_train, X_test, Y_train, Y_test, embedding_matrix
 
     @staticmethod
-    def get_training_x(row):
-        return {"hebrew": DataManager.clean_text(row["He_prefixed"], 'he'), "english": DataManager.clean_text(row["En"], 'en')}
+    def get_training_x_default(row):
+        return {"hebrew": DataManager.clean_text(row["He_prefixed"], 'he'), "english": DataManager.clean_text(row["En"], 'en'), "links": row["Links"].replace(" ", "_").replace("|||", " ")}
 
     @staticmethod
-    def get_training_y(row):
+    def get_training_y_default(row):
         return row["Topics"].split()
 
     @staticmethod
@@ -253,12 +292,19 @@ class DataManager:
             s = DataManager.remove_prefixes(s)
         return DataManager.normalize(s, lang)
 
-    def get_embedding_matrix(self, tokenizer, lang):
-        embedding_model = getattr(self, f"embedding_model_{lang}")
-        embedding_matrix = np.zeros((len(tokenizer.word_index)+1, self.embedding_size))
+    def get_embedding_matrix(self, tokenizer, data_type):
+        embedding_model = getattr(self, f"embedding_model_{data_type}")
+        embedding_matrix = np.zeros((len(tokenizer.word_index)+1, self.link_embedding_size if data_type == "links" else self.embedding_size))
+        num_unknown = 0
         for word, i in tqdm(tokenizer.word_index.items(), desc="Filling in embedding matrix"):
-            embedding = embedding_model.get_word_vector(word)
+            if word == '<UNK>':
+                num_unknown += 1
+            if data_type == "links":
+                embedding = embedding_model.get(word, np.zeros((self.link_embedding_size,)))
+            else:
+                embedding = embedding_model.get_word_vector(word)
             embedding_matrix[i] = embedding
+        print("NUM UNKNOWN", data_type, num_unknown)
         return embedding_matrix
 
     @staticmethod
@@ -286,14 +332,29 @@ class DataManager:
     def get_ensemble_dataset_for_super_topic(self, super_topic):
         sub_topics = self.toc_mapping[super_topic]
         X, Y = self.get_binary_dataset_for_slug_set(set(sub_topics), 4)
+        return self.get_ensemble_dataset(X, Y)
+
+    def get_ensemble_dataset_for_sub_topic(self, sub_topic):
+        X, Y = self.get_binary_dataset_for_slug_set({sub_topic}, 4)
+        return self.get_ensemble_dataset(X, Y)
+
+    def get_ensemble_dataset(self, X, Y):
         random_state = RANDOM_SEED
         X_train_he, X_test_he, Y_train, Y_test, embedding_matrix_he = self.get_train_test_sets([x["hebrew"] for x in X], Y, "he", random_state)
         X_train_en, X_test_en, Y_train, Y_test, embedding_matrix_en = self.get_train_test_sets([x["english"] for x in X], Y, "en", random_state)
-
-        return {"hebrew": X_train_he, "english": X_train_en}, {"hebrew": X_test_he, "english": X_test_en}, Y_train, Y_test, {"hebrew": embedding_matrix_he, "english": embedding_matrix_en}
+        X_train_links, X_test_links, Y_train, Y_test, embedding_matrix_links = self.get_train_test_sets([x["links"] for x in X], Y, "links", random_state)
+        return (
+            {"hebrew": X_train_he, "english": X_train_en, "links": X_train_links},
+            {"hebrew": X_test_he, "english": X_test_en, "links": X_test_links},
+            Y_train, Y_test,
+            {"hebrew": embedding_matrix_he, "english": embedding_matrix_en, "links": embedding_matrix_links}
+        )
 
     def get_super_topics(self):
         return list(self.toc_mapping.keys())
+
+    def get_sub_topics(self, super_topic):
+        return self.toc_mapping[super_topic]
 
 
 def get_data_for_classes(slug_set, X, Y):
@@ -317,10 +378,14 @@ if __name__ == "__main__":
     # super_topic_clf.fit_class(1, "philosophy", dm.get_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
 
     # ensemble
-    dm = DataManager(DATA, EMBEDDING_HE, EMBEDDING_EN, EMBEDDING_SIZE)
-    print(dm.get_super_topics())
-    super_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_super_topics())
-    super_topic_clf.fit_class(1, "stories", dm.get_ensemble_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
+    dm = DataManager(DATA)
+    dm.load_embeddings(EMBEDDING_HE, EMBEDDING_EN, EMBEDDING_LINKS, EMBEDDING_SIZE, LINK_EMBEDDING_SIZE)
+
+    # super_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_super_topics())
+    # super_topic_clf.fit_class(1, "biblical-figures", dm.get_ensemble_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
+    sub_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_sub_topics("biblical-figures"))
+    sub_topic_clf.fit_class(1, "abraham", dm.get_ensemble_dataset_for_sub_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
+
 
     # super_topic_clf.fit(dm.get_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
     # super_topic_clf.evaluate(dm.get_dataset_for_super_topic, batch_size=BATCH_SIZE, verbose=1, return_dict=True)
@@ -331,6 +396,8 @@ if __name__ == "__main__":
 # loss: 0.2545 - categorical_accuracy: 0.8880 - val_loss: 0.3006 - val_categorical_accuracy: 0.8844
 # for binary on abraham
 # loss: 0.2538 - categorical_accuracy: 0.8906 - val_loss: 0.2883 - val_categorical_accuracy: 0.8946
-
-
+# 11/10/20 for binary moses
+#  loss: 0.2675 - categorical_accuracy: 0.8774 - recall: 0.6000 - precision: 0.7378 - val_loss: 0.2956 - val_categorical_accuracy: 0.8668 - val_recall: 0.6912 - val_precision: 0.6599
+# 11/10/20 for binary abraham
+# loss: 0.2360 - categorical_accuracy: 0.9052 - recall: 0.6716 - precision: 0.8061 - val_loss: 0.2738 - val_categorical_accuracy: 0.8800 - val_recall: 0.6583 - val_precision: 0.7532
 # Good article on dropout https://machinelearningmastery.com/dropout-for-regularizing-deep-neural-networks/
