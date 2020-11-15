@@ -3,7 +3,7 @@ from sefaria.model import *
 import re
 generated_by = "maharal_i_tags_"
 LinkSet({"generated_by": generated_by}).delete()
-titles = ["Gevurot Hashem"]#, "Netivot Olam"] #["Gevurot Hashem", "Ner Mitzvah"]
+titles = ["Netivot Olam"]#, "Netivot Olam"] #["Gevurot Hashem", "Ner Mitzvah"]
 for title in titles:
     ftnote_count = 0
     i = library.get_index(title)
