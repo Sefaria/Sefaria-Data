@@ -26,14 +26,14 @@ def validity_and_cluster(dict_list):
                 for cit in com_list:
                     r = Ref(cit)
                     if r.is_empty():
-                        print u"Line: {} No text at Ref: {}".format(i, cit)
+                        print(u"Line: {} No text at Ref: {}".format(i, cit))
                         clean = False
                     col_refs.append(r)
             except InputError as e:
-                    print u"Line: {} Failed to parse Ref: {}".format(i, cit)
+                    print(u"Line: {} Failed to parse Ref: {}".format(i, cit))
                     clean = False
             except AttributeError as e:
-                print u"Line: {} Malformed Ref: {}".format(i, cit)
+                print(u"Line: {} Malformed Ref: {}".format(i, cit))
                 clean = False
         all_clusters.append(col_refs)
     return (clean, all_clusters)
@@ -85,10 +85,11 @@ from sefaria.helper.link import create_link_cluster
 
 
 if __name__ == "__main__":
-    massekhet = 'Niddah'
+    massekhet = 'Rif'
     # final_list = segment_column(u'done/niddah_little_letters.csv', u'done/niddah_little_letters.csv', massekhet, wikitext=False)
-    # print final_list
-    # validation = validity_and_cluster(final_list)
-    # save_links_local(final_list, massekhet)
+    final_list = segment_column(u'EM_Rif.csv', u'EM_Rif.csv', massekhet, wikitext=False)
+    print(final_list)
+    validation = validity_and_cluster(final_list)
+    save_links_local(final_list, massekhet)
     links = post_ein_mishpat(massekhet)
-    print 'done'
+    print('done')

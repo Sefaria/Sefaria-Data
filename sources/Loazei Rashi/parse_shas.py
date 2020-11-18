@@ -44,7 +44,6 @@ def get_best_pair_talmud(ref, actual_he, french_he, passing_val=80, french_addit
 
     curr_max = {"fr": passing_val, "he": passing_val}
     curr_best = {"he": set(), "fr": set()}
-    found = {"he": set(), "fr": set()}
 
     ref = Ref(ref) if isinstance(ref, str) else ref
     if len(ref.all_subrefs()) == 1:
@@ -119,6 +118,8 @@ with open("loazei_shas.csv", 'w') as f:
             continue
 
         for i, dh in enumerate(laazim[ref]):
+            if book == "Rashi on Bava Batra" and Ref(ref).sections[0] > 75:
+                ref = ref.replace("Rashi", "Rashbam")
             matches = get_best_pair_talmud(ref, dh.hebrew_word, dh.french_he)
             he_match = matches[0]
             fr_match = matches[1]

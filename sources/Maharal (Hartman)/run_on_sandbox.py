@@ -3,7 +3,7 @@ from sefaria.model import *
 import re
 generated_by = "maharal_i_tags_"
 LinkSet({"generated_by": generated_by}).delete()
-titles = ["Ohr Chadash"] #"Netivot Olam", "Gevurot Hashem",
+titles = ["Netivot Olam"]#, "Netivot Olam"] #["Gevurot Hashem", "Ner Mitzvah"]
 for title in titles:
     ftnote_count = 0
     i = library.get_index(title)
@@ -11,12 +11,18 @@ for title in titles:
     assert len(vs) in [1, 0]
     vtitle = vs[0].versionTitle
     for ref in i.all_segment_refs():
+        print(ref)
+
         try:
             if ref.sections[-1] == 1:
                 ftnote_count = 0
             tc = TextChunk(ref, lang='he', vtitle=vtitle)
-            for i_tag in re.findall("<i .*?></i>", tc.text):
+            i_tags = re.findall("<i .*?></i>", tc.text)
+            for i_tag in i_tags:
                 ftnote_count += 1
+                print(i_tag)
+                print(ftnote_count)
+                print("****")
                 data = BeautifulSoup(i_tag).find("i")
                 data = data.attrs
                 comm = data["data-commentator"].replace("Index: ", "")
@@ -32,3 +38,4 @@ for title in titles:
         except Exception as e:
             print(e)
 
+library.rebuild(include_toc=True)

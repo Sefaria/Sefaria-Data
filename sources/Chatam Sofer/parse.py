@@ -7,9 +7,36 @@ import re
 import time
 import json
 from data_utilities.dibur_hamatchil_matcher import *
+from sefaria.profiling import *
+from sefaria.tracker import *
+
+
+
+def func_to_profile(links):
+    with open("links.json", 'r') as fp:
+        links = json.load(fp)
+
+    before = time.time()
+    #result = post_link(links, server="http://localhost:8000")
+    for l, link in enumerate(links):
+        'Link().load({"$or": [{"refs": self.refs}, {"refs": [self.refs[1], self.refs[0]]}]})'
+        if Link().load({"$or": [{"refs": link["refs"]}, {"refs": [link["refs"][1], link["refs"][1]]}]}) is None:
+            try:
+                add(1, Link, link)
+            except Exception as e:
+                print(link)
+                print(e)
+    # with open('result.html', 'w') as f:
+    #     try:
+    #         f.writelines(result)
+    #     except:
+    #         print(result)
+    after = time.time()
+    print(after - before)
+
 
 def get_dh(comment):
-    first_ten = " ".join(comment.split()[:17])
+    first_ten = " ".join(comment.split()[:5])
     if "." in first_ten:
         return (first_ten.split(".")[0], ".")
     else:
@@ -167,100 +194,110 @@ if __name__ == "__main__":
     #         result = post_link(links[i:amt + i])
     #         time.sleep(5)
 
-    links = []
-    files = os.listdir(".")
-    links_per_masechtot = {}
-    links_per_daf = {}
-    comments_per_masechtot = {}
-    start = True
-    start_when = "Chullin"
-    for f in files:
-        if not f.endswith("tsv"):
-            continue
+    with open('links.json', 'r') as fp:
+        links = json.load(fp)
 
-        title = f.split(".")[0].split(" - ")[-1]
-        try:
-            en_title = library.get_index(title).title
-        except:
-            en_title = title
-        if en_title == start_when:
-            start = True
-        if not start:
-            continue
-        text = {}
-        links_per_masechtot[en_title] = 0
-        links_per_daf[en_title] = {}
-        comments_per_masechtot[en_title] = 0
-        dhs = {}
-        daf_as_num = 0
-        prev_daf_as_num = 0
-        with open(f) as tsv_file:
-            for line in tsv_file:
-                daf, comment = line.split("\t", 1)
-                if daf:
-                    daf_as_num = getGematria(daf) * 2
-                    amud = 1 if "." in daf else 0
-                    daf_as_num -= amud
-                    assert daf_as_num > prev_daf_as_num
-                else:
-                    daf_as_num = prev_daf_as_num
+    prof('func_to_profile(links)')
+    #
+    # links = []
+    # files = os.listdir(".")
+    # links_per_masechtot = {}
+    # links_per_daf = {}
+    # comments_per_masechtot = {}
+    # start = True
+    # start_when = "Shabbat"
+    # for f in files:
+    #     if not f.endswith("tsv"):
+    #         continue
+    #
+    #     title = f.split(".")[0].split(" - ")[-1]
+    #     try:
+    #         en_title = library.get_index(title).title
+    #     except:
+    #         en_title = title
+    #     if en_title == start_when:
+    #         start = True
+    #     if not start:
+    #         continue
+    #     text = {}
+    #     links_per_masechtot[en_title] = 0
+    #     links_per_daf[en_title] = {}
+    #     comments_per_masechtot[en_title] = 0
+    #     dhs = {}
+    #     daf_as_num = 0
+    #     prev_daf_as_num = 0
+    #     with open(f) as tsv_file:
+    #         for line in tsv_file:
+    #             daf, comment = line.split("\t", 1)
+    #             if daf:
+    #                 daf_as_num = getGematria(daf) * 2
+    #                 amud = 1 if "." in daf else 0
+    #                 daf_as_num -= amud
+    #                 assert daf_as_num > prev_daf_as_num
+    #             else:
+    #                 daf_as_num = prev_daf_as_num
+    #
+    #             var = """בד"א שיודעין"""
+    #             dh, delim = get_dh(comment)
+    #             if daf_as_num not in text:
+    #                 text[daf_as_num] = []
+    #                 dhs[daf_as_num] = []
+    #
+    #             if "@99" in comment:
+    #                 comment = "<b>"+removeAllTags(comment)+"</b>"
+    #                 text[daf_as_num].append(comment)
+    #                 dhs[daf_as_num].append("")
+    #             elif "@11" in comment:
+    #                 comment = removeAllTags(" ".join(comment.split()))
+    #                 dhs[daf_as_num].append(removeAllTags(dh))
+    #                 text[daf_as_num].append(comment)
+    #
+    #             prev_daf_as_num = daf_as_num
+    #         for daf, dhs in dhs.items():
+    #             daf_as_num = daf
+    #             comments = text[daf_as_num]
+    #             daf = AddressTalmud.toStr("en", daf)
+    #             comm_ref = "Chidushei Chatam Sofer on {} {}".format(en_title, daf)
+    #             base_ref = "{} {}".format(en_title, daf) if "Mahadura" not in en_title else "{} {}".format(en_title.split(",")[0], daf)
+    #             new_links = match_ref_interface(base_ref, comm_ref, dhs, lambda x: x.split(), lambda x: x)
+    #             links += new_links
+    #             text[daf_as_num] = insert_bold(comments, new_links, dhs)
+    #             links_per_masechtot[en_title] += len(new_links)
+    #             links_per_daf[en_title][comm_ref] = "{}/{}".format(len(new_links), len(dhs))
+    #             comments_per_masechtot[en_title] += len(dhs)
+    #         text = convertDictToArray(text)
+    #         send_text = {
+    #             "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH002036613/NLI",
+    #             "versionTitle": "Chidushei Chatam Sofer, 1864-1908",
+    #             "text": text,
+    #             "language": "he"
+    #         }
+    #         if "Mahadura" not in en_title:
+    #             create_index(en_title, title)
+    #         post_text("Chidushei Chatam Sofer on {}".format(en_title), send_text, index_count="on")
 
-                var = """בד"א שיודעין"""
-                dh, delim = get_dh(comment)
-                if daf_as_num not in text:
-                    text[daf_as_num] = []
-                    dhs[daf_as_num] = []
+    # print("Len links is {}".format(len(links)))
+    # amt = 1000
 
-                if "@99" in comment:
-                    comment = "<b>"+removeAllTags(comment)+"</b>"
-                    text[daf_as_num].append(comment)
-                    dhs[daf_as_num].append("")
-                elif "@11" in comment:
-                    comment = removeAllTags(" ".join(comment.split()))
-                    dhs[daf_as_num].append(removeAllTags(dh))
-                    text[daf_as_num].append(comment)
+    # for i in range(0, 5100, amt):
+    #     print("Posting {} through {}".format(i, amt+i))
+    #     result = post_link(links[i:amt+i])
+    #     time.sleep(2)
+    # with open("links_per_masechta.csv", 'w') as f:
+    #     masechta_writer = csv.writer(f)
+    #     masechta_writer.writerow(["Masechet",  "Links", "Total segments"])
+    #     sort_key = lambda x: AddressTalmud(1).toNumber("en", x.split()[-1])
+    #
+    #     for en_title in links_per_masechtot:
+    #         print(en_title)
+    #         masechta_writer.writerow([en_title, links_per_masechtot[en_title], comments_per_masechtot[en_title]])
+    #         with open("links_per_daf_in_{}.csv".format(en_title), 'w') as f:
+    #             writer = csv.writer(f)
+    #             for daf in sorted(links_per_daf[en_title].keys(), key=sort_key):
+    #                 writer.writerow([daf.split()[-1], links_per_daf[en_title][daf]])
+    #
 
-                prev_daf_as_num = daf_as_num
-            for daf, dhs in dhs.items():
-                daf_as_num = daf
-                comments = text[daf_as_num]
-                daf = AddressTalmud.toStr("en", daf)
-                comm_ref = "Chidushei Chatam Sofer on {} {}".format(en_title, daf)
-                base_ref = "{} {}".format(en_title, daf) if "Mahadura" not in en_title else "{} {}".format(en_title.split(",")[0], daf)
-                new_links = match_ref_interface(base_ref, comm_ref, dhs, lambda x: x.split(), lambda x: x)
-                links += new_links
-                text[daf_as_num] = insert_bold(comments, new_links, dhs)
-                links_per_masechtot[en_title] += len(new_links)
-                links_per_daf[en_title][comm_ref] = "{}/{}".format(len(new_links), len(dhs))
-                comments_per_masechtot[en_title] += len(dhs)
-            text = convertDictToArray(text)
-            send_text = {
-                "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH002036613/NLI",
-                "versionTitle": "Chidushei Chatam Sofer, 1864-1908",
-                "text": text,
-                "language": "he"
-            }
-            # if "Mahadura" not in en_title:
-            #     create_index(en_title, title)
-            post_text("Chidushei Chatam Sofer on {}".format(en_title), send_text, index_count="on")
 
-    print("Len links is {}".format(len(links)))
-    amt = 500
-    with open('links.json', 'w') as fp:
-        json.dump(links, fp)
-    for i in range(0, 4000, amt):
-        print("Posting {} through {}".format(i, amt+i))
-        result = post_link(links[i:amt+i])
-        time.sleep(2)
-    with open("links_per_masechta.csv", 'w') as f:
-        masechta_writer = csv.writer(f)
-        masechta_writer.writerow(["Masechet",  "Links", "Total segments"])
-        sort_key = lambda x: AddressTalmud(1).toNumber("en", x.split()[-1])
 
-        for en_title in links_per_masechtot:
-            print(en_title)
-            masechta_writer.writerow([en_title, links_per_masechtot[en_title], comments_per_masechtot[en_title]])
-            with open("links_per_daf_in_{}.csv".format(en_title), 'w') as f:
-                writer = csv.writer(f)
-                for daf in sorted(links_per_daf[en_title].keys(), key=sort_key):
-                    writer.writerow([daf.split()[-1], links_per_daf[en_title][daf]])
+
+

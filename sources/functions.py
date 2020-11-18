@@ -10,6 +10,7 @@ import os
 import sys
 import codecs
 import re
+import bleach
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
 sys.path.insert(0, "../")
@@ -654,7 +655,10 @@ def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key = API_KEY
         return response
 
 @weak_connection
-def post_index(index, server=SEFARIA_SERVER, method="POST"):
+def post_index(index, server=SEFARIA_SERVER, method="POST", dump_json=False):
+    if dump_json:
+        with open('index_json.json', 'w') as fp:
+            json.dump(index, fp)
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
     return http_request(url, body={'apikey': API_KEY}, json_payload=index, method=method)
     # indexJSON = json.dumps(index)
@@ -745,8 +749,11 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST"):
-    url = server+'/api/links/'
+def post_link(info, server=SEFARIA_SERVER, skip_lang_check=False, VERBOSE = False, method="POST", dump_json=False):
+    if dump_json:
+        with open('links_dump.json', 'w') as fp:
+            json.dump(info, fp)
+    url = server+'/api/links/' if not skip_lang_check else server+"/api/links/?skip_lang_check=1"
     result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method=method)
     if VERBOSE:
         print(result)
@@ -791,15 +798,15 @@ def post_link_weak_connection(info, repeat=10):
 
 
 
-def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method):
-    generated_by_str = Ref(base_ref).index.title + "_to_" + comm_ref.split()[0]
+def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle="", generated_by=""):
+    generated_by_str = Ref(base_ref).index.title + "_to_" + comm_ref.split()[0] if generated_by == "" else generated_by
     links = []
-    base = TextChunk(Ref(base_ref), lang='he')
+    base = TextChunk(Ref(base_ref), lang='he', vtitle=vtitle) if vtitle else TextChunk(Ref(base_ref), lang='he', vtitle=vtitle)
     matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)
     for n, match in enumerate(matches["matches"]):
-        len_match_text = len(matches["match_text"][n][0]) + len(matches["match_text"][n][1])
+        len_prob = len(matches["match_text"][n][0]) < 2 or len(matches["match_text"][n][1]) < 2
         curr_comm_ref = "{}:{}".format(comm_ref, n + 1)
-        if match and len_match_text > 4:
+        if match and not len_prob:
             curr_base_ref = match.normal()
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
                         "type": "Commentary", "auto": True}
@@ -807,6 +814,57 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
     return links
 
 
+def resegment_X_based_on_Y(ref, X, Y):
+    #X and Y are TextChunks with Ref = ref but different version titles
+
+    def fix(results, i, X_words):
+        if i == 0:
+            return (0, 0, "GUESS")
+        if i == len(results) - 1:
+            return (results[i - 1][1] + 1, len(X_words), "GUESS")
+        return (results[i - 1][1] + 1, results[i + 1][1] - 1, "GUESS")
+
+    def dher(str):
+        dh_num = 10
+        str = str.replace("<b>", "").replace("</b>", "")
+        str = str.split(".")[-1]
+        if str.count(" ") > dh_num:
+            return " ".join(str.split()[-1 * dh_num:])
+        else:
+            return str
+
+    resegmented_X = []
+    resegmented_X = ["" for line in Y.text]
+
+    Y_modified = [bleach.clean(line, strip=True) for line in Y.text]
+    results = match_ref(X, Y_modified, base_tokenizer=lambda x: x.split(),
+                        dh_extract_method=dher,
+                        with_abbrev_matches=True, place_consecutively=True, strict_boundaries=True)
+
+    X_words = " ".join(X.text).split()
+    len_results = len(results["match_word_indices"])
+
+    #get rid of (-1, -1)s
+    for i, tuple in enumerate(reversed(results["match_word_indices"])):
+        prev = results["match_word_indices"][len_results - i - 2] if i < len_results - 1 else (1, 1)
+        curr = tuple[1]
+        if curr == -1 and prev[1] == -1:
+            pass
+        elif curr == -1:
+            results["match_word_indices"][len_results - i - 1] = fix(results["match_word_indices"], len_results - i - 1,
+                                                                     X_words)
+        elif prev == -1:
+            results["match_word_indices"][len_results - i - 2] = fix(results["match_word_indices"], len_results - i - 2,
+                                                                     X_words)
+
+    #use match_word_indices to resegment X_words
+    for i, tuple in enumerate(reversed(results["match_word_indices"])):
+        prev = results["match_word_indices"][len_results - i - 2] if i < len_results - 1 else (-1, -1)
+        curr = tuple[1]
+        # if curr == -1 and prev[1] == -1:
+        #     pass
+        resegmented_X[len_results - 1 - i] = " ".join(X_words[prev[1] + 1:tuple[1] + 1])
+    return resegmented_X
 
 
 def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, talmud=True, lang='he', word_threshold=0.27, server="", rashi_filter=None, dh_extract_method=lambda x: x):
@@ -887,7 +945,7 @@ def first_word_with_period(str):
     return len(str.split(" "))
 
 @weak_connection
-def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER):
+def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER, dump_json=False):
     """
     :param ref:
     :param text:
@@ -896,6 +954,9 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
     :param server:
     :return:`
     """
+    if dump_json:
+        with open('text_dump.json', 'w') as fp:
+            json.dump(text, fp)
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     url = server+'/api/texts/'+ref
@@ -1037,10 +1098,10 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
     textJSON = json.dumps(flags)
     version['ref'] = version['ref'].replace(' ', '_')
     url = server+'/api/version/flags/{}/{}/{}'.format(
-        urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']), urllib.parse.quote(version['vtitle'])
+        urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']), urllib.parse.quote(version['vtitle']).encode('utf-8')
     )
     values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.parse.urlencode(values)
+    data = urllib.parse.urlencode(values).encode('utf-8')
     req = urllib.request.Request(url, data)
     try:
         response = urllib.request.urlopen(req)
@@ -1050,7 +1111,7 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
             return "error"
     except HTTPError as e:
         with open('errors.html', 'w') as errors:
-            errors.write(e.read())
+            errors.write(str(e.read()))
 
 
 @weak_connection
@@ -1107,7 +1168,7 @@ def get_index_api(ref, server='http://www.sefaria.org'):
 
 def get_links(ref, server="http://www.sefaria.org"):
     ref = ref.replace(" ", "_")
-    url = server+'/api/links/'+ref
+    url = server+'/api/links/'+ref+"?skip_lang_check=1"
     return http_request(url)
 
 def get_text(ref, lang="", versionTitle="", server="http://draft.sefaria.org"):

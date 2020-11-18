@@ -57,8 +57,9 @@ if __name__ == "__main__":
     #         array_of_names[i] = str(chapters[counter])
     #         counter += 1
 
-
-    parser = XML_to_JaggedArray(title, file_name, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
+    with open(file_name) as f:
+        file = f.read()
+    parser = XML_to_JaggedArray(title, file, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
                                 titled=True, print_bool=True)
     parser.set_funcs(reorder_modify=reorder_modify)
     parser.run()

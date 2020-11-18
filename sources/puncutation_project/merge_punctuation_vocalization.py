@@ -54,7 +54,7 @@ if __name__ == '__main__':
     except IndexError:
         print("Please add name of Tractate")
         sys.exit(0)
-    base_ref = Ref("Eruvin")
+    base_ref = Ref(book_title)
     segments = base_ref.all_segment_refs()
     for segment in segments:
         punc, voc = segment.text('he', PUNC_VTITLE).text, segment.text('he', VOC_VTITLE).text

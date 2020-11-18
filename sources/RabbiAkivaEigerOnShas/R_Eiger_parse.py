@@ -20,14 +20,14 @@ for tractate_title in library.get_indexes_in_category("Talmud"):
     talmud_titles[he_title]=tractate_title
 def not_blank(s):
     while " " in s:
-        s = s.replace(u" ",u"")
-    return (len(s.replace(u"\n",u"").replace(u"\r",u"").replace(u"\t",u""))!=0);
+        s = s.replace(" ","")
+    return (len(s.replace("\n","").replace("\r","").replace("\t",""))!=0);
 def find_tractate_name(s):
     for tn in talmud_titles.keys():
         if tn in s:
             return talmud_titles[tn]
 def clean_line(s):
-    s=s.replace(u'\n',u'')
+    s=s.replace('\n','')
     return s
 def make_talmud_array(book):
     tc = TextChunk(Ref(book), "he")
@@ -40,19 +40,23 @@ def make_talmud_array(book):
             return_array[index].append([])
     return return_array
 def dh_extract_method(some_string):
-    some_string=some_string.replace(u'גמרא ',u'').replace(u',',u'')
-    if u'@11' and u'@33' in some_string:
-        if len(re.search(ur'(?<=@11).*?(?=@33)',some_string).group().split(u' '))>4:
-            return re.search(ur'(?<=@11).*?(?=@33)',some_string).group()
-    if u'וכו\'' in u' '.join(some_string.split(u' ')[:10]):
-        return some_string[:some_string.index(u'וכו\'')-1]
-    return ' '.join(some_string.split(u' ')[:8])
+    some_string=some_string.replace('גמרא ','').replace(',','')
+    if '@11' and '@33' in some_string:
+        if len(re.search(r'(?<=@11).*?(?=@33)',some_string).group().split(' '))>4:
+            return re.search(r'(?<=@11).*?(?=@33)',some_string).group()
+    if 'וכו\'' in ' '.join(some_string.split(' ')[:10]):
+        return some_string[:some_string.index('וכו\'')-1]
+    return ' '.join(some_string.split(' ')[:8])
+
 def remove_extra_space(string):
-    while u"  " in string:
-        string = string.replace(u"  ",u" ")
+    while "  " in string:
+        string = string.replace("  "," ")
     return string
+
 def base_tokenizer(some_string):
-    return filter(lambda(x): x!=u'',remove_extra_space(strip_nekud(some_string).replace(u"<b>",u"").replace(u"</b>",u"").replace(".","").replace(u"\n",u"")).split(u" "))
+    #return filter(lambda x: x!='',remove_extra_space(strip_nekud(some_string).replace("<b>","").replace("</b>","").replace(".","").replace("\n","")).split(" "))
+    return remove_extra_space(strip_nekud(some_string).replace("<b>","").replace("</b>","").replace(".","").replace("\n","")).split(" ")
+
 class Tractate:
     def __init__(self, tractate_name):
         self.he_tractate_name=tractate_name
@@ -68,7 +72,7 @@ for rae_file in os.listdir('files'):
     if 'txt' in rae_file:    
         amud_box=[]
         with open('files/'+rae_file) as myFile:
-            lines = list(map(lambda x: x.decode("utf-8",'replace'), myFile.readlines()))
+            lines = list(map(lambda x: x, myFile.readlines()))
         current_tractate=None
         current_daf=None
         current_amud=None
@@ -79,7 +83,7 @@ for rae_file in os.listdir('files'):
             if 'STOP SKIPPING' in line:
                 skipping=False
             if not skipping:
-                if u'@00' in line and len(line.split(u' '))<6:
+                if '@00' in line and len(line.split(' '))<6:
                     if find_tractate_name(line):
                         if current_amud and len(amud_box)>0:
                             text_list.append([current_tractate, current_daf, current_amud, amud_box])
@@ -89,41 +93,51 @@ for rae_file in os.listdir('files'):
                             tractate_list.append(current_tractate)
                         current_daf=None
                         current_amud=None
-                if u'@22' in line:
-                    if current_amud and len(amud_box)>0 and (re.search(ur'(?<=דף )\S+',line) or u'ע"א' in line or u'ע"ב' in line):
+                if '@22' in line:
+                    if current_amud and len(amud_box)>0 and (re.search(r'(?<=דף )\S+',line) or 'ע"א' in line or 'ע"ב' in line):
                         text_list.append([current_tractate, current_daf, current_amud, amud_box])
                         amud_box=[]
-                    if re.search(ur'(?<=דף )\S+',line):
-                        current_daf=getGematria(re.search(ur'(?<=דף )\S+',line).group())
+                    if re.search(r'(?<=דף )\S+',line):
+                        current_daf=getGematria(re.search(r'(?<=דף )\S+',line).group())
                         current_amud='a'
-                    if u'ע"א' in line:
+                    if 'ע"א' in line:
                         current_amud='a'
-                    if u'ע"ב' in line:
+                    if 'ע"ב' in line:
                         current_amud='b'
                 elif current_tractate and current_daf and not_blank(line):
-                    if u'@11' in line or u'@00' in line or len(amud_box)<1:
+                    if '@11' in line or '@00' in line or len(amud_box)<1:
                         amud_box.append(clean_line(line))
                     else:
-                        amud_box[-1]+=u'<br>'+clean_line(line)
+                        amud_box[-1]+='<br>'+clean_line(line)
         text_list.append([current_tractate, current_daf, current_amud, amud_box])
-        
+
+links = []
 for tractate in tractate_list:
     myfile = open('output/RabbiEigerLinks_{}.tsv'.format(tractate),'w')
     myfile.close()
 for set_of_comments in text_list:
-    print 'matching {}.{}{}...'.format(set_of_comments[0],set_of_comments[1],set_of_comments[2])
+    print('matching {}.{}{}...'.format(set_of_comments[0],set_of_comments[1],set_of_comments[2]))
     tractate_ref=Ref('{}.{}{}'.format(set_of_comments[0],set_of_comments[1],set_of_comments[2]))
     tractate_chunk = TextChunk(tractate_ref,"he")
     match_set = match_ref(tractate_chunk,set_of_comments[3],base_tokenizer,dh_extract_method=dh_extract_method,verbose=False)
     with open('output/RabbiEigerLinks_{}.tsv'.format(set_of_comments[0]),'a') as myfile:
-        for comment,base in zip(set_of_comments[3], match_set['matches']):
+        comments = set_of_comments[3]
+        for c, comment in enumerate(comments):
+            match = match_set["matches"][c]
+            if match:
+                comm = "Chidushei Rabbi Akiva Eiger on {}:{}".format(tractate_ref.normal(), c+1)
+                links.append({"refs": [comm, match.normal()], "generated_by": "chidushei_akiva_eiger",
+                              "auto": True, "type": "Commentary"})
+post_link(links, server="http://sterling.sandbox.sefaria.org")
+with open("links.json", 'w') as f:
+    json.dump(links, f)
            #print "COMMENT\/"
            #print comment 
-           if base:
-             myfile.write('{} {}{}\t{}\t{}\n'.format(set_of_comments[0],set_of_comments[1],set_of_comments[2],base,comment.encode('utf','replace')))
-           else:
-             myfile.write('{} {}{}\tNULL\t{}\n'.format(set_of_comments[0],set_of_comments[1],set_of_comments[2],comment.encode('utf','replace')))
-           
+           # if base:
+           #   myfile.write('{} {}{}\t{}\t{}\n'.format(set_of_comments[0],set_of_comments[1],set_of_comments[2],base,comment.encode('utf','replace')))
+           # else:
+           #   myfile.write('{} {}{}\tNULL\t{}\n'.format(set_of_comments[0],set_of_comments[1],set_of_comments[2],comment.encode('utf','replace')))
+           #
     
     """
     if "comment_refs" in matches:
