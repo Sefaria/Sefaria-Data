@@ -8,6 +8,7 @@ import re
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
 from sources.functions import *
+from time import sleep
 
 ftnote_counter = 0
 
@@ -545,7 +546,7 @@ def post(text):
                          "versionSource": version.vsource,
                          "text": nodes["Footnotes"][intro_node],
                          "language": "he"}
-            #post_text("Footnotes and Annotations on {}, {}".format(intro_title, intro), send_text, index_count="on")
+            post_text("Footnotes and Annotations on {}, {}".format(intro_title, intro), send_text, index_count="on")
             nodes.pop(intro_node)
             nodes["Footnotes"].pop(intro_node)
         if title == "Be'er HaGolah":
@@ -588,29 +589,31 @@ def post(text):
             footnotes = nodes["Footnotes"]
             nodes.pop("Footnotes")
             body = convertDictToArray(nodes)
-            ftnotes = convertDictToArray(footnotes)[46]
+            ftnotes = convertDictToArray(footnotes)
             send_text = {"versionTitle": version.vtitle,
                          "versionSource": version.vsource,
                          "text": ftnotes,
                          "language": "he"}
-            #post_text("Footnotes and Annotations on {} 47".format(title), send_text, index_count="on")
+            #post_text("Footnotes and Annotations on {}".format(title), send_text, index_count="on", server="https://www.sefaria.org")
 
-            # for n, footnote_ch in footnotes.items():
-            #     footnotes[n] = [el for el in footnote_ch if el]
-            #     send_text = {"versionTitle": version.vtitle,
-            #                  "versionSource": version.vsource,
-            #                      "text": insert_count(footnotes[n]),
-            #                      "language": "he"}
-            #     try:
-            #         ref = "Footnotes and Annotations on {} {}".format(title, n)
-            #         post_text(ref, send_text, index_count="on")
-            #     except Exception as e:
-            #         print("CANT post {}: {}".format(title, e))
+            for n, footnote_ch in footnotes.items():
+                footnotes[n] = [el for el in footnote_ch if el]
+                send_text = {"versionTitle": version.vtitle,
+                             "versionSource": version.vsource,
+                                 "text": insert_count(footnotes[n]),
+                                 "language": "he"}
+                try:
+                    if int(n) > 46:
+                        ref = "Footnotes and Annotations on {} {}".format(title, n)
+                        post_text(ref, send_text, index_count="off", server="https://www.sefaria.org")
+                        sleep(20)
+                except Exception as e:
+                    print("CANT post {}: {}".format(title, e))
             send_text = {"versionTitle": version.vtitle,
                          "versionSource": version.vsource,
                          "text": body,
                          "language": "he"}
-            post_text(title, send_text, index_count="on")
+            #post_text(title, send_text, index_count="on")
 
 
 def get_match(header, prev_beer_match, prev_match):

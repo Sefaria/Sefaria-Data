@@ -531,7 +531,7 @@ class ParallelMatcher:
         return list(match_set)
 
     def match(self, tref_list, lang="he", comment_index_list=None, use_william=False, output_root="",
-              return_obj=False):
+              return_obj=False, vtitle_list=None):
         """
 
         :param list[str] tref_list: list of trefs names to match against.
@@ -539,14 +539,15 @@ class ParallelMatcher:
                 - str: will be interpretted as a tref. str have multiple trefs in it separated by '|'. This is useful when you want to match against a whole category of texts (e.g. Tanakh)
                 - tuple: where the tuples look like (content, unique_id) where `content` is the text to match and `unique_id` is a unique id.
         :param list[int] comment_index_list: list of indexes which correspond to either `index_list` or `tc_list` (whichever is not None). each index in this list indicates that the corresponding element should be treated as a `comment` meaning `self.dh_extract_method()` will be used on it.
-        :param bool use_william: True if you want to use William Davidson version for Talmud refs
+        :param list[tuple] vtitle_list: optional list of version title where each item is a string that represents a version title. You can put None for any version you want to be the default version. If passed, should be same length as tref_list. version title will only be used when passing trefs and not when passing tuples of (content, unique_id).
         :return: mesorat_hashas, mesorat_hashas_indexes
         """
         self.reset()
         start_time = pytime.time()
-
+        vtitle_list = vtitle_list or [None]*len(tref_list)
+        assert len(vtitle_list) == len(tref_list), f"If passing vtitle_list, vtitle_list must be the same length as tref_list. len(vtitle_list) == {len(vtitle_list)}, len(tref_list) == {len(tref_list)}"
         text_index_map_data = [None for yo in range(len(tref_list))]
-        for iunit, tref in enumerate(tref_list):
+        for iunit, (tref, vtitle) in enumerate(zip(tref_list, vtitle_list)):
             if comment_index_list is not None and iunit in comment_index_list:
                 # this unit is a comment. modify tokenizer so that it applies dh_extract_method first
                 unit_tokenizer = lambda x: self.tokenizer(self.dh_extract_method(x))
@@ -563,13 +564,9 @@ class ParallelMatcher:
                 unit_il, unit_wl, unit_rl, last_total_len = [], [], [], 0
                 for temp_tref in tref.split("|"):
                     oref = Ref(temp_tref)
-                    if len(oref.index.categories) >= 2 and oref.index.categories[1] == "Bavli" and use_william:
-                        vtitle = 'William Davidson Edition - Aramaic'
-                    else:
-                        vtitle = None
                     try:
                         # jagged array, can be instantiated as TextChunk
-                        text_chunk = oref.text(lang, vtitle)
+                        text_chunk = oref.text(lang, vtitle, lang)
                         temp_unit_il, temp_unit_rl, total_len, unit_flattened = text_chunk.text_index_map(unit_tokenizer, ret_ja=True)
                         temp_unit_wl = [w for seg in unit_flattened for w in unit_tokenizer(seg)]
                     except InputError:

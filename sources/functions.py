@@ -749,11 +749,11 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_link(info, server=SEFARIA_SERVER, VERBOSE = False, method="POST", dump_json=False):
+def post_link(info, server=SEFARIA_SERVER, skip_lang_check=False, VERBOSE = False, method="POST", dump_json=False):
     if dump_json:
         with open('links_dump.json', 'w') as fp:
             json.dump(info, fp)
-    url = server+'/api/links/'
+    url = server+'/api/links/' if not skip_lang_check else server+"/api/links/?skip_lang_check=1"
     result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method=method)
     if VERBOSE:
         print(result)
@@ -798,15 +798,15 @@ def post_link_weak_connection(info, repeat=10):
 
 
 
-def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle=""):
-    generated_by_str = Ref(base_ref).index.title + "_to_" + comm_ref.split()[0]
+def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle="", generated_by=""):
+    generated_by_str = Ref(base_ref).index.title + "_to_" + comm_ref.split()[0] if generated_by == "" else generated_by
     links = []
     base = TextChunk(Ref(base_ref), lang='he', vtitle=vtitle) if vtitle else TextChunk(Ref(base_ref), lang='he', vtitle=vtitle)
     matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)
     for n, match in enumerate(matches["matches"]):
-        len_match_text = len(matches["match_text"][n][0]) + len(matches["match_text"][n][1])
+        len_prob = len(matches["match_text"][n][0]) < 2 or len(matches["match_text"][n][1]) < 2
         curr_comm_ref = "{}:{}".format(comm_ref, n + 1)
-        if match and len_match_text > 4:
+        if match and not len_prob:
             curr_base_ref = match.normal()
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
                         "type": "Commentary", "auto": True}
@@ -1168,7 +1168,7 @@ def get_index_api(ref, server='http://www.sefaria.org'):
 
 def get_links(ref, server="http://www.sefaria.org"):
     ref = ref.replace(" ", "_")
-    url = server+'/api/links/'+ref
+    url = server+'/api/links/'+ref+"?skip_lang_check=1"
     return http_request(url)
 
 def get_text(ref, lang="", versionTitle="", server="http://draft.sefaria.org"):

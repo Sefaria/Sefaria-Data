@@ -1,6 +1,6 @@
 from sources.functions import *
 
-with open("alt_struct.csv") as f:
+with open("updated.csv") as f:
     en = he = ""
     parent_node = None
     root = []
