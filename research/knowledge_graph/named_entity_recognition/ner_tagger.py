@@ -101,8 +101,10 @@ class TextNormalizer:
         "”": '"',
         "“": '"'
     }
-    normalizing_reg = r"\s*<[^>]+>\s*"
-    normalizing_rep = " "
+    normalizing_reg_en = r"\s*<[^>]+>\s*"
+    normalizing_reg_he = "[\u0591-\u05bd\u05bf-\u05c5\u05c7]+"
+    normalizing_rep_en = " "
+    normalizing_rep_he = ""
 
     @classmethod
     def get_rabbi_regex(cls, rabbi):
@@ -132,19 +134,19 @@ class TextNormalizer:
 
     @classmethod
     def normalize_text(cls, lang, s):
-        # text = re.sub('<[^>]+>', ' ', text)
+        s = cls.myunidecode(s)
         if lang == 'en':
-            s = cls.myunidecode(s)
-            s = re.sub(cls.normalizing_reg, cls.normalizing_rep, s)
-            # text = unidecode(text)
-            # text = re.sub('\([^)]+\)', ' ', text)
-            # text = re.sub('\[[^\]]+\]', ' ', text)
-        # text = ' '.join(text.split())
+            s = re.sub(cls.normalizing_reg_en, cls.normalizing_rep_en, s)
+        else:
+            s = re.sub(cls.normalizing_reg_he, cls.normalizing_rep_he, s)
+            s = s.replace('־', ' ')
         return s
 
     @classmethod
-    def find_text_to_remove(cls, s):
-        return [(m, cls.normalizing_rep) for m in re.finditer(cls.normalizing_reg, s)]
+    def get_find_text_to_remove(cls, lang):
+        normalizing_reg = cls.normalizing_reg_en if lang == 'en' else cls.normalizing_reg_he
+        normalizing_rep = cls.normalizing_rep_en if lang == 'en' else cls.normalizing_rep_he
+        return lambda s: [(m, normalizing_rep) for m in re.finditer(normalizing_reg, s)]
 
 class Mention:
 
@@ -206,17 +208,18 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
 
     def __init__(self, named_entities, **kwargs):
         self.named_entities = named_entities
-        self.named_entity_regex = None
+        self.named_entity_regex_by_lang = {}
 
     def fit(self):
-        title_regs = []
-        for ne in tqdm(self.named_entities, desc="fit ner"):
-            for title in ne.get_titles(lang="en", with_disambiguation=False):
-                title_regs += [re.escape(expansion) for expansion in TextNormalizer.get_rabbi_expansions(title)]
-        title_regs.sort(key=lambda x: len(x), reverse=True)
-        word_breakers = r"|".join(re.escape(breaker) for breaker in ['.', ',', '"', '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§', '<', '>', "'s"])
+        for lang in ("en", "he"):
+            title_regs = []
+            for ne in tqdm(self.named_entities, desc="fit ner"):
+                for title in ne.get_titles(lang=lang, with_disambiguation=False):
+                    title_regs += [re.escape(expansion) for expansion in TextNormalizer.get_rabbi_expansions(title)]
+            title_regs.sort(key=lambda x: len(x), reverse=True)
+            word_breakers = r"|".join(re.escape(breaker) for breaker in ['.', ',', '"', '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§', '<', '>', "'s", "׃", "׀", "־"])
 
-        self.named_entity_regex = re.compile(fr"(?:^|\s|{word_breakers})({'|'.join(title_regs)})(?:\s|{word_breakers}|$)")
+            self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:^|\s|{word_breakers})({'|'.join(title_regs)})(?:\s|{word_breakers}|$)")
 
     @staticmethod
     def filter_already_found_mentions(mentions, text, lang):
@@ -225,20 +228,20 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
         all_reg = library.get_multi_title_regex_string(unique_titles, lang)
         reg = regex.compile(all_reg, regex.VERBOSE)
 
-        link_indexes = set()
+        already_found_indexes = set()
         for match in reg.finditer(text):
-            link_indexes |= {i for i in range(match.start(), match.end())}
-        return list(filter(lambda m: len(link_indexes & set(range(m.start, m.end))) == 0, mentions))
+            already_found_indexes |= {i for i in range(match.start(), match.end())}
+        return list(filter(lambda m: len(already_found_indexes & set(range(m.start, m.end))) == 0, mentions))
 
     def predict_segment(self, corpus_segment):
         from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
 
         norm_text = TextNormalizer.normalize_text(corpus_segment.language, corpus_segment.text)
         mentions = []
-        for match in re.finditer(self.named_entity_regex, norm_text):
+        for match in re.finditer(self.named_entity_regex_by_lang[corpus_segment.language], norm_text):
             mentions += [Mention(match.start(1), match.end(1), match.group(1), ref=corpus_segment.ref, versionTitle=corpus_segment.versionTitle, language=corpus_segment.language)]
         mention_indices = [(mention.start, mention.end) for mention in mentions]
-        norm_map = get_mapping_after_normalization(corpus_segment.text, TextNormalizer.find_text_to_remove)
+        norm_map = get_mapping_after_normalization(corpus_segment.text, TextNormalizer.get_find_text_to_remove(corpus_segment.language))
         mention_indices = convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map)
         for mention, (unnorm_start, unnorm_end) in zip(mentions, mention_indices):
             mention.add_metadata(start=unnorm_start, end=unnorm_end)
@@ -271,9 +274,10 @@ class AbstractEntityLinker:
 
 class NaiveEntityLinker(AbstractEntityLinker):
 
-    def __init__(self, named_entities):
+    def __init__(self, named_entities, rules):
         self.named_entities = named_entities
         self.named_entity_table = defaultdict(dict)
+        self.rules = rules
 
     def fit(self):
         for ne in tqdm(self.named_entities, desc="fit el"):
@@ -286,12 +290,81 @@ class NaiveEntityLinker(AbstractEntityLinker):
 
     def predict(self, corpus_segments, mentions):
         for mention in tqdm(mentions, desc="el predict"):
-            ne_list = self.named_entity_table.get(mention.mention, None)
-            if ne_list is None:
-                print(f"No named entity matches '{mention.mention}'")
-                continue
-            mention.add_metadata(id_matches=[ne.slug for ne in ne_list])
+            pretagged_id_matches = getattr(mention, 'id_matches', None)
+            if pretagged_id_matches is None:
+                ne_list = self.named_entity_table.get(mention.mention, None)
+                if ne_list is None:
+                    print(f"No named entity matches '{mention.mention}'")
+                    continue
+                mention.add_metadata(id_matches=[ne.slug for ne in ne_list])
+            for rule in self.rules:
+                rule.apply(None, [mention])
         return mentions
+
+class AbstractRule:
+
+    def __init__(self, rule_dict):
+        self.rule = rule_dict['rule']
+        self.named_entities = set(rule_dict['namedEntities'])
+        self.mentions = rule_dict.get('mentions', None)
+        if self.mentions is not None:
+            self.mentions = set(self.mentions)
+
+    def is_applicable(self, mention, mentions, corpus_segments):
+        return len(set(mention.id_matches) & self.named_entities) > 0
+
+    def apply(self, corpus_segments, mentions):
+        pass
+
+class MinMaxRefRule(AbstractRule):
+
+    def __init__(self, rule_dict):
+        super(MinMaxRefRule, self).__init__(rule_dict)
+        self.rule['maxRef'] = Ref(self.rule['maxRef']) if 'maxRef' in self.rule else None
+        self.rule['minRef'] = Ref(self.rule['minRef']) if 'minRef' in self.rule else None
+
+
+    def apply(self, corpus_segments, mentions):
+        from sefaria.utils.hebrew import strip_cantillation
+        mentions = [mention for mention in mentions if self.is_applicable(mention, mentions, corpus_segments)]
+        for mention in mentions:
+            rule_satisfied = True
+            if self.mentions is None or strip_cantillation(mention.mention, strip_vowels=True) in self.mentions:
+                if self.rule['minRef'] is not None and Ref(mention.ref).order_id() < self.rule['minRef'].order_id():
+                    rule_satisfied = False
+                if self.rule['maxRef'] is not None and Ref(mention.ref).order_id() > self.rule['maxRef'].order_id():
+                    rule_satisfied = False
+            if not rule_satisfied:
+                mention.id_matches = list(set(mention.id_matches).difference(self.named_entities))
+
+class ExactRefRule(AbstractRule):
+
+    def __init__(self, rule_dict):
+        super(ExactRefRule, self).__init__(rule_dict)
+        self.rule['exactRefs'] = set(self.rule['exactRefs'])
+
+    def apply(self, corpus_segments, mentions):
+        mentions = [mention for mention in mentions if self.is_applicable(mention, mentions, corpus_segments)]
+        for mention in mentions:
+            rule_satisfied = mention.ref in self.rule['exactRefs']
+            if not rule_satisfied:
+                mention.id_matches = list(set(mention.id_matches).difference(self.named_entities))
+
+class RuleFactory:
+
+    key_rule_map = {
+        "minRef": MinMaxRefRule,
+        "maxRef": MinMaxRefRule,
+        "exactRefs": ExactRefRule
+    }
+
+    @classmethod
+    def create(cls, rule_dict):
+        for key, rule in cls.key_rule_map.items():
+            if key in rule_dict['rule']:
+                return rule(rule_dict)
+
+
 
 class CorpusSegment:
 
@@ -306,6 +379,7 @@ class CorpusManager:
     def __init__(self, tagging_params_file, mentions_output_file, mentions_html_folder):
         self.mentions_output_file = mentions_output_file
         self.mentions_html_folder = mentions_html_folder
+        self.named_entities = []
         self.ner = None
         self.el = None
         self.mentions = []
@@ -316,26 +390,30 @@ class CorpusManager:
     def read_tagging_params_file(self, tagging_params_file):
         with open(tagging_params_file, "r") as fin:
             tagging_params = json.load(fin)
-        named_entities = self.create_named_entities(tagging_params["namedEntities"])
-        self.ner = NaiveNamedEntityRecognizer(named_entities)
-        self.el = NaiveEntityLinker(named_entities)
+        self.named_entities = self.create_named_entities(tagging_params["namedEntities"])
+        rules = self.create_rules(tagging_params.get("rules", []))
+        self.ner = NaiveNamedEntityRecognizer(self.named_entities)
+        self.el = NaiveEntityLinker(self.named_entities, rules)
         self.ner.fit()
         self.el.fit()
         self.corpus_version_queries = self.create_corpus_version_queries(tagging_params["corpus"])
 
     def tag_corpus(self):
+        pretagged_mentions = []
         for version_query in tqdm(self.corpus_version_queries, desc="load corpus"):
             pretagged_file = version_query.get("pretaggedFile", None)
             if pretagged_file is not None:
                 with open(pretagged_file, "r") as fin:
-                    pretagged_mentions = json.load(fin)
-                    for mention in pretagged_mentions:
-                        self.mentions += [Mention().add_metadata(versionTitle=version_query['versionTitle'], language=version_query['language'], **mention)]
+                    raw_pretagged_mentions = json.load(fin)
+                    for mention in raw_pretagged_mentions:
+                        pretagged_mentions += [Mention().add_metadata(versionTitle=version_query['versionTitle'], language=version_query['language'], **mention)]
             else:
                 version = Version().load(version_query)
                 version.walk_thru_contents(self.recognize_named_entities_in_segment)
         ner_mentions = self.ner.predict(self.corpus_segments)
-        self.mentions += self.el.predict(self.corpus_segments, ner_mentions)
+        ner_mentions += pretagged_mentions
+        el_mentions = self.el.predict(self.corpus_segments, ner_mentions)
+        self.mentions = el_mentions
 
     def save_mentions(self):
         out = [mention.serialize() for mention in tqdm(self.mentions, desc="save mentions")]
@@ -344,6 +422,10 @@ class CorpusManager:
 
     def recognize_named_entities_in_segment(self, segment_text, en_tref, he_tref, version):
         self.corpus_segments += [CorpusSegment(segment_text, version.language, version.versionTitle, en_tref)]
+
+    @staticmethod
+    def create_rules(raw_rules):
+        return [RuleFactory.create(raw_rule) for raw_rule in raw_rules]
 
     @staticmethod
     def create_named_entities(raw_named_entities):
@@ -376,9 +458,16 @@ class CorpusManager:
             title_list = [item["title"]] if item["type"] == "index" else library.get_indexes_in_category(item["title"])
             for title in title_list:
                 for temp_version_query in item["versions"]:
+                    if temp_version_query.get("pretaggedFile", False):
+                        # no need to include every index for a pretagged version
+                        continue
                     version_query_copy = temp_version_query.copy()
                     version_query_copy["title"] = title
                     version_queries += [version_query_copy]
+            for temp_version_query in item["versions"]:
+                if not temp_version_query.get("pretaggedFile", False):
+                    continue
+                version_queries += [temp_version_query]
         return version_queries
 
     @staticmethod
@@ -404,9 +493,9 @@ class CorpusManager:
                 print("KEYERROR", match.group())
                 return match.group()
             # TODO find better way to determine if slug is in topics collection
-            slug = slugs[0]
+            slug = slugs[0] if len(slugs) > 0 else ''
             other_slugs = slugs[1:]
-            link = f"""<a href="https://www.sefaria.org/topics/{slug}" class="{"missing" if ':' in slug else "found"}">{mention}</a>"""
+            link = f"""<a href="https://www.sefaria.org/topics/{slug}" class="{"no-ids" if len(slug) == 0 else "missing" if ':' in slug else "found"}">{mention}</a>"""
             if len(other_slugs) > 0:
                 link += f'''<sup>{", ".join([f"""<a href="https://www.sefaria.org/topics/{temp_slug}" class="{"missing" if ':' in temp_slug else "found"}">[{i+1}]</a>""" for i, temp_slug in enumerate(other_slugs)])}</sup>'''
             return link
@@ -438,6 +527,9 @@ class CorpusManager:
                         }
                         .found {
                             color: green;
+                        }
+                        .no-ids {
+                            color: purple;
                         }
                     </style>
                 </head>
@@ -580,24 +672,24 @@ class CorpusManager:
             self.mentions = [Mention().add_metadata(**m) for m in tqdm(mentions, desc="load mentions")]
 
 if __name__ == "__main__":
+    ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_tanakh.json",
-        "/Users/nss/Documents/Sefaria-Docs/ner/ner_output_tanakh.json",
-        "/Users/nss/Documents/Sefaria-Docs/ner/html"
+        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_tanakh_simple.json",
+        f"{ner_file_prefix}/ner_output_tanakh.json",
+        f"{ner_file_prefix}/html"
     )
     corpus_manager.tag_corpus()
     corpus_manager.save_mentions()
-    corpus_manager.generate_html_file()
+    # corpus_manager.generate_html_file()
 
     # corpus_manager.load_mentions()
-    corpus_manager.cross_validate_mentions_by_lang("/Users/nss/Documents/Sefaria-Docs/ner/cross_validated_by_language.csv", "/Users/nss/Documents/Sefaria-Docs/ner/cross_validated_by_language_common_mistakes.csv")
+    # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv")
 
 
 """
-x-validation algo
+TODO
+searching without nikkud in Hebrew is way too dangerous.
+need to only search in Hebrew as a rule
 
-for each sugya
-    en_ids = set(ids in en mentions)
-    he_ids = set(ids in he mentions)
 
 """
