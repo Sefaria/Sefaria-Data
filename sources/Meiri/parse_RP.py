@@ -4,7 +4,7 @@ from research.link_disambiguator.main import Link_Disambiguator
 import os
 from functools import reduce
 from sefaria.utils.hebrew import strip_cantillation
-from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
+from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
 from data_utilities.util import WeightedLevenshtein
 levenshtein = WeightedLevenshtein()
 mode = "2"
@@ -124,6 +124,9 @@ for f in os.listdir("."):
                         line = "<b>" + line.split()[0] + "</b> " + " ".join(line.split()[1:])
                     lines[curr][curr_section].append(line)
 
+def just_mishnah(str):
+    value = " ".join(str.split()[1:5]) if mishnah in str.split()[0] else ""
+    return value
 
 
 # t = Term()
@@ -138,7 +141,7 @@ c.add_shared_term("Meiri")
 links = []
 
 for en_title, he_title in lines.keys():
-    if en_title not in ["Gittin", "Kiddushin", "Sanhedrin"]:
+    if en_title not in ["Kiddushin", "Gittin", "Sanhedrin"]:
         continue
     categories = ["Talmud", "Bavli", "Commentary", "Meiri", library.get_index(en_title).categories[-1]]
     print(categories)
@@ -149,7 +152,7 @@ for en_title, he_title in lines.keys():
         c.save()
     except Exception as e:
         print(e)
-    add_category(categories[-1], categories)
+    #add_category(categories[-1], categories)
     full_title = "Meiri on {}".format(en_title)
     he_full_title = "מאירי על {}".format(he_title)
     if "Introduction" in lines[(en_title, he_title)]:
@@ -188,36 +191,45 @@ for en_title, he_title in lines.keys():
         "versionSource": "http://www.sefaria.org",
         "text": convertDictToArray(lines_in_title)
     }
-    mishnah = "המשנה"
+    mishnah = "משנה"
     #post_text(full_title, send_text, index_count="on")
+    found_refs = []
+
+    new_links = []
     for daf in lines_in_title:
         actual_daf = AddressTalmud.toStr('en', daf)
         comm_title = "{} {}".format(full_title, actual_daf)
         base_ref = "{} {}".format(en_title, actual_daf)
+        found = -1
+        leave = False
+        #get positions of base and comm that are Mishnah
+        positions_comm = [l for l, line in enumerate(lines_in_title[daf]) if mishnah in line.split()[0]]
+        base = Ref("{} {}".format(en_title, actual_daf)).text('he')
+        positions_base = [l for l, line in enumerate(base.text) if "מַתְנִי׳" in line.split()[0] or "מתני׳" in line.split()[0]]
+        for base, comm in zip(positions_base, positions_comm):
+            found_refs.append("Meiri on {} {}:{}".format(en_title, actual_daf, comm + 1))
+            links.append({"generated_by": "mishnah_to_meiri", "auto": True, "type": "Commentary",
+                          "refs": ["Meiri on {} {}:{}".format(en_title, actual_daf, comm + 1),
+                                   "{} {}:{}".format(en_title, actual_daf, base + 1)]})
+        if len(positions_base) != len(positions_comm) > 0:
+            print("Meiri on {} {}".format(en_title, actual_daf))
+
+
         if mode == "1":
-            links += PM_regular(lines_in_title[daf], comm_title, base_ref)
+            new_links = PM_regular(lines_in_title[daf], comm_title, base_ref)
         elif mode == "2":
-            links += match_ref_interface(base_ref, comm_title, lines_in_title[daf], lambda x: x.split(), dher, generated_by="meiri_to_daf")
+            new_links = match_ref_interface(base_ref, comm_title, lines_in_title[daf], lambda x: x.split(), dher, generated_by="meiri_to_daf")
         elif mode == "3":
             if daf-1 in lines_in_title:
-                links += PM_regular(lines_in_title[daf-1], comm_title, base_ref)
-            links += PM_regular(lines_in_title[daf], comm_title, base_ref)
+                new_links = PM_regular(lines_in_title[daf-1], comm_title, base_ref)
+            new_links = PM_regular(lines_in_title[daf], comm_title, base_ref)
             if daf+1 in lines_in_title:
-                links += PM_regular(lines_in_title[daf+1], comm_title, base_ref)
+                new_links = PM_regular(lines_in_title[daf+1], comm_title, base_ref)
+        for l in new_links:
+            meiri_ref = l["refs"][0] if l["refs"][0].startswith("Meiri") else l["refs"][1]
+            if meiri_ref not in found_refs:
+                links.append(l)
 
-        for j, line in enumerate(lines_in_title[daf]):
-            if mishnah in line.split()[0]:
-                base = Ref("{} {}".format(en_title, actual_daf)).text('he').text
-                found = -1
-                for i, base_line in enumerate(base):
-                    if "מַתְנִי׳" in base_line.split()[0] or "מתני׳" in base_line.split()[0]:
-                        found = i
-                if found == -1:
-                    print("Meiri on {} {}:{}".format(en_title, actual_daf, j + 1))
-                else:
-                    if mode == "2":
-                        links.append({"generated_by": "mishnah_to_meiri", "auto": True, "type": "Commentary",
-                              "refs": ["Meiri on {} {}:{}".format(en_title, actual_daf, j + 1), "{} {}:{}".format(en_title, actual_daf, found + 1)]})
 
 with open("{}.json".format(mode), 'w') as f:
     json.dump(links, f)

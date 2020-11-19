@@ -46,13 +46,13 @@ books = "|".join(fr_books)
 from sources.functions import *
 with open("new_full_text.csv", 'w') as new_f:
     writer = csv.writer(new_f)
-    with open("full_text.csv", 'r') as f:
+    with open("Moreh Nevukhim.csv", 'r') as f:
         for row in csv.reader(f):
             finds = re.findall("("+books+"), ([ILVXC]+), (\d+)", row[1])
             if finds:
                 for find in finds:
                     find = list(find)
-                    old_citation = "{}, {}, {}".format(*find)
+                    old_citation = "{}, {}".format(*find[1:])
                     if len(find) != 3:
                         print("ERROR")
                     else:
@@ -61,8 +61,9 @@ with open("new_full_text.csv", 'w') as new_f:
                         loc = fr_books.index(find[0])
                         actual_book = en_tanakh[loc]
                         find[0] = actual_book
-                        new_citation = "{}, {}:{}".format(*find)
-                        row[1] = row[1].replace(old_citation, new_citation)
+                        new_citation = "{}:{}".format(*find[1:])
+                        assert old_citation in row[1]
+                        row[1] = row[1].replace(old_citation, new_citation, 1)
 
             writer.writerow(row)
 

@@ -24,6 +24,7 @@ servers = [servers[1]]
 links = []
 import json
 with open("1.json", 'r') as f:
+    post_link(json.load(f))
     one_links = filter_tractates(json.load(f), ["Gittin", "Kiddushin", "Sanhedrin"])
 with open("2.json", 'r') as f:
     two_links = filter_tractates(json.load(f), ["Gittin", "Kiddushin", "Sanhedrin"])
