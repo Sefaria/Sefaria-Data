@@ -577,11 +577,11 @@ def http_request(url, params=None, body=None, json_payload=None, method="GET"):
         body['json'] = json.dumps(json_payload)  # Adds the json as a url parameter - otherwise json gets lost
 
     if method == "GET":
-        response = requests.get(url, verify=False)
+        response = requests.get(url)
     elif method == "POST":
-        response = requests.post(url, params=params, data=body, verify=False)
+        response = requests.post(url, params=params, data=body)
     elif method == "DELETE":
-        response = requests.delete(url, params=params, data=body, verify=False)
+        response = requests.delete(url, params=params, data=body)
     else:
         raise ValueError("Cannot handle HTTP request method {}".format(method))
 
