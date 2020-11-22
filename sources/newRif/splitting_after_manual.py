@@ -8,6 +8,7 @@ o150 = 0
 o200 = 0
 o300 = 0
 o0 = 0
+prs=0
 for row in data:
     if row['masechet'].strip() != '':
         try:
@@ -15,6 +16,7 @@ for row in data:
             page = 'X'.join(page).replace('U', ' ').replace('\n', '').replace('XX', 'X').split('X')
             for n, sec in enumerate(page):
                 newdata.append({'page.section': f'{npage}:{n+1}', 'content': sec})
+            prs+=len(newdata)
             with open(f'{path}/rif_csv/manual/{masechet}.csv', 'w', encoding='utf-8', newline='') as fp:
                 awriter = csv.DictWriter(fp, fieldnames=['page.section', 'content'])
                 awriter.writeheader()
@@ -45,9 +47,10 @@ page = 'X'.join(page).replace('U', ' ').replace('\n', '').replace('XX', 'X').spl
 for n, sec in enumerate(page):
     newdata.append({'page.section': f'{npage}:{n+1}', 'content': sec})
 page = []
+prs+=len(newdata)
 with open(f'{path}/rif_csv/manual/{masechet}.csv', 'w', encoding='utf-8', newline='') as fp:
     awriter = csv.DictWriter(fp, fieldnames=['page.section', 'content'])
     awriter.writeheader()
     for item in newdata: awriter.writerow(item)
-
+print(prs)
 print(o0, o150, o200, o300)

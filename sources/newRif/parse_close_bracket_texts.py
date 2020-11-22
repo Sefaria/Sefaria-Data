@@ -11,6 +11,11 @@ from sg_parser import check_sequence
 def clean_garbage(string):
     return re.sub('\ufeff|\u200f', '', strung)
 
+def bold(par):
+    if '.' in par and 2 < len(par.split('.')[0]) < 100:
+        par = '<b>' + par.replace('.', '.</b>', 1).strip()
+    return par
+
 def parse_pages(data, letter_tag):
     splitted = []
     lengths = []
@@ -55,9 +60,10 @@ def nky_bmravad(mefaresh, masechet):
         print('no newdata')
 
     newdata = [[re.sub(' +', ' ', re.sub('@11.\]|@|\d', '', par)).strip() for par in page] for page in newdata]
+    if mefaresh == 'bmravad':
+        newdata = [[bold(par) for par in page] for page in newdata]
     with open(path+f'/commentaries/json/{mefaresh}_{masechet}.json', 'w') as fp:
         json.dump(newdata, fp)
-
 
 def ravad(masechet):
     with open(path+f'/commentaries/ravad_{masechet}.txt', encoding='utf-8') as fp:
@@ -96,13 +102,9 @@ def ravad(masechet):
     save_tags(tags, masechet)
 
     newdata = [[re.sub(' +', ' ', re.sub('@|\d', '', par)).strip() for par in page] for page in newdata]
+    newdata = [[bold(par) for par in page] for page in newdata]
     with open(path+f'/commentaries/json/ravad_{masechet}.json', 'w') as fp:
         json.dump(newdata, fp)
-
-def bold(par):
-    if '.' in par and 2 < len(par.split('.')[0]) < 100:
-        par = '<b>' + par.replace('.', '.</b>', 1).strip()
-    return par
 
 def efrayim_bk():
     with open(path+'/commentaries/R_Efrayim_Bava Kamma.txt', encoding='utf-8') as fp:

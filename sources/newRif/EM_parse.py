@@ -7,6 +7,8 @@ from tags_compare import compare_tags_nums, compare_tags, OrderedCounter
 from sg_parser import check_sequence
 from sources.EinMishpat.ein_parser import parse_em
 
+REPORT = []
+
 def parse_em_pars(data, masechet):
     data = re.sub('\ufeff|\u200f', '', data)
     letter_tag = tags_map[masechet]['em_letter']
@@ -36,7 +38,8 @@ def find_refs(data):
     newdata = '@P'.join(['@P'.join(page) for page in data if page])
     newdata = fix_file(newdata)
     newdata = parse_em(f'EM', 1, 'emerrors.txt', em_list=newdata)
-    newdata = [{'Rambam': item['Rambam'], 'Semag': item['Semag'], 'Tur Shulchan Arukh': item['Tur Shulchan Arukh']} for item in newdata]
+    mefarshim = ['Rambam', 'Semag', 'Tur Shulchan Arukh']
+    newdata = [{mefaresh: item[mefaresh] if item[mefaresh] else [] for mefaresh in mefarshim} for item in newdata]
     for n, page in enumerate(data):
         if page:
             for m, _ in enumerate(page):
@@ -44,9 +47,10 @@ def find_refs(data):
     return data
 
 def execute():
+    global REPORT
     for masechet in tags_map:
         if masechet == 'Nedarim': continue
-        print(masechet)
+        REPORT.append(masechet)
         with open(path+'/commentaries/EM_{}.txt'.format(masechet), encoding='utf-8') as fp:
             data = fp.read()
         page_tag = tags_map[masechet]['em_page']
@@ -64,12 +68,12 @@ def execute():
                     daf_num = getGematria(daf)
                     if amud == 'א': amud = 1
                     elif amud == 'ב': amud = 2
-                    else: print('amud isnt valid', page[:30])
+                    else: REPORT.append('amud isnt valid', page[:30])
                     section = daf_num * 2 - 3 + amud
                     while len(newdata) < section: newdata.append([])
                     page = re.sub('דף [א-ס][א-ט]? ע"[אב]', f'@88{daf}{"." if amud==1 else ":"}', page).strip()
                 except (ValueError, AttributeError):
-                    print('daf and amud arent valid', page[:30])
+                    REPORT.append('daf and amud arent valid', page[:30])
                 page = parse_em_pars(page, masechet)
                 newdata.append(page)
 
@@ -113,3 +117,4 @@ def execute():
 
 if __name__ == '__main__':
     execute()
+    print(REPORT)

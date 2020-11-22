@@ -183,3 +183,6 @@ def execute():
             awriter = csv.DictWriter(file, fieldnames=['page.section', 'content'])
             awriter.writeheader()
             for item in new_data: awriter.writerow(item)
+
+if __name__ == '__main__':
+    execute()

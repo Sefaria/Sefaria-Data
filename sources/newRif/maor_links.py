@@ -54,8 +54,8 @@ def base_tokenizer(string, masechet):
 
 def unpack_ref(tref):
     tref = tref.split()[-1]
+    tref = tref.split('-')[0]
     a, c = re.split('[ab]:', tref)
-    c = c.split('-')[0]
     b = re.findall('[ab]', tref)[0]
     return int(a), b, int(c)
 
@@ -66,6 +66,8 @@ def find_gemara(rif, masechet):
     if gemara_refs:
         first = gemara_refs[0].split('-')[0]
         last = re.sub(r'\d*-', '', gemara_refs[-1].split()[-1])
+        if last.count(':') == 2: #means two pages in ref
+            last = last.split(':', 1)[1]
         return f'{first}-{last}'
 
 for masechet in maor_tags:

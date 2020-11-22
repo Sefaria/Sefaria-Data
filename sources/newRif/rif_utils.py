@@ -9,7 +9,7 @@ path = os.path.dirname(os.path.abspath("top_level_file.txt"))
 
 def cleanspaces(string):
     string = re.sub (' +', ' ', string)
-    string = re.sub(r' ([\)\]:.])|([\(\[]) ', r'\1\2', string)
+    string = re.sub(r' ([\)\]:\.])|([\(\[]) ', r'\1\2', string)
     return string.strip()
 
 def removeinbetween(stringtoclean, sub1, sub2):
@@ -62,6 +62,7 @@ def unite_ref(refs: list) -> list:
 
     if refs == []: return []
     refs = [ref.tref if type(ref)==Ref else ref for ref in refs]
+    print(refs)
     base_ref = refs[0].split(':')[0]
     lines = set()
     for ref in refs:
@@ -88,6 +89,16 @@ def unite_ref(refs: list) -> list:
             start = 0
 
     return new_ref_lines
+
+def unite_ref_pages(refs):
+    if refs == []: return []
+    refs = [ref.tref if type(ref)==Ref else ref for ref in refs]
+    refs_dict = {ref.split()[-1].split(':')[0]: [] for ref in refs}
+    for ref in refs:
+        refs_dict[ref.split()[-1].split(':')[0]].append(ref)
+    for key in refs_dict:
+        refs_dict[key] = unite_ref(refs_dict[key])
+    return [item for x in list(refs_dict.values()) for item in x]
 
 def main_mefaresh(masechet):
     for mefaresh in ['Ran', 'Nimmukei Yosef', 'Rabbenu Yonah', 'Rabbenu Yehonatan of Lunel']:
