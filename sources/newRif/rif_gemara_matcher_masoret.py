@@ -9,9 +9,24 @@ from sefaria.model import *
 from rif_utils import path, remove_metadata, tags_map, get_hebrew_masechet, hebrewplus, netlen2, unite_ref
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from sefaria.system.exceptions import InputError
+from scoremanager import ScoreManager
+
+with open(f'{path}/talmud.json', encoding='utf-8') as fp:
+    rt = json.load(fp)
+def open_rashei_tevot(string):
+    rt_dict = {}
+    for key, value in rt.items():
+        rt_dict[key[:-1]+'"'+key[-1]] = [subval for subval in value if value[subval]==max(value.values())][0]
+    return ' '.join([rt_dict.get(i, i) for i in string.split()])
+
+with open('words_remove.json') as fp:
+    words = json.load(fp)
+def remove_too_frequent(l):
+    return [w for w in l]# if re.sub('^ו+', '', hebrewplus(w, '"')) not in words]
 
 def base_tokenizer(string, masechet):
-    return remove_metadata(string, masechet).split()
+    string = remove_metadata(string, masechet)
+    return remove_too_frequent(open_rashei_tevot(string).split())
 
 def check_ref(string, masechet, gemara_text):
     string = re.sub(r'במכילתין|לקמן|לעיל|ע"ש|מכלתין|מכילתין|כאן|[\(\)\[\]]', '', string).strip()
@@ -103,8 +118,10 @@ def execute():
         new_data = []
         prev = ''
         current_ref = 'דף ב.'
+        oldpage = None
         splitted_data = {current_ref: []}
-        matcher = ParallelMatcher(partial(base_tokenizer, masechet=masechet), verbose=False)
+        score_manager = ScoreManager("words_dict.json")
+        matcher = ParallelMatcher(partial(base_tokenizer, masechet=masechet), verbose=False)#, all_to_all=False)#, calculate_score=score_manager.get_score)
         ref_tag = tags_map[masechet]['gemara_refs']
         note_tag = tags_map[masechet]['notes']
         end_tag = tags_map[masechet]['end_tag']
@@ -114,6 +131,13 @@ def execute():
             data = list(csv.DictReader(file))
 
         for row in data:
+            page = row["page.section"].split(":")[0]
+            if oldpage != page:
+                par = 1
+            else:
+                par += 1
+            oldpage = page
+            row['page.section'] = f'{page}:{par}'
             row['content'] = re.sub(r'[\ufeff\n]', '', row['content'])
             if row['content'] == '':
                 print('empty row in', row['page.section'])
@@ -165,7 +189,9 @@ def execute():
             for section in splitted_data[ref]:
                 if netlen2(section['content'], masechet) > 4:
                     tref_list = [gemara_text[0], (section['content'], 'rif')]
-                    match_list = matcher.match(tref_list, return_obj=True)
+                    ver = 'Wikisource Talmud Bavli' if Ref(gemara_text[0]).is_bavli() else None
+                    match_list = matcher.match(tref_list, return_obj=True, vtitle_list=[ver, None])
+                    match_list = [item for item in match_list if 'rif' in [item.a.mesechta, item.b.mesechta] and [item.a.mesechta, item.b.mesechta] != ['rif', 'rif']]
                     match_list = [item.a.ref if item.a.mesechta!='rif' else item.b.ref for item in match_list]
                     match_list = unite_ref(match_list)
                     for item in match_list:
