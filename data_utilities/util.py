@@ -536,7 +536,7 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                             # set middle back to false
                             middle = False
 
-                    print(index+1, end=' ')
+                    print(index+1)
 
                     # get canonical number of verses
                     canon = len(TextChunk(chapter, vtitle='Tanach with Text Only', lang='he').text)

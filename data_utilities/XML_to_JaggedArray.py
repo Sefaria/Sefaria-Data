@@ -88,7 +88,7 @@ class XML_to_JaggedArray:
 
     def run(self):
         xml_text = self.xml_text
-        self.get_each_type_tag(BeautifulSoup(xml_text).contents)
+        #self.get_each_type_tag(BeautifulSoup(xml_text).contents)
         xml_text = self.modify_before_parse(xml_text)
         xml_text = bleach.clean(xml_text, tags=self.allowedTags, attributes=self.allowedAttributes, strip=False)
         xml_text = self.convertIMGBase64(xml_text)
@@ -229,6 +229,10 @@ class XML_to_JaggedArray:
         #     '\u1e93': 'z',
         #     '\u1e24': 'H'
         # }
+        # if '\u201c' in text or chr(147) in text or "“" in text:
+        #     for word in text.split():
+        #         if'\u201c' in word or chr(147) in word or "“" in word:
+        #             print('found')
         for key in things_to_replace:
             text = text.replace(key, things_to_replace[key])
         return text
@@ -246,7 +250,8 @@ class XML_to_JaggedArray:
         orig_ref = ref
         if type(text) is str or type(text) is str:
             self.word_count += self.cleanText(text).count(" ")
-            self.writer.writerow([ref, self.cleanText(text)])
+            text = self.cleanText(text)
+            self.writer.writerow([ref, text])
         else:
             assert type(text) is list
             for count, element in enumerate(text):

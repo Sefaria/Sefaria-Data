@@ -24,7 +24,7 @@ if __name__ == "__main__":
     #The first text already exists and the second should follow the exact same structure as the first
     original = sys.argv[1]
     new = sys.argv[2]
-    server = "http://ste.sandbox.sefaria.org"
+    server = "https://ste.cauldron.sefaria.org"
 
     #assert original exists and new doesn't exist
     verify_input(original, new)
