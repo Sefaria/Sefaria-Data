@@ -467,7 +467,7 @@ def default_calculate_score(words_a, words_b):
 class ParallelMatcher:
 
     def __init__(self, tokenizer, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
-                 min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True,
+                 min_distance_between_matches=100, all_to_all=True, parallelize=False, verbose=True,
                  calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None, ignore_subset_results=True):
         """
         Minimal usage would be:
@@ -479,7 +479,7 @@ class ParallelMatcher:
         :param ngram_size: int, basic unit of matching. 1 word will be skipped in each ngram of size `ngram_size`
         :param max_words_between: max words between consecutive ngrams
         :param min_words_in_match: min words for a match to be considered valid
-        :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
+        :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen. NOTE: only applies to matches that are within the same book to avoid matching within the same discussion
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
         :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry TODO: interesting question on sharing ram: https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
         :param f(str, str) -> float: function that takes two strings as parameters, representing both sides of a match. returns float representing score. This score does not affect the algorithm at all. it's purpose is to be used for post-processing on the results
@@ -755,7 +755,7 @@ class ParallelMatcher:
             skip_matches.remove(a)  # remove the skip match that we're inspecting
             if not self.all_to_all:
                 # filter anything that's in this TextChunk
-                skip_matches = [x for x in skip_matches if not imes == x.mesechta_index]
+                skip_matches = [x for x in skip_matches if imes != x.mesechta_index]
             skip_matches = [x for x in skip_matches if not x.too_close(a)]
             skip_matches = [x for x in skip_matches if not self.ght.already_started_here((a, x))] # TODO use some closeness metric here also
             try:
@@ -763,7 +763,8 @@ class ParallelMatcher:
                 temp_already_matched_list = already_matched_dict[i_word]
 
                 for temp_already_matched in temp_already_matched_list:
-                    skip_matches = [x for x in skip_matches if not x.too_close(temp_already_matched)]
+                    # only check for too_close if x is in same book as a. otherwise, too_close metric is arbitrarily filtering skip_matches that are close to previous matches in x, but maybe not be in the same book as a
+                    skip_matches = [x for x in skip_matches if (x.mesechta_index != imes or not x.too_close(temp_already_matched))]
             except KeyError:
                 pass
             skip_matches.sort(key=cmp_to_key(lambda x, y: x.compare(y)))
@@ -798,7 +799,7 @@ class ParallelMatcher:
                     if distance_from_last_match > self.max_words_between:
                         if len(dead) >= self.min_words_in_match:
                             self.ght.put_already_started((dead.b_start, dead.a_start))
-                            for i_matched_word in range(dead.a_start.location[0], dead.a_end.location[1] + 100):
+                            for i_matched_word in range(dead.a_start.location[0], dead.a_end.location[1] + self.min_distance_between_matches):
                                 already_matched_dict[i_matched_word] += [dead.b_start]
                             try:
                                 matches += [dead.finalize()]
