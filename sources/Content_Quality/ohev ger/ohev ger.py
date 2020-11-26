@@ -21,6 +21,12 @@ with open("ohev_ger.csv", 'r') as f:
             else:
                 parshiyot[found_parasha].append(row[1])
 
+def replace_torah_with_targum(l):
+    i = 1 if l["refs"][0].startswith("Ohev Ger") else 0
+    comm_title = Ref(l["refs"][i]).index.title
+    l["refs"][i] = l["refs"][i].replace(comm_title, "Targum Onkelos {}".format(comm_title))
+    return l
+
 links = []
 how_many_comments = 0
 for i, parasha in enumerate(parshiyot):
@@ -37,4 +43,6 @@ for i, parasha in enumerate(parshiyot):
             links.append(new_link)
     how_many_comments += len(comments)
 
-post_link(links)
+# post_link(links)
+targum_links = [replace_torah_with_targum(l) for l in links]
+post_link(targum_links, server="https://www.sefaria.org")
