@@ -479,7 +479,7 @@ class ParallelMatcher:
         :param f(str) -> str dh_extract_method: takes the full text of `comment` and returns only the dibur hamatchil. `self.tokenizer` will be applied to it afterward. this will only be used if `comment_index_list` in `match()` is not None
         :param ngram_size: int, basic unit of matching. 1 word will be skipped in each ngram of size `ngram_size`
         :param max_words_between: max words between consecutive ngrams
-        :param min_words_in_match: min words for a match to be considered valid
+        :param min_words_in_match: min words for a match to be considered valid. By default, only one side needs to have min_words. However, if both_sides_have_min_words is True, then both need (see both_sides_have_min_words param)
         :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen. NOTE: only applies to matches that are within the same book to avoid matching within the same discussion
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
         :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry TODO: interesting question on sharing ram: https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
