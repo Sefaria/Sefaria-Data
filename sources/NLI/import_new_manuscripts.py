@@ -1,6 +1,8 @@
 # encoding=utf-8
 
 import re
+import os
+import csv
 import json
 import django
 from urllib import parse
@@ -92,7 +94,8 @@ def find_ranges(ref_list):
     return ranges
 
 
-def create_manuscript(title, manuscript_data):
+def create_manuscript(manuscript_data):
+    title = manuscript_data['title']
     mongo_manuscript = manuscript.Manuscript().load({'title': title})
     if mongo_manuscript is not None:
         print(f'{title} exists, doing nothing')
@@ -156,22 +159,36 @@ def import_kaufmann():
 
 def create_leningrad():
     title = 'Leningrad Codex'
-    create_manuscript(title, MANUSCRIPT_DATA[title])
+    create_manuscript(MANUSCRIPT_DATA[title])
 
     with open('Leningrad_map.json') as fp:
         leningrad = json.load(fp)
 
-    url_prefix = 'https://storage.googleapis.com/sefaria-manuscripts/Leningrad'
+    url_prefix = 'https://storage.googleapis.com/sefaria-manuscripts/leningrad-color'
     for i, (page, ref_range) in enumerate(leningrad.items()):
         if i % 25 == 0:
             print(f'{i} / {len(leningrad)}')
         data = {
             'manuscript_slug': manuscript.ManuscriptPage.get_slug_for_title(title),
             'page_id': page.replace(".jpg", ""),
-            'image_url': f'{url_prefix}/{page}',
-            'thumbnail_url': f'{url_prefix}/{page.replace(".jpg", "_thumbnail.jpg")}',
+            # 'image_url': f'{url_prefix}/{page}',
+            # 'thumbnail_url': f'{url_prefix}/{page.replace(".jpg", "_thumbnail.jpg")}',
         }
-        page_obj = manuscript.ManuscriptPage().load_from_dict(data)
+        page_obj = manuscript.ManuscriptPage().load(data)
+        if not page_obj:
+            page_obj = manuscript.ManuscriptPage().load_from_dict(data)
+        page_obj.contained_refs = []
+        page_obj.set_expanded_refs()
+        file_conversion_data = re.search(r'_([0-9]+)([vr])', page)
+        if not file_conversion_data:
+            print(f'weird filename: {page}')
+            continue
+        else:
+            number, side = file_conversion_data.group(1), file_conversion_data.group(2)
+            new_filename = f'BIB_LENCDX_F{number.zfill(3)}{"B" if side == "v" else "A"}.jpg'
+            page_obj.image_url = f'{url_prefix}/{new_filename}'
+            page_obj.thumbnail_url = f'{url_prefix}/{new_filename}'.replace('.jpg', '_thumbnail.jpg')
+
         for tref in ref_range.split('; '):
             page_obj.add_ref(tref)
         page_obj.save()
@@ -253,32 +270,60 @@ def create_munich():
                 raise e
     print(f'number of weird cases is: {len(bizzarre)}', *bizzarre, sep='\n')
 
-    # title = 'Munich Manuscript'
-    # create_manuscript(title, MANUSCRIPT_DATA[title])
-    #
-    # munich = [{'foo': 'bar'}]
-    # slug = manuscript.ManuscriptPage.get_slug_for_title(title)
-    # for i, page in enumerate(munich):
-    #     if i % 25 == 0:
-    #         print(f'{i} / {len(munich)}')
-    #     full_url = page["image_file"].replace("munich_images", url_prefix)
-    #     data = {
-    #         'manuscript_slug': slug,
-    #         'page_id':  page['full_ref'],
-    #         'image_url': full_url,
-    #         'thumbnail_url': full_url.replace('.jpg', '_thumbnail.jpg')
-    #     }
-    #     page_obj = manuscript.ManuscriptPage().load_from_dict(data)
-    #     page_obj.add_ref(page['full_ref'])
-    #     try:
-    #         page_obj.save()
-    #     except DuplicateKeyError as e:
-    #         print(e, 'cleaning up', sep='\n')
-    #         manuscript.ManuscriptPageSet({'manuscript_slug': slug}).delete()
-    #         raise e
+
+def create_bomberg():
+    manuscript_data = MANUSCRIPT_DATA['Bomberg Pressing']
+    manuscript_title = manuscript_data['title']
+    create_manuscript(manuscript_data)
+    missing_files, tractates_to_check = [], []
+
+    with open('Bomberg_map.csv') as fp:
+        map_rows = list(csv.DictReader(fp))
+
+    url_prefix = 'https://storage.googleapis.com/sefaria-manuscripts/bomberg'
+    slug = manuscript.ManuscriptPage.get_slug_for_title(manuscript_title)
+    ms = manuscript.ManuscriptPageSet({'manuscript_slug': slug})
+    ms.delete()
+
+    for row in map_rows:
+        try:
+            current, first, last = 0, int(row['FirstDaf']), int(row['lastDaf'])
+        except ValueError:
+            continue
+        for section in Ref(row['Tractate']).all_subrefs()[2:]:  # subrefs will add daf 1a and 2b
+            page_id = section.normal()
+            # print(page_id)
+            filename = f'masekhet_{row["Number"].zfill(2)}_{str(first+current).zfill(4)}.jpg'
+            if not os.path.exists(os.path.join('./Bomberg/bomberg_original', filename)):
+                missing_files.append((page_id, filename))
+                current += 1
+                continue
+            data = {
+                'manuscript_slug': slug,
+                'page_id': page_id
+            }
+            page_obj = manuscript.ManuscriptPage().load(data)
+            if page_obj is None:
+                page_obj = manuscript.ManuscriptPage().load_from_dict(data)
+            page_obj.image_url = f'{url_prefix}/{filename}'
+            page_obj.thumbnail_url = f'{url_prefix}/{filename.replace(".jpg", "_thumbnail.jpg")}'
+            if hasattr(page_obj, 'contained_refs'):
+                page_obj.contained_refs = []
+                page_obj.set_expanded_refs()
+            page_obj.add_ref(page_id)
+            page_obj.save()
+            current += 1
+        if current + first - 1 != last:
+            tractates_to_check.append(row['Tractate'])
+
+    print(f'number of weird tractates is {len(tractates_to_check)}')
+    for t in tractates_to_check:
+        print(t)
+    print(f'number of missing files is {len(missing_files)}')
+    for m in missing_files[:10]:
+        print(m)
 
 
-create_munich()
 """
 manuscript attrs:
 - title:
