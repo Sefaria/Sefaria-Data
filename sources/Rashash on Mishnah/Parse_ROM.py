@@ -1,17 +1,12 @@
 # encoding=utf-8
 import sys
-from sources.local_settings import *
-sys.path.insert(0, SEFARIA_PROJECT_PATH)
 import django
 django.setup()
 from sefaria.model import *
-
 from docx import Document
-from data_utilities.util import convert_dict_to_array
 from sources.yesh_seder_lamishna.Parse_YSLM import make_gematria_list
 import re
 from concurrent.futures import ThreadPoolExecutor
-from sources.functions import post_index, post_text, add_term, add_category
 try:
     import cPickle as pickle
 except ImportError:  # python 3.x

@@ -2,8 +2,55 @@ import django
 django.setup()
 from sefaria.model import *
 from data_utilities.XML_to_JaggedArray import *
-def add_citations(row):
-    match = re.search(".*?\d+\.\d+\.\d+", row[0])
+problems = set()
+def get_guide_links_and_pos():
+    links_and_pos = {}
+    for k in sentences_per_chapter.keys():
+        if k == "":
+            continue
+        print(k)
+        links_and_pos[k] = []
+        moreh_text = " ".join(Ref(k).text('en').text)
+        citations = library.get_refs_in_string(moreh_text)
+        prev_loc = 0
+        for i, ref in enumerate(citations):
+            curr_text = " ".join(moreh_text.split()[prev_loc:])
+            chr_pos = curr_text.find(ref)
+            loc = len(curr_text[:chr_pos].split())
+            try:
+                links_and_pos[k].append((Ref(ref).normal(), loc+prev_loc))
+            except:
+                pass
+            prev_loc += loc
+    return links_and_pos
+
+def get_guide_words_and_sentences():
+    our_guide_words = {}
+    our_guide_sentences = {}
+    avg = 0
+    total = 0
+    min = 100
+    max = 0
+    for k in sentences_per_chapter.keys():
+        if k == "":
+            continue
+        moreh_text = " ".join(Ref(k).text('en').text)
+
+        our_guide_sentences[k] = len(re.findall("\. [A-Z]{1}", moreh_text)) + 1 + len(re.findall('\.\"', moreh_text))
+        our_guide_words[k] = len(moreh_text.split())
+        curr_val = words_per_chapter[k]/our_guide_words[k]
+        if curr_val < min:
+            min = curr_val
+        if curr_val > max:
+            max = curr_val
+        avg += curr_val
+        total += 1
+    print("Average: {}".format(float(avg)/total))
+    print("Range: {} to {}".format(min, max))
+    return our_guide_sentences, our_guide_words
+
+def add_citations(orig_row, row, num_words_citation):
+    match = re.search(".*?\d+\.\d+\.\d+", orig_row[0])
     if not match:
         return row
     if "Part" not in row[0]:
@@ -14,7 +61,9 @@ def add_citations(row):
         found_by_sec[section_ref] = []
         found_by_seg[section_ref] = {}
     found_by_sec[section_ref].append(new_citation)
-    found_by_seg[section_ref][Ref(row[0]).normal()] = new_citation
+    if Ref(row[0]).normal() not in found_by_seg[section_ref]:
+        found_by_seg[section_ref][Ref(row[0]).normal()] = []
+    found_by_seg[section_ref][Ref(row[0]).normal()].append((new_citation, num_words_citation, row[1]))
     return row
 
 def test(poss_links, ref, corresponding):
@@ -140,39 +189,67 @@ Esther
 Daniel
 Esdras
 Néhémie
-1 Chroniques
-2 Chroniques""".splitlines()
+I Chroniques
+II Chroniques""".splitlines()
 
 en_tanakh = library.get_indexes_in_category("Tanakh")
 books = "|".join(fr_books)
 found_by_seg = {}
 found_by_sec = {}
 from sources.functions import *
+words_per_chapter = {}
+sentences_per_chapter = {}
+num_words_citation = 0
 with open("new_full_text.csv", 'w') as new_f:
     writer = csv.writer(new_f)
     with open("Moreh Nevukhim.csv", 'r') as f:
         rows = list(csv.reader(f))
         for r, row in enumerate(rows):
-            finds = re.findall("("+books+"), ([ILVXC]+), (\d+)", row[1])
+            orig_row = list(row)
+            finds = re.findall("([A-ZÀ-ÿa-z. ]{2,15}), ([ILVXC]+), (\d+)", row[1])
+            if "Part" not in row[0]:
+                ch = row[0].replace(".", ", ", 1)
+                ch = re.sub("(\d+), ", "Part \g<1>, ", ch)
+            ch = ":".join(ch.split(".")[:-1])
+            if ch not in words_per_chapter:
+                num_words = 0
+                words_per_chapter[ch] = 0
+                sentences_per_chapter[ch] = 0
+            words_per_chapter[ch] += len(row[1].split())
+            sentences_per_chapter[ch] += len(re.findall("\. [A-ZÀ-Ÿ]{1}", row[1])) + 1 + len(re.findall('\.\"', row[1]))
             if finds:
                 for find in finds:
                     find = list(find)
+                    num_words_citation = len(row[1].split("{}, {}, {}".format(find[0], find[1], find[2]))[0].split())
                     old_citation = "{}, {}".format(*find[1:])
                     if len(find) != 3:
                         print("ERROR")
                     else:
                         find[1] = roman_to_int(find[1])
-                        loc = fr_books.index(find[0])
-                        actual_book = en_tanakh[loc]
-                        find[0] = actual_book
+                        try:
+                            loc = fr_books.index(find[0])
+                            actual_book = en_tanakh[loc]
+                            find[0] = actual_book
+                        except ValueError as e:
+                            find[0] = find[0].replace("Micha", "Micah").replace("Ézéch.", "Ezekiel").replace("Ps.", "Psalms").replace("Exod.", "Exodus") \
+                                .replace("Deutéron.", "Deuteronomy").replace("I Chron.", "I Chronicles").replace("Habac.", "Habakkuk") \
+                                .replace("Lévit.", "Leviticus").replace("Prov.", "Proverbs").replace("Lament.", "Lamentations") \
+                                .replace("I Sam.", "I Samuel").replace("II Sam.", "II Samuel").replace("II Chron.", "II Chronicles") \
+                                .replace("Malach.", "Malachi").replace("Deutér.", "Deuteronomy").replace("Nomb.", "Numbers") \
+                                .replace("Nombr.", "Numbers").replace("Lév.", "Leviticus").replace("Jér.", "Jeremiah").replace('Ecclés.', "Ecclesiastes") \
+                                .replace("Deutér", "Deuteronomy").replace("Malach.", "Malachi").replace("Ezéch", "Ezekiel").replace("Deulér", "Deuteronomy").replace("Gen.", "Genesis") \
+                                .replace("Jos.", "Joshua").replace("Dan.", "Daniel").replace("Deuter.", "Deuteronomy").replace("Hos.", "Hoshea") \
+                                .replace("Cantique des cant.", "Cantique des Cant.").replace("Cantique des Cant.", "Song of Songs") \
+                                .replace("Ecclesiaste", "Ecclesiastes").replace("Roi", "Rois").replace("Deut.", "Deuteronomy").replace("'Jérém.'", "Jeremiah").replace("Sam.", "Samuel").replace("Hag.", "Haggai").replace("Hosée","Hosea")
+                            actual_book = find[0]
                         new_citation = "{}:{}".format(*find[1:])
                         assert old_citation in row[1]
                         row[1] = row[1].replace(old_citation, new_citation, 1)
                         new_citation = "{} {}".format(actual_book, new_citation)
-                        row = add_citations(row)
+                        row = add_citations(orig_row, row, num_words+num_words_citation)
             else:
                 pass
-
+            num_words += len(row[1].split())
 
             writer.writerow(row)
 our_guide_links = {}
@@ -182,17 +259,51 @@ segs = Ref("Guide for the Perplexed, Part 1").all_segment_refs() + Ref(
 secs = Ref("Guide for the Perplexed, Part 1").all_subrefs() + Ref(
     "Guide for the Perplexed, Part 2").all_subrefs() + Ref("Guide for the Perplexed, Part 3").all_subrefs()
 
+our_guide_words, our_guide_sentences = get_guide_words_and_sentences()
 for ref in segs:
     our_guide_seg_links[ref.normal()] = [get_ref(l) for l in LinkSet(ref)]
 
+# links_and_pos = get_guide_links_and_pos()
+with open('our_guide_links_and_pos.json', 'r') as f:
+    links_and_pos = json.load(f)
 for ref in secs:
     our_guide_links[ref.normal()] = [get_ref(l) for l in LinkSet(ref)]
 
-results = get_corr_siman_try_2(our_guide_links, our_guide_seg_links, found_by_sec, found_by_seg)
-pass
-# now that we know that most of the time the entire siman matches the original (as in the citations are contained)
-# when citations are contained entirely, we can look at each individual citation and make a map of segments
-# from French to Original.  once map is generated, I can look at it and come up with segmentation plan.
+#results = get_corr_siman_try_2(our_guide_links, our_guide_seg_links, found_by_sec, found_by_seg)
 
 
-# do I need to make a map of French segments to citations and English/Hebrew segments to citations?
+#test that ratio falls inside range 1.13 to 4.36 before accepting match, otherwise flag siman
+#need to test that match ends with a period...
+prev_pos = 0
+total_simanim = 0
+new_found_by_seg = dict(our_guide_seg_links)
+for i, sec_ref in enumerate(found_by_seg):
+    total_simanim += 1
+    flag = False
+    for seg_ref in found_by_seg[sec_ref]:
+        new_found_by_seg[seg_ref] = ""
+        for citation in found_by_seg[sec_ref][seg_ref]:
+            french_ref, french_word_count, french_text = citation
+            moreh_ref = sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,").replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
+            our_guide_links_and_word_counts = links_and_pos[moreh_ref]
+            found = False
+            for our_ref, our_word_count in our_guide_links_and_word_counts:
+                if french_ref == our_ref:
+                    ratio = float(french_word_count)/our_word_count
+                    if 1 < ratio < 5:
+                        found = True
+                        # check french text to see that it ends with a period...
+                        if not french_text.endswith("."):
+                            print("Warning: {} {}".format(french_ref, french_text))
+                            curr_text = french_text[prev_pos:french_word_count]
+                            new_found_by_seg[seg_ref] += curr_text
+                        prev_pos = french_word_count
+                    else:
+                        print("PROBLEM IN {}".format(sec_ref))
+                        flag = True
+                        break
+            if not found:
+                running_text = french_text
+
+print(total_simanim)
+

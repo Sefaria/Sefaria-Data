@@ -7,7 +7,7 @@ from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
 from sefaria.helper.schema import *
 import bleach
 
-SERVER = "http://proto.sefaria.org"
+SERVER = "https://ste.cauldron.sefaria.org"
 
 def reorder_modify(text):
     return bleach.clean(text, strip=True)
@@ -45,11 +45,11 @@ if __name__ == "__main__":
     post_info["versionTitle"] = "Trans. Salomon Munk, Paris, 1856 [fr]"
     post_info["versionSource"] = "http://beta.nli.org.il/he/books/NNL_ALEPH001236429/NLI"
     title = "Rereading the Rabbis; A Woman's Voice"
-    file_name = "Reading_The_Rabbis.xml"
+    file_name = "Reading_The_Rabbis 2.xml"
 
     with open(file_name) as f:
         file = f.read()
     parser = XML_to_JaggedArray(title, file, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
-                                titled=True, print_bool=True)
+                                titled=True)
     parser.set_funcs(reorder_modify=reorder_modify, reorder_test=tester)
     parser.run()

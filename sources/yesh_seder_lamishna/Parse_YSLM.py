@@ -1,13 +1,5 @@
 # encoding=utf-8
 import sys
-from sources.local_settings import *
-sys.path.insert(0, SEFARIA_PROJECT_PATH)
-import django
-django.setup()
-from sefaria.model import *
-
-from data_utilities.util import getGematria, convert_dict_to_array, ja_to_xml
-from sources.functions import post_index, post_text, add_term, add_category
 import codecs
 import re
 import requests

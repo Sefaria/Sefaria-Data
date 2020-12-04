@@ -749,7 +749,7 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_link(info, server=SEFARIA_SERVER, skip_lang_check=False, VERBOSE = False, method="POST", dump_json=False):
+def post_link(info, server=SEFARIA_SERVER, skip_lang_check=True, VERBOSE=True, method="POST", dump_json=False):
     if dump_json:
         with open('links_dump.json', 'w') as fp:
             json.dump(info, fp)

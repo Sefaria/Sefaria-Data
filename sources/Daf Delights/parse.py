@@ -15,8 +15,10 @@ def get_daf(result):
 
 def text_and_daf(contents, found_daf):
     def process(c):
-        c if c.endswith(" ") else c + " "
-        if len(c) < 3 and c in ["(", ")"]:
+        c = c if c.endswith(" ") else c + " "
+        if c in ["(", ")", ",", ".", ":"]:
+            c = c.strip()
+        elif c.isupper() and len(c) == 1:
             c = c.strip()
         return c
     new_contents = ""
@@ -31,12 +33,16 @@ def text_and_daf(contents, found_daf):
             text = process(text)
             new_contents += text
     c = new_contents.strip()
-    c = c.replace(" . ", ". ")
+    c = c.replace(" . ", ". ").replace("( ", "(").replace(" )", ")")
     daf = get_daf(c)
     return c, daf
 
 files = [f for f in os.listdir(".") if f.endswith("html")]
 for f in files:
+    if "Sanhedrin" not in f:
+        continue
+    if "errors" in f:
+        continue
     text = {}
     next_broken_segment = False
     found_daf = False
@@ -54,25 +60,29 @@ for f in files:
                         assert poss_daf not in text
                         masechet = " ".join(poss_daf.split()[:-1])
                         poss_daf = poss_daf.split()[-1]
-                        text[poss_daf] = []
-                        curr_daf = poss_daf
+                        curr_daf = int(poss_daf)
+                        text[curr_daf] = ""
                         found_daf = True
                     elif found_daf and result.isupper() and result.count(" ") < 4:
                         next_broken_segment = True
                     elif found_daf:
                         if next_broken_segment:
-                            text[curr_daf][-1] += result
+                            text[curr_daf] = text[curr_daf].strip()
+                            text[curr_daf] += " "+result.strip()
                         else:
-                            text[curr_daf].append(result)
+                            if "(" in text[curr_daf] and ")" not in text[curr_daf].split("(")[-1]:
+                                text[curr_daf] += result
+                            else:
+                                text[curr_daf] += "\n"+result
                         next_broken_segment = False
 
 
 
     root = JaggedArrayNode()
     masechet = library.get_index(masechet)
-    root.add_primary_titles(masechet.get_title('en'), masechet.get_title('he'))
+    root.add_primary_titles("Daf Delights on "+masechet.get_title('en'), "שעשועי הדף "+masechet.get_title('he'))
     root.add_structure(["Daf", "Paragraph"], address_types=["Talmud", "Integer"])
-    root.key = masechet.get_title('en')
+    root.key = "Daf Delights on "+masechet.get_title('en')
     indx = {
         "schema": root.serialize(),
         "title": root.key,
@@ -81,11 +91,12 @@ for f in files:
         "base_text_titles": [masechet.get_title('en')]
     }
     post_index(indx)
-    text = convertDictToArray(text)
+    text = convertDictToArray(text, empty="")
+    text = [daf.splitlines() for daf in text]
     send_text = {
         "language": "en",
-        "versionTitle": "Daf Delights",
-        "versionSource": "https://www.sefaria.org",
+        "versionTitle": "Daf Delights, Rabbi Zev Reichman, 2017-2019",
+        "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH004779793",
         "text": text
     }
-    post_text(text)
+    post_text(root.key, send_text)

@@ -7,7 +7,7 @@ from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
 from data_utilities.util import WeightedLevenshtein
 levenshtein = WeightedLevenshtein()
-mode = "2"
+mode = "1"
 
 def get_ref(pos, text, ref):
     count = 0
@@ -129,19 +129,22 @@ def just_mishnah(str):
     return value
 
 
-# t = Term()
-# t.add_primary_titles("Meiri", "מאירי")
-# t.name = "Meiri"
+t = Term()
+t.add_primary_titles("Meiri", "מאירי")
+t.name = "Meiri"
 # t.save()
 c = Category()
 c.path = ["Talmud", "Bavli", "Commentary", "Meiri"]
 c.add_shared_term("Meiri")
 # c.save()
-#add_category("Meiri", c.path)
+# add_category("Meiri", c.path)
 links = []
-
+start = "Sanhedrin"
+starting = True
 for en_title, he_title in lines.keys():
-    if en_title not in ["Kiddushin", "Gittin", "Sanhedrin"]:
+    if start in en_title:
+        starting = True
+    if not starting:
         continue
     categories = ["Talmud", "Bavli", "Commentary", "Meiri", library.get_index(en_title).categories[-1]]
     print(categories)
@@ -174,8 +177,8 @@ for en_title, he_title in lines.keys():
         root.add_structure(["Daf", "Line"], address_types=["Talmud", "Integer"])
     root.validate()
     print(categories)
-    post_index({"title": full_title, "schema": root.serialize(), "dependence": "Commentary",
-                "categories": categories, "base_text_titles": [en_title], "collective_title": "Meiri"}, dump_json=True)
+    # post_index({"title": full_title, "schema": root.serialize(), "dependence": "Commentary",
+    #             "categories": categories, "base_text_titles": [en_title], "collective_title": "Meiri"}, dump_json=True)
     lines_in_title = lines[(en_title, he_title)]
     intro = lines_in_title.pop("Introduction")
     send_text = {
@@ -184,7 +187,7 @@ for en_title, he_title in lines.keys():
         "versionSource": "http://www.sefaria.org",
         "text": intro
     }
-    #post_text(full_title + ", Introduction", send_text, index_count="on")
+    # post_text(full_title + ", Introduction", send_text, index_count="on")
     send_text = {
         "language": "he",
         "versionTitle": "Meiri on Shas",
@@ -192,7 +195,7 @@ for en_title, he_title in lines.keys():
         "text": convertDictToArray(lines_in_title)
     }
     mishnah = "משנה"
-    #post_text(full_title, send_text, index_count="on")
+    # post_text(full_title, send_text, index_count="on")
     found_refs = []
 
     new_links = []
