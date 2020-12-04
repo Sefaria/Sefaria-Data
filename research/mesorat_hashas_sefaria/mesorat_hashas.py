@@ -426,7 +426,7 @@ class Mesorah_Match:
 
 class PartialMesorahMatch:
 
-    def __init__(self, a_start, a_end, b_start, b_end, min_words_in_match):
+    def __init__(self, a_start, a_end, b_start, b_end, min_words_in_match, both_sides_have_min_words):
         """
 
         :param Mesorah_Item a_start:
@@ -439,10 +439,11 @@ class PartialMesorahMatch:
         self.b_start = b_start
         self.b_end = b_end
         self.min_words_in_match = min_words_in_match
+        self.both_sides_have_min_words = both_sides_have_min_words
 
-    def __len__(self):
-        # TODO does this need to distinguish b/w len(a) and len(b)
-        return self.a_start - self.a_end + 4
+    def has_min_words(self):
+        pooling_func = min if self.both_sides_have_min_words else max
+        return pooling_func(self.a_end.location[1] - self.a_start.location[0], self.b_end.location[1] - self.b_start.location[0]) >= self.min_words_in_match
 
     def last_a_word_matched(self):
         return self.a_end.location[1]
@@ -467,8 +468,8 @@ def default_calculate_score(words_a, words_b):
 class ParallelMatcher:
 
     def __init__(self, tokenizer, dh_extract_method=None, ngram_size=5, max_words_between=4, min_words_in_match=9,
-                 min_distance_between_matches=1000, all_to_all=True, parallelize=False, verbose=True,
-                 calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None, ignore_subset_results=True):
+                 min_distance_between_matches=100, all_to_all=True, parallelize=False, verbose=True,
+                 calculate_score=None, only_match_first=False, lemmatizer=None, lemma2index=None, ignore_subset_results=True, both_sides_have_min_words=False):
         """
         Minimal usage would be:
         >>> p = ParallelMatcher(lambda s: s.split())
@@ -478,8 +479,8 @@ class ParallelMatcher:
         :param f(str) -> str dh_extract_method: takes the full text of `comment` and returns only the dibur hamatchil. `self.tokenizer` will be applied to it afterward. this will only be used if `comment_index_list` in `match()` is not None
         :param ngram_size: int, basic unit of matching. 1 word will be skipped in each ngram of size `ngram_size`
         :param max_words_between: max words between consecutive ngrams
-        :param min_words_in_match: min words for a match to be considered valid
-        :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen (i think)
+        :param min_words_in_match: min words for a match to be considered valid. By default, only one side needs to have min_words. However, if both_sides_have_min_words is True, then both need (see both_sides_have_min_words param)
+        :param min_distance_between_matches: min distance between matches. If matches are closer than this, the first one will be chosen. NOTE: only applies to matches that are within the same book to avoid matching within the same discussion
         :param bool all_to_all: if True, make between everything either in index_list or ref_list. False means results get filtered to only match inter-ref matches
         :param bool parallelize: Do you want this to run in parallel? WARNING: this uses up way more RAM. and this is already pretty RAM-hungry TODO: interesting question on sharing ram: https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
         :param f(str, str) -> float: function that takes two strings as parameters, representing both sides of a match. returns float representing score. This score does not affect the algorithm at all. it's purpose is to be used for post-processing on the results
@@ -487,6 +488,7 @@ class ParallelMatcher:
         :param f(str) -> str lemmatizer: function that takes a word and returns the lemma of the word. Default is `self.get_two_letter_word` which is useful for Hebrew
         :param f(str) -> hashable lemma2index: function that takes a string of concatenated lemmas (from self.lemmatizer) and produces a key to store those lemmas in the hashtable
         :param bool ignore_subset_results: if True, filters out subset results before returning
+        :param bool both_sides_have_min_words: if True, both a and b sides of match need min_words_in_match. If False, only one side needs min_words_in_match.
         """
         self.tokenizer = tokenizer
         self.dh_extract_method = dh_extract_method
@@ -505,6 +507,7 @@ class ParallelMatcher:
         self.word_list_map = {}
         self.with_scoring = True  # hard-coding to True now that calculate_score has a default
         self.ignore_subset_results = ignore_subset_results
+        self.both_sides_have_min_words = both_sides_have_min_words
         if calculate_score:
             self.calculate_score = calculate_score
         else:
@@ -680,7 +683,7 @@ class ParallelMatcher:
             matches_by_books_and_end_loc[key] += [m]
         new_matches = []
         for m_list in matches_by_books_and_end_loc.values():
-            m_list.sort(key=lambda x: x.a.location[1] - x.a.location[0])
+            m_list.sort(key=lambda x: (x.a.location[1] - x.a.location[0]) + (x.b.location[1] - x.b.location[0]))
             new_matches += [m_list[-1]]
         return new_matches
 
@@ -693,35 +696,19 @@ class ParallelMatcher:
         """
         good = []
         bad = []
-
-        # print u'OLD', u' - '.join([str(o) for o in old])
-        # print u'NEW', u' - '.join([str(o) for o in new])
-        up_to = 0
         for o in old_partials:
             found = False
-
-            while up_to < len(new_b_skips):
-                n = new_b_skips[up_to]
+            for n in new_b_skips:
                 if o.b_end.mesechta_index != n.mesechta_index:
-                    up_to += 1
                     continue
-                dist = o.b_end - n
-                mes_dist = o.b_end.mesechta_diff(n)
-                if dist is not None:
-                    new_is_ahead = dist > 0
-                else:
-                    new_is_ahead = mes_dist < 0
-
-                if new_is_ahead:
-                    if dist is not None and 0 < dist <= self.max_words_between + self.skip_gram_size:  # plus the length of a single skip-gram
-                        # extend o until n
-                        o.a_end = current_a
-                        o.b_end = n
-                        good += [o]
-                        found = True
+                diff = o.b_end - n
+                if diff is not None and 0 < diff <= self.max_words_between + self.skip_gram_size:  # plus the length of a single skip-gram
+                    # extend o until n
+                    o.a_end = current_a
+                    o.b_end = n
+                    good += [o]
+                    found = True
                     break
-                else:
-                    up_to += 1
             if not found:
                 bad += [o]
 
@@ -755,7 +742,7 @@ class ParallelMatcher:
             skip_matches.remove(a)  # remove the skip match that we're inspecting
             if not self.all_to_all:
                 # filter anything that's in this TextChunk
-                skip_matches = [x for x in skip_matches if not imes == x.mesechta_index]
+                skip_matches = [x for x in skip_matches if imes != x.mesechta_index]
             skip_matches = [x for x in skip_matches if not x.too_close(a)]
             skip_matches = [x for x in skip_matches if not self.ght.already_started_here((a, x))] # TODO use some closeness metric here also
             try:
@@ -763,11 +750,12 @@ class ParallelMatcher:
                 temp_already_matched_list = already_matched_dict[i_word]
 
                 for temp_already_matched in temp_already_matched_list:
-                    skip_matches = [x for x in skip_matches if not x.too_close(temp_already_matched)]
+                    # only check for too_close if x is in same book as a. otherwise, too_close metric is arbitrarily filtering skip_matches that are close to previous matches in x, but maybe not be in the same book as a
+                    skip_matches = [x for x in skip_matches if (x.mesechta_index != imes or not x.too_close(temp_already_matched))]
             except KeyError:
                 pass
             skip_matches.sort(key=cmp_to_key(lambda x, y: x.compare(y)))
-            partial_match_list = [PartialMesorahMatch(a, a, b, b, self.min_words_in_match) for b in skip_matches]
+            partial_match_list = [PartialMesorahMatch(a, a, b, b, self.min_words_in_match, self.both_sides_have_min_words) for b in skip_matches]
 
             for j_word in range(i_word + 1, len(mes_wl) - self.skip_gram_size + 1):  # +1 at end of range to get last incomplete skip-gram
                 if len(partial_match_list) == 0:
@@ -796,9 +784,9 @@ class ParallelMatcher:
                 for dead in dead_matches_possibly:
                     distance_from_last_match = j_word - dead.last_a_word_matched()
                     if distance_from_last_match > self.max_words_between:
-                        if len(dead) >= self.min_words_in_match:
+                        if dead.has_min_words():
                             self.ght.put_already_started((dead.b_start, dead.a_start))
-                            for i_matched_word in range(dead.a_start.location[0], dead.a_end.location[1] + 100):
+                            for i_matched_word in range(dead.a_start.location[0], dead.a_end.location[1] + self.min_distance_between_matches):
                                 already_matched_dict[i_matched_word] += [dead.b_start]
                             try:
                                 matches += [dead.finalize()]
@@ -813,7 +801,7 @@ class ParallelMatcher:
             # account for matches at end of book
             for dead in partial_match_list:
                 distance_from_last_match = (len(mes_wl)-self.skip_gram_size) - dead.last_a_word_matched()
-                if len(dead) >= self.min_words_in_match:
+                if dead.has_min_words():
                     self.ght.put_already_started((dead.b_start, dead.a_start))
                     try:
                         matches += [dead.finalize()]
