@@ -220,7 +220,8 @@ with open("new_full_text.csv", 'w') as new_f:
             if finds:
                 for find in finds:
                     find = list(find)
-                    num_words_citation = len(row[1].split("{}, {}, {}".format(find[0], find[1], find[2]))[0].split())
+                    temp_ref = "{}, {}, {}".format(find[0], find[1], find[2])
+                    num_words_citation = len(row[1].split(temp_ref)[0].split()) + temp_ref.count(" ") + 1
                     old_citation = "{}, {}".format(*find[1:])
                     if len(find) != 3:
                         print("ERROR")
@@ -248,7 +249,18 @@ with open("new_full_text.csv", 'w') as new_f:
                         new_citation = "{} {}".format(actual_book, new_citation)
                         row = add_citations(orig_row, row, num_words+num_words_citation)
             else:
-                pass
+                if "Part" not in row[0]:
+                    row[0] = row[0].replace(".", ", ", 1)
+                    row[0] = re.sub("(\d+), ", "Part \g<1>, ", row[0])
+                try:
+                    section_ref = Ref(row[0]).section_ref().normal()
+                    if section_ref not in found_by_sec:
+                        found_by_seg[section_ref] = {}
+                    if Ref(row[0]).normal() not in found_by_seg[section_ref]:
+                        found_by_seg[section_ref][Ref(row[0]).normal()] = []
+                    found_by_seg[section_ref][Ref(row[0]).normal()].append((new_citation, num_words_citation, row[1]))
+                except Exception as e:
+                    pass
             num_words += len(row[1].split())
 
             writer.writerow(row)
@@ -276,12 +288,19 @@ for ref in secs:
 #need to test that match ends with a period...
 prev_pos = 0
 total_simanim = 0
+running_text = ""
 new_found_by_seg = dict(our_guide_seg_links)
 for i, sec_ref in enumerate(found_by_seg):
     total_simanim += 1
-    flag = False
+    prev_len_text = 0 #running count throughout sec_ref
+    full_text = ""
     for seg_ref in found_by_seg[sec_ref]:
         new_found_by_seg[seg_ref] = ""
+        for citation in found_by_seg[sec_ref][seg_ref]:
+            french_ref, french_word_count, french_text = citation
+            full_text += french_text + " "
+
+    for seg_ref in found_by_seg[sec_ref]:
         for citation in found_by_seg[sec_ref][seg_ref]:
             french_ref, french_word_count, french_text = citation
             moreh_ref = sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,").replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
@@ -289,21 +308,28 @@ for i, sec_ref in enumerate(found_by_seg):
             found = False
             for our_ref, our_word_count in our_guide_links_and_word_counts:
                 if french_ref == our_ref:
+                    if french_ref == 'Ezekiel 1:26':
+                        print()
                     ratio = float(french_word_count)/our_word_count
                     if 1 < ratio < 5:
                         found = True
+                        curr_text = " ".join(full_text.split()[prev_pos:french_word_count])
+                        new_found_by_seg[seg_ref] += curr_text
+                        running_text = ""
                         # check french text to see that it ends with a period...
                         if not french_text.endswith("."):
-                            print("Warning: {} {}".format(french_ref, french_text))
-                            curr_text = french_text[prev_pos:french_word_count]
-                            new_found_by_seg[seg_ref] += curr_text
+                            print("Warning: No period in {}".format(french_ref))
+
                         prev_pos = french_word_count
                     else:
-                        print("PROBLEM IN {}".format(sec_ref))
-                        flag = True
-                        break
-            if not found:
-                running_text = french_text
+                        print("Warning: Ratio off in {}".format(sec_ref))
+            # running_text += " ".join(french_text.split()[prev_pos:]) + " " #whatever couldn't be matched should be saved
+            # prev_pos = len(running_text.split())
+        # if not found:
+        prev_len_text += len(french_text.split())
+    if prev_pos < len(full_text.split()):
+        curr_text = " ".join(full_text.split()[prev_pos:french_word_count + 1])
+        new_found_by_seg[seg_ref] += curr_text
 
 print(total_simanim)
 
