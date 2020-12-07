@@ -42,8 +42,8 @@ if __name__ == "__main__":
     allowed_attributes = ["id"]
     p = re.compile("\d+a?\.")
 
-    post_info["versionTitle"] = "Trans. Salomon Munk, Paris, 1856 [fr]"
-    post_info["versionSource"] = "http://beta.nli.org.il/he/books/NNL_ALEPH001236429/NLI"
+    post_info["versionTitle"] = "Rereading The Rabbis: A Woman's Voice. By Judith Hauptman"
+    post_info["versionSource"] = "https://www.amazon.com/Rereading-Rabbis-Womans-Radical-Traditions/dp/0813334063"
     title = "Rereading the Rabbis; A Woman's Voice"
     file_name = "Reading_The_Rabbis 2.xml"
 

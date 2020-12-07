@@ -152,6 +152,16 @@ def get_corresponding_simanim(links):
                             curr_siman -= 1
     return corresponding
 
+
+def get_proper_ref(fr_seg_ref, new_found_by_seg):
+    sec_ref = seg_ref.split(":")[0]
+    en_seg_refs = new_found_by_seg[sec_ref]
+    if fr_seg_ref in en_seg_refs:
+        return fr_seg_ref
+    else:
+        last_one = list(en_seg_refs.keys())[-1]
+        return last_one
+
 fr_books = """Genèse
 Exode
 Lévitique
@@ -223,6 +233,8 @@ with open("new_full_text.csv", 'w') as new_f:
                     find = list(find)
                     french_citation = "({}, {}, {})".format(find[0], find[1], find[2])
                     before_fr_citation = row[1].split(french_citation)[0].strip()
+                    if f > 0:
+                        before_fr_citation = before_fr_citation.split(prev_citation)[-1]
                     num_words_citation = len(before_fr_citation.split()) + french_citation.count(" ") + 1
                     old_citation = "{}, {}".format(*find[1:])
                     if len(find) != 3:
@@ -248,6 +260,7 @@ with open("new_full_text.csv", 'w') as new_f:
                         new_citation = "{}:{}".format(*find[1:])
                         assert old_citation in row[1]
                         row[1] = row[1].replace(old_citation, new_citation, 1)
+                        prev_citation = "{}, {}".format(finds[f][0], new_citation)
                         new_citation = "{} {}".format(actual_book, new_citation)
                         row = add_citations(orig_row, row, num_words+num_words_citation, before_fr_citation, french_citation)
             else:
@@ -275,6 +288,13 @@ secs = Ref("Guide for the Perplexed, Part 1").all_subrefs() + Ref(
     "Guide for the Perplexed, Part 2").all_subrefs() + Ref("Guide for the Perplexed, Part 3").all_subrefs()
 
 our_guide_words, our_guide_sentences = get_guide_words_and_sentences()
+new_found_by_seg = {}
+for ref in secs:
+    sec_ref_segs = ref.all_subrefs()
+    new_found_by_seg[ref.normal()] = {}
+    for r in sec_ref_segs:
+        new_found_by_seg[ref.normal()][r.normal()] = ""
+
 for ref in segs:
     our_guide_seg_links[ref.normal()] = [get_ref(l) for l in LinkSet(ref)]
 
@@ -284,6 +304,7 @@ with open('our_guide_links_and_pos.json', 'r') as f:
 for ref in secs:
     our_guide_links[ref.normal()] = [get_ref(l) for l in LinkSet(ref)]
 
+
 #results = get_corr_siman_try_2(our_guide_links, our_guide_seg_links, found_by_sec, found_by_seg)
 
 
@@ -291,15 +312,15 @@ for ref in secs:
 #need to test that match ends with a period...
 prev_pos = 0
 total_simanim = 0
-new_found_by_seg = dict(our_guide_seg_links)
-for seg_ref in new_found_by_seg:
-    new_found_by_seg[seg_ref] = ""
 
 for i, sec_ref in enumerate(found_by_seg):
+    if i < 3:
+        continue
     total_simanim += 1
     last_pair_found = -1
     prev_len_text = 0 #running count throughout sec_ref
     running_text = ""
+    curr_ref = 1
     for seg_ref in found_by_seg[sec_ref]:
         for citation in found_by_seg[sec_ref][seg_ref]:
             french_ref, french_word_count, before_fr_text, fr_citation = citation
@@ -316,11 +337,13 @@ for i, sec_ref in enumerate(found_by_seg):
                     if 1 < ratio < 5:
                         found = True
                         curr_text = running_text + " " + before_fr_text + " " + fr_citation
-                        new_found_by_seg[seg_ref] += curr_text
+                        french_pos = seg_ref.split(":")[-1]
+                        curr_ref = get_proper_ref(seg_ref, new_found_by_seg)
+                        new_found_by_seg[sec_ref][curr_ref] += curr_text
                         running_text = ""
                         # check french text to see that it ends with a period...
-                        if not curr_text.endswith("."):
-                            print("Warning: No period in {}".format(french_ref))
+                        # if not curr_text.endswith("."):
+                        #     print("Warning: No period in {}".format(french_ref))
 
                         prev_pos = french_word_count
                         last_pair_found = i
@@ -333,7 +356,9 @@ for i, sec_ref in enumerate(found_by_seg):
             # prev_pos = len(running_text.split())
         # if not found:
     if running_text:
-        new_found_by_seg[seg_ref] += " " + running_text
+        curr_ref = get_proper_ref(seg_ref, new_found_by_seg)
+        new_found_by_seg[sec_ref][curr_ref] += " " + running_text
+        running_text = ""
 
 print(total_simanim)
 
