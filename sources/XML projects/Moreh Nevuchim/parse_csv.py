@@ -292,13 +292,15 @@ for ref in secs:
 prev_pos = 0
 total_simanim = 0
 new_found_by_seg = dict(our_guide_seg_links)
-last_pair_found = -1
+for seg_ref in new_found_by_seg:
+    new_found_by_seg[seg_ref] = ""
+
 for i, sec_ref in enumerate(found_by_seg):
     total_simanim += 1
+    last_pair_found = -1
     prev_len_text = 0 #running count throughout sec_ref
     running_text = ""
     for seg_ref in found_by_seg[sec_ref]:
-        new_found_by_seg[seg_ref] = ""
         for citation in found_by_seg[sec_ref][seg_ref]:
             french_ref, french_word_count, before_fr_text, fr_citation = citation
             moreh_ref = sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,").replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
@@ -326,7 +328,7 @@ for i, sec_ref in enumerate(found_by_seg):
                     else:
                         print("Warning: Ratio off in {}".format(sec_ref))
             if not found:
-                running_text = before_fr_text + " " + fr_citation
+                running_text += before_fr_text + " " + fr_citation
             # running_text += " ".join(french_text.split()[prev_pos:]) + " " #whatever couldn't be matched should be saved
             # prev_pos = len(running_text.split())
         # if not found:
