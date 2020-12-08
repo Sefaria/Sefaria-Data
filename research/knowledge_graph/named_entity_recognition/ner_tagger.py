@@ -799,20 +799,22 @@ class CorpusManager:
         """
         out_rows = []
         common_issues = defaultdict(list)
-        def get_rows_from_opcode(tag, i1, i2, j1, j2, a, b):
+        def get_rows_from_opcode(tag, i1, i2, j1, j2, a, b, a_text, b_text):
             if tag == 'equal': return []
             temp_rows = []
             if tag == 'replace':
                 if i2 - i1 == 1 and j2 - j1 == 1:
-                    temp_a = set(a[i1])
-                    temp_b = set(b[j1])
+                    temp_a = set(a[i1].id_matches)
+                    temp_b = set(b[j1].id_matches)
                     if len(temp_a & temp_b) > 0:
                         # ambiguity. currently won't count as a difference
                         return []
                 temp_rows += [{
                     "Type": "Replace",
-                    "Rabbi": ", ".join([x[0] for x in a[i1:i2]]),
-                    "With Rabbi": ", ".join([x[0] for x in b[j1:j2]])
+                    "Rabbi": ", ".join([x.id_matches[0] for x in a[i1:i2]]),
+                    "Rabbi Snippet": " | ".join([self.get_snippet(a_text, x) for x in a[i1:i2]]),
+                    "With Rabbi": ", ".join([x.id_matches[0] for x in b[j1:j2]]),
+                    "With Rabbi Snippet": " | ".join([self.get_snippet(b_text, x) for x in b[j1:j2]]),
                 }]
                 # temp_rows += get_rows_from_opcode('delete', i1, i2, j1, j1, a, b)
                 # temp_rows += get_rows_from_opcode('insert', i1, i1, j1, j2, a, b)
@@ -821,32 +823,35 @@ class CorpusManager:
 
                     temp_rows += [{
                         "Type": "Extra",
-                        "Rabbi": a[i][0]
+                        "Rabbi": a[i].id_matches[0],
+                        "Rabbi Snippet": self.get_snippet(a_text, a[i]),
                     }]
             elif tag == 'insert':
                 for i in range(j1, j2):
                     temp_rows += [{
                         "Type": "Missing",
-                        "Rabbi": b[i][0]
+                        "Rabbi": b[i].id_matches[0],
+                        "Rabbi Snippet": self.get_snippet(b_text, b[i]),
                     }]
             return temp_rows
    
-        for ref, version_dict in mentions_by_passage.items():
-            primary_mentions = version_dict[primary_version_key]
-            for version_key, mention_list in version_dict.items():
+        for ref, version_dict in tqdm(mentions_by_passage.items(), total=len(mentions_by_passage), desc='calc diff'):
+            a_mentions = version_dict[primary_version_key]
+            a_text = Ref(ref).text(primary_lang, vtitle=primary_version).text
+            for version_key, b_mentions in version_dict.items():
                 version, lang = version_key
                 if version == "William Davidson Edition - Vocalized Aramaic":
                     continue
-                if version_key == primary_mentions:
+                if version_key == primary_version_key:
                     continue
                 # do diff
-                a_mentions = [tuple(x.id_matches) for x in primary_mentions]
-                b_mentions = [tuple(x.id_matches) for x in mention_list]
-
-                s = SequenceMatcher(None, a_mentions, b_mentions, False)
+                a_mention_ids = [tuple(x.id_matches) for x in a_mentions]
+                b_mention_ids = [tuple(x.id_matches) for x in b_mentions]
+                b_text = Ref(ref).text(lang, vtitle=version).text
+                s = SequenceMatcher(None, a_mention_ids, b_mention_ids, False)
                 codes = s.get_opcodes()
                 for tag, i1, i2, j1, j2 in codes:
-                    temp_rows = get_rows_from_opcode(tag, i1, i2, j1, j2, a_mentions, b_mentions)
+                    temp_rows = get_rows_from_opcode(tag, i1, i2, j1, j2, a_mentions, b_mentions, a_text, b_text)
                     for r in temp_rows:
                         r['Ref'] = ref
                         r['Version'] = primary_version
@@ -854,7 +859,7 @@ class CorpusManager:
                         common_issues[(r['Type'], r['Rabbi'], r.get('With Rabbi', None))] += [r['Ref']]
                     out_rows += temp_rows
         with open(output_file, "w") as fout:
-            c = csv.DictWriter(fout, ['Ref', 'Version', 'Language', 'Type', 'Rabbi', 'With Rabbi'])
+            c = csv.DictWriter(fout, ['Ref', 'Version', 'Language', 'Type', 'Rabbi', 'With Rabbi', 'Rabbi Snippet', 'With Rabbi Snippet'])
             c.writeheader()
             c.writerows(out_rows)
         print("TOTAL MENTIONS", len(self.mentions))
@@ -925,12 +930,12 @@ if __name__ == "__main__":
         f"{ner_file_prefix}/ner_output_talmud.json",
         f"{ner_file_prefix}/html"
     )
-    corpus_manager.tag_corpus()
+    # corpus_manager.tag_corpus()
     # corpus_manager.merge_rabbis_in_mentions(f"{ner_file_prefix}/swap_rabbis.json")
-    corpus_manager.save_mentions()
+    # corpus_manager.save_mentions()
 
-    # corpus_manager.load_mentions()
-    corpus_manager.generate_html_file()
+    corpus_manager.load_mentions()
+    # corpus_manager.generate_html_file()
     # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv")
     corpus_manager.cross_validate_mentions_by_lang_talmud(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"))
 """

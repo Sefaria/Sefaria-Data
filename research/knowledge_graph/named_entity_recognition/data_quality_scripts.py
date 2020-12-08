@@ -37,10 +37,12 @@ def make_levi_shmuel_csv():
                 out += [{
                     'Slug': slug,
                     'Ref': row['Ref'],
-                    'Snippet': Ref(row['Ref']).text('en').text
+                    'Snippet': row['Rabbi Snippet'],
+                    'En': Ref(row['Ref']).text('en').text,
+                    'He': Ref(row['Ref']).text('he').text
                 }]
     with open(f"{DATASET_LOC}/levi_shmuel_errors.csv", "w") as fout:
-        c = csv.DictWriter(fout, ['Slug', 'Ref', 'Snippet'])
+        c = csv.DictWriter(fout, ['Slug', 'Ref', 'Snippet', 'En', 'He'])
         c.writeheader()
         c.writerows(out)
 
@@ -544,7 +546,8 @@ if __name__ == "__main__":
     # remove_gen_data()
     # find_changes_between_wiki_and_will()
     # num_tanakh_person('aaron', "Tanakh: The Holy Scriptures, published by JPS", 'en')
-    find_true_bonayich_rabbis()
+    # find_true_bonayich_rabbis()
+    make_levi_shmuel_csv()
 """
 Confirm new rabbis to create
 Create them
