@@ -1352,19 +1352,26 @@ def change_array(ja, callback):
 
     return new_array
 
-def get_mapping_after_normalization(text, find_text_to_remove):
+def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list=None):
     """
     Example.
-        text = "a###b##c" normalizer = lambda x: re.finditer(r"#"+, x)
+        text = "a###b##c" find_text_to_remove = lambda x: [(m, '') for m in re.finditer(r'#+', x)]
         will return {1: 3, 2: 5}
+        meaning by the 2nd index, 5 chars have been removed
         then if you have a range (0,3) in the normalized string "abc" you will know that maps to (0, 8) in the original string
     """
-    removal_list = find_text_to_remove(text)
+    if removal_list is None:
+        removal_list = find_text_to_remove(text)
     total_removed = 0
     removal_map = {}
     for removal, subst in removal_list:
-        normalized_text_index = (removal.start() - total_removed)
-        total_removed += (removal.end() - removal.start() - len(subst))
+        try:
+            start, end = removal
+        except TypeError:
+            # must be match object
+            start, end = removal.start(), removal.end()
+        normalized_text_index = (start - total_removed)
+        total_removed += (end - start - len(subst))
         removal_map[normalized_text_index] = total_removed
     return removal_map
 

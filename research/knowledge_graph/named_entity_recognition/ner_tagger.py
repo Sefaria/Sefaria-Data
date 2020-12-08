@@ -35,7 +35,8 @@ inputs
                         {
                             "language": ["en", "he"],
                             "versionTitle": <VTITLE>,
-                            "pretaggedFile": <FILEPATH> (OPTIONAL)
+                            "pretaggedFile": <FILEPATH> (OPTIONAL),
+                            "pretaggedMentionsInDB": <BOOL> (OPTIONAL)
                         }
                     ]
                 }
@@ -79,7 +80,7 @@ from sefaria.model import *
 from collections import defaultdict
 
 class TextNormalizer:
-    b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ']
+    b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ', ' son of ', ' the son of ']
     b_token = ' b. '
     starting_replacements = ['Ben ', 'Bar ', 'The ']
     unidecode_table = {
@@ -165,8 +166,29 @@ class Mention:
             setattr(self, key, value)
         return self
 
-    def serialize(self):
-        return {
+    def add_metadata_from_link(self, link:RefTopicLink):
+        if getattr(self, 'possibility_map', None) is None:
+            self.load_ambiguous_map()
+        cld = link.charLevelData
+        self.start = cld['startChar']
+        self.end = cld['endChar']
+        self.mention = cld['text']
+        self.id_matches = list(self.possibility_map.get(link.toTopic, [link.toTopic]))
+        self.ref = link.ref
+        self.versionTitle = cld['versionTitle']
+        self.language = cld['language']
+        return self
+
+    @classmethod
+    def load_ambiguous_map(cls):
+        ambiguous_links = IntraTopicLinkSet({"linkType": "possibility-for"})
+        cls.possibility_map = defaultdict(set)
+        for l in ambiguous_links:
+            cls.possibility_map[l.toTopic].add(l.fromTopic)
+        
+
+    def serialize(self, delete_keys=None):
+        d = {
             "start": self.start,
             "end": self.end,
             "mention": self.mention,
@@ -175,6 +197,10 @@ class Mention:
             "versionTitle": self.versionTitle,
             "language": self.language
         }
+        if delete_keys is not None:
+            for key in delete_keys:
+                del d[key]
+        return d
 
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
@@ -223,6 +249,8 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
 
     @staticmethod
     def filter_already_found_mentions(mentions, text, lang):
+        # can be generalized more. meant to avoid double linking things that are already linked
+        # currnetly runs linker and skips named entities that overlap with linker results
         text = text.replace('\xa0', ' ')  # strange character
         unique_titles = set(library.get_titles_in_string(text, lang, True))
         all_reg = library.get_multi_title_regex_string(unique_titles, lang)
@@ -278,6 +306,7 @@ class NaiveEntityLinker(AbstractEntityLinker):
         self.named_entities = named_entities
         self.named_entity_table = defaultdict(dict)
         self.rules = rules
+        self.english_bold_ranges = get_all_bold_in_talmud()
 
     def fit(self):
         for ne in tqdm(self.named_entities, desc="fit el"):
@@ -289,7 +318,13 @@ class NaiveEntityLinker(AbstractEntityLinker):
             self.named_entity_table[key] = sorted(ne_dict.values(), key=lambda x: getattr(x, 'numSources', 0), reverse=True)
 
     def predict(self, corpus_segments, mentions):
+        grouped_by_ref = defaultdict(list)
         for mention in tqdm(mentions, desc="el predict"):
+            grouped_by_ref[mention.ref] += [mention]
+            if mention.language == 'en':
+                temp_bold_indexes = self.english_bold_ranges[mention.ref]
+                mention_indices = {i for i in range(mention.start, mention.end)}
+                mention.in_bold = len(temp_bold_indexes & mention_indices) > 0
             pretagged_id_matches = getattr(mention, 'id_matches', None)
             if pretagged_id_matches is None:
                 ne_list = self.named_entity_table.get(mention.mention, None)
@@ -297,9 +332,12 @@ class NaiveEntityLinker(AbstractEntityLinker):
                     print(f"No named entity matches '{mention.mention}'")
                     continue
                 mention.add_metadata(id_matches=[ne.slug for ne in ne_list])
+        out_mentions = []
+        for _, ref_mentions in grouped_by_ref.items():
             for rule in self.rules:
-                rule.apply(None, [mention])
-        return mentions
+                rule.apply(ref_mentions)
+            out_mentions += list(filter(lambda mention: len(mention.id_matches) > 0, ref_mentions))  # remove any mentions that no longer have id_matches due to rules applied           
+        return out_mentions
 
 class AbstractRule:
 
@@ -310,10 +348,10 @@ class AbstractRule:
         if self.mentions is not None:
             self.mentions = set(self.mentions)
 
-    def is_applicable(self, mention, mentions, corpus_segments):
+    def is_applicable(self, mention, mentions):
         return len(set(mention.id_matches) & self.named_entities) > 0
 
-    def apply(self, corpus_segments, mentions):
+    def apply(self, mentions):
         pass
 
 class MinMaxRefRule(AbstractRule):
@@ -324,9 +362,9 @@ class MinMaxRefRule(AbstractRule):
         self.rule['minRef'] = Ref(self.rule['minRef']) if 'minRef' in self.rule else None
 
 
-    def apply(self, corpus_segments, mentions):
+    def apply(self, mentions):
         from sefaria.utils.hebrew import strip_cantillation
-        mentions = [mention for mention in mentions if self.is_applicable(mention, mentions, corpus_segments)]
+        mentions = [mention for mention in mentions if self.is_applicable(mention, mentions)]
         for mention in mentions:
             rule_satisfied = True
             if self.mentions is None or strip_cantillation(mention.mention, strip_vowels=True) in self.mentions:
@@ -343,26 +381,51 @@ class ExactRefRule(AbstractRule):
         super(ExactRefRule, self).__init__(rule_dict)
         self.rule['exactRefs'] = set(self.rule['exactRefs'])
 
-    def apply(self, corpus_segments, mentions):
-        mentions = [mention for mention in mentions if self.is_applicable(mention, mentions, corpus_segments)]
+    def apply(self, mentions):
+        mentions = [mention for mention in mentions if self.is_applicable(mention, mentions)]
         for mention in mentions:
             rule_satisfied = mention.ref in self.rule['exactRefs']
             if not rule_satisfied:
                 mention.id_matches = list(set(mention.id_matches).difference(self.named_entities))
 
+class NamedEntityInVersionRule(AbstractRule):
+    """
+    deletes mention if equivalent mention doesn't appear in specified version
+    """
+    def __init__(self, rule_dict):
+        super(NamedEntityInVersionRule, self).__init__(rule_dict)
+        self.applies_to_vtitle_set = {x['versionTitle'] for x in self.rule['appliesToVersions']}
+        self.applies_to_lang_set = {x['language'] for x in self.rule['appliesToVersions']}
+    
+    def apply(self, mentions):
+        applicable_mentions = [mention for mention in mentions if self.is_applicable(mention, mentions)]
+        compare_named_entities = set()
+        for mention in mentions:
+            if mention.versionTitle != self.rule['versionToCompare']['versionTitle'] or mention.language != self.rule['versionToCompare']['language']:
+                continue
+            if mention.in_bold:
+                compare_named_entities |= set(mention.id_matches)
+
+        for mention in applicable_mentions:
+            if mention.versionTitle not in self.applies_to_vtitle_set or mention.language not in self.applies_to_lang_set:
+                continue
+            if len(set(mention.id_matches) & compare_named_entities) == 0:
+                # equivalent named entity doesn't appear in versionToCompare
+                # delete id_matches
+                mention.id_matches = []
+            
 class RuleFactory:
 
     key_rule_map = {
         "minRef": MinMaxRefRule,
         "maxRef": MinMaxRefRule,
-        "exactRefs": ExactRefRule
+        "exactRefs": ExactRefRule,
+        "namedEntityInVersion": NamedEntityInVersionRule,
     }
 
     @classmethod
     def create(cls, rule_dict):
-        for key, rule in cls.key_rule_map.items():
-            if key in rule_dict['rule']:
-                return rule(rule_dict)
+        return cls.key_rule_map[rule_dict['rule']['id']](rule_dict)
 
 
 
@@ -402,12 +465,18 @@ class CorpusManager:
         pretagged_mentions = []
         for version_query in tqdm(self.corpus_version_queries, desc="load corpus"):
             pretagged_file = version_query.get("pretaggedFile", None)
+            pretagged_in_db = version_query.get("pretaggedMentionsInDB", False)
             if pretagged_file is not None:
                 with open(pretagged_file, "r") as fin:
                     raw_pretagged_mentions = json.load(fin)
                     for mention in raw_pretagged_mentions:
                         pretagged_mentions += [Mention().add_metadata(versionTitle=version_query['versionTitle'], language=version_query['language'], **mention)]
-            else:
+            if pretagged_in_db:
+                mention_links = RefTopicLinkSet({"linkType": "mention", "charLevelData.versionTitle": version_query['versionTitle'], "charLevelData.language": version_query['language']})
+                for link in mention_links:
+                    pretagged_mentions += [Mention().add_metadata_from_link(link)]
+            if pretagged_file is None and not pretagged_in_db:
+                # no pretagged mentions
                 version = Version().load(version_query)
                 version.walk_thru_contents(self.recognize_named_entities_in_segment)
         ner_mentions = self.ner.predict(self.corpus_segments)
@@ -458,14 +527,15 @@ class CorpusManager:
             title_list = [item["title"]] if item["type"] == "index" else library.get_indexes_in_category(item["title"])
             for title in title_list:
                 for temp_version_query in item["versions"]:
-                    if temp_version_query.get("pretaggedFile", False):
+                    if temp_version_query.get("pretaggedFile", False) or temp_version_query.get('pretaggedMentionsInDB', False):
                         # no need to include every index for a pretagged version
                         continue
                     version_query_copy = temp_version_query.copy()
                     version_query_copy["title"] = title
                     version_queries += [version_query_copy]
             for temp_version_query in item["versions"]:
-                if not temp_version_query.get("pretaggedFile", False):
+                # pretagged files and pretaggedmentions in db here!
+                if not (temp_version_query.get("pretaggedFile", False) or temp_version_query.get('pretaggedMentionsInDB', False)):
                     continue
                 version_queries += [temp_version_query]
         return version_queries
@@ -562,7 +632,11 @@ class CorpusManager:
         end = text[mention.end:mention.end+padding]
         return f"{start}{delim}{mention.mention}{delim}{end}"
 
-    def cross_validate_mentions_by_lang(self, output_file, common_mistakes_output_file):
+    def cross_validate_mentions_by_lang(self, output_file, common_mistakes_output_file, ambiguities_output_file):
+        """
+        TODO focus on single semgent. make sure same rabbis appear in english bold as in aramaic. ignore english non-bold
+        IDEA precalculate bold ranges for each segment. if mention is not in this range, ignore
+        """
         from functools import reduce
         ps = PassageSet()
         ref_passage_map = {
@@ -623,6 +697,7 @@ class CorpusManager:
                         "versionTitle": versionTitle,
                         "language": language,
                         "passage": passage,
+                        "example ref": example_ref,
                         "mentions": " | ".join(mentions_for_id.keys()),
                         "example snippet": self.get_snippet(temp_text, example_mention),
                         "id": temp_id_key,
@@ -645,24 +720,48 @@ class CorpusManager:
                     "versionTitle": "---"
                 }]
         common_rows = []
+        total_mistakes = 0
         for (versionTitle, language, id_key, _type, ambiguous), temp_dict in sorted(common_mistakes.items(), key=lambda x: x[1]['count'], reverse=True):
+            if ambiguous:
+                continue
+            total_mistakes += temp_dict['count']
             common_rows += [{
                 "versionTitle": versionTitle,
                 "language": language,
                 "id": id_key,
                 "type": _type,
-                "ambiguous": ambiguous,
+                "count": temp_dict['count'],
+                "rowIds": ", ".join(str(rowId) for rowId in temp_dict['rowIds'])
+            }]
+        ambiguous_rows = []
+        total_ambiguities = 0
+        for (versionTitle, language, id_key, _type, ambiguous), temp_dict in sorted(common_mistakes.items(), key=lambda x: x[1]['count'], reverse=True):
+            if not ambiguous:
+                continue
+            total_ambiguities += temp_dict['count']
+            ambiguous_rows += [{
+                "versionTitle": versionTitle,
+                "language": language,
+                "id": id_key,
+                "type": _type,
                 "count": temp_dict['count'],
                 "rowIds": ", ".join(str(rowId) for rowId in temp_dict['rowIds'])
             }]
         with open(output_file, "w") as fout:
-            c = csv.DictWriter(fout, ["rowId","versionTitle", "language", "id", "type", "ambiguous", "passage", "mentions", "example snippet"])
+            c = csv.DictWriter(fout, ["rowId","versionTitle", "language", "id", "type", "ambiguous", "passage", "mentions", "example ref", "example snippet"])
             c.writeheader()
             c.writerows(rows)
         with open(common_mistakes_output_file, "w") as fout:
-            c = csv.DictWriter(fout, ["versionTitle", "language", "id", "type", "ambiguous", "count", "rowIds"])
+            c = csv.DictWriter(fout, ["versionTitle", "language", "id", "type", "count", "rowIds"])
             c.writeheader()
             c.writerows(common_rows)
+        with open(ambiguities_output_file, "w") as fout:
+            c = csv.DictWriter(fout, ["versionTitle", "language", "id", "type", "count", "rowIds"])
+            c.writeheader()
+            c.writerows(ambiguous_rows)
+        print("TOTAL MENTIONS", len(self.mentions))
+        print("TOTAL MISTAKES", total_mistakes)
+        print("TOTAL AMBIGUITIES", total_ambiguities)
 
     def load_mentions(self):
         with open(self.mentions_output_file, "r") as fin:
@@ -671,21 +770,169 @@ class CorpusManager:
             print("Done")
             self.mentions = [Mention().add_metadata(**m) for m in tqdm(mentions, desc="load mentions")]
 
+    def cross_validate_mentions_by_lang_talmud(self, output_file, common_mistakes_output_file, ambiguities_output_file, primary_version_key=None):
+        from difflib import SequenceMatcher
+        bold_ranges = get_all_bold_in_talmud()
+        mentions_by_passage = defaultdict(lambda: defaultdict(list))
+        primary_version, primary_lang = None, None
+        if primary_version_key is not None:
+            primary_version, primary_lang = primary_version_key
+        for mention in tqdm(self.mentions, desc="group by passage"):
+            if mention.language == "en":
+                bold_indexes = bold_ranges[mention.ref]
+                mention_indices = {i for i in range(mention.start, mention.end)}
+                if len(mention_indices & bold_indexes) == 0:
+                    continue
+            version_key = (mention.versionTitle,mention.language)
+            if primary_version_key is None:
+                # arbitrarily pick first version you come across
+                primary_version_key = version_key
+                primary_version, primary_lang = version_key
+            mentions_by_passage[mention.ref][version_key] += [mention]
+        # sort by position
+        for ref, version_dict in mentions_by_passage.items():
+            for version_key, mention_list in version_dict.items():
+                version_dict[version_key].sort(key=lambda x: x.start)
+        """
+        Choose 'primary' version. Diff other versions against this.
+
+        """
+        out_rows = []
+        common_issues = defaultdict(list)
+        def get_rows_from_opcode(tag, i1, i2, j1, j2, a, b):
+            if tag == 'equal': return []
+            temp_rows = []
+            if tag == 'replace':
+                if i2 - i1 == 1 and j2 - j1 == 1:
+                    temp_a = set(a[i1])
+                    temp_b = set(b[j1])
+                    if len(temp_a & temp_b) > 0:
+                        # ambiguity. currently won't count as a difference
+                        return []
+                temp_rows += [{
+                    "Type": "Replace",
+                    "Rabbi": ", ".join([x[0] for x in a[i1:i2]]),
+                    "With Rabbi": ", ".join([x[0] for x in b[j1:j2]])
+                }]
+                # temp_rows += get_rows_from_opcode('delete', i1, i2, j1, j1, a, b)
+                # temp_rows += get_rows_from_opcode('insert', i1, i1, j1, j2, a, b)
+            elif tag == 'delete':
+                for i in range(i1, i2):
+
+                    temp_rows += [{
+                        "Type": "Extra",
+                        "Rabbi": a[i][0]
+                    }]
+            elif tag == 'insert':
+                for i in range(j1, j2):
+                    temp_rows += [{
+                        "Type": "Missing",
+                        "Rabbi": b[i][0]
+                    }]
+            return temp_rows
+   
+        for ref, version_dict in mentions_by_passage.items():
+            primary_mentions = version_dict[primary_version_key]
+            for version_key, mention_list in version_dict.items():
+                version, lang = version_key
+                if version == "William Davidson Edition - Vocalized Aramaic":
+                    continue
+                if version_key == primary_mentions:
+                    continue
+                # do diff
+                a_mentions = [tuple(x.id_matches) for x in primary_mentions]
+                b_mentions = [tuple(x.id_matches) for x in mention_list]
+
+                s = SequenceMatcher(None, a_mentions, b_mentions, False)
+                codes = s.get_opcodes()
+                for tag, i1, i2, j1, j2 in codes:
+                    temp_rows = get_rows_from_opcode(tag, i1, i2, j1, j2, a_mentions, b_mentions)
+                    for r in temp_rows:
+                        r['Ref'] = ref
+                        r['Version'] = primary_version
+                        r['Language'] = primary_lang
+                        common_issues[(r['Type'], r['Rabbi'], r.get('With Rabbi', None))] += [r['Ref']]
+                    out_rows += temp_rows
+        with open(output_file, "w") as fout:
+            c = csv.DictWriter(fout, ['Ref', 'Version', 'Language', 'Type', 'Rabbi', 'With Rabbi'])
+            c.writeheader()
+            c.writerows(out_rows)
+        print("TOTAL MENTIONS", len(self.mentions))
+        print("TOTAL MISTAKES", len(out_rows))
+        print("PERC CORRECT", (len(self.mentions)-len(out_rows))/len(self.mentions))
+        print("UNIQUE MISTAKES", len(common_issues))
+
+        common_rows = []
+        for i, ((t, r, w), v) in enumerate(sorted(common_issues.items(), key=lambda x: len(x[1]), reverse=True)):
+            common_rows += [{
+                "Action": t,
+                "Rabbi": r,
+                "Num": len(v),
+                "With Rabbi": w or '',
+                "Refs": ", ".join(v)
+            }]
+        with open(common_mistakes_output_file, 'w') as fout:
+            c = csv.DictWriter(fout, ['Action', 'Rabbi', 'With Rabbi', 'Num', 'Refs'])
+            c.writeheader()
+            c.writerows(common_rows)
+
+    def merge_rabbis_in_mentions(self, swap_file):
+        """
+        Just merge rabbis as they appear in mentions. Actual topics will be merged at a later step
+        Swap file is an object where each key is a slug that should be changed to the value slug
+        """
+        with open(swap_file, 'r') as fin:
+            swaps = json.load(fin)
+        for mention in self.mentions:
+            mention.id_matches = list({swaps.get(slug, slug) for slug in mention.id_matches})
+        
+
+class BoldWalker:
+
+    def __init__(self):
+        self.range_ref_map = {}
+    def walk(self, segment_text, en_tref, he_tref, version):
+        self.range_ref_map[en_tref] = self.get_bold_ranges(segment_text)
+
+    @staticmethod
+    def get_bold_ranges(text):
+        start_bs = [m.start() for m in re.finditer("<b>", text)]
+        end_bs = [m.end()+1 for m in re.finditer("</b>", text)]
+        assert len(start_bs) == len(end_bs)
+        return list(zip(start_bs, end_bs))
+
+def get_all_bold_in_talmud():
+    bold_walker = BoldWalker()
+    title_list = library.get_indexes_in_category("Bavli")
+    for title in tqdm(title_list, desc="get bold ranges"):
+        version = Version().load({"title": title, "language": "en", "versionTitle": "William Davidson Edition - English"})
+        if version is None:
+            print("Version is None for", title)
+        version.walk_thru_contents(bold_walker.walk)
+    
+    bold_index_set_map = {}
+    for tref, temp_ranges in bold_walker.range_ref_map.items():
+        bold_indexes = set()
+        for s, e in temp_ranges:
+            bold_indexes |= {i for i in range(s, e)}
+        bold_index_set_map[tref] = bold_indexes
+    return bold_index_set_map
+
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_tanakh_simple.json",
-        f"{ner_file_prefix}/ner_output_tanakh.json",
+        "research/knowledge_graph/named_entity_recognition/ner_tagger_input.json",
+        f"{ner_file_prefix}/ner_output_talmud.json",
         f"{ner_file_prefix}/html"
     )
     corpus_manager.tag_corpus()
+    # corpus_manager.merge_rabbis_in_mentions(f"{ner_file_prefix}/swap_rabbis.json")
     corpus_manager.save_mentions()
-    # corpus_manager.generate_html_file()
 
     # corpus_manager.load_mentions()
-    # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv")
-
-
+    corpus_manager.generate_html_file()
+    # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv")
+    corpus_manager.cross_validate_mentions_by_lang_talmud(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"))
 """
 TODO
 searching without nikkud in Hebrew is way too dangerous.
