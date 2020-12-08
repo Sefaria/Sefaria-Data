@@ -3,6 +3,9 @@ django.setup()
 from sefaria.model import *
 from data_utilities.XML_to_JaggedArray import *
 problems = set()
+def get_first_seg_ref():
+    return ""
+
 def get_guide_links_and_pos():
     links_and_pos = {}
     for k in sentences_per_chapter.keys():
@@ -22,6 +25,31 @@ def get_guide_links_and_pos():
             except:
                 pass
             prev_loc += loc
+    return links_and_pos
+
+
+def get_guide_links_and_pos_by_seg_ref():
+    links_and_pos = {}
+    for k in sentences_per_chapter.keys():
+        if k == "":
+            continue
+        sec_ref = Ref(k)
+        sub_refs = sec_ref.all_subrefs()
+        links_and_pos[k] = {}
+        prev_loc = 0
+        for sub_ref in sub_refs:
+            moreh_text = sub_ref.text('en').text
+            citations = library.get_refs_in_string(moreh_text)
+            links_and_pos[k][sub_ref.normal()] = []
+            for i, ref in enumerate(citations):
+                curr_text = " ".join(moreh_text.split()[prev_loc:])
+                chr_pos = curr_text.find(ref)
+                loc = len(curr_text[:chr_pos].split())
+                try:
+                    links_and_pos[k][sub_ref.normal()].append((Ref(ref).normal(), loc+prev_loc))
+                except Exception as e:
+                    print(e)
+                prev_loc += loc
     return links_and_pos
 
 def get_guide_words_and_sentences():
@@ -299,8 +327,12 @@ for ref in segs:
     our_guide_seg_links[ref.normal()] = [get_ref(l) for l in LinkSet(ref)]
 
 # links_and_pos = get_guide_links_and_pos()
-with open('our_guide_links_and_pos.json', 'r') as f:
-    links_and_pos = json.load(f)
+# with open('our_guide_links_and_pos.json', 'r') as f:
+#     links_and_pos = json.load(f)
+# links_and_pos_by_seg_ref = get_guide_links_and_pos_by_seg_ref()
+with open("our_guide_links_and_pos_by_seg_ref.json", 'r') as f:
+    links_and_pos_by_seg_ref = json.load(f)
+
 for ref in secs:
     our_guide_links[ref.normal()] = [get_ref(l) for l in LinkSet(ref)]
 
@@ -313,10 +345,28 @@ for ref in secs:
 prev_pos = 0
 total_simanim = 0
 
+#steps: 1) start with first citation, set our_guide_seg_ref to first seg ref in our guide,
+#       2) look for first citation in our_guide_ref's citations and check word_count ratio
+#       3) if found and ratio good, add text to new_found_by_seg[our_guide_seg_ref]
+#       4) if not found, look in next our_guide_seg_ref if there is a next ref until we
+#       exhaust all seg_refs in our_guide_sec_ref
+#       5) if found and ratio good in one of the next our_guide_seg_refs, we add text to
+#       new_found_by_seg[our_guide_seg_ref] and continue looking for next citation from this our_guide_seg_ref onward
+#       6) if not found anywhere or ratio not good, simply add text to running_text
+#       7) if at end there is running_text, add running_text to new_found_by_seg[our_guide_seg_ref]
+#
+#
+#
+for i, fr_sec_ref in enumerate(found_by_seg):
+    our_guide_seg_ref = get_first_seg_ref()
+    for fr_seg_ref in found_by_seg[fr_sec_ref]:
+        french_ref, french_word_count, before_fr_text, fr_citation = citation
+        moreh_ref = fr_sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,").replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
+        our_guide_links_and_word_counts = links_and_pos[moreh_ref]
+
 for i, sec_ref in enumerate(found_by_seg):
     if i < 3:
         continue
-    total_simanim += 1
     last_pair_found = -1
     prev_len_text = 0 #running count throughout sec_ref
     running_text = ""
@@ -360,5 +410,52 @@ for i, sec_ref in enumerate(found_by_seg):
         new_found_by_seg[sec_ref][curr_ref] += " " + running_text
         running_text = ""
 
+#  BELOW CODE WORKS FOR SIMAN 1 & 2 and fails for 3 & 4
+# for i, sec_ref in enumerate(found_by_seg):
+#     if i < 3:
+#         continue
+#     total_simanim += 1
+#     last_pair_found = -1
+#     prev_len_text = 0 #running count throughout sec_ref
+#     running_text = ""
+#     curr_ref = 1
+#     for seg_ref in found_by_seg[sec_ref]:
+#         for citation in found_by_seg[sec_ref][seg_ref]:
+#             french_ref, french_word_count, before_fr_text, fr_citation = citation
+#             moreh_ref = sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,").replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
+#             our_guide_links_and_word_counts = links_and_pos[moreh_ref]
+#             found = False
+#             starting_to_look = False if last_pair_found > 0 else True
+#             for i, this_pair in enumerate(our_guide_links_and_word_counts):
+#                 our_ref, our_word_count = this_pair
+#                 if i == last_pair_found:
+#                     starting_to_look = True
+#                 elif starting_to_look and (french_ref == our_ref):
+#                     ratio = float(french_word_count)/our_word_count
+#                     if 1 < ratio < 5:
+#                         found = True
+#                         curr_text = running_text + " " + before_fr_text + " " + fr_citation
+#                         french_pos = seg_ref.split(":")[-1]
+#                         curr_ref = get_proper_ref(seg_ref, new_found_by_seg)
+#                         new_found_by_seg[sec_ref][curr_ref] += curr_text
+#                         running_text = ""
+#                         # check french text to see that it ends with a period...
+#                         # if not curr_text.endswith("."):
+#                         #     print("Warning: No period in {}".format(french_ref))
+#
+#                         prev_pos = french_word_count
+#                         last_pair_found = i
+#                         break
+#                     else:
+#                         print("Warning: Ratio off in {}".format(sec_ref))
+#             if not found:
+#                 running_text += before_fr_text + " " + fr_citation
+#             # running_text += " ".join(french_text.split()[prev_pos:]) + " " #whatever couldn't be matched should be saved
+#             # prev_pos = len(running_text.split())
+#         # if not found:
+#     if running_text:
+#         curr_ref = get_proper_ref(seg_ref, new_found_by_seg)
+#         new_found_by_seg[sec_ref][curr_ref] += " " + running_text
+#         running_text = ""
 print(total_simanim)
 
