@@ -96,6 +96,10 @@ class TestDHMatcher:
         rashi = ['', 'אף על גב שאמרו']
         matched = dhm.match_text(daftext, rashi, verbose=True)
 
+    def test_duplicate_comment(self):
+        daftext = 'אע״ג שאמרו ככה בלה בלה בלה'.split()
+        rashi = ['בלה', 'בלה']
+        matched = dhm.match_text(daftext, rashi, verbose=True)
 
 
 class TestDHMatcherFunctions:

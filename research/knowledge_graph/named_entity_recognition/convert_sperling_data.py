@@ -127,7 +127,6 @@ def get_rabbi_mention_segments(rows_by_mas, limit=None):
             matches = match_ref(tc, [r[' Snippet'] for r in amud], base_tokenizer, dh_extract_method=dh_extract_method, with_num_abbrevs=False, place_all=True, place_consecutively=True, verbose=False)
             total+=len(matches['matches'])
             rabbi_match_segs = []
-            seg_char_locs = []
             for j, m in enumerate(matches['matches']):
                 snippet = amud[j][' Snippet']
                 rabbi_match_segs += [get_rabbi_seg(m, snippet)]
@@ -185,7 +184,7 @@ def get_rabbi_char_loc(context, seg_text):
         # cant assume rabbi_start_rel is same as it was in `context`
         rcount = matched.count(rabbi)
         if rcount == 0:
-            print("NO_RABBI")
+            # print("NO_RABBI")
             return None, None
         if rcount > 1:
             print("TON_O_RABANAN")
@@ -230,26 +229,60 @@ def display_displacy(jsonl_loc):
 
 def convert_to_mentions_file():
     import json
+    from sefaria.utils.hebrew import is_hebrew
     from research.knowledge_graph.named_entity_recognition.ner_tagger import Mention
 
-    sef_id_map = {}
-    with open("research/knowledge_graph/named_entity_recognition/sefaria_bonayich_reconciliation - Sheet2.csv", "r") as fin:
+    manual_sef_id_map = defaultdict(set)
+    with open(f"{DATA_LOC}/Match Bonayich Rabbis with Sefaria Rabbis - Sefaria Rabbis Matched.csv", "r") as fin:
         c = csv.DictReader(fin)
         for row in c:
             try:
-                sef_id_map[int(row["bonayich"])] = row["Slug"]
+                manual_sef_id_map[int(row["Bonayich ID"])].add(row["Slug"])
             except ValueError:
                 continue
+    db_sef_id_map = defaultdict(set)
+    topic_set = TopicSet({"alt_ids.bonayich": {"$exists": True}})
+    for t in topic_set:
+        db_sef_id_map[int(t.alt_ids['bonayich'])].add(t.slug)
 
+    ids_not_in_sefaria_db = set()
+    with open(f"{DATA_LOC}/sperling_en_and_he.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            if row['Exists in DB'] == 'y':
+                continue
+            en1 = row["En 1"].strip()
+            if len(en1) == 0 or en1 == "N/A" or en1 == "MM":
+                continue
+            try:
+                bid = int(row['Bonayich ID'])
+                ids_not_in_sefaria_db.add(bid)
+            except ValueError:
+                continue
+    print("NUM DB IDS", len(db_sef_id_map))
+    unique_missed = {}
     new_mentions = set()
     for mention in srsly.read_jsonl(f"{DATA_LOC}/he_mentions.jsonl"):
-        slug = sef_id_map.get(int(mention['Bonayich ID']), None)
+        if int(mention['Bonayich ID']) not in ids_not_in_sefaria_db:
+            # already exists in sefaria db. we can skip
+            continue
+        slug_set = manual_sef_id_map.get(int(mention['Bonayich ID']), None)
+        if slug_set is None:
+            slug_set = db_sef_id_map.get(int(mention['Bonayich ID']), None)
+        if slug_set is None and False:
+            # disabling this if b/c we want mentions that dont appear in db
+            # these are 'missing' mostly because they're false positives in michael's results
+            unique_missed[mention['Bonayich ID']] = mention['Mention']
+            continue
+        if slug_set is not None:
+            # ignore any bids that match sefaria slugs 
+            continue
         new_mentions.add(Mention().add_metadata(**{
             "start": mention["Start"],
             "end": mention["End"],
             "mention": mention["Mention"],
             "ref": mention["Ref"],
-            "id_matches": [f"BONAYICH:{mention['Bonayich ID']}" if slug is None else slug]
+            "id_matches": [f"BONAYICH:{mention['Bonayich ID']}"] if slug_set is None else list(slug_set)
         }))
     new_new_mentions = []
     for mention in new_mentions:
@@ -260,8 +293,295 @@ def convert_to_mentions_file():
             "ref": mention.ref,
             "id_matches": mention.id_matches
         }]
+    if False:
+        # skipping since we already have these mentions fixed in db
+        # modify mentions based on manual corrections
+        with open(f"{DATA_LOC}/../sefaria/Fix Rabi and Rav Errors - rav_rabbi_errors.csv", "r") as fin:
+            c = csv.DictReader(fin)
+            rows = list(c)
+        to_delete = defaultdict(list)
+        to_modify = defaultdict(list)
+        for row in rows:
+            typ = row['Error Type (rabbi, title, mistake, correct)']
+            is_heb = is_hebrew(row['Snippet'])
+            if not is_heb:
+                continue
+            mention = row['Snippet'].split('~')[1]
+            key = f"{row['Ref']}|{mention}"
+            if typ == 'mistake':
+                to_delete[key] += [row]
+            elif typ == 'title' or typ == 'rabbi':
+                to_modify[key] += [row]
+        def delete_mistakes(mention):
+            key = f"{mention['ref']}|{mention['mention']}"
+            to_keep = key not in to_delete
+            if not to_keep and len(to_delete[key]) == 0:
+                pass
+                # print("ALREADY USED but seems right anyway to delete", mention)
+            elif not to_keep:
+                to_delete[key].pop()
+            return to_keep
+        print("BEFORE DELETE", len(new_new_mentions))
+        new_new_mentions = list(filter(delete_mistakes, new_new_mentions))
+        print("AFTER DELETE", len(new_new_mentions))
+        for mention in new_new_mentions:
+            key = f"{mention['ref']}|{mention['mention']}"
+            if key not in to_modify:
+                continue
+            row = to_modify[key][0]
+            typ = row['Error Type (rabbi, title, mistake, correct)']
+
+            new_mention = row['Missing Title'].strip() if typ == 'title' else row['Missing Rabbi Hebrew'].strip()
+            try:
+                index = new_mention.index(mention['mention'])
+            except ValueError:
+                prefixes = ['ו', 'מד', 'כ', 'ד', 'ול', 'ל']
+                prefixes.sort(key=lambda x: len(x), reverse=True)
+                prefixed_mention = None
+                for p in prefixes:
+                    if mention['mention'].startswith(p):
+                        prefixed_mention = mention['mention'][len(p):]
+                        break
+                if prefixed_mention is None:
+                    print("Couldn't find prefix", mention['mention'], new_mention)
+                    continue
+                try:
+                    index = new_mention.index(prefixed_mention)
+                except ValueError:
+                    print("Couldn't find after prefix", prefixed_mention, new_mention)
+                    continue
+            new_start = mention['start'] - index
+            new_end = new_start + len(new_mention)
+            mention['start'] = new_start
+            mention['end'] = new_end
+            mention['mention'] = new_mention
+            if typ == "title":
+                new_id_matches = [row['Missing Title Slug']]
+                more_id_matches_str = row['Additional Missing Title Slugs']
+                if len(more_id_matches_str) > 0:
+                    new_id_matches += more_id_matches_str.split(', ')
+                assert all([Topic.init(slug) is not None for slug in new_id_matches])
+            elif typ == "rabbi":
+                topics = TopicSet({"titles.text": {"$all": [row['Missing Rabbi Hebrew'].strip(), row['Missing Rabbi English'].strip()]}})
+                if topics.count() > 1:
+                    for t in topics:
+                        print("POSSIBLE RABBI", t.slug)
+                    continue
+                elif topics.count() == 0:
+                    print("NO NEW RABBI", row)
+                    continue
+                new_id_matches = [topics.array()[0].slug]
+            mention['id_matches'] = new_id_matches
+            """
+            find index of mention['mention'] in Missing Title
+            if -1, :shrug:
+            else:
+                start = old_start - index
+                end = start + len(Missing Title)
+            """
     with open("research/knowledge_graph/named_entity_recognition/sperling_mentions.json", "w") as fout:
         json.dump(new_new_mentions, fout, ensure_ascii=False, indent=2)
+    print("NUM MISSED", len(unique_missed))
+    print("NUM GOT", len(new_new_mentions))
+    # for k, v in unique_missed.items():
+    #     print(k, v)
+
+def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_changes_file=None, limit=None):
+    import json
+    from research.knowledge_graph.named_entity_recognition.ner_tagger import Mention
+    from data_utilities.dibur_hamatchil_matcher import match_text
+    from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
+    if manual_changes_file is not None:
+        changes = srsly.read_json(manual_changes_file)
+    with open("research/knowledge_graph/named_entity_recognition/sperling_mentions.json", "r") as fin:
+        j = json.load(fin)
+    mentions_by_seg = defaultdict(list)
+    print("TOTAL MENTIONS", len(j))
+    for mention in j:
+        mentions_by_seg[mention['ref']] += [Mention().add_metadata(**mention)]
+    indexes = library.get_indexes_in_category("Bavli") if limit is None else limit
+
+    def get_norm_pos(start, end, s):
+        num_to_remove = s.count(':', 0, start)
+        return start - num_to_remove, end - num_to_remove
+    replace_reg_parens = r"(?:[\u0591-\u05bd\u05bf-\u05c5\u05c7,.:!?״()]+|\s—|\s…)"
+    replace_reg = r"(?:[\u0591-\u05bd\u05bf-\u05c5\u05c7,.:!?״]+|\s—|\s…)"
+    def get_find_text_to_remove(remove_parens=True):
+        return lambda s: [(m, '') for m in re.finditer(replace_reg_parens if remove_parens else replace_reg, s)]
+
+    new_mentions = []
+    num_failed = 0
+    for mas in tqdm(indexes):
+        if Version().load({"title": mas, "versionTitle": nikkud_vtitle, "language": "he"}) is None:
+            continue
+        index = library.get_index(mas)
+        for seg in index.all_segment_refs():
+            temp_mentions = mentions_by_seg[seg.normal()]
+            if len(temp_mentions) == 0:
+                continue
+            text = TextChunk(seg, lang='he', vtitle='William Davidson Edition - Aramaic').text
+            norm_text = re.sub(':', '', text)
+            text_nikkud = TextChunk(seg, lang='he', vtitle=nikkud_vtitle).text
+            remove_parens = True
+            if re.sub(replace_reg_parens, '', text_nikkud) != text:
+                remove_parens = False
+            norm_text_nikkud = re.sub(replace_reg_parens if remove_parens else replace_reg, '', text_nikkud)
+
+            if len(text_nikkud) == 0:
+                continue
+            mention_indices = [get_norm_pos(mention.start, mention.end, text) for mention in temp_mentions]
+            if manual_changes_file is None:
+                norm_map = get_mapping_after_normalization(text_nikkud, find_text_to_remove=get_find_text_to_remove(remove_parens))
+            else:
+                temp_wiki_changes = changes.get(seg.normal(), {}).get('wiki', [])
+
+                temp_will_changes = changes.get(seg.normal(), {}).get('will', [])
+                temp_wiki_changes = list(filter(lambda x: x not in temp_will_changes, temp_wiki_changes))
+                temp_wiki_changes.sort(key=lambda x: x[0][0])
+                for tc in temp_wiki_changes:
+                    tc[0][0] += 1
+                    tc[0][1] += 1
+                norm_map = get_mapping_after_normalization(text_nikkud, removal_list=temp_wiki_changes)
+  
+            mention_indices = convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map)
+            temp_new_mentions = []
+            for mention, (unnorm_start, unnorm_end) in zip(temp_mentions, mention_indices):
+                if manual_changes_file is None:
+                    new_mention = re.sub(replace_reg_parens if remove_parens else replace_reg, '', text_nikkud[unnorm_start:unnorm_end])
+                else:
+                    new_mention = text_nikkud[unnorm_start:unnorm_end]
+                try:
+                    if len(new_mention) == 0:
+                        print("ZERO LENGTH MENTION", mention.mention, seg.normal())
+                    assert len(new_mention) > 0
+                    if manual_changes_file is None:
+                        assert new_mention == mention.mention, f"'{new_mention} != {mention.mention}' {unnorm_start} {unnorm_end}"
+                    else:
+                        for offset in [0, -1, 1, -2, 2]:
+                            new_mention = text_nikkud[unnorm_start+offset:unnorm_end+offset]
+                            # likely to be abbreviations in new_mention. use dh matcher to see if they're 'equivalent'
+                            old_mention_comparison = mention.mention
+                            if new_mention.startswith('א"ר'):
+                                old_mention_comparison = "אמר " + old_mention_comparison
+                            if new_mention.startswith('"'):
+                                # middle of abbrev
+                                new_mention_comparison = new_mention[1:2] + "'" + new_mention[2:]
+                            else:
+                                new_mention_comparison = new_mention
+                            new_words = new_mention_comparison.split()
+                            matched = match_text(new_words, [old_mention_comparison], with_abbrev_matches=True, daf_skips=0, rashi_skips=0, overall=0)
+                            if matched['matches'][0][0] != -1:
+                                # need look at actual match and figure out if any words are missing
+                                # recalculate unnorm_start and unnorm_end to leave out these words. Test case: Arakhin 5a:18
+                                istart_word, iend_word = matched['matches'][0]
+                                start_text = " ".join(new_words[:istart_word])
+                                start_offset = len(start_text) + (1 if len(start_text) > 0 else 0)  # add 1 to account for space right after start_text
+                                end_text = " ".join(new_words[iend_word+1:])
+                                end_offset = len(end_text) + (1 if len(end_text) > 0 else 0)
+                                unnorm_start += offset + start_offset
+                                unnorm_end += offset - end_offset
+                                break
+                        # move unnorm_start and end to nearest word break
+                        if unnorm_end == len(text_nikkud) + 1:
+                            # one too big
+                            unnorm_end -= 1
+                        if unnorm_end > len(text_nikkud):
+                            # too big give up
+                            # print("UPDATE END TOO BIG. GIVE UP...", mention.mention, seg.normal())
+                            assert False
+                        if text_nikkud[unnorm_start] in {' ', ':'}:
+                            # move forward by one
+                            unnorm_start += 1
+                        if text_nikkud[unnorm_end-1] in {' ', ':'}:
+                            unnorm_end -= 1
+                        start_nearest_break = max(text_nikkud.rfind(' ', 0, unnorm_start), text_nikkud.rfind(':', 0, unnorm_start))
+                        end_nearest_break_match = re.search(r'[\s:]', text_nikkud[unnorm_end:])
+                        end_nearest_break = (end_nearest_break_match.start() + unnorm_end) if end_nearest_break_match is not None else -1
+                        if start_nearest_break != -1:
+                            unnorm_start = start_nearest_break + 1
+                        elif unnorm_start != 0:
+                            # if couldn't find space before, must be at beginning
+                            # print("UPDATE START", mention.mention, seg.normal())
+                            unnorm_start = 0
+                        if end_nearest_break != -1:
+                            unnorm_end = end_nearest_break
+                        elif unnorm_end != len(text_nikkud):
+                            # print("UPDATE END", mention.mention, seg.normal())
+                            unnorm_end = len(text_nikkud)
+                        assert matched['matches'][0][0] != -1
+                    mention.add_metadata(start=unnorm_start, end=unnorm_end, mention=text_nikkud[unnorm_start:unnorm_end])
+                    temp_new_mentions += [mention]
+                except AssertionError:
+                    norm_start, norm_end = get_norm_pos(mention.start, mention.end, text)
+                    snip_size = 10
+                    start_snip_naive = norm_start - snip_size if norm_start >= snip_size else 0
+                    start_snip = norm_text.rfind(" ", 0, start_snip_naive)
+                    if start_snip == -1:
+                        start_snip = start_snip_naive
+                    end_snip_naive = norm_end + snip_size if norm_end + snip_size <= len(norm_text) else len(norm_text)
+                    end_snip = norm_text.find(" ", end_snip_naive)
+                    if end_snip == -1:
+                        end_snip = end_snip_naive
+                    snippet = f"{norm_text[start_snip:norm_start]}~{norm_text[norm_start:norm_end]}~{norm_text[norm_end:end_snip]}"
+
+                    new_norm_start, new_norm_end = get_rabbi_char_loc(snippet, norm_text_nikkud)
+                    if new_norm_start is None:
+                        # print("new_norm_start is None")
+                        num_failed += 1
+                        continue
+                    new_start, new_end = convert_normalized_indices_to_unnormalized_indices([(new_norm_start, new_norm_end)], norm_map)[0]
+                    new_mention = re.sub(replace_reg_parens if remove_parens else replace_reg, '', text_nikkud[new_start:new_end])
+                    try:
+                        assert new_mention == mention.mention, f"'{new_mention} != {mention.mention}' {unnorm_start} {unnorm_end}"
+                        mention.add_metadata(start=new_start, end=new_end, mention=text_nikkud[new_start:new_end])
+                        temp_new_mentions += [mention]
+                    except AssertionError:
+                        num_failed += 1
+                    # get_rabbi_char_pos using context and text_nikkud
+                    # get_unnormalized pos
+            new_mentions += temp_new_mentions
+    out = [m.serialize(delete_keys=['versionTitle', 'language']) for m in new_mentions]
+    with open(f"research/knowledge_graph/named_entity_recognition/{mentions_output}", "w") as fout:
+        json.dump(out, fout, ensure_ascii=False, indent=2)
+    print("NUM FAILED", num_failed)
+
+def make_new_alt_titles_file():
+    import json
+    from sefaria.utils.hebrew import is_hebrew
+    from research.knowledge_graph.named_entity_recognition.ner_tagger import Mention
+
+    manual_sef_id_map = defaultdict(set)
+    with open(f"{DATA_LOC}/Match Bonayich Rabbis with Sefaria Rabbis - Sefaria Rabbis Matched.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            try:
+                manual_sef_id_map[int(row["Bonayich ID"])].add(row["Slug"])
+            except ValueError:
+                continue
+
+    slug2titles = defaultdict(set)
+    with open(f"{DATA_LOC}/sperling_en_and_he.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            try:
+                bid = int(row["Bonayich ID"])
+            except ValueError:
+                print(row)
+                continue
+            slugs = manual_sef_id_map[bid]
+            titles = set()
+            for i in range(1,4):
+                title = row[f'En {i}'].strip()
+                if len(title) == 0 or title == "N/A" or title == "MM":
+                    break
+                titles.add(title)
+            for slug in slugs:
+                slug2titles[slug] |= titles
+    out = {}
+    for k, v in slug2titles.items():
+        out[k] = list(v)
+    with open(f"/home/nss/sefaria/datasets/ner/sefaria/new_alt_titles.json", "w") as fout:
+        json.dump(out, fout, ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
     # rows_by_mas = get_rows_by_mas()
@@ -272,3 +592,8 @@ if __name__ == "__main__":
     # display_displacy(f"{DATA_LOC}/he_training.jsonl")
     
     convert_to_mentions_file()
+    convert_mentions_for_alt_version('William Davidson Edition - Vocalized Aramaic', 'sperling_mentions_nikkud.json')
+    convert_mentions_for_alt_version('William Davidson Edition - Vocalized Punctuated Aramaic', 'sperling_mentions_nikkud_punctuated.json')
+    convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
+
+    # make_new_alt_titles_file()

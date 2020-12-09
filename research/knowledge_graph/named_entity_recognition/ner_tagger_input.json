@@ -11,15 +11,48 @@
             "getLeaves": true
         },
         {
+            "id": "group-of-talmudic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "group-of-mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
             "namedEntityFile": "research/knowledge_graph/named_entity_recognition/sperling_named_entities.json"
-        },
+        }
+    ],
+    "rules": [
         {
-            "id": "beit-hillel",
-            "idIsSlug": true
-        },
-        {
-            "id": "beit-shammai",
-            "idIsSlug": true
+          "rule": {
+            "id": "namedEntityInVersion",
+            "appliesToVersions": [
+                {
+                    "versionTitle": "William Davidson Edition - Aramaic",
+                    "language": "he"
+                },
+                {
+                    "versionTitle": "William Davidson Edition - Vocalized Aramaic",
+                    "language": "he"
+                }, 
+                {
+                    "versionTitle": "William Davidson Edition - Vocalized Punctuated Aramaic",
+                    "language": "he"
+                }, 
+                {
+                    "versionTitle": "Wikisource Talmud Bavli",
+                    "language": "he"
+                }
+            ],
+            "versionToCompare": {
+                "versionTitle": "William Davidson Edition - English",
+                "language": "en"
+            }
+          },
+          "namedEntities": ["rav", "rabbah-b-nachmani", "rabi", "rava", "shemaiah", "rabbi-shemaya"],
+          "comment": "Rav is very ambiguous in Aramaic and less ambiguous in English"
         }
     ],
     "corpus": [
@@ -34,7 +67,26 @@
                 {
                     "language": "he",
                     "versionTitle":"William Davidson Edition - Aramaic",
+                    "pretaggedMentionsInDB": true,
                     "pretaggedFile": "research/knowledge_graph/named_entity_recognition/sperling_mentions.json"
+                },
+                {
+                    "language": "he",
+                    "versionTitle":"William Davidson Edition - Vocalized Aramaic",
+                    "pretaggedMentionsInDB": true,
+                    "pretaggedFile": "research/knowledge_graph/named_entity_recognition/sperling_mentions_nikkud.json"
+                },
+                {
+                    "language": "he",
+                    "versionTitle":"William Davidson Edition - Vocalized Punctuated Aramaic",
+                    "pretaggedMentionsInDB": true,
+                    "pretaggedFile": "research/knowledge_graph/named_entity_recognition/sperling_mentions_nikkud_punctuated.json"
+                },
+                {
+                    "language": "he",
+                    "versionTitle":"Wikisource Talmud Bavli",
+                    "pretaggedMentionsInDB": true,
+                    "pretaggedFile": "research/knowledge_graph/named_entity_recognition/sperling_mentions_wikisource.json"
                 }
             ]
         }

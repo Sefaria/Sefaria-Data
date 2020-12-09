@@ -29,7 +29,7 @@ EMBEDDING_LINKS = "/home/nss/sefaria/datasets/text classification/link_embedding
 MAX_DOCUMENT_LENGTH = 100
 EMBEDDING_SIZE = 20
 LINK_EMBEDDING_SIZE = 50
-LINK_INPUT_LENGTH = 30
+LINK_INPUT_LENGTH = 1000
 WINDOW_SIZE = EMBEDDING_SIZE
 STRIDE = int(WINDOW_SIZE/2)
 N_EPOCHS = 150
@@ -105,14 +105,14 @@ class CnnClfEnsemble:
 
         he_outputs = self.get_text_model(embedding_matrix_dict["hebrew"], embedding_size, input_length)(he_inputs)
         en_outputs = self.get_text_model(embedding_matrix_dict["english"], embedding_size, input_length)(en_inputs)
-        # link_outputs = self.get_link_model(embedding_matrix_dict["links"], link_embedding_size, link_input_length)(link_inputs)
-        x = layers.Concatenate()([he_outputs, en_outputs])  # link_outputs
+        link_outputs = self.get_link_model(embedding_matrix_dict["hebrew"], embedding_size, link_input_length)(link_inputs)
+        x = layers.Concatenate()([he_outputs, en_outputs, link_outputs])
         x = layers.Dense(128, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
         x = layers.Dropout(0.5)(x)
         x = layers.Dense(64, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
         outputs = layers.Dropout(0.5)(x)
         outputs = layers.Dense(2, activation='softmax', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
-        self.model = keras.Model(inputs=[he_inputs, en_inputs], outputs=outputs)  # link_inputs
+        self.model = keras.Model(inputs=[he_inputs, en_inputs, link_inputs], outputs=outputs)
         self.model.compile(optimizer=optimizers.Adam(), #learning_rate=0.001), 
                     loss=losses.CategoricalCrossentropy(from_logits=False), 
                     metrics=[metrics.CategoricalAccuracy(), metrics.Recall(class_id=0), metrics.Precision(class_id=0)])
@@ -215,7 +215,7 @@ class BinaryRelevance:
         # self.models[klass] = temp_clf
 
         # evaluate
-        results = temp_clf.evaluate(X_test, Y_test, return_dict=return_dict)
+        results = temp_clf.evaluate(X_test, Y_test, return_dict=return_dict, verbose=0)
         precision, recall = None, None
         for k, v in results.items():
             if k.startswith('precision'):
@@ -227,14 +227,16 @@ class BinaryRelevance:
         results['precision'] = precision
         results['recall'] = recall
         try:
-            results['f1'] = 2*(results['precision']*results['recall'])/(results['precision']+results['recall'])
+            results['f1'] = self.f_score(results['precision'], results['recall'], 1)
+            results['f-half'] = self.f_score(results['precision'], results['recall'], 0.5)
         except ZeroDivisionError:
             results['f1'] = 0
+            results['f-half'] = 0
         results['weight'] = X_test['hebrew'].shape[0]
-        print("RESULTS", klass, results)
+        print("RESULTS", klass, results['f1'], results['f-half'], results['precision'], results['recall'])
         self.results[klass] = results
 
-    def infer(self, data):
+    def infer_one(self, data):
         inferences = set()
         inference_percent_dict = {}
         for klass in self.klasses:
@@ -244,21 +246,37 @@ class BinaryRelevance:
             inference_percent_dict[klass] = self.softmax(tensor_out.numpy())[0]
         return inferences, inference_percent_dict
 
+    def infer_many(self, data):
+        inferences = [set() for _ in range(len(data))]
+        inference_percent_dict_list = [{} for _ in range(len(data))]
+        for klass in self.klasses:
+            tensor_out = self.models[klass].model(data)
+            softmaxed = tf.argmax(tensor_out, axis=1).numpy()
+            for i, choice in enumerate(softmaxed):
+                if choice == 0:
+                    inferences[i].add(klass)
+            inference_percent_dict_list[i][klass] = self.softmax(tensor_out.numpy())[0]
+        return inferences, inference_percent_dict_list    
     @staticmethod
     def softmax(x): 
         """Compute softmax values for each sets of scores in x.""" 
         e_x = np.exp(x - np.max(x)) 
-        return e_x / e_x.sum() 
+        return e_x / e_x.sum()
+
+    @staticmethod
+    def f_score(precision, recall, beta):
+        return (1+beta**2)*(precision*recall)/((beta**2*precision)+recall)
     
 class DataManager:
 
-    def __init__(self, data_file, get_training_x=None, get_training_y=None):
+    def __init__(self, data_file=None, get_training_x=None, get_training_y=None):
         self.get_training_x = get_training_x or self.get_training_x_default
         self.get_training_y = get_training_y or self.get_training_y_default
         self.topic_counts = defaultdict(int)
-        X, Y = self.load_data(data_file)
-        self.X = X
-        self.Y = Y
+        if data_file is not None:
+            X, Y = self.load_data(data_file)
+            self.X = X
+            self.Y = Y
         self.toc_mapping = self.get_toc_mapping()
 
     def load_embeddings(self, embedding_file_he, embedding_file_en, embedding_file_links=None, embedding_size=None, link_embedding_size=None):
@@ -307,9 +325,22 @@ class DataManager:
 
     def tokenize_all_text(self):
         tokenizer_he = preprocessing.text.Tokenizer(oov_token="<UNK>")
-        tokenizer_he.fit_on_texts([x["hebrew"] for x in self.X])
+        all_he = []
+        with open("/home/nss/sefaria/datasets/general/all_text_he.txt") as fin:
+            for line in fin:
+                line = line.strip()
+                all_he += [line]
+        tokenizer_he.fit_on_texts(all_he)
+        all_he = None
         tokenizer_en = preprocessing.text.Tokenizer(oov_token="<UNK>")
-        tokenizer_en.fit_on_texts([x["english"] for x in self.X])
+        all_en = []
+        with open("/home/nss/sefaria/datasets/general/all_text_en.txt") as fin:
+            for line in fin:
+                line = line.strip()
+                all_en += [line]
+        tokenizer_en.fit_on_texts(all_en)
+        all_en = None
+
         embedding_en = self.get_embedding_matrix(tokenizer_en, 'en')
         embedding_he = self.get_embedding_matrix(tokenizer_he, 'he')
         out = {
@@ -321,20 +352,24 @@ class DataManager:
 
 
     @staticmethod
-    def get_sequenced_text(X, tokenizer, max_len=MAX_DOCUMENT_LENGTH, minimal_tokenization=False):
+    def get_sequenced_text(X, tokenizer, max_len=MAX_DOCUMENT_LENGTH):
         X_seq = tokenizer.texts_to_sequences(X)
         X_seq = preprocessing.sequence.pad_sequences(X_seq, maxlen=max_len, padding='post', truncating='post')
         return X_seq
  
     def get_train_test_sets(self, X, Y, data_type, random_state):
-        tokenizer = self.tokenizer_dict[data_type]
-        X_seq = self.get_sequenced_text(X, tokenizer, LINK_INPUT_LENGTH if data_type == "links" else MAX_DOCUMENT_LENGTH, minimal_tokenization=data_type == "links")
+        tokenizer = self.tokenizer_dict['hebrew' if data_type == 'links' else data_type]
+        X_seq = self.get_sequenced_text(X, tokenizer, LINK_INPUT_LENGTH if data_type == "links" else MAX_DOCUMENT_LENGTH)
         X_train, X_test, Y_train, Y_test = train_test_split(X_seq, np.asarray(Y), test_size=TEST_SIZE, random_state=random_state)
         return X_train, X_test, Y_train, Y_test
 
     @staticmethod
     def get_training_x_default(row):
-        return {"hebrew": DataManager.clean_text(row["He_prefixed"], 'he'), "english": DataManager.clean_text(row["En"], 'en'), "links": row["Links"].replace(" ", "_").replace("|||", " ")}
+        return {
+            "hebrew": DataManager.clean_text(row["He"], 'he'),
+            "english": DataManager.clean_text(row["En"], 'en'),
+            "links": DataManager.clean_text(row["Links"], 'he')
+        }
 
     @staticmethod
     def get_training_y_default(row):
@@ -420,10 +455,10 @@ class DataManager:
         random_state = RANDOM_SEED
         X_train_he, X_test_he, Y_train, Y_test = self.get_train_test_sets([x["hebrew"] for x in X], Y, "hebrew", random_state)
         X_train_en, X_test_en, Y_train, Y_test = self.get_train_test_sets([x["english"] for x in X], Y, "english", random_state)
-        # X_train_links, X_test_links, Y_train, Y_test = self.get_train_test_sets([x["links"] for x in X], Y, "links", random_state)
+        X_train_links, X_test_links, Y_train, Y_test = self.get_train_test_sets([x["links"] for x in X], Y, "links", random_state)
         return (
-            {"hebrew": X_train_he, "english": X_train_en},
-            {"hebrew": X_test_he, "english": X_test_en},
+            {"hebrew": X_train_he, "english": X_train_en, "links": X_train_links},
+            {"hebrew": X_test_he, "english": X_test_en, "links": X_test_links},
             Y_train, Y_test,
         )
 
@@ -436,10 +471,11 @@ class DataManager:
     def get_topics_above_count(self, count):
         return [x[0] for x in filter(lambda x: x[1] >= count, self.topic_counts.items())]
 
-    def get_ensemble_input_for_inference(self, X_he, X_en):
+    def get_ensemble_input_for_inference(self, X_he, X_en, X_links):
         X_he_seq = self.get_sequenced_text(X_he, self.tokenizer_dict['hebrew'])
         X_en_seq = self.get_sequenced_text(X_en, self.tokenizer_dict['english'])
-        return {"hebrew": X_he_seq, "english": X_en_seq}
+        X_links_seq = self.get_sequenced_text(X_links, self.tokenizer_dict['hebrew'], LINK_INPUT_LENGTH)
+        return {"hebrew": X_he_seq, "english": X_en_seq, "links": X_links_seq}
 
 def get_data_for_classes(slug_set, X, Y):
     new_X, new_Y = zip(*list(filter(lambda x: len(set(x[1]) & slug_set) == 1, zip(X, Y))))
@@ -462,7 +498,7 @@ def get_inferences_for_ref(tref, data_manager, clf):
 
     he = DataManager.clean_text(he, 'he')
     en = DataManager.clean_text(en, 'en')
-
+    # TODO add links
     data_in = data_manager.get_ensemble_input_for_inference([he], [en])
     return clf.infer(data_in)
 
@@ -478,12 +514,14 @@ if __name__ == "__main__":
 
     # ensemble
     dm = DataManager(DATA)
+    # dm.load_embeddings(EMBEDDING_HE, EMBEDDING_EN, EMBEDDING_LINKS, EMBEDDING_SIZE, LINK_EMBEDDING_SIZE)
+    # dm.tokenize_all_text()
     dm.load_tokenizers_and_embeddings()
 
     # super_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_super_topics())
     # super_topic_clf.fit_class(1, "biblical-figures", dm.get_ensemble_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
     
-    all_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_topics_above_count(100)[353:])
+    all_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_topics_above_count(100)[-24:])
     # all_topic_clf.load_models('research/topics_cnn/cnn_models', dm.embedding_dict)
     all_topic_clf.fit_and_evaluate(dm.get_ensemble_dataset_for_sub_topic, dm.embedding_dict, True, epochs=N_EPOCHS, verbose=0, batch_size=BATCH_SIZE)
 

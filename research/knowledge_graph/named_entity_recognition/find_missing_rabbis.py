@@ -149,10 +149,32 @@ def check_rabbi_yehuda_hanasi():
     print(bad)
 
 def convert_final_en_names_to_ner_tagger_input():
+    matched_bon_id_set = set()
+    with open(f"{DATA_LOC}/Match Bonayich Rabbis with Sefaria Rabbis - Sefaria Rabbis Matched.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            try:
+                matched_bon_id_set.add(int(row["Bonayich ID"]))
+            except ValueError:
+                continue
+    bonayich_metadata = {}
+    with open(f"{DATA_LOC}/AllRabbisWithSegs.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            bid = int(row[' Rabbi ID after Link'])
+            if bid in bonayich_metadata:
+                continue
+            bonayich_metadata[bid] = {
+                "type": row[" Rabbi Type after Link"],
+                "gen": row[" Rabbi Generation after Link"]
+            }
+    num_not_matched = 0
     with open(f"{DATA_LOC}/sperling_en_and_he.csv", "r") as fin:
         sperling_entities = []
         c = csv.DictReader(fin)
         for row in c:
+            if row['Exists in DB'] == 'y':
+                continue
             en1 = row["En 1"].strip()
             if len(en1) == 0 or en1 == "N/A" or en1 == "MM":
                 continue
@@ -163,18 +185,323 @@ def convert_final_en_names_to_ner_tagger_input():
                 if len(temp_en) == 0:
                     continue
                 en_titles += [temp_en]
+            try:
+                if int(bid) in matched_bon_id_set:
+                    print("MATCHED", bid, en_titles)
+                    continue
+                else:
+                    num_not_matched += 1
+                    # print("NOT MATCHED", bid, en_titles)
+            except ValueError:
+                pass # these are extra rabbis I added that weren't in Bonayich
             tag = "NORP" if len(row["Is Group"]) > 0 else "PERSON"
             sperling_entities += [{
                 "tag": tag,
                 "id": f"BONAYICH:{bid}",
                 "idIsSlug": False,
-                "manualTitles": [{"text": title, "lang": "en"} for title in en_titles] + [{"text": row["He"], "lang": "he"}]
+                "manualTitles": [{"text": title, "lang": "en"} for title in en_titles] + [{"text": row["He"], "lang": "he"}],
+                "gen": bonayich_metadata[int(bid)]["gen"] if (bid != 'N/A' and False) else None,  # manually leave this data out for now
+                "type": bonayich_metadata[int(bid)]["type"] if bid != 'N/A' else None
             }]
-        with open(f"{DATA_LOC}/sperling_ner_tagger_input.json", "w") as fout:
+        with open(f"research/knowledge_graph/named_entity_recognition/sperling_named_entities.json", "w") as fout:
             json.dump(sperling_entities, fout, ensure_ascii=False, indent=2)
+        print("TOTAL NOT MATCHED", num_not_matched)
 
+def create_csv_for_rav_nataf():
+    sef_rabbis = Topic.init('talmudic-people').topics_by_link_type_recursively(only_leaves=True) + Topic.init('mishnaic-people').topics_by_link_type_recursively(only_leaves=True)
+    sef_id_map = {}
+    with open("/home/nss/sefaria/data/research/knowledge_graph/named_entity_recognition/sefaria_bonayich_reconciliation - Sheet2.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            try:
+                sef_id_map[row['Slug']] = int(row["bonayich"])
+            except ValueError:
+                continue
+    rows = []
+    for rab in sef_rabbis:
+        rows += [{
+            "Slug": rab.slug,
+            "En": rab.get_primary_title("en"),
+            "He": rab.get_primary_title("he"),
+            "Bonayich ID": sef_id_map.get(rab.slug, '')
+        }]
+    with open(f"{DATA_LOC}/curr_sefaria_bonayich_mapping.csv", "w") as fout:
+        c = csv.DictWriter(fout, ['Slug', 'En', 'He', 'Bonayich ID'])
+        c.writeheader()
+        c.writerows(rows)
+    
+    bon_rabs = defaultdict(lambda: {"segments": set(), "mentions": set()})
+    with open(f"{DATA_LOC}/AllRabbisWithSegs.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            bid = row[' Rabbi ID after Link']
+            bon_rabs[bid]['he'] = row[' Rabbi Name after Link']
+            bon_rabs[bid]['mentions'].add(row[' Rabbi Name w/o Prefix'])
+            bon_rabs[bid]['segments'].add(row['Segment'])
+    
+    bon_to_en = {}
+    with open(f"{DATA_LOC}/sperling_en_and_he.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            en = row['En 1']
+            if en == "MM" or en == "N/A" or len(en) == 0:
+                continue 
+            bon_to_en[row['Bonayich ID']] = en
+    rows = []
+    for bid, bdict in bon_rabs.items():
+        rows += [{
+            "Bonayich ID": bid,
+            "He": bdict['he'],
+            "En": bon_to_en.get(bid, ''),
+            'Mentions': ' | '.join(bdict['mentions']),
+            "Segments": ' | '.join(bdict['segments'])
+        }]
+    with open(f"{DATA_LOC}/all_bonayich_rabbis.csv", "w") as fout:
+        c = csv.DictWriter(fout, ["Bonayich ID", "He", "En", "Mentions", "Segments"])
+        c.writeheader()
+        c.writerows(rows)
+
+def import_bonayich_into_topics():
+    from sefaria.model.abstract import AbstractMongoRecord
+    with open(f"research/knowledge_graph/named_entity_recognition/sperling_named_entities.json", "r") as fin:
+        j = json.load(fin)
+    tds_json = {
+        "slug": "sperling-bonayich",
+        "displayName": {
+            "en": "Bonyaich via Michael Sperling",
+            "he": "Bonyaich via Michael Sperling"
+        }
+    }
+    tds = TopicDataSource().load({"slug": tds_json['slug']})
+    if tds is None:
+        TopicDataSource(tds_json).save()
+    for r in tqdm(j):
+        en_prime = None
+        he_prime = None
+        titles = list({f"{t['text']}|{t['lang']}": t for t in r['manualTitles']}.values())
+
+        for title in titles:
+            if title['lang'] == 'en' and en_prime is None:
+                en_prime = title['text']
+                title['primary'] = True
+            if title['lang'] == 'he' and he_prime is None:
+                he_prime = title['text']
+                title['primary'] = True
+        
+        slug = en_prime if en_prime is not None else he_prime
+        if slug is None:
+            print("SLUG IS NONE", r)
+        topic_json = {
+            "slug": AbstractMongoRecord.normalize_slug(slug),
+            "titles": titles
+        }
+        try:
+            bid = int(r['id'].replace('BONAYICH:', ''))
+            topic_json['alt_ids'] = { "bonayich": bid }
+        except ValueError:
+            print("BAD ID", r['id'])
+            pass
+        type_is_guess = False
+        try:
+            assert r['type'] in {'תנא', 'אמורא', 'בדור תנאים', 'בדור אמוראים'}, r
+        except AssertionError:
+            # print("GUESSING AMORA", r)
+            type_is_guess = True
+            r['type'] = 'אמורא' 
+        type_symbol = "T" if 'תנא' in r['type'] else 'A'
+        if 'gen' in r and r['gen'] is not None and len(r['gen']) > 0:
+            try:
+                r['gen'] = re.sub('[אב]', '', r['gen'])
+                gens = re.split('[\-/]', r['gen'])
+                gen_list = []
+                for g in gens:
+                    gen_list += [f"{type_symbol}{int(g)}"]
+                symbol = "/".join(gen_list)
+
+                try:
+                    assert TimePeriod().load({"symbol": symbol}) is not None, r
+                    topic_json['properties'] = { "generation": { "value": symbol, "dataSource": tds_json['slug']}}
+                except AssertionError:
+                    print("BAD GEN SYMBOL", symbol, r)
+            except ValueError:
+                print("BAD GEN NUM", r)
+        # doesn't work...
+        # t = Topic(topic_json)
+        # t = Topic.init(t.normalize_slug_field('slug'))
+        # if t is not None:
+        #     t.delete()
+
+        t = Topic(topic_json)
+        t.save()
+
+        if r['tag'] == 'NORP':
+            toTopic = "group-of-mishnaic-people" if type_symbol == "T" else "group-of-talmudic-people"
+            print(t.slug)
+        else:
+            toTopic = "mishnaic-people" if type_symbol == "T" else "talmudic-people"
+        link_json = {
+            "class": "intraTopic",
+            "fromTopic": t.slug,
+            "toTopic": toTopic,
+            "linkType": "is-a",
+            "dataSource": tds_json['slug']
+        }
+        if type_is_guess:
+            link_json['generatedBy'] = "import_bonayich_into_topics. may not be amora."
+        itl = IntraTopicLink().load(link_json)
+        if itl is not None:
+            itl.delete()
+        itl = IntraTopicLink(link_json)
+        itl.save()
+
+def import_rabi_rav_rabbis_into_topics():
+    from research.knowledge_graph.named_entity_recognition.ner_tagger import TextNormalizer
+    from sefaria.utils.hebrew import is_hebrew
+    with open("/home/nss/sefaria/datasets/ner/sefaria/new_rabbis.json", "r") as fin:
+        j = json.load(fin)
+    TopicSet({'alt_ids.rav_rabi': {"$exists": True}}).delete()
+    for _, d in j.items():
+        d['alt_ids'] = {"rav_rabi": True}
+        typ = d['type']
+        del d['type']
+        t = Topic(d)
+        t.save()
+        toTopic = "mishnaic-people" if typ == "tanna" else "talmudic-people"
+        link_json = {
+            "class": "intraTopic",
+            "fromTopic": t.slug,
+            "toTopic": toTopic,
+            "linkType": "is-a",
+            "dataSource": "sperling-bonayich"
+        }
+        itl = IntraTopicLink(link_json)
+        itl.save()
+
+    with open(f"/home/nss/sefaria/datasets/ner/sefaria/Fix Rabi and Rav Errors - rav_rabbi_errors.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        rows = list(c)
+    for row in rows:
+        typ = row['Error Type (rabbi, title, mistake, correct)']
+        is_heb = is_hebrew(row['Snippet'])
+
+        if typ == 'title':
+            slug_list = [row['Missing Title Slug']]
+            other_slugs = row['Additional Missing Title Slugs']
+            if len(other_slugs) > 0:
+                slug_list += other_slugs.split(', ')
+            topic_list = [Topic.init(slug) for slug in slug_list]
+            for t, s in zip(topic_list, slug_list):
+                if not t:
+                    print("NO TOPIC", s)
+                    continue
+                has_title = False
+                for tit in t.titles:
+                    if tit['text'] == row['Missing Title']:
+                        has_title = True
+                        break
+                if has_title:
+                    continue
+                t.add_title(row['Missing Title'], 'he' if is_heb else 'en')
+                t.save()
+
+def add_ambiguous_topics():
+    from sefaria.utils.hebrew import is_hebrew
+    TopicSet({"isAmbiguous": True}).delete()
+    IntraTopicLinkSet({"generatedBy": "add_ambiguous_topics"}).delete()
+    with open("/home/nss/sefaria/datasets/ner/sefaria/ner_output_talmud.json", "r") as fin:
+        j = json.load(fin)
+    unique_ambiguities = defaultdict(set)
+    for m in j:
+        if len(m['id_matches']) < 2:
+            continue
+        unique_ambiguities[tuple(m['id_matches'])].add(m['mention'])
+    out = []
+    for k, v in unique_ambiguities.items():
+        titles = [{
+            "text": title,
+            "lang": "he" if is_hebrew(title) else "en"
+        } for title in sorted(v, key=lambda x: len(x))]
+        primary_langs_found = set()
+        for title in titles:
+            if title['lang'] not in primary_langs_found:
+                title['primary'] = True
+                primary_langs_found.add(title['lang'])
+
+        topic = Topic({
+            "slug": f"{titles[0]['text']}-(ambiguous)",
+            "titles": titles,
+            "isAmbiguous": True,
+            "shouldDisplay": False
+        })
+        topic.save()
+        for other_slug in k:
+            itl = IntraTopicLink({
+                "fromTopic": other_slug,
+                "toTopic": topic.slug,
+                "linkType": "possibility-for",
+                "dataSource": "sefaria",
+                "generatedBy": "add_ambiguous_topics",
+            })
+            itl.save()
+
+        out += [{
+            "ids": list(k),
+            "titles": list(v)
+        }]
+    slug2bid = {}
+    with open("/home/nss/sefaria/datasets/ner/michael-sperling/Match Bonayich Rabbis with Sefaria Rabbis - Sefaria Rabbis Matched.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            slug2bid[row['Slug']] = row['Bonayich ID']
+    for item in out:
+        item["bids"] = [slug2bid.get(slug, '') for slug in item['ids']]
+    # out = list(filter(lambda x: len(set(x['bids'])) > 1, out))
+    with open("/home/nss/sefaria/datasets/ner/sefaria/ambiguous_rabbis.json", "w") as fout:
+        json.dump(out, fout, ensure_ascii=False, indent=2)
+
+def deduplicate_new_rabbis_rav_nataf():
+    same_as_dict = defaultdict(dict)
+    with open("/home/nss/sefaria/datasets/ner/sefaria/Fix Rabi and Rav Errors - Current Known Rabbis.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            if len(row["Same as Slug"]) == 0:
+                continue
+            slug1, slug2 = row['Slug'], row['Same as Slug']
+            slug1, slug2 = (slug1, slug2) if slug1 > slug2 else (slug2, slug1)
+            if slug2 in same_as_dict:
+                slug1, slug2 = slug2, slug1
+            same_as_dict[slug1][slug1] = (row['Is Judgment Call?'] == 'y')
+            same_as_dict[slug1][slug2] = (row['Is Judgment Call?'] == 'y')
+    out = {}
+    for _, v in same_as_dict.items():
+        rabbis = list(sorted(v.keys(), key=lambda x: len(x), reverse=True))
+        topics = [Topic.init(r) for r in rabbis]
+        # look for longest name that is in Sefaria
+        main_rabbi = rabbis[0]
+        other_rabbis = rabbis[1:]
+        for i, (r, t) in enumerate(zip(rabbis, topics)):
+            if t is not None and getattr(t, 'alt_ids', {}).get('bonayich', None) is None:
+                # Sefaria rabbi
+                main_rabbi = r
+                other_rabbis = rabbis[:i] + rabbis[i+1:]
+        for other_rabbi in other_rabbis:
+            out[other_rabbi] = main_rabbi
+    with open('/home/nss/sefaria/datasets/ner/sefaria/swap_rabbis.json', 'w') as fout:
+        json.dump(out, fout, ensure_ascii=True, indent=2)
+        
+
+"""
+one slug/mention per line. only choose one mention in each language
+also add basic info on topic (en, he, description, link)
+also some examples of them being referred to that way (it will be ambiguous, so how helpful is this?)
+"""
 if __name__ == "__main__":
     # convert_final_en_names_to_csv()
     # find_ambiguous_rabbis()
     # check_rabbi_yehuda_hanasi()
     convert_final_en_names_to_ner_tagger_input()
+    # create_csv_for_rav_nataf()
+    # import_bonayich_into_topics()
+    # import_rabi_rav_rabbis_into_topics()
+    # add_ambiguous_topics()
+    # deduplicate_new_rabbis_rav_nataf()
