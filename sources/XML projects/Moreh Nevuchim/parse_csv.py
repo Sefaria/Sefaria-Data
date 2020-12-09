@@ -3,6 +3,53 @@ django.setup()
 from sefaria.model import *
 from data_utilities.XML_to_JaggedArray import *
 problems = set()
+
+def align():
+    for i, fr_sec_ref in enumerate(french_data):
+        moreh_ref = fr_sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,") \
+            .replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
+        our_guide_seg_ref = list(links_and_pos_by_seg_ref[moreh_ref].keys())[0]
+        running_text = ""
+        last_citation_found = None
+
+        for fr_seg_ref in french_data[fr_sec_ref]:
+            for citation in french_data[fr_sec_ref][fr_seg_ref]:
+                french_ref, french_word_count, before_fr_text, fr_citation = citation
+                our_guide_links_and_word_counts = links_and_pos_by_seg_ref[moreh_ref]
+                starting_to_look = False
+                found = False
+                matches_skipped = 0
+                for temp_ref in our_guide_links_and_word_counts:
+                    if not starting_to_look and temp_ref == our_guide_seg_ref:
+                        starting_to_look = True
+                    if starting_to_look:
+                        for i, this_pair in enumerate(our_guide_links_and_word_counts[temp_ref]):
+                            our_ref, our_word_count = this_pair
+                            if french_ref == Ref(our_ref).normal():
+                                pos_ratio = float(french_word_count) / our_word_count
+                                curr_text = running_text + " " + before_fr_text + " " + fr_citation
+                                # num_english_words_in_match = get_num_english_words_from_X_to_Y(fr_sec_ref, last_citation_found, our_ref)
+                                # match_ratio = float(curr_text.count(" "))/num_english_words_in_match
+                                if 0.9 < pos_ratio < 6:  # and 0.9 < match_ratio < 6:
+                                    found = True
+                                    french_pos = fr_seg_ref.split(":")[-1]
+                                    our_guide_seg_ref = temp_ref
+                                    aligned[fr_sec_ref][our_guide_seg_ref] += curr_text
+                                    running_text = ""
+                                    last_citation_found = our_ref
+                                    break
+                            else:
+                                matches_skipped += 1
+                    if found:
+                        break
+                if not found:
+                    running_text += before_fr_text + " " + fr_citation + " "
+
+        if running_text:
+            aligned[fr_sec_ref][our_guide_seg_ref] += running_text
+            running_text = ""
+    print("DONE")
+            
 def get_first_seg_ref():
     return ""
 
@@ -30,26 +77,30 @@ def get_guide_links_and_pos():
 
 def get_guide_links_and_pos_by_seg_ref():
     links_and_pos = {}
-    for k in sentences_per_chapter.keys():
+    for i, k in enumerate(sentences_per_chapter.keys()):
         if k == "":
             continue
+
         sec_ref = Ref(k)
         sub_refs = sec_ref.all_subrefs()
         links_and_pos[k] = {}
         prev_loc = 0
         for sub_ref in sub_refs:
+            prev_find = 0
             moreh_text = sub_ref.text('en').text
             citations = library.get_refs_in_string(moreh_text)
             links_and_pos[k][sub_ref.normal()] = []
             for i, ref in enumerate(citations):
-                curr_text = " ".join(moreh_text.split()[prev_loc:])
-                chr_pos = curr_text.find(ref)
-                loc = len(curr_text[:chr_pos].split())
+                # curr_text = " ".join(moreh_text.split()[prev_loc:])
+                chr_pos = moreh_text.find(ref)
+                loc = len(moreh_text[prev_find:chr_pos].split())
                 try:
-                    links_and_pos[k][sub_ref.normal()].append((Ref(ref).normal(), loc+prev_loc))
+                    Ref(ref)
+                    links_and_pos[k][sub_ref.normal()].append((ref, loc+prev_loc))
                 except Exception as e:
                     print(e)
                 prev_loc += loc
+                prev_find = chr_pos
     return links_and_pos
 
 def get_guide_words_and_sentences():
@@ -77,7 +128,7 @@ def get_guide_words_and_sentences():
     print("Range: {} to {}".format(min, max))
     return our_guide_sentences, our_guide_words
 
-def add_citations(orig_row, row, num_words_citation, before, french_citation):
+def add_citations(orig_row, row, num_words_citation, before_text, french_citation_text, sefaria_ref):
     match = re.search(".*?\d+\.\d+\.\d+", orig_row[0])
     if not match:
         return row
@@ -87,11 +138,11 @@ def add_citations(orig_row, row, num_words_citation, before, french_citation):
     section_ref = Ref(row[0]).section_ref().normal()
     if section_ref not in found_by_sec:
         found_by_sec[section_ref] = []
-        found_by_seg[section_ref] = {}
-    found_by_sec[section_ref].append(new_citation)
-    if Ref(row[0]).normal() not in found_by_seg[section_ref]:
-        found_by_seg[section_ref][Ref(row[0]).normal()] = []
-    found_by_seg[section_ref][Ref(row[0]).normal()].append((new_citation, num_words_citation, before, french_citation))
+        french_data[section_ref] = {}
+    found_by_sec[section_ref].append(sefaria_ref)
+    if Ref(row[0]).normal() not in french_data[section_ref]:
+        french_data[section_ref][Ref(row[0]).normal()] = []
+    french_data[section_ref][Ref(row[0]).normal()].append((sefaria_ref, num_words_citation, before_text, french_citation_text))
     return row
 
 def test(poss_links, ref, corresponding):
@@ -134,6 +185,13 @@ def get_corr_siman_try_2(our_guide_links, our_guide_links_by_seg, links, links_b
                     print("Found match")
                     corresponding[ref] += l
     return corresponding
+
+def get_num_english_words_from_X_to_Y(sec_ref, last_citation_found, our_ref):
+    moreh_text = " ".join(Ref(sec_ref).text('en').text)
+    last_citation_found_pos = moreh_text.find(last_citation_found, 1) if last_citation_found else 0
+    our_ref_pos = moreh_text.find(our_ref)
+    assert our_ref_pos > last_citation_found_pos >= 0
+    return moreh_text[last_citation_found_pos:our_ref_pos].count(" ") + 1
 
     # try instead of resetting each time we find, because this relies on assumptions,
     # just start at each position and go up and down 5 - 10 spots looking for all matches and record all
@@ -181,14 +239,76 @@ def get_corresponding_simanim(links):
     return corresponding
 
 
-def get_proper_ref(fr_seg_ref, new_found_by_seg):
+def get_proper_ref(fr_seg_ref, aligned):
     sec_ref = seg_ref.split(":")[0]
-    en_seg_refs = new_found_by_seg[sec_ref]
+    en_seg_refs = aligned[sec_ref]
     if fr_seg_ref in en_seg_refs:
         return fr_seg_ref
     else:
         last_one = list(en_seg_refs.keys())[-1]
         return last_one
+
+def split_up_text_by_citations(finds, row, num_words):
+    prev_citation = ""
+    after_last_citation_text = ""
+    for f, find in enumerate(finds):
+        find = list(find)
+        french_citation = "({}, {}, {}".format(find[0], find[1], find[2])
+        before_fr_citation = row[1].split(french_citation)[0].strip()
+        if f > 0:
+            before_fr_citation = before_fr_citation.split(prev_citation)[-1]
+        elif f == len(finds) - 1:
+            last_french_citation = "{}, {}, {}".format(find[0], find[1], find[2])
+            assert row[1].find(last_french_citation) > 0
+            after_last_citation_text = row[1].split(last_french_citation)[-1].strip()
+
+
+        num_words_citation = len(before_fr_citation.split()) + french_citation.count(" ") + 1
+        old_citation = "{}, {}".format(*find[1:])
+        if len(find) != 3:
+            print("ERROR")
+        else:
+            find[1] = roman_to_int(find[1])
+            try:
+                loc = fr_books.index(find[0])
+                actual_book = en_tanakh[loc]
+                find[0] = actual_book
+            except ValueError as e:
+                find[0] = find[0].replace("Micha", "Micah").replace("Ézéch.", "Ezekiel").replace("Ps.",
+                                                                                                 "Psalms").replace(
+                    "Exod.", "Exodus") \
+                    .replace("Deutéron.", "Deuteronomy").replace("I Chron.", "I Chronicles").replace("Habac.",
+                                                                                                     "Habakkuk") \
+                    .replace("Lévit.", "Leviticus").replace("Prov.", "Proverbs").replace("Lament.", "Lamentations") \
+                    .replace("I Sam.", "I Samuel").replace("II Sam.", "II Samuel").replace("II Chron.", "II Chronicles") \
+                    .replace("Malach.", "Malachi").replace("Deutér.", "Deuteronomy").replace("Nomb.", "Numbers") \
+                    .replace("Nombr.", "Numbers").replace("Lév.", "Leviticus").replace("Jér.", "Jeremiah").replace(
+                    'Ecclés.', "Ecclesiastes") \
+                    .replace("Deutér", "Deuteronomy").replace("Malach.", "Malachi").replace("Ezéch", "Ezekiel").replace(
+                    "Deulér", "Deuteronomy").replace("Gen.", "Genesis") \
+                    .replace("Jos.", "Joshua").replace("Dan.", "Daniel").replace("Deuter.", "Deuteronomy").replace(
+                    "Hos.", "Hoshea") \
+                    .replace("Cantique des cant.", "Cantique des Cant.").replace("Cantique des Cant.", "Song of Songs") \
+                    .replace("Ecclesiaste", "Ecclesiastes").replace("Roi", "Rois").replace("Deut.",
+                                                                                           "Deuteronomy").replace(
+                    "'Jérém.'", "Jeremiah").replace("Sam.", "Samuel").replace("Hag.", "Haggai").replace("Hosée",
+                                                                                                        "Hosea")
+                actual_book = find[0]
+            sefaria_ref = "{}:{}".format(*find[1:])
+            assert old_citation in row[1]
+            row[1] = row[1].replace(old_citation, sefaria_ref, 1)
+            prev_citation = "{}, {}".format(finds[f][0], sefaria_ref)
+            sefaria_ref = "{} {}".format(actual_book, sefaria_ref)
+            num_words = num_words + num_words_citation
+            row = add_citations(orig_row, row, num_words, before_fr_citation, french_citation, sefaria_ref)
+
+    # there is still likely remaining text after the last French citation. if there is,
+    # add it to french_data and increase num_words
+    if len(after_last_citation_text) > 0:
+        num_words += len(after_last_citation_text.split())
+        add_citations(orig_row, row, num_words, "", after_last_citation_text, "")
+
+    return num_words
 
 fr_books = """Genèse
 Exode
@@ -232,7 +352,7 @@ II Chroniques""".splitlines()
 
 en_tanakh = library.get_indexes_in_category("Tanakh")
 books = "|".join(fr_books)
-found_by_seg = {}
+french_data = {}
 found_by_sec = {}
 from sources.functions import *
 words_per_chapter = {}
@@ -257,57 +377,27 @@ with open("new_full_text.csv", 'w') as new_f:
             words_per_chapter[ch] += len(row[1].split())
             sentences_per_chapter[ch] += len(re.findall("\. [A-ZÀ-Ÿ]{1}", row[1])) + 1 + len(re.findall('\.\"', row[1]))
             if finds:
-                for f, find in enumerate(finds):
-                    find = list(find)
-                    french_citation = "({}, {}, {})".format(find[0], find[1], find[2])
-                    before_fr_citation = row[1].split(french_citation)[0].strip()
-                    if f > 0:
-                        before_fr_citation = before_fr_citation.split(prev_citation)[-1]
-                    num_words_citation = len(before_fr_citation.split()) + french_citation.count(" ") + 1
-                    old_citation = "{}, {}".format(*find[1:])
-                    if len(find) != 3:
-                        print("ERROR")
-                    else:
-                        find[1] = roman_to_int(find[1])
-                        try:
-                            loc = fr_books.index(find[0])
-                            actual_book = en_tanakh[loc]
-                            find[0] = actual_book
-                        except ValueError as e:
-                            find[0] = find[0].replace("Micha", "Micah").replace("Ézéch.", "Ezekiel").replace("Ps.", "Psalms").replace("Exod.", "Exodus") \
-                                .replace("Deutéron.", "Deuteronomy").replace("I Chron.", "I Chronicles").replace("Habac.", "Habakkuk") \
-                                .replace("Lévit.", "Leviticus").replace("Prov.", "Proverbs").replace("Lament.", "Lamentations") \
-                                .replace("I Sam.", "I Samuel").replace("II Sam.", "II Samuel").replace("II Chron.", "II Chronicles") \
-                                .replace("Malach.", "Malachi").replace("Deutér.", "Deuteronomy").replace("Nomb.", "Numbers") \
-                                .replace("Nombr.", "Numbers").replace("Lév.", "Leviticus").replace("Jér.", "Jeremiah").replace('Ecclés.', "Ecclesiastes") \
-                                .replace("Deutér", "Deuteronomy").replace("Malach.", "Malachi").replace("Ezéch", "Ezekiel").replace("Deulér", "Deuteronomy").replace("Gen.", "Genesis") \
-                                .replace("Jos.", "Joshua").replace("Dan.", "Daniel").replace("Deuter.", "Deuteronomy").replace("Hos.", "Hoshea") \
-                                .replace("Cantique des cant.", "Cantique des Cant.").replace("Cantique des Cant.", "Song of Songs") \
-                                .replace("Ecclesiaste", "Ecclesiastes").replace("Roi", "Rois").replace("Deut.", "Deuteronomy").replace("'Jérém.'", "Jeremiah").replace("Sam.", "Samuel").replace("Hag.", "Haggai").replace("Hosée","Hosea")
-                            actual_book = find[0]
-                        new_citation = "{}:{}".format(*find[1:])
-                        assert old_citation in row[1]
-                        row[1] = row[1].replace(old_citation, new_citation, 1)
-                        prev_citation = "{}, {}".format(finds[f][0], new_citation)
-                        new_citation = "{} {}".format(actual_book, new_citation)
-                        row = add_citations(orig_row, row, num_words+num_words_citation, before_fr_citation, french_citation)
+                num_words = split_up_text_by_citations(finds, row, num_words)
             else:
+                #no citations found, so simply increase num_words by words in row[1] and add it to french_data
                 if "Part" not in row[0]:
                     row[0] = row[0].replace(".", ", ", 1)
                     row[0] = re.sub("(\d+), ", "Part \g<1>, ", row[0])
                 try:
                     section_ref = Ref(row[0]).section_ref().normal()
                     if section_ref not in found_by_sec:
-                        found_by_seg[section_ref] = {}
-                    if Ref(row[0]).normal() not in found_by_seg[section_ref]:
-                        found_by_seg[section_ref][Ref(row[0]).normal()] = []
-                    found_by_seg[section_ref][Ref(row[0]).normal()].append((new_citation, num_words_citation, row[1], ""))
+                        french_data[section_ref] = {}
+                    if Ref(row[0]).normal() not in french_data[section_ref]:
+                        french_data[section_ref][Ref(row[0]).normal()] = []
+                    num_words += len(row[1].split())
+                    french_data[section_ref][Ref(row[0]).normal()].append(("", num_words, row[1], ""))
                 except Exception as e:
                     pass
-            num_words += len(row[1].split())
+
             prev_row = row
 
             writer.writerow(row)
+
 our_guide_links = {}
 our_guide_seg_links = {}
 segs = Ref("Guide for the Perplexed, Part 1").all_segment_refs() + Ref(
@@ -316,12 +406,12 @@ secs = Ref("Guide for the Perplexed, Part 1").all_subrefs() + Ref(
     "Guide for the Perplexed, Part 2").all_subrefs() + Ref("Guide for the Perplexed, Part 3").all_subrefs()
 
 our_guide_words, our_guide_sentences = get_guide_words_and_sentences()
-new_found_by_seg = {}
+aligned = {}
 for ref in secs:
     sec_ref_segs = ref.all_subrefs()
-    new_found_by_seg[ref.normal()] = {}
+    aligned[ref.normal()] = {}
     for r in sec_ref_segs:
-        new_found_by_seg[ref.normal()][r.normal()] = ""
+        aligned[ref.normal()][r.normal()] = ""
 
 for ref in segs:
     our_guide_seg_links[ref.normal()] = [get_ref(l) for l in LinkSet(ref)]
@@ -330,97 +420,38 @@ for ref in segs:
 # with open('our_guide_links_and_pos.json', 'r') as f:
 #     links_and_pos = json.load(f)
 # links_and_pos_by_seg_ref = get_guide_links_and_pos_by_seg_ref()
+# with open("our_guide_links_and_pos_by_seg_ref.json", 'w') as f:
+#     json.dump(links_and_pos_by_seg_ref, f)
 with open("our_guide_links_and_pos_by_seg_ref.json", 'r') as f:
     links_and_pos_by_seg_ref = json.load(f)
 
-for ref in secs:
-    our_guide_links[ref.normal()] = [get_ref(l) for l in LinkSet(ref)]
+# #steps: 1) start with first citation, set our_guide_seg_ref to first seg ref in our guide,
+# #       2) look for first citation in our_guide_ref's citations and check word_count ratio
+# #       3) if found and ratio good, add text to aligned[our_guide_seg_ref]
+# #       4) if not found, look in next our_guide_seg_ref if there is a next ref until we
+# #       exhaust all seg_refs in our_guide_sec_ref
+# #       5) if found and ratio good in one of the next our_guide_seg_refs, we add text to
+# #       aligned[our_guide_seg_ref] and continue looking for next citation from this our_guide_seg_ref onward
+# #       6) if not found anywhere or ratio not good, simply add text to running_text
+# #       7) if at end there is running_text, add running_text to aligned[our_guide_seg_ref]
+# #       8) in case of chapter 5, where ratio doesn't help remove false positive, compare directly number of french
+# #       words being added to aligned to number of english words from last citation found
+# #
+# #
+align()
 
-
-#results = get_corr_siman_try_2(our_guide_links, our_guide_seg_links, found_by_sec, found_by_seg)
-
-
-#test that ratio falls inside range 1.13 to 4.36 before accepting match, otherwise flag siman
-#need to test that match ends with a period...
-prev_pos = 0
-total_simanim = 0
-
-#steps: 1) start with first citation, set our_guide_seg_ref to first seg ref in our guide,
-#       2) look for first citation in our_guide_ref's citations and check word_count ratio
-#       3) if found and ratio good, add text to new_found_by_seg[our_guide_seg_ref]
-#       4) if not found, look in next our_guide_seg_ref if there is a next ref until we
-#       exhaust all seg_refs in our_guide_sec_ref
-#       5) if found and ratio good in one of the next our_guide_seg_refs, we add text to
-#       new_found_by_seg[our_guide_seg_ref] and continue looking for next citation from this our_guide_seg_ref onward
-#       6) if not found anywhere or ratio not good, simply add text to running_text
-#       7) if at end there is running_text, add running_text to new_found_by_seg[our_guide_seg_ref]
 #
 #
 #
-for i, fr_sec_ref in enumerate(found_by_seg):
-    our_guide_seg_ref = get_first_seg_ref()
-    for fr_seg_ref in found_by_seg[fr_sec_ref]:
-        french_ref, french_word_count, before_fr_text, fr_citation = citation
-        moreh_ref = fr_sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,").replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
-        our_guide_links_and_word_counts = links_and_pos[moreh_ref]
-
-for i, sec_ref in enumerate(found_by_seg):
-    if i < 3:
-        continue
-    last_pair_found = -1
-    prev_len_text = 0 #running count throughout sec_ref
-    running_text = ""
-    curr_ref = 1
-    for seg_ref in found_by_seg[sec_ref]:
-        for citation in found_by_seg[sec_ref][seg_ref]:
-            french_ref, french_word_count, before_fr_text, fr_citation = citation
-            moreh_ref = sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,").replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
-            our_guide_links_and_word_counts = links_and_pos[moreh_ref]
-            found = False
-            starting_to_look = False if last_pair_found > 0 else True
-            for i, this_pair in enumerate(our_guide_links_and_word_counts):
-                our_ref, our_word_count = this_pair
-                if i == last_pair_found:
-                    starting_to_look = True
-                elif starting_to_look and (french_ref == our_ref):
-                    ratio = float(french_word_count)/our_word_count
-                    if 1 < ratio < 5:
-                        found = True
-                        curr_text = running_text + " " + before_fr_text + " " + fr_citation
-                        french_pos = seg_ref.split(":")[-1]
-                        curr_ref = get_proper_ref(seg_ref, new_found_by_seg)
-                        new_found_by_seg[sec_ref][curr_ref] += curr_text
-                        running_text = ""
-                        # check french text to see that it ends with a period...
-                        # if not curr_text.endswith("."):
-                        #     print("Warning: No period in {}".format(french_ref))
-
-                        prev_pos = french_word_count
-                        last_pair_found = i
-                        break
-                    else:
-                        print("Warning: Ratio off in {}".format(sec_ref))
-            if not found:
-                running_text += before_fr_text + " " + fr_citation
-            # running_text += " ".join(french_text.split()[prev_pos:]) + " " #whatever couldn't be matched should be saved
-            # prev_pos = len(running_text.split())
-        # if not found:
-    if running_text:
-        curr_ref = get_proper_ref(seg_ref, new_found_by_seg)
-        new_found_by_seg[sec_ref][curr_ref] += " " + running_text
-        running_text = ""
-
-#  BELOW CODE WORKS FOR SIMAN 1 & 2 and fails for 3 & 4
-# for i, sec_ref in enumerate(found_by_seg):
+# for i, sec_ref in enumerate(french_data):
 #     if i < 3:
 #         continue
-#     total_simanim += 1
 #     last_pair_found = -1
 #     prev_len_text = 0 #running count throughout sec_ref
 #     running_text = ""
 #     curr_ref = 1
-#     for seg_ref in found_by_seg[sec_ref]:
-#         for citation in found_by_seg[sec_ref][seg_ref]:
+#     for seg_ref in french_data[sec_ref]:
+#         for citation in french_data[sec_ref][seg_ref]:
 #             french_ref, french_word_count, before_fr_text, fr_citation = citation
 #             moreh_ref = sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,").replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
 #             our_guide_links_and_word_counts = links_and_pos[moreh_ref]
@@ -436,8 +467,8 @@ for i, sec_ref in enumerate(found_by_seg):
 #                         found = True
 #                         curr_text = running_text + " " + before_fr_text + " " + fr_citation
 #                         french_pos = seg_ref.split(":")[-1]
-#                         curr_ref = get_proper_ref(seg_ref, new_found_by_seg)
-#                         new_found_by_seg[sec_ref][curr_ref] += curr_text
+#                         curr_ref = get_proper_ref(seg_ref, aligned)
+#                         aligned[sec_ref][curr_ref] += curr_text
 #                         running_text = ""
 #                         # check french text to see that it ends with a period...
 #                         # if not curr_text.endswith("."):
@@ -454,8 +485,56 @@ for i, sec_ref in enumerate(found_by_seg):
 #             # prev_pos = len(running_text.split())
 #         # if not found:
 #     if running_text:
-#         curr_ref = get_proper_ref(seg_ref, new_found_by_seg)
-#         new_found_by_seg[sec_ref][curr_ref] += " " + running_text
+#         curr_ref = get_proper_ref(seg_ref, aligned)
+#         aligned[sec_ref][curr_ref] += " " + running_text
+#         running_text = ""
+
+#  BELOW CODE WORKS FOR SIMAN 1 & 2 and fails for 3 & 4
+# for i, sec_ref in enumerate(french_data):
+#     if i < 3:
+#         continue
+#     total_simanim += 1
+#     last_pair_found = -1
+#     prev_len_text = 0 #running count throughout sec_ref
+#     running_text = ""
+#     curr_ref = 1
+#     for seg_ref in french_data[sec_ref]:
+#         for citation in french_data[sec_ref][seg_ref]:
+#             french_ref, french_word_count, before_fr_text, fr_citation = citation
+#             moreh_ref = sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,").replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
+#             our_guide_links_and_word_counts = links_and_pos[moreh_ref]
+#             found = False
+#             starting_to_look = False if last_pair_found > 0 else True
+#             for i, this_pair in enumerate(our_guide_links_and_word_counts):
+#                 our_ref, our_word_count = this_pair
+#                 if i == last_pair_found:
+#                     starting_to_look = True
+#                 elif starting_to_look and (french_ref == our_ref):
+#                     ratio = float(french_word_count)/our_word_count
+#                     if 1 < ratio < 5:
+#                         found = True
+#                         curr_text = running_text + " " + before_fr_text + " " + fr_citation
+#                         french_pos = seg_ref.split(":")[-1]
+#                         curr_ref = get_proper_ref(seg_ref, aligned)
+#                         aligned[sec_ref][curr_ref] += curr_text
+#                         running_text = ""
+#                         # check french text to see that it ends with a period...
+#                         # if not curr_text.endswith("."):
+#                         #     print("Warning: No period in {}".format(french_ref))
+#
+#                         prev_pos = french_word_count
+#                         last_pair_found = i
+#                         break
+#                     else:
+#                         print("Warning: Ratio off in {}".format(sec_ref))
+#             if not found:
+#                 running_text += before_fr_text + " " + fr_citation
+#             # running_text += " ".join(french_text.split()[prev_pos:]) + " " #whatever couldn't be matched should be saved
+#             # prev_pos = len(running_text.split())
+#         # if not found:
+#     if running_text:
+#         curr_ref = get_proper_ref(seg_ref, aligned)
+#         aligned[sec_ref][curr_ref] += " " + running_text
 #         running_text = ""
 print(total_simanim)
 

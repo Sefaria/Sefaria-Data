@@ -1,3 +1,18 @@
+Use google translate to check bag of words overlap
+
+Check how many sentences are in English and French and number of words in both already aligned and non-aligned simanim
+
+Think about ways to flag to QA person
+Citation mismatch, number of sentences is way off
+Word count
+
+check every chapter number of words and number of sentences
+
+1. start with ["", "", ""] mirroring English
+2. start with curr_english = 0, when to increment?
+In Siman 2, start with first French segment, running text until 3rd segment where match is apparently found.  
+
+
 
 
 French
@@ -18,6 +33,10 @@ English
 
 'Guide for the Perplexed, Part 1 1:3' =  ['Psalms 102:7', 'Ezekiel 8', 'Psalms 58:5', 'Psalms 17:12', 'Ezekiel 1:26', 'Ezekiel 1:13']
 
+'Guide for the Perplexed, Part 1 2:1' = {list: 1} [('Genesis 3:5', 100, 'Un homme de science m’a fait, il y a déjà plusieurs années, une objection remarquable qui mérite considération, ainsi que la réponse que nous avons faite pour la détruire. Mais avant de rapporter l’objection et la manière de la détru
+'Guide for the Perplexed, Part 1 2:2' = {list: 1} [('Genesis 3:5', 100, 'Il paraîtrait, d’après le sens littéral du texte, disait l’auteur de l’objection, que l’intention primitive dans (la création de) l’homme était qu’il fût comme le reste des animaux, sans intelligence et sans réflexion, et sans savoir
+'Guide for the Perplexed, Part 1 2:3' = {list: 5} [('Genesis 2:16', 494, 'O toi, disions-nous, qui examines (les choses) avec un esprit superficiel et irréfléchi <sup>(2)</sup><i class="footnote">(4) Voy. ci-dessus, p. 18, note 2.</i>, et qui crois comprendre un livre, guide des anciens et des modernes, e
+'Guide for the Perplexed, Part 1 2:4' = {list: 2} [('Job 14:20', 1180, 'Quant à ce qui est dit d’Adam: <i>Quand il changea de</i> face <i>tu le renvoyas</i>', '(Job, XIV, 20)'), ('Genesis 3:18', 1537, ') <sup>(1)</sup><i class="footnote">(2) C’est-à-dire: parce que les éléments forment également des sphèr
 
 
 
@@ -58,7 +77,16 @@ French
  'Guide for the Perplexed, Part 1 5:2' =  [('Exodus 24:11', 1284)]
 
 
+
 English
+
+0 = {list: 2} ['Exodus 3:6', 247]
+1 = {list: 2} ['Numbers 12:8', 329]
+2 = {list: 2} ['Exodus 24:10', 398]
+3 = {list: 2} ['Exodus 19:22', 596]
+4 = {list: 2} ['Ecclesiastes 4:17', 628]
+5 = {list: 2} ['Exodus 24:11', 690]
+6 = {list: 2} ['Exodus 24:10', 715]
 
 'Guide for the Perplexed, Part 1 5:1' =  []
 
