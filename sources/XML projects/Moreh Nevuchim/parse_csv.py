@@ -3,10 +3,57 @@ django.setup()
 from sefaria.model import *
 from sefaria.system.exceptions import *
 from data_utilities.XML_to_JaggedArray import *
-problems = set()
+
+french_by_sec = {}
+french_data = {}
+words_per_chapter = {}
+sentences_per_chapter = {}
+fr_books = """Genèse
+Exode
+Lévitique
+Nombres
+Deutéronome
+Josué
+Juges
+I Samuel
+II Samuel
+I Rois
+II Rois
+Isaïe
+Jérémie
+Ézéchiel
+Osée
+Joël
+Amos
+Abdias
+Jonas
+Michée
+Nahum
+Habacuc
+Zéphanie
+Aggée
+Zacharie
+Malachie
+Psaumes
+Proverbes
+Job
+Cantique des Cantiques
+Ruth
+Lamentations
+Ecclésiaste
+Esther
+Daniel
+Esdras
+Néhémie
+I Chroniques
+II Chroniques""".splitlines()
+en_tanakh = library.get_indexes_in_category("Tanakh")
+books = "|".join(fr_books)
 
 def align():
     for i, fr_sec_ref in enumerate(french_data):
+        if i not in [9]:
+            continue
         moreh_ref = fr_sec_ref.replace("Part 1", "Part 1,").replace("Part 2", "Part 2,") \
             .replace("Part 3", "Part 3,").replace("Guide for the Perplexed", "Moreh Nevukhim")
         our_guide_seg_ref = list(links_and_pos_by_seg_ref[moreh_ref].keys())[0]
@@ -151,10 +198,10 @@ def add_citations(orig_row, row, num_words_citation, before_text, french_citatio
         row[0] = row[0].replace(".", ", ", 1)
         row[0] = re.sub("(\d+), ", "Part \g<1>, ", row[0])
     section_ref = Ref(row[0]).section_ref().normal()
-    if section_ref not in found_by_sec:
-        found_by_sec[section_ref] = []
+    if section_ref not in french_by_sec:
+        french_by_sec[section_ref] = []
         french_data[section_ref] = {}
-    found_by_sec[section_ref].append(sefaria_ref)
+    french_by_sec[section_ref].append(sefaria_ref)
     if Ref(row[0]).normal() not in french_data[section_ref]:
         french_data[section_ref][Ref(row[0]).normal()] = []
     french_data[section_ref][Ref(row[0]).normal()].append((sefaria_ref, num_words_citation, before_text, french_citation_text))
@@ -263,7 +310,7 @@ def get_proper_ref(fr_seg_ref, aligned):
         last_one = list(en_seg_refs.keys())[-1]
         return last_one
 
-def split_up_text_by_citations(finds, row, num_words):
+def split_up_text_by_citations(orig_row, finds, row, num_words):
     prev_citation = ""
     after_last_citation_text = ""
     for f, find in enumerate(finds):
@@ -272,7 +319,7 @@ def split_up_text_by_citations(finds, row, num_words):
         before_fr_citation = row[1].split(french_citation)[0].strip()
         if f > 0:
             before_fr_citation = before_fr_citation.split(prev_citation)[-1]
-        elif f == len(finds) - 1:
+        if f == len(finds) - 1:
             last_french_citation = "({}, {}, {})".format(find[0], find[1], find[2])
             assert row[1].find(last_french_citation) > 0
             after_last_citation_text = row[1].split(last_french_citation)[-1].strip()
@@ -336,94 +383,49 @@ def check_simanim(aligned):
     print('done')
 
 
-fr_books = """Genèse
-Exode
-Lévitique
-Nombres
-Deutéronome
-Josué
-Juges
-I Samuel
-II Samuel
-I Rois
-II Rois
-Isaïe
-Jérémie
-Ézéchiel
-Osée
-Joël
-Amos
-Abdias
-Jonas
-Michée
-Nahum
-Habacuc
-Zéphanie
-Aggée
-Zacharie
-Malachie
-Psaumes
-Proverbes
-Job
-Cantique des Cantiques
-Ruth
-Lamentations
-Ecclésiaste
-Esther
-Daniel
-Esdras
-Néhémie
-I Chroniques
-II Chroniques""".splitlines()
-
-en_tanakh = library.get_indexes_in_category("Tanakh")
-books = "|".join(fr_books)
-french_data = {}
-found_by_sec = {}
-from sources.functions import *
-words_per_chapter = {}
-sentences_per_chapter = {}
-num_words_citation = 0
-with open("new_full_text.csv", 'w') as new_f:
-    writer = csv.writer(new_f)
-    prev_row = ""
-    with open("Moreh Nevukhim.csv", 'r') as f:
-        rows = list(csv.reader(f))
-        for r, row in enumerate(rows):
-            orig_row = list(row)
-            finds = re.findall("\(([A-ZÀ-ÿa-z. ]{2,15}), ([ILVXC]+), (\d+)\)", row[1])
-            if "Part" not in row[0]:
-                ch = row[0].replace(".", ", ", 1)
-                ch = re.sub("(\d+), ", "Part \g<1>, ", ch)
-            ch = ":".join(ch.split(".")[:-1])
-            if ch not in words_per_chapter:
-                num_words = 0
-                words_per_chapter[ch] = 0
-                sentences_per_chapter[ch] = 0
-            words_per_chapter[ch] += len(row[1].split())
-            sentences_per_chapter[ch] += len(re.findall("\. [A-ZÀ-Ÿ]{1}", row[1])) + 1 + len(re.findall('\.\"', row[1]))
-            if finds:
-                num_words = split_up_text_by_citations(finds, row, num_words)
-            else:
-                #no citations found, so simply increase num_words by words in row[1] and add it to french_data
+def extract_french_data():
+    with open("new_full_text.csv", 'w') as new_f:
+        writer = csv.writer(new_f)
+        prev_row = ""
+        with open("Moreh Nevukhim.csv", 'r') as f:
+            rows = list(csv.reader(f))
+            for r, row in enumerate(rows):
+                orig_row = list(row)
+                finds = re.findall("\(([A-ZÀ-ÿa-z. ]{2,15}), ([ILVXC]+), (\d+)\)", row[1])
                 if "Part" not in row[0]:
-                    row[0] = row[0].replace(".", ", ", 1)
-                    row[0] = re.sub("(\d+), ", "Part \g<1>, ", row[0])
-                try:
-                    section_ref = Ref(row[0]).section_ref().normal()
-                    if section_ref not in found_by_sec:
-                        french_data[section_ref] = {}
-                    if Ref(row[0]).normal() not in french_data[section_ref]:
-                        french_data[section_ref][Ref(row[0]).normal()] = []
-                    num_words += len(row[1].split())
-                    french_data[section_ref][Ref(row[0]).normal()].append(("", num_words, row[1], ""))
-                except Exception as e:
-                    pass
+                    ch = row[0].replace(".", ", ", 1)
+                    ch = re.sub("(\d+), ", "Part \g<1>, ", ch)
+                ch = ":".join(ch.split(".")[:-1])
+                if ch not in words_per_chapter:
+                    num_words = 0
+                    words_per_chapter[ch] = 0
+                    sentences_per_chapter[ch] = 0
+                words_per_chapter[ch] += len(row[1].split())
+                sentences_per_chapter[ch] += len(re.findall("\. [A-ZÀ-Ÿ]{1}", row[1])) + 1 + len(
+                    re.findall('\.\"', row[1]))
+                if finds:
+                    num_words = split_up_text_by_citations(orig_row, finds, row, num_words)
+                else:
+                    # no citations found, so simply increase num_words by words in row[1] and add it to french_data
+                    if "Part" not in row[0]:
+                        row[0] = row[0].replace(".", ", ", 1)
+                        row[0] = re.sub("(\d+), ", "Part \g<1>, ", row[0])
+                    try:
+                        section_ref = Ref(row[0]).section_ref().normal()
+                        if section_ref not in french_by_sec:
+                            french_data[section_ref] = {}
+                        if Ref(row[0]).normal() not in french_data[section_ref]:
+                            french_data[section_ref][Ref(row[0]).normal()] = []
+                        num_words += len(row[1].split())
+                        french_data[section_ref][Ref(row[0]).normal()].append(("", num_words, row[1], ""))
+                    except Exception as e:
+                        pass
 
-            prev_row = row
+                prev_row = row
 
-            writer.writerow(row)
+                writer.writerow(row)
 
+extract_french_data()
 our_guide_links = {}
 our_guide_seg_links = {}
 segs = Ref("Guide for the Perplexed, Part 1").all_segment_refs() + Ref(

@@ -1,4 +1,9 @@
+Check for capital letter at beginning of segment.  If not, look for first capital letter after period that isn't inside an <i class="footnote"></i>
+
 Use google translate to check bag of words overlap
+
+
+
 
 Check how many sentences are in English and French and number of words in both already aligned and non-aligned simanim
 
@@ -104,14 +109,33 @@ English
  'Guide for the Perplexed, Part 1 5:6' =  []
 
 
+French
+'Guide for the Perplexed, Part 1 6:1' = {list: 2} [('Genesis 7:2', 59, '<i>Isch</i> (<span dir="rtl">איש</span>) et <i>ischâ</i> (<span dir="rtl">אשה</span>) sont des noms employés primitivement pour (dire) <i>homme</i> et <i>femme</i>, ensuite on les a empruntés pour (désigner) le mâle et la femelle de t
+ 0 = {tuple: 4} ('Genesis 7:2', 59, '<i>Isch</i> (<span dir="rtl">איש</span>) et <i>ischâ</i> (<span dir="rtl">אשה</span>) sont des noms employés primitivement pour (dire) <i>homme</i> et <i>femme</i>, ensuite on les a empruntés pour (désigner) le mâle et la femelle de to
+ 1 = {tuple: 4} ('Exodus 26:3', 110, '); c’est comme s’il avait dit le <i>mâle</i> et la <i>femelle</i>. Ensuite le nom de <i>ischâ</i> a été employé métaphoriquement pour toute chose destinée et prête à se joindre à une autre chose; p. ex.: <i>Les cinq rideaux seront joi
 
- Average: 2.0004780582126758
-Range: 1.137704918032787 to 4.365325077399381
+English
+'Moreh Nevukhim, Part 1, 6' = {dict: 2} {'Guide for the Perplexed, Part 1 6:1': [['Gen. 7:2', 54], ['Exod. 26:3', 100]], 'Guide for the Perplexed, Part 1 6:2': []}
 
 
+French
 
- #iterate over French citations, look for each corresponding in the English, but no more than 3
+'Moreh Nevukhim, Part 1, 7' = {dict: 2} {'Guide for the Perplexed, Part 1 7:1': [['Deut. 21:15', 18], ['Ps. 90:2', 47], ['Isa. 4:10', 79], ['Prov. 27:1', 117], ['Ps. 7:14', 148], ['Isa. 2:6', 162]], 'Guide for the Perplexed, Part 1 7:2': [['Gen. 5:3', 260], ['Gen. 5:3', 260]]}
+
+English
+
+0 = {tuple: 4} ('Deuteronomy 21:15', 29, '<i>Yalad</i> (<span dir="rtl">ילד</span>). — Ce qu’on entend par ce mot est connu; il signifie <i>enfanter;</i> p. ex.: <i>Et qu’elles lui auront enfanté</i> (<span dir="rtl">וילדו</span>) <i>des fils</i>', '(Deutéron., XXI, 15)'
+1 = {tuple: 4} ('Isaiah 55:10', 97, '). Ensuite ce mot a été employé au figuré pour la production des choses naturelles; p. ex.: <i>Avant que les montagnes fussent nées</i> (<span dir="rtl">ילדו</span>) (Ps. XC, 2), et on s’en est servi aussi dans le sens de <i>faire ger
+2 = {tuple: 4} ('Proverbs 17:1', 129, '). On l’a aussi appliqué aux événements du temps, comme si c’étaient des choses qui naissent; p. ex.: <i>Car tu ne sais pas ce qu’enfantera</i> (<span dir="rtl">ילד</span>) <i>le jour</i>', '(Prov., XVII, 1)')
+3 = {tuple: 4} ('Isaiah 2:6', 187, '). Enfin on l’a appliqué à ce qui survient dans les pensées et à ce qu’elles produisent en fait d’idées et d’opinions, comme on a dit: <i>Et il enfantera</i> (<span dir="rtl">וילד</span>) <i>le mensonge</i> (Ps. VII, 15), et c’est dans
 
 
+French
 
+'Moreh Nevukhim, Part 1, 8' = {dict: 2} {'Guide for the Perplexed, Part 1 8:1': [['Ezek. 3:12', 107]], 'Guide for the Perplexed, Part 1 8:2': [['Exod. 33:26', 271]]}
+
+English
+
+'Guide for the Perplexed, Part 1 8:1' = {list: 2} [('Ezekiel 3:12', 313, '<i>Makôm</i> (<span dir="rtl">מקום</span>). — Ce nom est appliqué primitivement au <i>lieu</i> particulier et commun <sup>(1)</sup><i class="footnote">(1) Voici quel paraît être, d’après Maïmonide, le sens général de ce passage: Sel
+'Guide for the Perplexed, Part 1 8:2' = {list: 2} [('Exodus 33:21', 681, 'Sache que toutes les fois que nous t’expliquons, dans ce traité, l’homonymie d’un certain nom, nous n’avons pas pour but seulement d’éveiller l’attention sur ce que nous mentionnons dans le chapitre même, mais nous voulons ouvrir un
 
