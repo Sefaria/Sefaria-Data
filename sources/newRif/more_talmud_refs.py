@@ -2,18 +2,22 @@ import django
 django.setup()
 from sefaria.model import *
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
-from rif_utils import path, tags_map, unite_ref_pages
+from rif_utils import path, tags_map, unite_ref_pages, hebrewplus
 from sefaria.utils.talmud import daf_to_section
 import re
 import json
 import csv
+from rif_gemara_matcher_masoret import open_rashei_tevot
+from scoremanager import ScoreManager
 
+A=0
 Y, N = 0, 0
 REPORTY, REPORTN = [], []
 
 def base_tokenizer(string):
-    return re.sub('<i class="footnote">[^<]*<\/i>|\*|<[^>]*>', '', string).split()
-
+    string = re.sub('<i class="footnote">[^<]*<\/i>|\*|<[^>]*>', '', string)
+    string = hebrewplus(string, '"')
+    return open_rashei_tevot(string).split()
 
 def find_talmud(item, prev, next, include_prev=False):
     global Y, N
@@ -35,7 +39,8 @@ def find_talmud(item, prev, next, include_prev=False):
     else:
         talmud_ref = f'{prev.tref}-{next.tref.split()[-1]}'
     rif_ref = item.tref
-    matcher = ParallelMatcher(base_tokenizer, verbose=False)
+    score_manager = ScoreManager("words_dict.json")
+    matcher = ParallelMatcher(base_tokenizer, verbose=False, calculate_score=score_manager.get_score)
     links = []
 
     #print(talmud_ref, rif_ref)
@@ -79,6 +84,7 @@ def index_missings(index):
 def create_links(masechet):
     links = []
     index = library.get_index(f'Rif {masechet}')
+    index.versionState().refresh()
     refs_missings = index_missings(index)
     talmud = library.get_index(masechet)
     prev = talmud.all_section_refs()[0].tref
@@ -95,8 +101,11 @@ def create_links(masechet):
     return links
 
 def execute(masechtot=tags_map):
+    global A
     for masechet in masechtot:
+        print(masechet)
         links = create_links(masechet)
+        A+=len(links)
         with open(path+'/gemara_links/more_{}.json'.format(masechet), 'w') as fp:
             json.dump(links, fp)
 
@@ -111,3 +120,4 @@ if __name__ == '__main__':
         awriter = csv.DictWriter(file, fieldnames=['ref', 'text', 'talmud_ref'])
         awriter.writeheader()
         for item in REPORTN: awriter.writerow(item)
+    print(A)

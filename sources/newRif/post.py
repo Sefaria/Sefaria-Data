@@ -15,6 +15,7 @@ import time
 TS = 0
 LS = 0
 REPORT = set()
+REFS = []
 
 def housekeep(string, btext, masechet='', regex=''):
     if masechet == 'Nedraim':
@@ -27,7 +28,8 @@ def housekeep(string, btext, masechet='', regex=''):
     if regex:
         string = re.sub(regex, '', string)
     string = re.sub('°\)|\*\)|\d[ab]|<b><big><\/big><\/b>', '', string)
-    string = hebrewplus(string, '\(\[\)\]:\.,<>a-zA-Z-\/\*"\'⚬=')
+    string = hebrewplus(string, '\(\[\)\]:\.,<>a-zA-Z-\/\*"\'⚬=0-9')
+    string = re.sub('(?<!\")\d(?!\")', '', string)
     string = re.sub(r'\s', ' ', string)
     string = string.strip()
     string = re.sub(' +', ' ', string)
@@ -68,6 +70,7 @@ def hk_ja(ja, btext, masechet='', regex=''):
 def post_rif(masechtot=list(tags_map), index=True, text='csv', links=True, server = 'http://localhost:8000', clean=False):
     global TS
     global LS
+    global REFS
     for masechet in masechtot:
         title = 'Rif ' + masechet
         if index:
@@ -80,9 +83,13 @@ def post_rif(masechtot=list(tags_map), index=True, text='csv', links=True, serve
         if links:
             with open(path+'/gemara_links/{}.json'.format(masechet)) as fp:
                 data = json.load(fp)
-            with open(path+'/gemara_links/more_{}.json'.format(masechet)) as fp:
-                data += json.load(fp)
+            try:
+                with open(path+'/gemara_links/more_{}.json'.format(masechet)) as fp:
+                    data += json.load(fp)
+            except FileNotFoundError:
+                pass
             data = [link for lis in data for link in lis]
+            REFS += [link['refs'] for link in data]
             functions.post_link(data, server = server)
             LS+=len(data)
         if text:
@@ -165,89 +172,107 @@ def post_mefaresh(masechtot=list(tags_map), index=True, text='first', links=True
             functions.post_link(data, server = server)
             LS+=len(data)
 
-def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,2,3,4,5,6,7,8,9,10], index=True, text=True, links=True, server = 'http://localhost:8000', clean=False):
+def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,2,3,4,5,6,7,8,9,10,11,12], index=True, text=True, links=True, server = 'http://localhost:8000', clean=False):
     global TS
     global LS
-    for num in mefarshim:
-        if num == 6: continue
-        categories = ["Talmud", "Bavli", "Commentary", "Rif", "Commentary"]
-        mefaresh  = commentaries[str(num)]['title']
-        hmefaresh = commentaries[str(num)]['h_title']
-        fmefaresh = commentaries[str(num)]['f_name']
-        c_title = commentaries[str(num)]['c_title']
-        if num == 10:
-            hc_title = 'כתוב שם'
-        else:
-            hc_title = '{} על רי"ף'.format(hmefaresh)
-        functions.add_term(mefaresh, hmefaresh, server=server)
-        if num not in [7, 8]:
-            categories.append(mefaresh)
-            functions.add_category(mefaresh, categories, server=server)
-
-        for masechet in masechtot:
+    if index or text:
+        for num in mefarshim:
             if num == 6: continue
-            if num in [1, 2, 9]:
-                try:
-                    with open(path+f'/tags/topost/{fmefaresh}_{masechet}.json') as fp:
-                        data = json.load(fp)
-                except FileNotFoundError:
-                    continue
-                print(mefaresh, masechet)
+            categories = ["Talmud", "Bavli", "Commentary", "Rif", "Commentary"]
+            mefaresh  = commentaries[str(num)]['title']
+            hmefaresh = commentaries[str(num)]['h_title']
+            fmefaresh = commentaries[str(num)]['f_name']
+            c_title = commentaries[str(num)]['c_title']
+            if num == 10:
+                hc_title = 'כתוב שם'
+            elif num == 11:
+                hc_title = 'העתקת פירוש הרי"ף'
+            elif num == 12:
+                hc_title = 'ספר הזכות על השגות הראב"ד'
             else:
-                try:
-                    with open(path+f'/commentaries/json/{fmefaresh}_{masechet}.json') as fp:
-                        data = json.load(fp)
-                except FileNotFoundError:
-                    print('no file', mefaresh, masechet)
-                    continue
-            if masechet == 'Pesachim' and num == 10:
-                regex = ''
-            else:
-                regex = '\d(?:\(.\)|\[.\])|(?:^| ).\]'
-            if clean:
-                data = hk_ja(data, btext=f'{mefaresh} {masechet}', masechet=masechet, regex=regex)
+                hc_title = '{} על רי"ף'.format(hmefaresh)
+            functions.add_term(mefaresh, hmefaresh, server=server)
+            if num not in [7, 8]:
+                categories.append(mefaresh)
+                functions.add_category(mefaresh, categories, server=server)
 
-            hmasechet = get_hebrew_masechet(masechet)
-            title = '{} {}'.format(c_title, masechet)
-            htitle = '{} {}'.format(hc_title, hmasechet)
+            for masechet in masechtot:
+                if num == 6: continue
+                if num in [1, 2, 9]:
+                    try:
+                        with open(path+f'/tags/topost/{fmefaresh}_{masechet}.json') as fp:
+                            data = json.load(fp)
+                    except FileNotFoundError:
+                        continue
+                else:
+                    try:
+                        if num == 12:
+                            if masechet == 'Yoma': continue
+                            file = path+f'/commentaries/json/z{masechet[0].lower()}.json'
+                        elif num == 11:
+                            if masechet == 'Ketubot':
+                                file = path+f'/commentaries/json/td.json'
+                            elif masechet == 'Shevuot':
+                                file = path+f'/commentaries/json/tds.json'
+                            else:
+                                continue
+                        else:
+                            file = path+f'/commentaries/json/{fmefaresh}_{masechet}.json'
+                        with open(file) as fp:
+                            data = json.load(fp)
+                    except FileNotFoundError:
+                        print('no file', mefaresh, masechet)
+                        continue
+                if masechet == 'Pesachim' and num == 10:
+                    regex = ''
+                else:
+                    regex = '\d(?:\(.\)|\[.\])|(?:^| ).\]'
+                if clean:
+                    data = hk_ja(data, btext=f'{mefaresh} {masechet}', masechet=masechet, regex=regex)
 
-            if index:
-                record = JaggedArrayNode()
-                record.add_primary_titles(title, htitle)
-                record.add_structure(['Daf', 'Comment'])
-                record.addressTypes = ['Talmud', 'Integer']
-                record.validate()
-                index_dict = {'collective_title': mefaresh,
-                    'title': title,
-                    'categories': categories,
-                    'schema': record.serialize(),
-                    'dependence': 'Commentary',
-                    'base_text_titles': ['Rif '+masechet]
-                }
-                if (fmefaresh == 'SG' and masechet in ['Gittin', 'Kiddushin', 'Chullin']) or fmefaresh not in ['SG', 'R_Efrayim', 'ravad']:
-                    Mmefaresh = main_mefaresh(masechet)
-                    index_dict['base_text_titles'].append(f'{Mmefaresh} on Rif {masechet}')
-                if tags_by_criteria(masechet, key=lambda x: x[0]=='3', value=lambda x: x['referred text']==num):
-                    index_dict['base_text_titles'].append(f"{commentaries['1']['title']} on Rif {masechet}")
-                if tags_by_criteria(masechet, key=lambda x: x[0]=='4', value=lambda x: x['referred text']==num):
-                    index_dict['base_text_titles'].append(f"HaMaor {maor_godel(masechet)[0]} on {masechet}")
-                if tags_by_criteria(masechet, key=lambda x: x[0]=='5', value=lambda x: x['referred text']==num):
-                    index_dict['base_text_titles'].append(f"Milchemet Hashem on {masechet}")
-                if tags_by_criteria(masechet, key=lambda x: x[0]=='6', value=lambda x: x['referred text']==num):
-                    index_dict['base_text_titles'].append(f"{commentaries['2']['c_title']} {masechet}")
-                if num == 10:
-                    index_dict['base_text_titles'] = [f"HaMaor {maor_godel(masechet)[0]} on {masechet}"]
-                functions.post_index(index_dict, server = server)
+                hmasechet = get_hebrew_masechet(masechet)
+                title = '{} {}'.format(c_title, masechet)
+                htitle = '{} {}'.format(hc_title, hmasechet)
 
-            if text:
-                text_version = {
-                    'versionTitle': 'Vilna Edition',
-                    'versionSource': "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
-                    'language': 'he',
-                    'text': data
-                }
-                functions.post_text(title, text_version, server=server, skip_links=True)
-                TS+=1
+                if index:
+                    record = JaggedArrayNode()
+                    record.add_primary_titles(title, htitle)
+                    record.add_structure(['Daf', 'Comment'])
+                    record.addressTypes = ['Talmud', 'Integer']
+                    record.validate()
+                    index_dict = {'collective_title': mefaresh,
+                        'title': title,
+                        'categories': categories,
+                        'schema': record.serialize(),
+                        'dependence': 'Commentary',
+                        'base_text_titles': ['Rif '+masechet]
+                    }
+                    if (fmefaresh == 'SG' and masechet in ['Gittin', 'Kiddushin', 'Chullin']) or fmefaresh not in ['SG', 'R_Efrayim', 'ravad']:
+                        Mmefaresh = main_mefaresh(masechet)
+                        index_dict['base_text_titles'].append(f'{Mmefaresh} on Rif {masechet}')
+                    if tags_by_criteria(masechet, key=lambda x: x[0]=='3', value=lambda x: x['referred text']==num):
+                        index_dict['base_text_titles'].append(f"{commentaries['1']['title']} on Rif {masechet}")
+                    if tags_by_criteria(masechet, key=lambda x: x[0]=='4', value=lambda x: x['referred text']==num):
+                        index_dict['base_text_titles'].append(f"HaMaor {maor_godel(masechet)[0]} on {masechet}")
+                    if tags_by_criteria(masechet, key=lambda x: x[0]=='5', value=lambda x: x['referred text']==num):
+                        index_dict['base_text_titles'].append(f"Milchemet Hashem on {masechet}")
+                    if tags_by_criteria(masechet, key=lambda x: x[0]=='6', value=lambda x: x['referred text']==num):
+                        index_dict['base_text_titles'].append(f"{commentaries['2']['c_title']} {masechet}")
+                    if num == 10:
+                        index_dict['base_text_titles'] = [f"HaMaor {maor_godel(masechet)[0]} on {masechet}"]
+                    elif num == 12 and masechet == 'Gittin':
+                        index_dict['base_text_titles'].append(f"{commentaries['9']['c_title']} {masechet}")
+                    functions.post_index(index_dict, server = server)
+
+                if text:
+                    text_version = {
+                        'versionTitle': 'Vilna Edition',
+                        'versionSource': "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
+                        'language': 'he',
+                        'text': data
+                    }
+                    functions.post_text(title, text_version, server=server, skip_links=True)
+                    TS+=1
 
     if links:
         if mefarshim != [6]:
@@ -257,11 +282,39 @@ def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,2,3,4,5,6,7,8,9,10], 
                 functions.post_link(data, server = server)
                 LS+=len(data)
         if 6 in mefarshim:
+            print(6)
             for masechet in masechtot:
                 with open(path+'/tags/topost/em_links_{}.json'.format(masechet)) as fp:
                     data = json.load(fp)
                 functions.post_link(data, server = server)
                 LS+=len(data)
+        if 11 in mefarshim:
+            print(11)
+            for masechet in masechtot:
+                if masechet in ['Ketubot', 'Shevuot']:
+                    if masechet == 'Ketubot':
+                        with open(path+'/commentaries/json/links_td.json'.format(masechet)) as fp:
+                            data = json.load(fp)
+                    elif masechet == 'Shevuot':
+                        with open(path+'/commentaries/json/links_tds.json'.format(masechet)) as fp:
+                            data = json.load(fp)
+                    functions.post_link(data, server = server)
+                    LS+=len(data)
+        if 12 in mefarshim:
+            print(12)
+            for t in ['zg', 'zy']:
+                with open(f'{path}/commentaries/json/links_{t}.json'.format(masechet)) as fp:
+                    data = json.load(fp)
+                functions.post_link(data, server = server)
+                LS+=len(data)
+        if 9 in mefarshim:
+            print(9 )
+            for masechet in masechtot:
+                if masechet in ['Makkot', 'Shevuot']:
+                    with open(f'{path}/commentaries/json/links_ravad_{masechet}.json'.format(masechet)) as fp:
+                        data = json.load(fp)
+                    functions.post_link(data, server = server)
+                    LS+=len(data)
 
 def post_maor(masechtot=list(maor_tags)+['intro'], mefarshim=['maor', 'milchemet'], index=True, text=True, links=True, server = 'http://localhost:8000', clean=False):
     global TS
@@ -342,9 +395,11 @@ def post_maor(masechtot=list(maor_tags)+['intro'], mefarshim=['maor', 'milchemet
 if __name__ == '__main__':
     #server = 'http://localhost:8000'
     server = 'https://glazner.cauldron.sefaria.org'
-    post_rif(text=False,clean=True,server=server,index=False,links=True)
-    post_mefaresh(text=False,clean=True,server=server,index=False,links=True)
-    post_maor(clean=True,server=server,index=False,text=False,links=True)
-    post_mefareshim(clean=True,server=server,index=False,text=False,links=True,mefarshim=[6])
+    #post_rif(text=True,clean=True,server=server,index=False,links=False)#,masechtot=['Bava Batra'])
+    #post_mefaresh(text=True,clean=True,server=server,index=False,links=False)#,masechtot=masechtot)
+    #post_maor(clean=True,server=server,index=False,text=True)#,links=False)
+    post_mefareshim(clean=True,server=server,index=False,text=False,links=True)#,mefarshim=[10],masechtot=['Bava Batra'])
     print(f'{TS} texts {LS} links')
     #print(REPORT)
+    REFS=set(REFS)
+    print(len(REFS))

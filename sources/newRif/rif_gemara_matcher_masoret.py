@@ -120,7 +120,7 @@ def execute():
         current_ref = 'דף ב.'
         oldpage = None
         splitted_data = {current_ref: []}
-        score_manager = ScoreManager("words_dict.json")
+        #score_manager = ScoreManager("words_dict.json")
         matcher = ParallelMatcher(partial(base_tokenizer, masechet=masechet), verbose=False)#, all_to_all=False)#, calculate_score=score_manager.get_score)
         ref_tag = tags_map[masechet]['gemara_refs']
         note_tag = tags_map[masechet]['notes']

@@ -105,7 +105,7 @@ def execute():
                     else: print('amud isnt valid', page[:30])
                     section = daf_num * 2 - 3 + amud
                     while len(newdata) < section: newdata.append([])
-                    page = re.sub('דף [א-ס][א-ט]? ע"[אב]', f'@88{daf}{"." if amud==1 else ":"}', page).strip()
+                    page = re.sub('דף [א-ס][א-ט]? ע"[אב]', '', page).strip() #previously replaced by f'@88{daf}{"." if amud==1 else ":"}'
                     page = re.sub('(@88.*?)@77', r'@77\1', page)
                 except (ValueError, AttributeError):
                     print('daf and amud arent valid', page[:30])

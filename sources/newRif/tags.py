@@ -278,7 +278,7 @@ def execute():
             mil, miltags = maor_milchemet(masechet, mefaresh='milchemet')
             check_duplicate(tags, miltags)
             tags.update(miltags)
-        if masechet != 'Nedarim' and masechet not in ['Yoma', 'Beitzah']: #tha and is temp.
+        if masechet != 'Nedarim' and masechet not in ['Yoma']: #tha and is temp.
             ansh, anshtags = ansh_tags(masechet)
             check_duplicate(tags, anshtags)
             tags.update(anshtags)

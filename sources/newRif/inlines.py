@@ -114,8 +114,6 @@ def execute(masechtot=tags_map):
                         ravad = json.load(fp)
                 except FileNotFoundError:
                     continue
-            if mefaresh == 3 and masechet in ['Bava Batra']: #temp
-                continue
             print(c_title)
 
             for page in range(len(rif)):
@@ -161,6 +159,7 @@ def execute(masechtot=tags_map):
                             ravad[page][order-1] = ravad[page][order-1].replace(label+'] ', '', 1)
                         else:
                             print(f'tag {tag} with {len(with_tag)} relevant tags in ravad')
+                            print(ravad[page],page)
                             continue
 
                     if mefaresh == 3 or (mefaresh == 10 and masechet == 'Pesachim'): #bach has double letters
@@ -201,14 +200,14 @@ def execute(masechtot=tags_map):
                                 else:
                                     print('tag isnt in the expected place', tag)
 
-                    data[bpage][section] = data[bpage][section].replace(f'${tag}', f'<i data-commentator="{c_title}" data-label="{label}" data-order="{order}"></i>', 1)
+                    data[bpage][section] = data[bpage][section].replace(f'${tag}', f'<i data-commentator="{c_title.replace(" on Rif", "")}" data-label="{label}" data-order="{order}"></i>', 1)
                     data[bpage][section] = re.sub('(</i>) +', r'\1', data[bpage][section])
                     ref = f'{c_title} {masechet} {section_to_daf(page+1)}:{order}'
                     try:
                         if Ref(ref).text('he').text: #did post before
                             links.append({'refs': [f'{btext} {masechet} {section_to_daf(bpage+1)}:{section+1}', ref],
                             'type': 'commentary',
-                            'inline_reference': {'data-commentator': c_title, 'data-order': order, 'data-label': label},
+                            'inline_reference': {'data-commentator': c_title.replace(" on Rif", ""), 'data-order': order, 'data-label': label},
                             'generated_by': 'rif inline commentaries'})
                             tags[tag]['used'] = True
                         else:
@@ -216,8 +215,9 @@ def execute(masechtot=tags_map):
                     except InputError: #when running before post
                         links.append({'refs': [f'{btext} {masechet} {section_to_daf(bpage+1)}:{section+1}', ref],
                         'type': 'commentary',
-                        'inline_reference': {'data-commentator': c_title, 'data-order': order, 'data-label': label},
+                        'inline_reference': {'data-commentator': c_title.replace(" on Rif", ""), 'data-order': order, 'data-label': label},
                         'generated_by': 'rif inline commentaries'})
+                        print('error', ref)
                 save_tags(tags, masechet)
 
             if mefaresh == 9:
@@ -242,4 +242,4 @@ def execute(masechtot=tags_map):
             json.dump(ansh, fp)
 
 if __name__ == '__main__':
-    execute(['Gittin'])
+    execute(['Bava Batra'])

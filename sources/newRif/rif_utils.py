@@ -62,7 +62,6 @@ def unite_ref(refs: list) -> list:
 
     if refs == []: return []
     refs = [ref.tref if type(ref)==Ref else ref for ref in refs]
-    print(refs)
     base_ref = refs[0].split(':')[0]
     lines = set()
     for ref in refs:

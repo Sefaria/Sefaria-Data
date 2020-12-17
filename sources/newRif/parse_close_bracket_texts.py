@@ -71,6 +71,9 @@ def ravad(masechet):
     if masechet == 'Ketubot':
         pages = re.findall(r'השגות הראב"ד על הרי"ף מסכת כתובות דף ([א-ס]{1,2}) עמוד ([אב])\n\nהשגות הראב"ד על הרי"ף מסכת כתובות דף \1 עמוד \2', data)
         data = re.split(r'השגות הראב"ד על הרי"ף מסכת כתובות דף [א-ס]{1,2} עמוד [אב]\n\nהשגות הראב"ד על הרי"ף מסכת כתובות דף [א-ס]{1,2} עמוד [אב]', data)[1:]
+    elif masechet == 'Bava Batra':
+        pages = re.findall(r'@88דף ([א-פ]{1,2}) ע"([אב])', data)
+        data = re.split(r'@88דף [א-פ]{1,2} ע"[אב]', data)[1:]
     elif masechet in ['Gittin', 'Bava Kamma']:
         pages = re.findall('@66([א-נ]{1,2})([.:])', data)
         pages = [(page[0], 'א' if page[1] == '.' else 'ב') for page in pages]
@@ -84,7 +87,7 @@ def ravad(masechet):
             d_page = re.sub(' +', ' ', d_page.replace(':\n', ':<br>').replace('\n', ''))
             d_page = re.sub('(<br>) +', r'\1', d_page)
             d_page = d_page.split('@')
-        elif masechet in ['Gittin', 'Bava Kamma']:
+        elif masechet in ['Gittin', 'Bava Kamma', 'Bava Batra']:
             d_page = re.sub(' +', ' ', d_page.replace(':', ':<br>').replace('\n', ''))
             d_page = re.sub('(<br>) +', r'\1', d_page)
             d_page = ['@11' + par for par in d_page.split('@11')[1:]]
@@ -97,7 +100,7 @@ def ravad(masechet):
     lengths = [len(page) for page in temp if page]
     tags = tags_by_criteria(masechet, value=lambda x: x['referred text']==9)
     tags.update(compare_tags(tags, lengths, {}, 9))
-    if masechet == 'Ketubot':
+    if masechet in ['Ketubot']:
         check_sequence(newdata, '^')
     save_tags(tags, masechet)
 
@@ -131,7 +134,7 @@ def efrayim_bk():
 def execute():
     print('nky yevamot')
     nky_bmravad('nky', 'Yevamot')
-    for masechet in ['Ketubot', 'Gittin', 'Bava Kamma']:
+    for masechet in ['Ketubot', 'Gittin', 'Bava Kamma', 'Bava Batra']:
         print('ravad', masechet)
         ravad(masechet)
     print('r efrayim bk')

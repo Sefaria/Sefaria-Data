@@ -47,7 +47,6 @@ def execute():
     exceptions = exceptions.split('@')
     for masechet in tags_map:
         if not tags_map[masechet]['bach_letter']: continue
-        if masechet == 'Bava Batra': continue #file is missing
         print(masechet)
         with open(path+'/commentaries/bach_{}.txt'.format(masechet), encoding='utf-8') as fp:
             data = fp.read()
@@ -65,7 +64,7 @@ def execute():
             data = data.split('@88')[1:]
             for page in data:
                 try:
-                    daf, amud = re.search('^דף ([א-ס][א-ט]?) ע"([אב])', page).groups()
+                    daf, amud = re.search('^דף ([א-פ][א-ט]?) ע"([אב])', page).groups()
                     daf_num = getGematria(daf)
                     if amud == 'א': amud = 1
                     elif amud == 'ב': amud = 2
