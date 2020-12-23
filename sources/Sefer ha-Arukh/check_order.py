@@ -122,9 +122,8 @@ with open("new_arukh.csv", 'w') as new_f:
                                 orig_comm = comm
                                 changed = True
                                 links.append({"refs": [Ref(converted).normal(), ref], "generated_by": "sefer_he_arukh_disambiguation",
-                                              "auto": True, "type": "Commentary"})
+                                              "auto": True, "type": ""})
                                 comm = comm.replace("{} {}".format(masechet, amud), Ref(converted).he_normal().replace('״', ''))
-                                print(ref)
 
                                 good += 1
                             except Exception as e:
@@ -139,13 +138,16 @@ with open("new_arukh.csv", 'w') as new_f:
                 "language": "he"
             }
             # if changed:
-            #     post_text(ref, send_text)
+            post_text(ref, send_text)
             writer.writerow([ref, comm])
 print(len(links))
-for i in range(1500, len(links), 300):
-    print(links[i:i+300])
-    post_link(links[i:i+300])
+step = 500
+start = 0
+with open("attempted_post.json", 'r') as f:
+    links = json.load(f)
+for i in range(start, len(links), step):
+    post_link(links[i:i+step], server="https://ste.cauldron.sefaria.org")
     time.sleep(30)
-
-print(good)
-print(bad)
+#
+# print(good)
+# print(bad)

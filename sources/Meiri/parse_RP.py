@@ -7,28 +7,30 @@ from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
 from data_utilities.util import WeightedLevenshtein
 levenshtein = WeightedLevenshtein()
-mode = "1"
+mode = "2"
 
 def get_ref(pos, text, ref):
     count = 0
     start = -1
     end = -1
+    words = []
     for i, line in enumerate(text):
         orig_count = count
-        count += line.count(" ")
+        count += line.count(" ") + 1
         if orig_count <= pos[0] <= count:
             start = i+1
         if orig_count <= pos[1] <= count:
             end = i+1
             break
 
-    return "{}:{}-{}".format(ref, start, end) if end != start else "{}:{}".format(ref, start)
+    ref = "{}:{}-{}".format(ref, start, end) if end != start else "{}:{}".format(ref, start)
+    return ref, " ".join(" ".join(text).split()[pos[0]:pos[1]])
 
 
-def PM_regular(lines, comm_title, base_ref):
+def PM_regular(lines, comm_title, base_ref, writer):
     links = []
-    matcher = ParallelMatcher(Link_Disambiguator.tokenize_words, max_words_between=4, min_words_in_match=4,
-                              ngram_size=4,
+    matcher = ParallelMatcher(Link_Disambiguator.tokenize_words, max_words_between=4, min_words_in_match=9,
+                              ngram_size=5,
                               parallelize=False, all_to_all=False,
                               verbose=False, calculate_score=calc)
     words = " ".join(lines)
@@ -41,21 +43,27 @@ def PM_regular(lines, comm_title, base_ref):
                    if not mm is None]
     meiri_found = {}
     for m in all_matches:
-        if m[4] > 80:
-            ref = get_ref(m[3], base.ja().flatten_to_array(), base_ref)
-            meiri = get_ref(m[2], lines_in_title[daf], comm_title)
-            if meiri in meiri_found and meiri_found[meiri]:
-                new_ref = meiri_found[meiri]["refs"][1].split("-")[0] + "-" + ref.split(":")[-1]
-                meiri_found[meiri]["refs"][1] = new_ref
-                ref = new_ref
-            else:
-                links += [{"refs": [meiri,
-                                ref],
-                       "generated_by": "meiri_to_daf", "auto": True, "type": "Commentary"}]
-                meiri_found[meiri] = links[-1]
-    for l in links:
-        for r, ref in enumerate(l["refs"]):
-            l["refs"][r] = re.sub("(\d+)-\d+-(\d+)", "\g<1>-\g<2>", ref)
+        if m[4] > 90:
+            ref, ref_words = get_ref(m[3], base.ja().flatten_to_array(), base_ref)
+            meiri_range, meiri_words = get_ref(m[2], lines, comm_title)
+
+            # if meiri in meiri_found and meiri_found[meiri]:
+            #     new_ref = meiri_found[meiri]["refs"][1].split("-")[0] + "-" + ref.split(":")[-1]
+            #     meiri_found[meiri]["refs"][1] = new_ref
+            #     ref = new_ref
+            # else:
+
+            for meiri in Ref(meiri_range).range_list():
+                writer.writerow([ref, ref_words, meiri.normal(), meiri_words])
+                if meiri not in meiri_found:
+                    links += [{"refs": [meiri.normal(),
+                                    ref],
+                           "generated_by": "meiri_to_daf", "auto": True, "type": "Commentary"}]
+
+                    meiri_found[meiri] = links[-1]
+    # for l in links:
+    #     for r, ref in enumerate(l["refs"]):
+    #         l["refs"][r] = re.sub("(\d+)-\d+-(\d+)", "\g<1>-\g<2>", ref)
     return links
 
 def tokenize_words(base_str):
@@ -128,24 +136,28 @@ def just_mishnah(str):
     value = " ".join(str.split()[1:5]) if mishnah in str.split()[0] else ""
     return value
 
-
-t = Term()
-t.add_primary_titles("Meiri", "מאירי")
-t.name = "Meiri"
+#
+# t = Term()
+# t.add_primary_titles("Meiri", "מאירי")
+# t.name = "Meiri"
 # t.save()
-c = Category()
-c.path = ["Talmud", "Bavli", "Commentary", "Meiri"]
-c.add_shared_term("Meiri")
+# c = Category()
+# c.path = ["Talmud", "Bavli", "Commentary", "Meiri"]
+# c.add_shared_term("Meiri")
 # c.save()
 # add_category("Meiri", c.path)
 links = []
-start = "Sanhedrin"
+start = "Bava Kamma"
 starting = True
 for en_title, he_title in lines.keys():
     if start in en_title:
         starting = True
     if not starting:
         continue
+    if en_title not in ["Chullin"]:#, "Bava Kamma", "Bava Metzia", "Shabbat"]:
+        continue
+    f = open("{}.csv".format(en_title), 'w')
+    writer = csv.writer(f)
     categories = ["Talmud", "Bavli", "Commentary", "Meiri", library.get_index(en_title).categories[-1]]
     print(categories)
     c = Category()
@@ -177,8 +189,8 @@ for en_title, he_title in lines.keys():
         root.add_structure(["Daf", "Line"], address_types=["Talmud", "Integer"])
     root.validate()
     print(categories)
-    # post_index({"title": full_title, "schema": root.serialize(), "dependence": "Commentary",
-    #             "categories": categories, "base_text_titles": [en_title], "collective_title": "Meiri"}, dump_json=True)
+    post_index({"title": full_title, "schema": root.serialize(), "dependence": "Commentary",
+                  "categories": categories, "base_text_titles": [en_title], "collective_title": "Meiri"}, dump_json=True)
     lines_in_title = lines[(en_title, he_title)]
     intro = lines_in_title.pop("Introduction")
     send_text = {
@@ -187,7 +199,7 @@ for en_title, he_title in lines.keys():
         "versionSource": "http://www.sefaria.org",
         "text": intro
     }
-    # post_text(full_title + ", Introduction", send_text, index_count="on")
+    post_text(full_title + ", Introduction", send_text, index_count="on")
     send_text = {
         "language": "he",
         "versionTitle": "Meiri on Shas",
@@ -195,7 +207,7 @@ for en_title, he_title in lines.keys():
         "text": convertDictToArray(lines_in_title)
     }
     mishnah = "משנה"
-    # post_text(full_title, send_text, index_count="on")
+    post_text(full_title, send_text, index_count="on")
     found_refs = []
 
     new_links = []
@@ -219,7 +231,7 @@ for en_title, he_title in lines.keys():
 
 
         if mode == "1":
-            new_links = PM_regular(lines_in_title[daf], comm_title, base_ref)
+            new_links = PM_regular(lines_in_title[daf], comm_title, base_ref, writer)
         elif mode == "2":
             new_links = match_ref_interface(base_ref, comm_title, lines_in_title[daf], lambda x: x.split(), dher, generated_by="meiri_to_daf")
         elif mode == "3":
@@ -232,6 +244,7 @@ for en_title, he_title in lines.keys():
             meiri_ref = l["refs"][0] if l["refs"][0].startswith("Meiri") else l["refs"][1]
             if meiri_ref not in found_refs:
                 links.append(l)
+    f.close()
 
 
 with open("{}.json".format(mode), 'w') as f:

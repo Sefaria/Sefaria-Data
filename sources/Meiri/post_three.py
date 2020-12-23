@@ -30,11 +30,11 @@ with open("2.json", 'r') as f:
 links = one_and_two(one_links, two_links)
 
 print(len(links))
-step = int(len(links)/40)
+step = int(len(links)/2)
 #post_link(links, skip_lang_check=1)
-init = step*5
+init = 100
 for i in range(init, len(links), step):
     init += step
     post_link(links[0:step+init], skip_lang_check=1)
-    time.sleep(5)
+    time.sleep(20)
     # post_link(links, server=server)

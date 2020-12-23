@@ -1,5 +1,4 @@
-# encoding=utf-8
-from __future__ import unicode_literals, print_function
+from sources.functions import *
 
 import re
 import codecs
@@ -143,14 +142,14 @@ class Azharot(object):
 # p = a.get_commandment_map('positive')
 # n = a.get_commandment_map('negative')
 def zohar_sections(possible_line):
-    return bool(re.match(ur'@22\([\u05d0-\u05ea]{1,3}\)', possible_line))
+    return bool(re.match(r'@22\([\u05d0-\u05ea]{1,3}\)', possible_line))
 
 
 def zohar_segments(commandment):
     commandment = u' '.join(commandment)
-    raw_segments, segments = re.split(ur'@44', commandment), []
+    raw_segments, segments = re.split(r'@44', commandment), []
     for seg in raw_segments:
-        new_seg = re.sub(ur'@\d{2}', u' ', seg)
+        new_seg = re.sub(r'@\d{2}', u' ', seg)
         segments.append(u' '.join(new_seg.split()))
 
     return segments
@@ -188,7 +187,7 @@ class ZoharHaRakia(object):
 
         previous_section = 0
         for line in data_lines:
-            mark = re.match(ur'^@22\(([\u05d0-\u05ea]{1,3})\)', line)
+            mark = re.match(r'^@22\(([\u05d0-\u05ea]{1,3})\)', line)
             if mark:
                 current_section = getGematria(mark.group(1))
                 if current_section - previous_section != 1:
@@ -253,7 +252,7 @@ class ZhIndex(object):
 
         previous_section = 0
         for line in data_lines:
-            mark = re.match(ur'^@22\(([\u05d0-\u05ea]{1,3})\)', line)
+            mark = re.match(r'^@22\(([\u05d0-\u05ea]{1,3})\)', line)
             if mark:
                 current_section = getGematria(mark.group(1))
                 if current_section - previous_section != 1:
@@ -261,5 +260,10 @@ class ZhIndex(object):
                     success = False
                 previous_section = current_section
         return success
+
+if __name__ == "__main__":
+    az = Azharot()
+    zohar = ZoharHaRakia()
+    pass
 
 
