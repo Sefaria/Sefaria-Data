@@ -207,7 +207,7 @@ def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,2,3,4,5,6,7,8,9,10,11
                 else:
                     try:
                         if num == 12:
-                            if masechet == 'Yoma': continue
+                            if masechet in[ 'Yoma', 'Kiddushin']: continue
                             file = path+f'/commentaries/json/z{masechet[0].lower()}.json'
                         elif num == 11:
                             if masechet == 'Ketubot':
@@ -275,7 +275,7 @@ def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,2,3,4,5,6,7,8,9,10,11
                     TS+=1
 
     if links:
-        if mefarshim != [6]:
+        if set(mefarshim) | {6, 9, 11, 12} != {6, 9, 11, 12}:
             for masechet in masechtot:
                 with open(path+'/tags/topost/inline_links_{}.json'.format(masechet)) as fp:
                     data = json.load(fp)
@@ -302,13 +302,13 @@ def post_mefareshim(masechtot=list(tags_map), mefarshim=[1,2,3,4,5,6,7,8,9,10,11
                     LS+=len(data)
         if 12 in mefarshim:
             print(12)
-            for t in ['zg', 'zy']:
+            for t in ['zg', 'zy', 'zk']:
                 with open(f'{path}/commentaries/json/links_{t}.json'.format(masechet)) as fp:
                     data = json.load(fp)
                 functions.post_link(data, server = server)
                 LS+=len(data)
         if 9 in mefarshim:
-            print(9 )
+            print(9)
             for masechet in masechtot:
                 if masechet in ['Makkot', 'Shevuot']:
                     with open(f'{path}/commentaries/json/links_ravad_{masechet}.json'.format(masechet)) as fp:
@@ -398,7 +398,7 @@ if __name__ == '__main__':
     #post_rif(text=True,clean=True,server=server,index=False,links=False)#,masechtot=['Bava Batra'])
     #post_mefaresh(text=True,clean=True,server=server,index=False,links=False)#,masechtot=masechtot)
     #post_maor(clean=True,server=server,index=False,text=True)#,links=False)
-    post_mefareshim(clean=True,server=server,index=False,text=False,links=True)#,mefarshim=[10],masechtot=['Bava Batra'])
+    post_mefareshim(clean=True,server=server,index=True,text=True,links=True,mefarshim=[12])#,masechtot=['Bava Batra'])
     print(f'{TS} texts {LS} links')
     #print(REPORT)
     REFS=set(REFS)

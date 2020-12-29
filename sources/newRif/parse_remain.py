@@ -21,9 +21,14 @@ def find_section(daf):
     except ValueError:
         return getGematria(daf) * 2 - 2 if '.' in daf else getGematria(daf) * 2 - 1
 
-def parse_pages(data):
+def parse_pages(data, title):
+    if title == 'zk':
+        old = 'ספר הזכות מסכת כתובות דף ([י-ס][א-ט]?) עמוד ([אב])\n\nספר הזכות מסכת כתובות דף [י-ס][א-ט]? עמוד [אב]'
+        data = re.sub(old, r'@@\1@\2', data)
+        data = re.sub('(@@..?)@א', r'\1.', data)
+        data = re.sub('(@@..?)@ב', r'\1:', data)
     data = data.split('@@')[1:]
-    newdata = [[] for _ in range (110)]
+    newdata = [[] for _ in range (124)]
     for page in data:
         num, npage = page.split(None, 1)
         num = find_section(num)
@@ -40,6 +45,16 @@ def parse_page(page, title):
     elif title == 'zy':
         page = page.replace('@11', '', 1)
         page = ['<br>'.join([p.strip() for p in page.split('@11')])]
+    elif title == 'zk':
+        if 'כתוב בהלכות לשבועה' in page:
+            page = re.split('כתוב בהלכות לשבועה|כתוב בהלכות וכל זמן', page)
+            page[1] = 'כתוב בהלכות לשבועה' + page[1]
+            page[2] = 'כתוב בהלכות וכל זמן' + page[2]
+            page = [[par.strip() for par in p.split('\n') if par.strip()] for p in page]
+            page = ['<br>'.join(p) for p in page]
+        else:
+            page = [par.strip() for par in p.split('\n') if par.strip()]
+            page = ['<br>'.join(page)]
     page = [re.sub('@|\d|\n', '', p) for p in page]
     return [re.sub(' +', ' ', p).strip() for p in page]
 
@@ -48,13 +63,17 @@ def createlinks(data, title):
     link = {'refs': [],
         'type': 'commentary',
         'generated_by': 'rif commentary'}
-    if title == 'zg':
+    if title in ['zg', 'zk']:
+        masechet = 'Gittin' if title == 'zg' else 'Ketubot'
         for p, page in enumerate(data):
             if page:
                 for s, _ in enumerate(page):
                     daf = section_to_daf(p+1)
-                    ravad = f'Hasagot HaRaavad on Rif Gittin {daf}:{s+1}'
-                    ramban = f'Sefer HaZekhut on Hasagot HaRaavad Gittin {daf}:{s+1}'
+                    section = s+1
+                    if masechet == 'Ketubot' and daf == '21b' and section == 3:
+                        section = 2
+                    ravad = f'Hasagot HaRaavad on Rif {masechet} {daf}:{section}'
+                    ramban = f'Sefer HaZekhut on Hasagot HaRaavad {masechet} {daf}:{s+1}'
                     if Ref(ravad).text('he').text:
                         links.append(copy.deepcopy(link))
                         links[-1]['refs'] = [ravad, ramban]
@@ -62,6 +81,7 @@ def createlinks(data, title):
                             if l.generated_by == 'rif inline commentaries':
                                 links.append(copy.deepcopy(link))
                                 links[-1]['refs'] = [l.refs[0], ramban]
+                    else: print(ramban, 'not finding ravad')
     elif title == 'zy':
         for p, page in enumerate(data):
             for s, section in enumerate(page):
@@ -82,12 +102,12 @@ def createlinks(data, title):
                 links[-1]['refs'] = [f'Rif Ketubot {ref}', f"Ha'atakat Teshuvat HaRif Ketubot {daf}:1"]
     return links
 
-for title in ['td', 'zg', 'zy']:
+for title in ['td', 'zg', 'zy', 'zk']:
     with open(f'{path}/commentaries/{title}.txt', encoding='utf-8') as fp:
         data = fp.read()
     if title == 'zg':
         intro = data.split('@@', 1)[0]
-    data = parse_pages(data)
+    data = parse_pages(data, title)
     newdata = []
     for page in data:
         newdata.append([])
