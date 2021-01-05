@@ -14,6 +14,7 @@ import bleach
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
 sys.path.insert(0, "../")
+from time import sleep
 from .local_settings import *
 import django
 django.setup()
@@ -813,6 +814,13 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
             links.append(new_link)
     return links
 
+
+def post_link_in_steps(links, step, sleep_amt=0):
+    pos = 0
+    for i in range(0, len(links), step):
+        post_link(links[pos:pos+step])
+        pos += step
+        sleep(sleep_amt)
 
 def resegment_X_based_on_Y(ref, X, Y):
     #X and Y are TextChunks with Ref = ref but different version titles

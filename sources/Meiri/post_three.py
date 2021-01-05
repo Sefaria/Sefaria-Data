@@ -32,7 +32,7 @@ links = one_and_two(one_links, two_links)
 print(len(links))
 step = int(len(links)/2)
 #post_link(links, skip_lang_check=1)
-init = 100
+init = 0
 for i in range(init, len(links), step):
     init += step
     post_link(links[0:step+init], skip_lang_check=1)

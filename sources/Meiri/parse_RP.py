@@ -7,7 +7,49 @@ from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
 from data_utilities.util import WeightedLevenshtein
 levenshtein = WeightedLevenshtein()
-mode = "2"
+mode = "1"
+import json
+import math
+from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
+
+
+class ScoreManager:
+    def __init__(self, word_counts_file):
+        with open(word_counts_file, "r") as fin:
+            self.word_counts = json.load(fin)
+        self.max_count = 0
+        for word, count in self.word_counts.items():
+            if count > self.max_count:
+                self.max_count = count
+
+    def word_count_score(self, w):
+        max_score = 1
+        wc = self.word_counts.get(w, None)
+        score = 1 if wc is None else -math.log10(20 * (wc + (self.max_count / 10 ** max_score))) + math.log10(
+            20 * self.max_count)
+        return 3 * score
+
+    def is_stopword(self, w):
+        if len(w) > 0 and w[0] == 'ו' and self.word_counts.get(w[1:], 0) > 1.8e5:
+            # try to strip off leading vav
+            return True
+        return self.word_counts.get(w, 0) > 10000
+
+    def get_score(self, words_a, words_b):
+        # negative because for score higher is better but for leven lower is better
+        num_stopwords_a = reduce(lambda a, b: a + (1 if self.is_stopword(b) else 0), words_a, 0)
+        num_stopwords_b = reduce(lambda a, b: a + (1 if self.is_stopword(b) else 0), words_b, 0)
+        if len(words_a) - num_stopwords_a < 2 or len(words_b) - num_stopwords_b < 2:
+            print("stopwords!")
+            # print num_stopwords_a, len(words_a)
+            # print num_stopwords_b, len(words_b)
+            return -40
+        lazy_tfidf = sum([self.word_count_score(w) for w in words_b])
+        best_match = get_maximum_dh(words_a, words_b, min_dh_len=len(words_b) - 1, max_dh_len=len(words_b))
+        if best_match:
+            return -best_match.score + lazy_tfidf
+        else:
+            return -ComputeLevenshteinDistanceByWord(" ".join(words_a), " ".join(words_b)) + lazy_tfidf
 
 def get_ref(pos, text, ref):
     count = 0
@@ -27,12 +69,12 @@ def get_ref(pos, text, ref):
     return ref, " ".join(" ".join(text).split()[pos[0]:pos[1]])
 
 
-def PM_regular(lines, comm_title, base_ref, writer):
+def PM_regular(lines, comm_title, base_ref, writer, score_manager):
     links = []
     matcher = ParallelMatcher(Link_Disambiguator.tokenize_words, max_words_between=4, min_words_in_match=9,
                               ngram_size=5,
                               parallelize=False, all_to_all=False,
-                              verbose=False, calculate_score=calc)
+                              verbose=False, calculate_score=score_manager.get_score)
     words = " ".join(lines)
     base = TextChunk(Ref(base_ref), lang='he')
     ber_word_list = [w for seg in base.ja().flatten_to_array() for w in Link_Disambiguator.tokenize_words(seg)]
@@ -43,7 +85,8 @@ def PM_regular(lines, comm_title, base_ref, writer):
                    if not mm is None]
     meiri_found = {}
     for m in all_matches:
-        if m[4] > 90:
+        print(m[4])
+        if m[4] > 20:
             ref, ref_words = get_ref(m[3], base.ja().flatten_to_array(), base_ref)
             meiri_range, meiri_words = get_ref(m[2], lines, comm_title)
 
@@ -106,6 +149,7 @@ def calc(words_a, words_b):
 lines = {}
 curr = ""
 curr_section = ""
+word_count_meiri = {}
 for f in os.listdir("."):
     if f.endswith(".txt"):
         with open(f, 'r') as open_f:
@@ -126,11 +170,18 @@ for f in os.listdir("."):
                     curr_section = daf
                     lines[curr][curr_section] = []
                 else:
+                    words = Link_Disambiguator.tokenize_words(line)
+                    for word in words:
+                        if word not in word_count_meiri:
+                            word_count_meiri[word] = 1
+                        else:
+                            word_count_meiri[word] += 1
                     if line.startswith("זהו ביאור") and line.count(" ") < 20:
                         line = "<b>" + line + "</b>"
                     else:
                         line = "<b>" + line.split()[0] + "</b> " + " ".join(line.split()[1:])
                     lines[curr][curr_section].append(line)
+
 
 def just_mishnah(str):
     value = " ".join(str.split()[1:5]) if mishnah in str.split()[0] else ""
@@ -146,15 +197,28 @@ def just_mishnah(str):
 # c.add_shared_term("Meiri")
 # c.save()
 # add_category("Meiri", c.path)
+
 links = []
 start = "Bava Kamma"
 starting = True
+# for en_title, he_title in lines.keys():
+#     print(en_title)
+#     for ref in library.get_index(en_title).all_segment_refs():
+#         tc = TextChunk(ref, vtitle="William Davidson Edition - Aramaic", lang="he").text
+#         words = Link_Disambiguator.tokenize_words(tc)
+#         for word in words:
+#             if word not in word_count_meiri:
+#                 word_count_meiri[word] = 0
+#             word_count_meiri[word] += 1
+# with open("word_count.json", 'w') as f:
+#     json.dump(word_count_meiri, f)
+score_manager = ScoreManager("word_count.json")
 for en_title, he_title in lines.keys():
     if start in en_title:
         starting = True
     if not starting:
         continue
-    if en_title not in ["Chullin"]:#, "Bava Kamma", "Bava Metzia", "Shabbat"]:
+    if en_title not in ["Chullin", "Rosh Hashanah"]:
         continue
     f = open("{}.csv".format(en_title), 'w')
     writer = csv.writer(f)
@@ -189,8 +253,8 @@ for en_title, he_title in lines.keys():
         root.add_structure(["Daf", "Line"], address_types=["Talmud", "Integer"])
     root.validate()
     print(categories)
-    post_index({"title": full_title, "schema": root.serialize(), "dependence": "Commentary",
-                  "categories": categories, "base_text_titles": [en_title], "collective_title": "Meiri"}, dump_json=True)
+    #post_index({"title": full_title, "schema": root.serialize(), "dependence": "Commentary",
+    #               "categories": categories, "base_text_titles": [en_title], "collective_title": "Meiri"}, dump_json=True)
     lines_in_title = lines[(en_title, he_title)]
     intro = lines_in_title.pop("Introduction")
     send_text = {
@@ -199,7 +263,7 @@ for en_title, he_title in lines.keys():
         "versionSource": "http://www.sefaria.org",
         "text": intro
     }
-    post_text(full_title + ", Introduction", send_text, index_count="on")
+    #post_text(full_title + ", Introduction", send_text, index_count="on")
     send_text = {
         "language": "he",
         "versionTitle": "Meiri on Shas",
@@ -207,7 +271,7 @@ for en_title, he_title in lines.keys():
         "text": convertDictToArray(lines_in_title)
     }
     mishnah = "משנה"
-    post_text(full_title, send_text, index_count="on")
+    #post_text(full_title, send_text, index_count="on")
     found_refs = []
 
     new_links = []
@@ -231,7 +295,7 @@ for en_title, he_title in lines.keys():
 
 
         if mode == "1":
-            new_links = PM_regular(lines_in_title[daf], comm_title, base_ref, writer)
+            new_links = PM_regular(lines_in_title[daf], comm_title, base_ref, writer, score_manager)
         elif mode == "2":
             new_links = match_ref_interface(base_ref, comm_title, lines_in_title[daf], lambda x: x.split(), dher, generated_by="meiri_to_daf")
         elif mode == "3":

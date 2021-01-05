@@ -2,8 +2,8 @@ from sources.functions import *
 from fuzzywuzzy import fuzz
 import time
 
-def is_ref(ref):
-    return ref.startswith("Sefer HeArukh, Letter")
+def is_ref(ref, title):
+    return ref.startswith("{}, Letter".format(title))
 
 def compare(word1, word2):
     for c, char in enumerate(word1):
@@ -18,13 +18,15 @@ def compare(word1, word2):
 
 prev_masechet = ""
 refs = {}
-with open("arukh.csv", 'r') as f:
+title = "Hafla'ah ShebaArakhin on Sefer HeArukh"
+with open("{} - he - Sefer HeArukh, Lublin 1883.csv".format(title), 'r') as f:
     words = []
     last_word = "אא"
     for row in csv.reader(f):
         ref, comm = row
-        if is_ref(ref):
-            match = re.match(".*?<big>(.*?)\s", comm)
+        if is_ref(ref, title):
+            #match = re.match(".*?<big>(.*?)\s", comm)
+            match = re.match("<b>(.*?)</b>\s", comm)
             if match:
                 dappim = re.findall("\(([\S]+) ([\S]+)\) ([\S]+ [\S]+ [\S]+ [\S]+)", comm)
                 for daf in dappim:
@@ -53,7 +55,7 @@ with open("arukh.csv", 'r') as f:
                             pass
 
                     prev_masechet = masechet
-#
+
 # converted_citations = {}
 # for key in refs:
 #     for ref_dh in refs[key]:
@@ -78,6 +80,16 @@ with open("arukh.csv", 'r') as f:
 #                 best = seg
 #         if best:
 #             converted_citations[ref][dh] = best.normal()
+#
+# with open("info.json", 'w') as f:
+#     json.dump(converted_citations, f)
+
+for ref in refs:
+    if refs[ref]:
+        print(ref)
+        for citation in refs[ref]:
+            print(citation)
+        print()
 
 with open('info.json', 'r') as f:
     converted_citations = json.load(f)
@@ -85,16 +97,18 @@ with open('info.json', 'r') as f:
 good = 0
 links = []
 bad = 0
+
 with open("new_arukh.csv", 'w') as new_f:
     writer = csv.writer(new_f)
-    with open("arukh.csv", 'r') as f:
+    with open("{} - he - Sefer HeArukh, Lublin 1883.csv".format(title), 'r') as f:
         words = []
         last_word = "אא"
         for row in csv.reader(f):
             ref, comm = row
             changed = False
-            if is_ref(ref):
-                match = re.match(".*?<big>(.*?)\s", comm)
+            if is_ref(ref, title):
+                #match = re.match(".*?<big>(.*?)\s", comm)
+                match = re.match("<b>(.*?)</b>\s", comm)
                 if match:
                     dappim = re.findall("\(([\S]+) ([\S]+)\) ([\S]+ [\S]+ [\S]+ [\S]+)", comm)
                     for daf in dappim:
@@ -138,7 +152,7 @@ with open("new_arukh.csv", 'w') as new_f:
                 "language": "he"
             }
             # if changed:
-            post_text(ref, send_text)
+            #post_text(ref, send_text)
             writer.writerow([ref, comm])
 print(len(links))
 step = 500
@@ -148,6 +162,6 @@ with open("attempted_post.json", 'r') as f:
 for i in range(start, len(links), step):
     post_link(links[i:i+step], server="https://ste.cauldron.sefaria.org")
     time.sleep(30)
-#
+# #
 # print(good)
 # print(bad)
