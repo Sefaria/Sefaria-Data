@@ -272,7 +272,7 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
         norm_map = get_mapping_after_normalization(corpus_segment.text, TextNormalizer.get_find_text_to_remove(corpus_segment.language))
         mention_indices = convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map)
         for mention, (unnorm_start, unnorm_end) in zip(mentions, mention_indices):
-            mention.add_metadata(start=unnorm_start, end=unnorm_end)
+            mention.add_metadata(start=unnorm_start, end=unnorm_end, mention=corpus_segment.text[unnorm_start:unnorm_end])
         mentions = self.filter_already_found_mentions(mentions, corpus_segment.text, corpus_segment.language)
         return mentions
 
@@ -322,14 +322,16 @@ class NaiveEntityLinker(AbstractEntityLinker):
         for mention in tqdm(mentions, desc="el predict"):
             grouped_by_ref[mention.ref] += [mention]
             if mention.language == 'en':
-                temp_bold_indexes = self.english_bold_ranges[mention.ref]
+                temp_bold_indexes = self.english_bold_ranges.get(mention.ref, set())
                 mention_indices = {i for i in range(mention.start, mention.end)}
                 mention.in_bold = len(temp_bold_indexes & mention_indices) > 0
             pretagged_id_matches = getattr(mention, 'id_matches', None)
             if pretagged_id_matches is None:
-                ne_list = self.named_entity_table.get(mention.mention, None)
+                norm_mention = TextNormalizer.normalize_text(mention.language, mention.mention)
+                ne_list = self.named_entity_table.get(norm_mention, None)
                 if ne_list is None:
-                    print(f"No named entity matches '{mention.mention}'")
+                    print(f"No named entity matches '{norm_mention}'. Unnorm mention: '{mention.mention}', Ref: {mention.ref}")
+                    mention.add_metadata(id_matches=[])
                     continue
                 mention.add_metadata(id_matches=[ne.slug for ne in ne_list])
         out_mentions = []
@@ -505,6 +507,7 @@ class CorpusManager:
                 if ne.get("getLeaves", False):
                     named_entities += topic.topics_by_link_type_recursively(only_leaves=True)
                 else:
+                    topic.titles += ne.get("manualTitles", [])
                     named_entities += [topic]
             else:
                 if ne.get("namedEntityFile", False):
@@ -525,6 +528,9 @@ class CorpusManager:
         version_queries = []
         for item in raw_corpus:
             title_list = [item["title"]] if item["type"] == "index" else library.get_indexes_in_category(item["title"])
+            if item.get('skip', None) is not None:
+                skip_set = set(item['skip'])
+                title_list = list(filter(lambda x: x not in skip_set, title_list))
             for title in title_list:
                 for temp_version_query in item["versions"]:
                     if temp_version_query.get("pretaggedFile", False) or temp_version_query.get('pretaggedMentionsInDB', False):
@@ -779,7 +785,7 @@ class CorpusManager:
             primary_version, primary_lang = primary_version_key
         for mention in tqdm(self.mentions, desc="group by passage"):
             if mention.language == "en":
-                bold_indexes = bold_ranges[mention.ref]
+                bold_indexes = bold_ranges.get(mention.ref, set())
                 mention_indices = {i for i in range(mention.start, mention.end)}
                 if len(mention_indices & bold_indexes) == 0:
                     continue
@@ -926,22 +932,22 @@ def get_all_bold_in_talmud():
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "research/knowledge_graph/named_entity_recognition/ner_tagger_input.json",
-        f"{ner_file_prefix}/ner_output_talmud.json",
+        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_mishnah.json",
+        f"{ner_file_prefix}/ner_output_mishnah.json",
         f"{ner_file_prefix}/html"
     )
-    # corpus_manager.tag_corpus()
+    corpus_manager.tag_corpus()
     # corpus_manager.merge_rabbis_in_mentions(f"{ner_file_prefix}/swap_rabbis.json")
-    # corpus_manager.save_mentions()
+    corpus_manager.save_mentions()
 
-    corpus_manager.load_mentions()
-    # corpus_manager.generate_html_file()
+    # corpus_manager.load_mentions()
+    corpus_manager.generate_html_file()
     # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv")
     corpus_manager.cross_validate_mentions_by_lang_talmud(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"))
 """
-TODO
-searching without nikkud in Hebrew is way too dangerous.
-need to only search in Hebrew as a rule
+This file depends on first running
+- find_missing_rabbis.convert_final_en_names_to_ner_tagger_input() which creates sperling_named_entities
+- convert_sperling_data.convert_to_mentions_file() which converts 
 
 
 """
