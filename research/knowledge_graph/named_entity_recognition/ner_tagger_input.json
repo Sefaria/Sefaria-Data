@@ -51,7 +51,7 @@
                 "language": "en"
             }
           },
-          "namedEntities": ["rav", "rabbah-b-nachmani", "rabi", "rava", "shemaiah", "rabbi-shemaya"],
+          "namedEntities": ["rav", "rabbah-b-nachmani", "rabi", "rava", "shemaiah", "rabbi-shemaya", "shmuel-(amora)", "levi-b-sisi"],
           "comment": "Rav is very ambiguous in Aramaic and less ambiguous in English"
         }
     ],
@@ -90,5 +90,20 @@
                 }
             ]
         }
-    ]
+    ],
+    "namedEntityLinkerParams": {
+        "nonLiteralCorpus": [
+            {
+                "title": "Bavli",
+                "type": "category",
+                "versions": [
+                    {
+                        "language": "en",
+                        "versionTitle": "William Davidson Edition - English",
+                        "literalRegex": "<b>[^<]+</b>"
+                    }
+                ]
+            }
+        ]       
+    }
 }

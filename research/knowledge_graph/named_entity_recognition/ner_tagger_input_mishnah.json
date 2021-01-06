@@ -1,0 +1,84 @@
+{
+    "namedEntities": [
+        {
+            "id": "mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "group-of-mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "namedEntityFile": "research/knowledge_graph/named_entity_recognition/sperling_named_entities.json"
+        },
+        {
+            "id": "rabi",
+            "idIsSlug": true,
+            "manualTitles": [{
+                "text": "Rabbi",
+                "lang": "en"
+            }]
+        }
+    ],
+    "rules": [
+        {
+          "rule": {
+            "id": "namedEntityInVersion",
+            "appliesToVersions": [
+                {
+                    "versionTitle": "Torat Emet 357",
+                    "language": "he"
+                },
+                {
+                    "versionTitle": "Version of the Gemara - vocalized",
+                    "language": "he"
+                }
+            ],
+            "versionToCompare": {
+                "versionTitle": "Mishnah Yomit by Dr. Joshua Kulp",
+                "language": "en"
+            }
+          },
+          "namedEntities": ["rabi", "levi-b-sisi", "elisha-ben-abuya"],
+          "comment": "Rav is very ambiguous in Aramaic and less ambiguous in English"
+        }
+    ],
+    "corpus": [
+        {
+            "title": "Mishnah",
+            "type": "category",
+            "skip": ["Yesh Seder LaMishnah Introduction"],
+            "versions": [
+                {
+                    "language": "en",
+                    "versionTitle": "Mishnah Yomit by Dr. Joshua Kulp"
+                },
+                {
+                    "language": "he",
+                    "versionTitle": "Torat Emet 357"
+                },
+                {
+                    "language": "he",
+                    "versionTitle": "Version of the Gemara - vocalized"
+                }
+            ]
+        }
+    ],
+    "namedEntityRecognizerParams": {
+        "langSpecificParams": {
+            "he": {
+                "allowAnyNikkud": true,
+                "prefixRegex": "(?:ב[֑-ׇ]{0,4}כ[֑-ׇ]{0,4}|ו[֑-ׇ]{0,4}ב[֑-ׇ]{0,4}|ו[֑-ׇ]{0,4}ה[֑-ׇ]{0,4}|ו[֑-ׇ]{0,4}כ[֑-ׇ]{0,4}|ו[֑-ׇ]{0,4}ל[֑-ׇ]{0,4}|ו[֑-ׇ]{0,4}מ[֑-ׇ]{0,4}|ו[֑-ׇ]{0,4}ש[֑-ׇ]{0,4}|כ[֑-ׇ]{0,4}ב[֑-ׇ]{0,4}|כ[֑-ׇ]{0,4}כ[֑-ׇ]{0,4}|כ[֑-ׇ]{0,4}ל[֑-ׇ]{0,4}|כ[֑-ׇ]{0,4}מ[֑-ׇ]{0,4}|כ[֑-ׇ]{0,4}ש[֑-ׇ]{0,4}|ל[֑-ׇ]{0,4}כ[֑-ׇ]{0,4}|מ[֑-ׇ]{0,4}ב[֑-ׇ]{0,4}|מ[֑-ׇ]{0,4}ה[֑-ׇ]{0,4}|מ[֑-ׇ]{0,4}כ[֑-ׇ]{0,4}|מ[֑-ׇ]{0,4}ל[֑-ׇ]{0,4}|מ[֑-ׇ]{0,4}ש[֑-ׇ]{0,4}|ש[֑-ׇ]{0,4}ב[֑-ׇ]{0,4}|ש[֑-ׇ]{0,4}ה[֑-ׇ]{0,4}|ש[֑-ׇ]{0,4}כ[֑-ׇ]{0,4}|ש[֑-ׇ]{0,4}ל[֑-ׇ]{0,4}|ש[֑-ׇ]{0,4}מ[֑-ׇ]{0,4}|ב[֑-ׇ]{0,4}|כ[֑-ׇ]{0,4}|ל[֑-ׇ]{0,4}|מ[֑-ׇ]{0,4}|ש[֑-ׇ]{0,4}|ה[֑-ׇ]{0,4}|ו[֑-ׇ]{0,4}|ד[֑-ׇ]{0,4})?"
+            }
+        }
+    },
+    "namedEntityLinkerParams": {
+        "langSpecificParams": {
+            "he": {
+                "allowAnyNikkud": true
+            }
+        }        
+    }
+}
