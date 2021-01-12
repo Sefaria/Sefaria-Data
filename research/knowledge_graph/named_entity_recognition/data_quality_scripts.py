@@ -1,4 +1,5 @@
 import json, re, csv, srsly, django
+from sefaria.utils.hebrew import is_hebrew
 django.setup()
 from sefaria.model import *
 
@@ -532,22 +533,71 @@ def find_true_bonayich_rabbis():
         c.writerows(rows)
     print(exist_count, na_count)
 
+def add_more_mishnah_titles():
+    from sefaria.utils.hebrew import is_hebrew, strip_cantillation
+    with open("/home/nss/sefaria/datasets/ner/sefaria/temp/Rabbis in Mishnah Corrections - cross_validated_by_language.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            # TODO deal with mistakes
+            if row['Error Type (rabbi, title, mistake, correct, skip)'] != 'title':
+                continue
+            new_title = strip_cantillation(row['Missing Title'], strip_vowels=True)
+            if new_title == 'TYPO':
+                continue
+            slug = row['Missing Title Slug']
+            if len(slug) == 0:
+                print('NO MISSING TITLE SLUG', row)
+                continue
+            if slug.startswith('BONAYICH'):
+                continue
+            t = Topic.init(slug)
+            if t is None:
+                print("NO TOPIC FOR SLUG", slug, row)
+                continue
+
+            if len(new_title) == 0:
+                print("ZERO LEN NEW TITLE", row)
+                continue
+            t.titles += [{
+                "text": new_title,
+                "lang": "he" if is_hebrew(new_title) else "en"
+            }]
+            t.save()
+
+def save_manual_mistakes_mishnah():
+    with open("/home/nss/sefaria/datasets/ner/sefaria/temp/Rabbis in Mishnah Corrections - cross_validated_by_language.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        out_rows = []
+        for row in c:
+            if row['Error Type (rabbi, title, mistake, correct, skip)'] != 'mistake':
+                continue
+            out_rows += [{
+                "start": int(row["Start"]),
+                "end": int(row["End"]),
+                "versionTitle": row["Version"],
+                "language": row["Language"],
+                "ref": row["Ref"],
+                "mention": row["Rabbi Snippet"].split("~")[1],
+                "correctionType": "mistake"
+            }]
+    with open("/home/nss/sefaria/data/research/knowledge_graph/named_entity_recognition/manual_corrections_mishnah.json", "w") as fout:
+        json.dump(out_rows, fout, ensure_ascii=False, indent=2)
+
 if __name__ == "__main__":
     # make_rav_rabbi_csv()
     # make_csv_of_alt_titles()
     # make_csvs_for_stub_rabbis()
     # check_rabi_rav_results()
     # check_new_rabbis_to_create()
-    # get_number_of_rabbis_in_perek('Kiddushin', 0)
-    # get_number_of_rabbis_in_perek('Baba Kamma', 0)
-    # get_number_of_rabbis_in_perek('Makkot', 2)
     # fix_stub_rabbis()
     # how_much_is_coming_from_bonayich()
     # remove_gen_data()
     # find_changes_between_wiki_and_will()
     # num_tanakh_person('aaron', "Tanakh: The Holy Scriptures, published by JPS", 'en')
     # find_true_bonayich_rabbis()
-    make_levi_shmuel_csv()
+    # make_levi_shmuel_csv()
+    # add_more_mishnah_titles()
+    save_manual_mistakes_mishnah()
 """
 Confirm new rabbis to create
 Create them
