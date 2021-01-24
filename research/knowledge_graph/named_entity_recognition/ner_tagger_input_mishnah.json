@@ -1,0 +1,102 @@
+{
+    "namedEntities": [
+        {
+            "id": "mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "group-of-mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "namedEntityFile": "research/knowledge_graph/named_entity_recognition/sperling_named_entities.json"
+        },
+        {
+            "id": "rabi",
+            "idIsSlug": true,
+            "manualTitles": [{
+                "text": "Rabbi",
+                "lang": "en"
+            }]
+        }
+    ],
+    "rules": [
+        {
+          "rule": {
+            "id": "namedEntityInVersion",
+            "appliesToVersions": [
+                {
+                    "versionTitle": "Torat Emet 357",
+                    "language": "he"
+                },
+                {
+                    "versionTitle": "Version of the Gemara - vocalized",
+                    "language": "he"
+                }
+            ],
+            "versionToCompare": {
+                "versionTitle": "Mishnah Yomit by Dr. Joshua Kulp",
+                "language": "en"
+            }
+          },
+          "namedEntities": ["rabi", "levi-b-sisi", "elisha-ben-abuya", "hillel"],
+          "comment": "Rav is very ambiguous in Aramaic and less ambiguous in English"
+        },
+        {
+          "rule": {
+            "id": "manualCorrections",
+            "correctionsFile": "research/knowledge_graph/named_entity_recognition/manual_corrections_mishnah.json"
+          }
+        }
+    ],
+    "corpus": [
+        {
+            "title": "Mishnah",
+            "type": "category",
+            "skip": ["Yesh Seder LaMishnah Introduction"],
+            "versions": [
+                {
+                    "language": "en",
+                    "versionTitle": "Mishnah Yomit by Dr. Joshua Kulp"
+                },
+                {
+                    "language": "he",
+                    "versionTitle": "Torat Emet 357"
+                },
+                {
+                    "language": "he",
+                    "versionTitle": "Version of the Gemara - vocalized"
+                },
+                {
+                    "language": "en",
+                    "versionTitle": "William Davidson Edition - English"
+                }
+            ]
+        }
+    ],
+    "namedEntityRecognizerParams": {
+        "langSpecificParams": {
+            "he": {
+                "prefixRegex": "(?:בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד)?"
+            }
+        }
+    },
+    "namedEntityLinkerParams": {
+        "nonLiteralCorpus": [
+            {
+                "title": "Mishnah",
+                "type": "category",
+                "skip": ["Yesh Seder LaMishnah Introduction"],
+                "versions": [
+                    {
+                        "language": "en",
+                        "versionTitle": "William Davidson Edition - English",
+                        "literalRegex": "<b>[^<]+</b>"
+                    }
+                ]
+            }
+        ]       
+    }
+}

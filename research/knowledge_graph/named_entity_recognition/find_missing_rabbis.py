@@ -149,6 +149,7 @@ def check_rabbi_yehuda_hanasi():
     print(bad)
 
 def convert_final_en_names_to_ner_tagger_input():
+    from sefaria.utils.hebrew import is_hebrew
     matched_bon_id_set = set()
     with open(f"{DATA_LOC}/Match Bonayich Rabbis with Sefaria Rabbis - Sefaria Rabbis Matched.csv", "r") as fin:
         c = csv.DictReader(fin)
@@ -180,7 +181,7 @@ def convert_final_en_names_to_ner_tagger_input():
                 continue
             bid = row['Bonayich ID']
             en_titles = []
-            for i in range(3):
+            for i in range(6):
                 temp_en = row[f'En {i+1}']
                 if len(temp_en) == 0:
                     continue
@@ -199,7 +200,7 @@ def convert_final_en_names_to_ner_tagger_input():
                 "tag": tag,
                 "id": f"BONAYICH:{bid}",
                 "idIsSlug": False,
-                "manualTitles": [{"text": title, "lang": "en"} for title in en_titles] + [{"text": row["He"], "lang": "he"}],
+                "manualTitles": [{"text": title, "lang": "he" if is_hebrew(title) else "en"} for title in en_titles] + [{"text": row["He"], "lang": "he"}],
                 "gen": bonayich_metadata[int(bid)]["gen"] if (bid != 'N/A' and False) else None,  # manually leave this data out for now
                 "type": bonayich_metadata[int(bid)]["type"] if bid != 'N/A' else None
             }]
