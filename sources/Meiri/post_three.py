@@ -22,13 +22,12 @@ files = ["1.json", "2.json"]
 servers = [servers[1]]
 links = []
 import json
-with open("1.json", 'r') as f:
-    one_links = filter_tractates(json.load(f))
+# with open("1.json", 'r') as f:
+#     one_links = filter_tractates(json.load(f))
 with open("2.json", 'r') as f:
     two_links = filter_tractates(json.load(f))
-
+one_links = {}
 links = one_and_two(one_links, two_links)
-
 print(len(links))
 step = int(len(links)/2)
 #post_link(links, skip_lang_check=1)

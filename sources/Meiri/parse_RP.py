@@ -7,7 +7,7 @@ from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
 from data_utilities.util import WeightedLevenshtein
 levenshtein = WeightedLevenshtein()
-mode = "1"
+mode = "2"
 import json
 import math
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
@@ -86,7 +86,7 @@ def PM_regular(lines, comm_title, base_ref, writer, score_manager):
     meiri_found = {}
     for m in all_matches:
         print(m[4])
-        if m[4] > 20:
+        if m[4] > 10:
             ref, ref_words = get_ref(m[3], base.ja().flatten_to_array(), base_ref)
             meiri_range, meiri_words = get_ref(m[2], lines, comm_title)
 
@@ -133,7 +133,7 @@ def tokenize_words(base_str):
     return word_list
 
 def dher(text):
-    dh = " ".join(text.split()[:10])
+    dh = " ".join(text.split()[:5])
     #dh = " ".join(text.split(".")) if " ".join(text.split(".")).count(" ") < 10 else " ".join(text.split(" ")[:7])
     return dh
 
