@@ -227,7 +227,7 @@ def display_displacy(jsonl_loc):
     jsonl_data = list(filter(lambda x: len(x['text']) > 0, srsly.read_jsonl(jsonl_loc)))
     spacy.displacy.serve(jsonl_data, style='ent', manual=True)
 
-def convert_to_mentions_file():
+def convert_to_mentions_file(only_bonayich_rabbis=True):
     import json
     from sefaria.utils.hebrew import is_hebrew
     from research.knowledge_graph.named_entity_recognition.ner_tagger import Mention
@@ -263,7 +263,7 @@ def convert_to_mentions_file():
     unique_missed = {}
     new_mentions = set()
     for mention in srsly.read_jsonl(f"{DATA_LOC}/he_mentions.jsonl"):
-        if int(mention['Bonayich ID']) not in ids_not_in_sefaria_db:
+        if int(mention['Bonayich ID']) not in ids_not_in_sefaria_db and only_bonayich_rabbis:
             # already exists in sefaria db. we can skip
             continue
         slug_set = manual_sef_id_map.get(int(mention['Bonayich ID']), None)
@@ -274,7 +274,7 @@ def convert_to_mentions_file():
             # these are 'missing' mostly because they're false positives in michael's results
             unique_missed[mention['Bonayich ID']] = mention['Mention']
             continue
-        if slug_set is not None:
+        if slug_set is not None and only_bonayich_rabbis:
             # ignore any bids that match sefaria slugs 
             continue
         new_mentions.add(Mention().add_metadata(**{
@@ -395,6 +395,15 @@ def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_chan
         changes = srsly.read_json(manual_changes_file)
     with open("research/knowledge_graph/named_entity_recognition/sperling_mentions.json", "r") as fin:
         j = json.load(fin)
+    # add mentions in db b/c sperling_mentions only includes bonayich-only mentions
+    for tl in RefTopicLinkSet({"class": "refTopic", "linkType": "mention", "charLevelData.versionTitle": "William Davidson Edition - Aramaic"}):
+        j += [{
+            "start": tl.charLevelData['startChar'],
+            "end": tl.charLevelData['endChar'],
+            "ref": tl.ref,
+            "mention": tl.charLevelData['text'],
+            "id_matches": [tl.toTopic]
+        }]
     mentions_by_seg = defaultdict(list)
     print("TOTAL MENTIONS", len(j))
     for mention in j:
@@ -591,7 +600,7 @@ if __name__ == "__main__":
     # srsly.write_jsonl(f'{DATA_LOC}/he_training.jsonl', spacy_formatted)
     # display_displacy(f"{DATA_LOC}/he_training.jsonl")
     
-    convert_to_mentions_file()
+    convert_to_mentions_file(only_bonayich_rabbis=True)
     convert_mentions_for_alt_version('William Davidson Edition - Vocalized Aramaic', 'sperling_mentions_nikkud.json')
     convert_mentions_for_alt_version('William Davidson Edition - Vocalized Punctuated Aramaic', 'sperling_mentions_nikkud_punctuated.json')
     convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
