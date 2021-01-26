@@ -2,13 +2,14 @@
 
 ---
 substitutions: 
-  _PRODIGY_FILENAME: ""
-  _ENV_NAME: ""
-  _MONGO_HOSTNAME: ""
+  _ENV_NAME: "deadbeef"
+  _MONGO_HOSTNAME: "deadbeef"
+  _GKE_NAMESPACE: "deadbeef"
+  _SEFARIA_BUILD_ARTIFACT_REPO: "deadbeef"
 
 steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    args: ['gsutil', 'cp', 'gs://sefaria--build-artifacts/prodigy-latest.whl', './research/prodigy/prodigy-latest.whl']
+    args: ['gsutil', 'cp', 'gs://${_SEFARIA_BUILD_ARTIFACT_REPO}/prodigy/prodigy-latest.whl', './research/prodigy/prodigy-latest.whl']
     id: retrieve_prodigy_binary
 
   - name: gcr.io/kaniko-project/executor:latest
@@ -16,7 +17,7 @@ steps:
       - --destination
       - --cache=true
       - --dockerfile=build/prodigy/Dockerfile
-      - --context=dir://
+      - --context=dir://.
     id: build_prodigy_container
     wait_for: 
       - retrieve_prodigy_binary
