@@ -30,8 +30,10 @@ steps:
     id: deploy_prodigy
     args: ["upgrade", "-i", "prodigy-${_ENV_NAME}", "--namespace", "${GKE_NAMESPACE}", "--debug"]
     env:
-      - 'CLOUDSDK_COMPUTE_ZONE=${_GKE_REGION}'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=${_GKE_CLUSTER}'
+      - 'CLOUDSDK_COMPUTE_ZONE=${_GKE_ZONE}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_GKE_CLUSTER_NAME}'
       - 'KUBECTL_VERSION=1.14'
       - 'KUBECONFIG=/root/.kube/config'
+    wait_for:
+      - build_prodigy_container
 ...
