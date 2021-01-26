@@ -11,8 +11,10 @@ import csv
 
 """
 0 Category
-1 Desc - En
-2 Desc - He
+1 English Description
+2 Hebrew Description
+3 Short English Description
+4 Short Hebrew Description
 """
 
 def _(p, attr, field):
@@ -26,4 +28,6 @@ with open("Torah Commentators - Bios - Categories.tsv") as tsv:
         c = Category().load({"path": path})
         c.enDesc = l[1].strip()
         c.heDesc = l[2].strip()
+        c.enShortDesc = l[3].strip()
+        c.heShortDesc = l[4].strip()
         c.save()
