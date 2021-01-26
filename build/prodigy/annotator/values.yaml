@@ -1,7 +1,7 @@
 ---
 deployEnv: deadbeef
 prodigyAnnotator:
-  resources: {}
+  imageName: gcr.io/$PROJECT_ID/prodigy-annotator
   mongoHostname: ""
   resources:
     request:

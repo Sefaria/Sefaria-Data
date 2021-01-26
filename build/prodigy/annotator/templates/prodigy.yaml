@@ -34,7 +34,8 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
           livenessProbe:
-            tcpSocket: 9999
+            tcpSocket: 
+              port: 9999
             periodSeconds: 10
             timeoutSeconds: 3
           env: 
@@ -52,6 +53,6 @@ spec:
   ports: 
     - name: http
       port: 3478
-    selector:
-      app: annotator-{{ .Values.deployEnv }}
+  selector:
+    app: annotator-{{ .Values.deployEnv }}
 ...

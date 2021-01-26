@@ -9,3 +9,6 @@ WORKDIR /home/prodigy
 
 COPY ./research/prodigy/* ./
 RUN pip3 install ./prodigy*.whl
+
+ENTRYPOINT [ "/bin/bash", "-c" ]
+EXPOSE 8080
