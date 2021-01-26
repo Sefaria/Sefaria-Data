@@ -79,6 +79,8 @@ with open("Torah Commentators - Bios - Works.tsv") as tsv:
         setattr(i, "authors", sheet_authors)
         attrs = [("enDesc", l[2]),
             ("heDesc", l[3]),
+            ("enShortDesc", l[4]),
+            ("heShortDesc", l[5]),
             ("compDate", l[6]),
             ("errorMargin", l[7]),
             ("compPlace", l[8]), #composition place
