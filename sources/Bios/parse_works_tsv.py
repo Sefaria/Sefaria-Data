@@ -10,7 +10,7 @@ import csv
 """
 db.index.update({}, {"$unset": {
     "authors": 1,
-    "enDesc: 1": 1,
+    "enDesc": 1,
     "heDesc": 1,
     "pubDate": 1,
     "compDate": 1,
@@ -26,12 +26,14 @@ db.index.update({}, {"$unset": {
 1  Author
 2  English Description
 3  Hebrew Description
-4  Composition Year (loazi)
-5  Composition Year Margin of Error (+/- years)
-6  Place composed
-7  Year of first publication
-8  Place of first publication
-9  Era
+4  English Short Description 
+5  Hebrew Short Description
+6  Composition Year (loazi)
+7  Composition Year Margin of Error (+/- years)
+8  Place composed
+9  Year of first publication
+10 Place of first publication
+11 Era
 """
 eras = {
     "Gaonim": "GN",
@@ -77,12 +79,12 @@ with open("Torah Commentators - Bios - Works.tsv") as tsv:
         setattr(i, "authors", sheet_authors)
         attrs = [("enDesc", l[2]),
             ("heDesc", l[3]),
-            ("compDate", l[4]),
-            ("errorMargin", l[5]),
-            ("compPlace", l[6]), #composition place
-            ("pubDate", l[7]),
-            ("pubPlace", l[8]), # publication place
-            ("era", eras.get(l[9]))]
+            ("compDate", l[6]),
+            ("errorMargin", l[7]),
+            ("compPlace", l[8]), #composition place
+            ("pubDate", l[9]),
+            ("pubPlace", l[10]), # publication place
+            ("era", eras.get(l[11]))]
 
         for aname, value in attrs:
             obj_val = getattr(i, aname, None)
