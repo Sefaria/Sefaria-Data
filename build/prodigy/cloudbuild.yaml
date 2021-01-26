@@ -14,7 +14,8 @@ steps:
 
   - name: gcr.io/kaniko-project/executor:latest
     args:
-      - --destination
+      - --destination=gcr.io/$PROJECT_ID/prodigy-annotator:$BUILD_ID
+      - --destination=gcr.io/$PROJECT_ID/prodigy-annotator:latest
       - --cache=true
       - --dockerfile=build/prodigy/Dockerfile
       - --context=dir://.
