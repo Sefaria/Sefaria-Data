@@ -1,0 +1,13 @@
+---
+deployEnv: deadbeef
+prodigyAnnotator:
+  resources: {}
+  mongoHostname: ""
+  resources:
+    request:
+      memory: "50Mi"
+      cpu: "50m"
+    limit:
+      memory: "50Mi"
+      cpu: "100m"
+...

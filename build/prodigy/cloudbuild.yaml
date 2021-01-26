@@ -1,0 +1,27 @@
+# TODO: Upload binary
+
+---
+substitutions: 
+  _PRODIGY_FILENAME: ""
+  _ENV_NAME: ""
+  _MONGO_HOSTNAME: ""
+
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args: ['gsutil', 'cp', 'gs://sefaria--build-artifacts/prodigy-latest.whl', './research/prodigy/prodigy-latest.whl']
+    id: retrieve_prodigy_binary
+
+  - name: gcr.io/kaniko-project/executor:latest
+    args:
+      - --destination
+      - --cache=true
+      - --dockerfile=build/prodigy/Dockerfile
+      - --context=dir://
+    id: build_prodigy_container
+    wait_for: 
+      - retrieve_prodigy_binary
+  
+  - name: "gcr.io/production-deployment/cloudbuild-helm:v3.1.2"
+    id: deploy_prodigy
+    args: ["upgrade", "-i", "prodigy-${_ENV_NAME}", "--namespace", "${GKE_NAMESPACE}", "--debug"]
+...
