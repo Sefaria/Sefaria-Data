@@ -5,7 +5,7 @@ from spacy.lang.he import Hebrew
 from spacy.util import minibatch, compounding
 from prodigy.components.sorters import prefer_uncertain
 from prodigy.components.preprocess import add_tokens, split_sentences
-from research.prodigy.db_manager import MongoProdigyDBManager
+from db_manager import MongoProdigyDBManager
 from pathlib import Path
 
 # LABELS = ["פשוט", "שם", "דיבור המתחיל"]

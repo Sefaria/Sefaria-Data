@@ -17,7 +17,7 @@ spec:
       containers:
         - name: prodigy
           image: "{{ .Values.prodigyAnnotator.imageName }}:{{ .Values.prodigyAnnotator.imageTag }}"
-          args: ["prodigy ref-tagging-recipe ref_tagging test_input research/prodigy/models/ref_tagging --view-id ner_manual -db-host $MONGO_HOST -db-port 27017 -F ./research/prodigy/ref_tagging_recipe.py"]
+          args: ["prodigy ref-tagging-recipe ref_tagging test_input research/prodigy/models/ref_tagging --view-id ner_manual -db-host $MONGO_HOST -db-port 27017 -F ./ref_tagging_recipe.py"]
           ports: 
             - containerPort: 8080
               protocol: TCP
