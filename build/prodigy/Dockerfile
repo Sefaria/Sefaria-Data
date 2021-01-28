@@ -13,6 +13,7 @@ RUN pip3 install -r ./requirements.txt
 # Expects the Prodigy python wheel to exist at ./research/prodigy/*
 COPY ./research/prodigy/* ./
 RUN pip3 install ./prodigy*.whl
+RUN touch ./ref_tagging_model_output
 
 ENTRYPOINT [ "/bin/bash", "-c" ]
 EXPOSE 8080
