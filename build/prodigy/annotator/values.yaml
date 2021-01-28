@@ -5,9 +5,9 @@ prodigyAnnotator:
   mongoHostname: ""
   resources:
     request:
-      memory: "50Mi"
-      cpu: "50m"
+      memory: "2Gi"
+      cpu: "1000m"
     limit:
-      memory: "50Mi"
-      cpu: "100m"
+      memory: "4Gi"
+      cpu: "1500m"
 ...
