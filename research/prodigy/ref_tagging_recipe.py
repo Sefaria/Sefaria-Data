@@ -66,11 +66,11 @@ def save_model(nlp, model_dir):
 
 def train_model(nlp, annotations, model_dir):
     batches = minibatch(annotations, size=compounding(4.0, 32.0, 1.001))
+    losses = {}
     for batch in batches:        
         texts = [eg["text"] for eg in batch]
         ents_list = [[(span["start"], span["end"], span["label"]) for span in eg.get("spans", [])] for eg in batch]
         annots = [{"entities": ents} for ents in ents_list]
-        losses = {}
         nlp.update(texts, annots, losses=losses)  # TODO add drop=0.5
     save_model(nlp, model_dir)
     return losses
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     import_file_to_collection('research/prodigy/data/test_input.jsonl', 'test_input')
 """
 command to run
-prodigy ref-tagging-recipe ref_tagging test_input research/prodigy/models/ref_tagging --view-id ner_manual -db-host localhost -db-port 27017 -F research/prodigy/ref_tagging_recipe.py
+prodigy ref-tagging-recipe ref_tagging test_input models/ref_tagging --view-id ner_manual -db-host localhost -db-port 27017 -F ref_tagging_recipe.py
 """
 
 """
