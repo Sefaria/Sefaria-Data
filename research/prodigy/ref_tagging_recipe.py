@@ -147,6 +147,8 @@ if __name__ == "__main__":
     import_file_to_collection('research/prodigy/data/test_input.jsonl', 'test_input')
 """
 command to run
+
+cd research/prodigy
 prodigy ref-tagging-recipe ref_tagging test_input models/ref_tagging --view-id ner_manual -db-host localhost -db-port 27017 -F ref_tagging_recipe.py
 """
 
