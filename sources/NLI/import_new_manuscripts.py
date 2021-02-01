@@ -5,6 +5,7 @@ import os
 import csv
 import json
 import django
+from PIL import Image, UnidentifiedImageError
 from urllib import parse
 django.setup()
 from sefaria.model import *
@@ -12,6 +13,7 @@ from sefaria.model import manuscript
 from pymongo.errors import DuplicateKeyError
 from sources.NLI.munich import get_rows_from_db
 from sefaria.system.exceptions import InputError
+from concurrent.futures.process import ProcessPoolExecutor
 
 MANUSCRIPT_DATA = {
     'Kaufmann Manuscript': {
@@ -324,7 +326,231 @@ def create_bomberg():
         print(m)
 
 
+def create_vilna():
+    manuscript_data = MANUSCRIPT_DATA['Vilna Pressing']
+    manuscript_title = manuscript_data['title']
+    create_manuscript(manuscript_data)
+
+    url_prefix = 'https://storage.googleapis.com/sefaria-manuscripts/vilna-romm'
+    slug = manuscript.ManuscriptPage.get_slug_for_title(manuscript_title)
+    ms = manuscript.ManuscriptPageSet({'manuscript_slug': slug})
+    ms.delete()
+
+    file_directory = '/home/jonathan/sefaria/Sefaria-Data/sources/NLI/Romm/full_size'
+    filenames = [f for f in os.listdir(file_directory) if f.endswith('.jpg')]
+    for i, f in enumerate(filenames, 1):
+        if i % 100 == 0:
+            print(f'{i}/{len(filenames)}')
+        tref = f.replace('.jpg', '').replace('_', ' ')
+        if not Ref.is_ref(tref):
+            print(f'bad filename for {f}')
+            continue
+        data = {
+            'manuscript_slug': slug,
+            'page_id': Ref(tref).normal(),
+            'image_url': f'{url_prefix}/{f}',
+            'thumbnail_url': f'{url_prefix}/{f.replace(".jpg", "_thumbnail.jpg")}',
+        }
+        page_obj = manuscript.ManuscriptPage().load_from_dict(data)
+        page_obj.add_ref(tref)
+        page_obj.save()
+
+
+
+def bad_remove_bad_first_image(page_set: list, final_page_url=None):
+    """
+    url on first image is unrelated, second url should be on the first image
+    By shifting the urls up by one, we're leaving the final page with no data. If this can be determined, supply it with
+    final_page_url
+    :param page_set:  ManuscriptPageSet to be corrected
+    :param final_page_url: url for the last page, which is presumably incorrect and will get orphaned by running this
+    method
+    :return:
+    """
+    page_set.sort(key=lambda x: Ref(x.expanded_refs[0]).sections)
+    urls = [{'u': p.image_url, 't': p.thumbnail_url} for p in page_set]
+    urls.pop(0)
+    final_page = page_set.pop()
+    for p, u in zip(page_set, urls):
+        p.image_url = u['u']
+        p.thumbnail_url = u['t']
+        # p.save()
+    if final_page_url:
+        final_page.image_url = final_page_url
+        final_page.thumbnail_url = final_page_url.replace(".jpg", "_thumbnail.jpg")
+    else:
+        final_page.image_url = 'orphaned'
+    # final_page.save()
+    return
+
+
+def remove_bad_first_image(tractate, final_page=None, use_dummy=False, dummy_tref=None):
+    """
+
+    :param tractate:
+    :param final_page:
+    :param use_dummy: Some tractates are off by one,but don't have a first image. For that case, I've set up a dummy
+    :param dummy_tref: Should span up till where the second page starts
+    image that we can use.
+    :return:
+    """
+    if use_dummy:
+        dummy = create_dummy_munich()  # this will not create duplicates
+        if dummy_tref:
+            dummy.add_ref(dummy_tref)
+        else:
+            dummy.add_ref(f'{tractate} 2a')
+        dummy.save()
+    page_set = m95_for_tractate(tractate)
+    contained_refs, next_contained_refs = [], []
+    for page in page_set:
+        for cr in page.contained_refs:
+            if Ref(cr).book == tractate:
+                page.remove_ref(cr)
+                next_contained_refs.append(cr)
+        for cr in contained_refs:
+            page.add_ref(cr)
+
+        page.save()
+        contained_refs = next_contained_refs
+        next_contained_refs = []
+    if final_page:
+        for cr in contained_refs:
+            final_page.add_ref(cr)
+        final_page.save()
+
+
+def add_missing_first_page(page_set: list, first_page_url):
+    page_set.sort(key=lambda x: Ref(x.expanded_refs[0]).sections)
+    urls = [{'u': p.image_url, 't': p.thumbnail_url} for p in page_set]
+    urls.insert(0, {'u': first_page_url, 't': first_page_url.replace(".jpg", "_thumbnail.jpg")})
+    urls.pop()  # presumably the last url is unrelated
+    for p, u in zip(page_set, urls):
+        p.image_url = u['u']
+        p.thumbnail_url = u['t']
+        p.save()
+
+
+def get_url_for_file(filename, manuscript_dir):
+    """
+    Useful tool for correcting munich
+    """
+    return f'https://storage.googleapis.com/sefaria-manuscripts/{manuscript_dir}/{filename}'
+
+
+def m95_for_tractate(tractate):
+    def sort_pages(mp):
+        for r in mp.contained_refs:
+            oref = Ref(r)
+            if oref.book == tractate:
+                return oref.sections
+        return 999
+
+    mp_array = manuscript.ManuscriptPageSet({
+        'expanded_refs': {'$regex': Ref(tractate).regex(anchored=True)},
+        'manuscript_slug': 'munich-manuscript-95'
+    }).array()
+    mp_array.sort(key=sort_pages)
+    return mp_array
+
+
+def create_dummy_munich():
+    mp = manuscript.ManuscriptPage().load({'manuscript_slug': "munich-manuscript-95", "page_id": "dummy_manuscript"})
+    if mp is not None:
+        return mp
+    mp = manuscript.ManuscriptPage()
+    mp.manuscript_slug = "munich-manuscript-95"
+    mp.page_id = "dummy_manuscript"
+    mp.image_url = "foo"
+    mp.thumbnail_url = 'foo'
+    mp.save()
+    return mp
+
+
+def create_thumbnail(filepath: str, thumb_size: int, output_dir=None):
+    """
+    :param filepath: full filepath
+    :param thumb_size:
+    :param output_dir: full path to output directory
+    :return:
+    """
+    print(filepath)
+    outpath = filepath.replace('.jpg', '_thumbnail.jpg')
+    if output_dir:
+        filename = re.search(r'[^/]+.jpg$', outpath).group(0)
+        outpath = os.path.join(output_dir, filename)
+    if os.path.exists(outpath):
+        return True
+    try:
+        im = Image.open(filepath)
+    except UnidentifiedImageError:
+        return False
+    height, length = im.size
+    aspect_ratio = length / height
+    new_h = thumb_size
+    new_l = int(aspect_ratio * length)
+    try:
+        im.thumbnail((new_h, new_l))
+    except OSError:
+        return False
+    im.save(outpath)
+    return True
+
+
+def check_missing(title_regex):
+    manu_meta = manuscript.Manuscript().load({'title': {'$regex': title_regex}})
+    talmud = library.get_indexes_in_category('Bavli')
+    talmud.sort(key=lambda x: Ref(x).index.order)
+    missing = []
+    total = 0
+    for tractate in talmud:
+        print(tractate)
+        segs = Ref(tractate).all_segment_refs()
+        total += len(segs)
+        for seg in segs:
+            tref = seg.normal()
+            mp = manuscript.ManuscriptPage().load({'manuscript_slug': manu_meta.slug, 'expanded_refs': tref})
+            if not mp:
+                missing.append(tref)
+
+    as_ranges = find_ranges(missing)
+    print(f'{len(as_ranges)} ranges of missing refs')
+    print(f'{len(missing)} total missing segments')
+    print(f'{total} segments analyzed')
+    print(*as_ranges, sep='\n')
+
+
+if __name__ == '__main__':
+    bomberg_man = manuscript.Manuscript().load({'title': {'$regex': r'[bB]omb'}})
+
+    sections = [f for f in Ref("Nedarim").all_subrefs() if not f.is_empty()]
+    input_directory = '/home/jonathan/sefaria/Sefaria-Data/sources/NLI/Bomberg/temp'
+    thumbnail_directory = '/home/jonathan/sefaria/Sefaria-Data/sources/NLI/Bomberg/temp_thumb'
+    files = os.listdir(input_directory)
+    files.sort(key=lambda x: int(re.search(r'([0-9]+).jpg$', x).group(1)))
+    if len(sections) != len(files):
+        raise AssertionError(f'{len(files)} files but ${len(sections)} sections')
+
+    for filename, section in zip(files, sections):
+        create_thumbnail(f'{input_directory}/{filename}', 256, thumbnail_directory)
+        normal_sec = section.normal()
+
+        data = {
+            'manuscript_slug': bomberg_man.slug,
+            'page_id': normal_sec,
+            'image_url': get_url_for_file(filename, 'bomberg'),
+            'thumbnail_url': get_url_for_file(filename.replace('.jpg', '_thumbnail.jpg'), 'bomberg'),
+            'contained_refs': [normal_sec]
+        }
+        mpage = manuscript.ManuscriptPage().load_from_dict(data)
+        mpage.set_expanded_refs()
+        mpage.save()
+
+
 """
+The following image is actually the last image in Berkahot:
+https://storage.googleapis.com/sefaria-manuscripts/munich-manuscript/Eruvin 72b-75a.jpg
+
 manuscript attrs:
 - title:
 - he_title
