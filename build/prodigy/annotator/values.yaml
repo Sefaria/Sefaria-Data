@@ -10,4 +10,7 @@ prodigyAnnotator:
     limit:
       memory: "4Gi"
       cpu: "1500m"
+  loadBalancerIP: 127.0.0.1
+  username: nonsense
+  password: nonsense
 ...

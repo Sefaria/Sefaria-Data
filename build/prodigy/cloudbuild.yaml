@@ -1,5 +1,3 @@
-# TODO: Upload binary
-
 ---
 substitutions: 
   _ENV_NAME: "deadbeef"
@@ -11,6 +9,23 @@ substitutions:
   _GKE_CLUSTER_NAME: "deadbeef"
 
 steps:
+
+  # Fetch secrets
+  - name: gcr.io/cloud-builders/gcloud
+    entrypoint: 'bash'
+    args: [ '-c', "gcloud secrets versions access latest --secret=prodigy-password --format='get(payload.data)' | tr '_-' '/+' | base64 -d > prodigy_password.txt" ]
+    id: prodigy_password
+
+  - name: gcr.io/cloud-builders/gcloud
+    entrypoint: 'bash'
+    args: [ '-c', "gcloud secrets versions access latest --secret=prodigy-username --format='get(payload.data)' | tr '_-' '/+' | base64 -d > prodigy_username.txt" ]
+    id: prodigy_username
+
+  - name: gcr.io/cloud-builders/gcloud
+    entrypoint: 'bash'
+    args: [ '-c', "gcloud secrets versions access latest --secret=prodigy-loadbalancerip --format='get(payload.data)' | tr '_-' '/+' | base64 -d > prodigy_ipaddress.txt" ]
+    id: prodigy_ipaddress
+
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args: ['gsutil', 'cp', 'gs://${_SEFARIA_BUILD_ARTIFACT_REPO}/prodigy/${_PRODIGY_WHEEL_FILENAME}', './research/prodigy/${_PRODIGY_WHEEL_FILENAME}']
     id: retrieve_prodigy_binary
@@ -28,7 +43,7 @@ steps:
   
   - name: "gcr.io/production-deployment/cloudbuild-helm:v3.1.2"
     id: deploy_prodigy
-    args: ["upgrade", "-i", "annotator-${_ENV_NAME}", "./build/prodigy/annotator", "--namespace", "${_GKE_NAMESPACE}", "--debug", "--set-string=deployEnv=${_ENV_NAME},prodigyAnnotator.imageName=gcr.io/$PROJECT_ID/prodigy-annotator,prodigyAnnotator.imageTag=$BUILD_ID,prodigyAnnotator.mongoHostname=${_MONGO_HOSTNAME}"]
+    args: ["upgrade", "-i", "annotator-${_ENV_NAME}", "./build/prodigy/annotator", "--namespace", "${_GKE_NAMESPACE}", "--debug", "--set-string=deployEnv=${_ENV_NAME},prodigyAnnotator.imageName=gcr.io/$PROJECT_ID/prodigy-annotator,prodigyAnnotator.imageTag=$BUILD_ID,prodigyAnnotator.mongoHostname=${_MONGO_HOSTNAME}", "--set-file=prodigyAnnotator.username=prodigy_username.txt,prodigyAnnotator.password=prodigy_password.txt,prodigyAnnotator.loadBalancerIP=prodigy_ipaddress.txt"]
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=${_GKE_ZONE}'
       - 'CLOUDSDK_CONTAINER_CLUSTER=${_GKE_CLUSTER_NAME}'
@@ -36,4 +51,7 @@ steps:
       - 'KUBECONFIG=/root/.kube/config'
     wait_for:
       - build_prodigy_container
+      - prodigy_username
+      - prodigy_password
+      - prodigy_ipaddress
 ...
