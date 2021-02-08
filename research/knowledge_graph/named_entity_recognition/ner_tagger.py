@@ -72,11 +72,13 @@ output
     ]
 """
 import django, json, srsly, csv
+from typing import Union
 from sefaria.utils.hebrew import strip_cantillation
 django.setup()
 import re2 as re
 import regex
 from tqdm import tqdm
+from functools import partial
 from sefaria.model import *
 from collections import defaultdict
 
@@ -245,6 +247,7 @@ class AbstractNamedEntityRecognizer:
         pass
 
 class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
+    word_breakers = r"|".join(re.escape(breaker) for breaker in ['.', ',', '"', '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§', '<', '>', "'s", "׃", "׀", "־"])
 
     def __init__(self, named_entities, **kwargs):
         self.named_entities = named_entities
@@ -258,8 +261,7 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
                 for title in ne.get_titles(lang=lang, with_disambiguation=False):
                     title_regs += [re.escape(expansion) for expansion in TextNormalizer.get_rabbi_expansions(title)]
             title_regs.sort(key=lambda x: len(x), reverse=True)
-            word_breakers = r"|".join(re.escape(breaker) for breaker in ['.', ',', '"', '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§', '<', '>', "'s", "׃", "׀", "־"])
-            self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\s|{word_breakers}){lang_params.get('prefixRegex', None) or ''})({'|'.join(title_regs)})(?=\s|{word_breakers}|$)")
+            self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\s|{self.word_breakers}){lang_params.get('prefixRegex', None) or ''})({'|'.join(title_regs)})(?=\s|{self.word_breakers}|$)")
     
     @staticmethod
     def filter_already_found_mentions(mentions, text, lang):
@@ -281,6 +283,9 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
         norm_text = TextNormalizer.normalize_text(corpus_segment.language, corpus_segment.text)
         mentions = []
         for match in re.finditer(self.named_entity_regex_by_lang[corpus_segment.language], norm_text):
+            # end = match.end(1)
+            # if not (end == len(norm_text) or re.match(fr"(?:\s|{self.word_breakers}|$)", norm_text[end:end+2])):
+            #     continue
             mentions += [Mention(match.start(1), match.end(1), match.group(1), ref=corpus_segment.ref, versionTitle=corpus_segment.versionTitle, language=corpus_segment.language)]
         mention_indices = [(mention.start, mention.end) for mention in mentions]
         norm_map = get_mapping_after_normalization(corpus_segment.text, TextNormalizer.get_find_text_to_remove(corpus_segment.language))
@@ -293,6 +298,7 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
     def predict(self, corpus_segments):
         mentions = []
         for corpus_segment in tqdm(corpus_segments, desc="ner predict"):
+            if corpus_segment.is_pretagged: continue
             mentions += self.predict_segment(corpus_segment)
         return mentions
 
@@ -322,7 +328,9 @@ class NaiveEntityLinker(AbstractEntityLinker):
         self.rules = rules
         self.lang_specific_params = kwargs.get('langSpecificParams', {})
         self.literal_text_map = get_literal_text_map(kwargs.get('nonLiteralCorpus', []))
-
+        self.ambig_map = defaultdict(set)
+        for link in IntraTopicLinkSet({"linkType": "possibility-for"}):
+            self.ambig_map[link.toTopic].add(link.fromTopic)
 
     def fit(self):
         for lang in ("en", "he"):
@@ -335,6 +343,18 @@ class NaiveEntityLinker(AbstractEntityLinker):
         for key, ne_dict in self.named_entity_table.items():
             self.named_entity_table[key] = sorted(ne_dict.values(), key=lambda x: getattr(x, 'numSources', 0), reverse=True)
 
+    def expand_ambiguous_named_entities(self, ne_slug_list:list) -> list:
+        ne_slug_set = set()
+        for slug in ne_slug_list:
+            ne_slug_set |= self.ambig_map.get(slug, {slug})
+        return list(ne_slug_set)
+
+    def get_named_entity_ids_for_mention(self, mention: Mention) -> Union[list, None]:
+        norm_mention = TextNormalizer.normalize_text(mention.language, mention.mention)
+        ne_list = self.named_entity_table.get((mention.language, norm_mention), None)
+        if ne_list is None: return
+        return self.expand_ambiguous_named_entities([ne.slug for ne in ne_list])
+
     def predict(self, corpus_segments, mentions):
         grouped_by_ref = defaultdict(list)
         for mention in tqdm(mentions, desc="el predict"):
@@ -343,17 +363,19 @@ class NaiveEntityLinker(AbstractEntityLinker):
             # check if mention is in literal text
             temp_literal_indexes = self.literal_text_map.get((mention.versionTitle, mention.language, mention.ref), None)
             mention_indices = {i for i in range(mention.start, mention.end)}
-            mention.is_non_literal = temp_literal_indexes is not None and len(temp_literal_indexes & mention_indices) == 0
+            mention.is_non_literal = temp_literal_indexes is None or len(temp_literal_indexes & mention_indices) == 0
 
             pretagged_id_matches = getattr(mention, 'id_matches', None)
             if pretagged_id_matches is None:
-                norm_mention = TextNormalizer.normalize_text(mention.language, mention.mention)
-                ne_list = self.named_entity_table.get((mention.language, norm_mention), None)
+                ne_list = self.get_named_entity_ids_for_mention(mention)
                 if ne_list is None:
                     print(f"No named entity matches '{norm_mention}'. Unnorm mention: '{mention.mention}', Ref: {mention.ref}")
                     mention.add_metadata(id_matches=[])
                     continue
-                mention.add_metadata(id_matches=[ne.slug for ne in ne_list])
+                
+                mention.add_metadata(id_matches=ne_list)
+            else:
+                mention.add_metadata(id_matches=self.expand_ambiguous_named_entities(mention.id_matches))
         out_mentions = []
         for _, ref_mentions in grouped_by_ref.items():
             for rule in self.rules:
@@ -455,7 +477,6 @@ class ManualCorrectionsRule(AbstractRule):
         for mention in mentions:
             correction_type = self.applies_to_dict[self.get_applies_to_key(mention)]
             if correction_type == 'mistake':
-                print("NABBED!", mention)
                 mention.id_matches = []
 class RuleFactory:
 
@@ -475,7 +496,8 @@ class RuleFactory:
 
 class CorpusSegment:
 
-    def __init__(self, text, language, versionTitle, ref):
+    def __init__(self, is_pretagged, text, language, versionTitle, ref):
+        self.is_pretagged = is_pretagged
         self.text = text
         self.language = language
         self.versionTitle = versionTitle
@@ -519,23 +541,42 @@ class CorpusManager:
                 mention_links = RefTopicLinkSet({"linkType": "mention", "charLevelData.versionTitle": version_query['versionTitle'], "charLevelData.language": version_query['language']})
                 for link in mention_links:
                     pretagged_mentions += [Mention().add_metadata_from_link(link)]
-            if pretagged_file is None and not pretagged_in_db:
-                # no pretagged mentions
-                version = Version().load(version_query)
-                if version is None: continue
-                version.walk_thru_contents(self.recognize_named_entities_in_segment)
+            version = Version().load({"title": version_query['title'], "versionTitle": version_query['versionTitle'], "language": version_query['language']})
+            if version is None: continue
+            is_pretagged = pretagged_file is not None or pretagged_in_db
+            version.walk_thru_contents(partial(self.create_corpus_segment, is_pretagged))
         ner_mentions = self.ner.predict(self.corpus_segments)
         ner_mentions += pretagged_mentions
         el_mentions = self.el.predict(self.corpus_segments, ner_mentions)
         self.mentions = el_mentions
+        self.validate_mention_matches_text()
+        self.deduplicate_mentions()
+
+    def deduplicate_mentions(self):
+        self.mentions = list(set(self.mentions))
+
+    def validate_mention_matches_text(self):
+        """
+        Sometimes mentions are created where the "mention" does not match text[start:end]
+        This mostly happens in pretagged mentions, but running on entire mention
+        """
+        seg_map = {
+            (seg.ref, seg.versionTitle, seg.language): seg for seg in self.corpus_segments
+        }
+        def matches_text(m):
+            key = (m.ref, m.versionTitle, m.language)
+            if key not in seg_map: return False
+            return m.mention == seg_map[key].text[m.start:m.end]
+
+        self.mentions = list(filter(matches_text, self.mentions))
 
     def save_mentions(self):
         out = [mention.serialize() for mention in tqdm(self.mentions, desc="save mentions")]
         with open(self.mentions_output_file, "w") as fout:
             json.dump(out, fout, ensure_ascii=False, indent=2)
 
-    def recognize_named_entities_in_segment(self, segment_text, en_tref, he_tref, version):
-        self.corpus_segments += [CorpusSegment(segment_text, version.language, version.versionTitle, en_tref)]
+    def create_corpus_segment(self, is_pretagged, segment_text, en_tref, he_tref, version):
+        self.corpus_segments += [CorpusSegment(is_pretagged, segment_text, version.language, version.versionTitle, en_tref)]
 
     @staticmethod
     def create_rules(raw_rules):
@@ -576,17 +617,9 @@ class CorpusManager:
                 title_list = list(filter(lambda x: x not in skip_set, title_list))
             for title in title_list:
                 for temp_version_query in item["versions"]:
-                    if temp_version_query.get("pretaggedFile", False) or temp_version_query.get('pretaggedMentionsInDB', False):
-                        # no need to include every index for a pretagged version
-                        continue
                     version_query_copy = temp_version_query.copy()
                     version_query_copy["title"] = title
                     version_queries += [version_query_copy]
-            for temp_version_query in item["versions"]:
-                # pretagged files and pretaggedmentions in db here!
-                if not (temp_version_query.get("pretaggedFile", False) or temp_version_query.get('pretaggedMentionsInDB', False)):
-                    continue
-                version_queries += [temp_version_query]
         return version_queries
 
     @staticmethod
@@ -621,59 +654,71 @@ class CorpusManager:
         linked_text = re.sub(r"\$+", repl, dummy_text)
         return linked_text
 
-    def generate_html_file(self):
+    def generate_html_files_for_mentions(self, special_slug_set=None):
         mentions_by_ref = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        special_mentions_by_ref = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+
         for mention in tqdm(self.mentions, desc="html group by ref"):
             mentions_by_ref[Ref(mention.ref).index.title][mention.ref][f"{mention.versionTitle}|||{mention.language}"] += [mention]
+            if special_slug_set is not None and len(special_slug_set & set(mention.id_matches)) > 0:
+                temp_special_slugs = special_slug_set & set(mention.id_matches)
+                for temp_slug in temp_special_slugs:
+                    special_mentions_by_ref[temp_slug][mention.ref][f"{mention.versionTitle}|||{mention.language}"] += [mention]
+
         for book, ref_dict in tqdm(mentions_by_ref.items(), desc="make html"):
-            refs_in_order = sorted(ref_dict.keys(), key=lambda x: Ref(x).order_id())
-            html = """
-            <html>
-                <head>
-                    <style>
-                        body {
-                            width: 700px;
-                            margin-right: auto;
-                            margin-bottom: 50px;
-                            margin-top: 50px;
-                            margin-left: auto;
-                        }
-                        .he {
-                            direction: rtl;
-                        }
-                        .missing {
-                            color: red;
-                        }
-                        .found {
-                            color: green;
-                        }
-                        .no-ids {
-                            color: purple;
-                        }
-                    </style>
-                </head>
-                <body>
+            self.generate_html_file(book, ref_dict)
+        for slug, ref_dict in tqdm(special_mentions_by_ref.items(), desc="make special html"):
+            self.generate_html_file(slug, ref_dict)
+
+    def generate_html_file(self, filename, ref_dict):
+        refs_in_order = sorted(ref_dict.keys(), key=lambda x: Ref(x).order_id())
+        html = """
+        <html>
+            <head>
+                <style>
+                    body {
+                        width: 700px;
+                        margin-right: auto;
+                        margin-bottom: 50px;
+                        margin-top: 50px;
+                        margin-left: auto;
+                    }
+                    .he {
+                        direction: rtl;
+                    }
+                    .missing {
+                        color: red;
+                    }
+                    .found {
+                        color: green;
+                    }
+                    .no-ids {
+                        color: purple;
+                    }
+                </style>
+            </head>
+            <body>
+        """
+        for ref in refs_in_order:
+            oref = Ref(ref)
+            versions = ref_dict[ref]
+            html += f"""
+                <p><a href="https://www.sefaria.org/{oref.url()}">{ref}</a></p>
             """
-            for ref in refs_in_order:
-                oref = Ref(ref)
-                versions = ref_dict[ref]
+            sorted_versions = sorted(versions.items(), key=lambda x: x[0])
+            for version_lang, temp_mentions in sorted_versions:
+                vtitle, lang = version_lang.split('|||')
+                segment_text = oref.text(lang, vtitle=vtitle).text
+                linked_text = self.add_html_links(temp_mentions, segment_text)
                 html += f"""
-                    <p><a href="https://www.sefaria.org/{oref.url()}">{ref}</a></p>
+                    <p class="{lang}">{linked_text}</p>
                 """
-                sorted_versions = sorted(versions.items(), key=lambda x: x[0])
-                for version_lang, temp_mentions in sorted_versions:
-                    vtitle, lang = version_lang.split('|||')
-                    segment_text = oref.text(lang, vtitle=vtitle).text
-                    linked_text = self.add_html_links(temp_mentions, segment_text)
-                    html += f"""
-                        <p class="{lang}">{linked_text}</p>
-                    """
-            html += """
-                </body>
-            </html>
-            """
-            with open(self.mentions_html_folder + f'/{book}.html', "w") as fout:
-                fout.write(html)
+        html += """
+            </body>
+        </html>
+        """
+        with open(self.mentions_html_folder + f'/{filename}.html', "w") as fout:
+            fout.write(html)
 
     @staticmethod
     def get_snippet(text, mention, padding=30, delim='~'):
@@ -1001,8 +1046,8 @@ def get_literal_text_map(raw_literal_corpus):
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_mishnah.json",
-        f"{ner_file_prefix}/ner_output_mishnah.json",
+        "research/knowledge_graph/named_entity_recognition/ner_tagger_input.json",
+        f"{ner_file_prefix}/ner_output_talmud.json",
         f"{ner_file_prefix}/html"
     )
     # corpus_manager.export_named_entities(f"{ner_file_prefix}/named_entities_export.csv")
@@ -1011,12 +1056,13 @@ if __name__ == "__main__":
     corpus_manager.save_mentions()
 
     # corpus_manager.load_mentions()
-    corpus_manager.generate_html_file()
+    corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi'})
     # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv")
-    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("Mishnah Yomit by Dr. Joshua Kulp", "en"), with_replace=True)
+    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en")
 """
 This file depends on first running
 - find_missing_rabbis.convert_final_en_names_to_ner_tagger_input() which creates sperling_named_entities
 - convert_sperling_data.convert_to_mentions_file() which converts 
 
+Current results: both talmud and mishnah are 97.4% accurate
 """

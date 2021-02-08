@@ -1,7 +1,7 @@
 # encoding=utf-8
 import re
 import requests
-from database import Database
+from sources.NLI.database import Database
 from concurrent.futures.thread import ThreadPoolExecutor
 
 import django
@@ -147,7 +147,7 @@ class Manuscript(object):
         try:
             self._manifest = requests.get(self.manifest_url).json()
         except ValueError:
-            print "Could not load manifest url {} for manuscript {}".format(self.manifest_url, self.manuscript_id)
+            print("Could not load manifest url {} for manuscript {}".format(self.manifest_url, self.manuscript_id))
             # del self.manuscript_id
             raise ManuscriptException
 
@@ -227,4 +227,4 @@ if __name__ == '__main__':
     import random
     for _ in range(10):
         foo = random.choice(ref_mapping)
-        print foo['full_ref'], u'{}/full/1600,/0/default.jpg'.format(foo['image_url'])
+        print(foo['full_ref'], u'{}/full/1600,/0/default.jpg'.format(foo['image_url']))

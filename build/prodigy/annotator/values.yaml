@@ -1,0 +1,16 @@
+---
+deployEnv: default
+prodigyAnnotator:
+  imageName: gcr.io/$PROJECT_ID/prodigy-annotator
+  mongoHostname: ""
+  resources:
+    request:
+      memory: "2Gi"
+      cpu: "1000m"
+    limit:
+      memory: "4Gi"
+      cpu: "1500m"
+  loadBalancerIP: 127.0.0.1
+  username: nonsense
+  password: nonsense
+...
