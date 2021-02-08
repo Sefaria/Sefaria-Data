@@ -815,9 +815,9 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
     return links
 
 
-def post_link_in_steps(links, step=-1, sleep_amt=5, server=SEFARIA_SERVER):
+def post_link_in_steps(links, step=0, sleep_amt=5, server=SEFARIA_SERVER):
     pos = 0
-    if step == -1:
+    if step == 0:
         step = int(len(links)/4)
     for i in range(0, len(links), step):
         post_link(links[pos:pos+step], server=server)

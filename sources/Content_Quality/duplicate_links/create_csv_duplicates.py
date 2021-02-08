@@ -14,6 +14,5 @@ with open("duplicates.csv", 'w') as f:
         if set_of_this_link.count() > 1:
             refs = sorted(l.refs)
             if refs not in already_found:
-                print(refs)
                 writer.writerow([refs])
                 already_found.append(refs)

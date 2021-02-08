@@ -16,12 +16,16 @@ for haflaah in haflaahs:
                 if word:
                     #word = word.group(1) + " " + word.group(2)
                     #dhs[sec_ref].append(bleach.clean(word, strip=True))
-                    word = word.group(1)
-                    if prev_word == word:
-                        last_num = getGematria(dhs[sec_ref][-1].split()[-1]) + 1
-                        dhs[sec_ref].append(word + " " + numToHeb(last_num) + "'")
+                    second_word = bleach.clean(word.group(2), strip=True)
+                    word = bleach.clean(word.group(1), strip=True)
+                    if second_word.endswith("'") and len(second_word) <= 3:
+                        dhs[sec_ref].append(word + " " + second_word)
                     else:
-                        dhs[sec_ref].append(word + " א'")
+                        if prev_word == word:
+                            last_num = getGematria(dhs[sec_ref][-1].split()[-1]) + 1
+                            dhs[sec_ref].append(word + " " + numToHeb(last_num) + "'")
+                        else:
+                            dhs[sec_ref].append(word + " א'")
                     prev_word = word
 
     prev_sec_ref = ""
@@ -46,6 +50,7 @@ for haflaah in haflaahs:
                     word = bleach.clean(word.group(1), strip=True)
                     if sec_ref not in base_words:
                         base_words[sec_ref] = []
+
                     if prev_word == word:
                         last_num = getGematria(base_words[sec_ref][-1].split()[-1]) + 1
                         base_words[sec_ref].append(word + " " + numToHeb(last_num) + "'")
@@ -89,7 +94,7 @@ for haflaah in haflaahs:
     for word in set(not_found):
         print(word)
     print(len(links))
-    post_link(links)
+    post_link_in_steps(links)
 
 
 

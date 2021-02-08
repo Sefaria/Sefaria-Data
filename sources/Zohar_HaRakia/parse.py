@@ -1,4 +1,6 @@
 from sources.functions import *
+import json
+
 vtitle = "Vilna, 1879"
 vsource = "http://aleph.nli.org.il/F/?func=direct&doc_number=001872727&local_base=NNL01"
 def create_azharot():
@@ -205,7 +207,7 @@ def parse_one_depth(file, ref):
 if __name__ == "__main__":
     create_azharot()
     create_zohar()
-    #azharot_to_zohar_index = parse_azharot()
+    azharot_to_zohar_index = parse_azharot()
     parse_zohar()
     #link_zohar_to_azharot(azharot_to_zohar_index)
     parse_one_depth("zohar_intro.txt", "Zohar HaRakia, Introduction")

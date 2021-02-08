@@ -675,7 +675,7 @@ if __name__ == "__main__":
         create_footnotes_indices(dirpath)
         counter = 0
         for f in filenames:
-            if "GH" not in f:
+            if "OH" not in f:
                 continue
             docx_file = dirpath+"/"+f
             index = library.get_index(dirpath.split("/")[1])

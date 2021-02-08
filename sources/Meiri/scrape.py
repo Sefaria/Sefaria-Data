@@ -100,10 +100,10 @@ root.append(intro)
 root.append(default)
 root.validate()
 
-# post_index(
-#     {"title": "Meiri on Berakhot", "schema": root.serialize(),
-#      "dependence": "Commentary", "base_text_titles": ["Berakhot"],
-#      "categories": ["Talmud", "Bavli", "Commentary", "Chidushei HaMeiri"]})
+post_index(
+    {"title": "Meiri on Berakhot", "schema": root.serialize(),
+     "dependence": "Commentary", "base_text_titles": ["Berakhot"],
+     "categories": ["Talmud", "Bavli", "Commentary", "Chidushei HaMeiri"]})
 
 text = convertDictToArray(text)
 send_text = {

@@ -22,18 +22,14 @@ files = ["1.json", "2.json"]
 servers = [servers[1]]
 links = []
 import json
+
+with open("berakhot_links.json", 'r') as f:
+    links = json.load(f)
+post_link_in_steps(links, step=200, sleep_amt=10)
+
 # with open("1.json", 'r') as f:
-#     one_links = filter_tractates(json.load(f))
-with open("2.json", 'r') as f:
-    two_links = filter_tractates(json.load(f))
-one_links = {}
-links = one_and_two(one_links, two_links)
-print(len(links))
-step = int(len(links)/2)
-#post_link(links, skip_lang_check=1)
-init = 0
-for i in range(init, len(links), step):
-    init += step
-    post_link(links[0:step+init], skip_lang_check=1)
-    time.sleep(20)
-    # post_link(links, server=server)
+#      one_links = filter_tractates(json.load(f))
+# with open("2.json", 'r') as f:
+#     two_links = filter_tractates(json.load(f))
+# links = one_and_two(one_links, two_links)
+# post_link_in_steps(links, step=200, sleep_amt=10)

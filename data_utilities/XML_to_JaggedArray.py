@@ -321,6 +321,8 @@ class XML_to_JaggedArray:
             return pos
 
         def removeNumberFromStart(text):
+            if "Ibn Ezra" in node_name:
+                return text
             if text[0].isdigit():
                 return " ".join(text.split(" ")[1:])
             return text
@@ -435,7 +437,8 @@ class XML_to_JaggedArray:
         elif child.tag in ["chapter"] and "CHAPTER " in child.text.upper():# and len(child.text.split(" ")) <= 3:
             tags = re.findall("<sup>.*?</sup>", child.text)
             if len(child.text.split()) == 2:
-                child.text = str(roman_to_int(child.text.split()[-1]))
+                child.text = child.text.split()[-1]
+                #child.text = str(roman_to_int(child.text.split()[-1]))
             #child.text = str(self.word_to_num.parse(child.text.split(" ")[-1])) #  Chapter Two => 2
 
     def go_down_to_text(self, element, parent, element_is_root=False):
