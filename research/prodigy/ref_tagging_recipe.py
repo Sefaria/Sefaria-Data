@@ -9,7 +9,7 @@ from db_manager import MongoProdigyDBManager
 from pathlib import Path
 
 # LABELS = ["פשוט", "שם", "דיבור המתחיל"]
-LABELS = ['פשוט']
+LABELS = ['מקור']
 
 def custom_tokenizer(nlp):
     tag_re = r'<[^>]+>'

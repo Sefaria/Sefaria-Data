@@ -28,6 +28,8 @@ class ProdigyInputWalker:
                 return None
             except AssertionError:
                 return None
+            except ValueError:
+                return None
 
         refs_with_loc = []
         if lang == "en":
@@ -51,7 +53,7 @@ class ProdigyInputWalker:
         temp_input = {
             "text": text,
             "spans": [
-                {"start": s, "end": e, "label": "פשוט"} for _, _, s, e in refs_with_loc
+                {"start": s, "end": e, "label": "מקור"} for _, _, s, e in refs_with_loc
             ],
             "meta": {
                 "Ref": en_tref
@@ -66,7 +68,8 @@ class ProdigyInputWalker:
         
     def make_final_input(self, sample_size):
         for temp_input_list in self.prodigyInputByVersion.values():
-            self.prodigyInput += random.sample(temp_input_list, sample_size)
+            self.prodigyInput += random.sample(temp_input_list, min(len(temp_input_list), sample_size))
+        random.shuffle(self.prodigyInput)
 
 
 def make_prodigy_input(title_list, vtitle_list, lang_list):
@@ -77,9 +80,14 @@ def make_prodigy_input(title_list, vtitle_list, lang_list):
         else:
             version = Version().load({"title": title, "versionTitle": vtitle, "language": lang})
         version.walk_thru_contents(walker.action)
-    walker.make_final_input(200)
+    walker.make_final_input(400)
     srsly.write_jsonl('research/prodigy/data/test_input.jsonl', walker.prodigyInput)
 
 if __name__ == "__main__":
-    title_list = ['Rashba on Eruvin', 'Responsa Benei Banim', 'Magen Avraham', 'Beit Yosef', 'Be\'er HaGolah', 'Havot Yair', 'Peninei Halakhah, Festivals', 'Pele Yoetz', 'Teshuvot HaRadbaz Volume 1']
+    title_list = [
+        'Rashba on Eruvin', 'Beit Yosef', 'Chiddushei Ramban on Avodah Zarah', 'Ben Yehoyada on Beitzah',
+        'Tosafot on Shabbat', 'Chidushei Agadot on Rosh Hashanah', 'Chidushei Halachot on Taanit', 'Rabbeinu Gershom on Chullin',
+        'Maharam Shif on Gittin', 'Maadaney Yom Tov on Menachot', 'Rashbam on Bava Batra', 'Penei Yehoshua on Bava Metzia',
+        'Ran on Nedarim', 'Tosafot Shantz on Sotah', 'Yad Ramah on Bava Batra', 'Shita Mekubetzet on Berakhot'
+    ]
     make_prodigy_input(title_list, [None]*len(title_list), ['he']*len(title_list))
