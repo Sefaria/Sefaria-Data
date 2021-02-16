@@ -188,10 +188,10 @@ def just_mishnah(str):
     return value
 
 if __name__ == "__main__":
-    # t = Term()
-    # t.add_primary_titles("Meiri", "מאירי")
-    # t.name = "Meiri"
-    # t.save()
+    t = Term()
+    t.add_primary_titles("Meiri", "מאירי")
+    t.name = "Meiri"
+    #t.save()
     c = Category()
     c.path = ["Talmud", "Bavli", "Commentary", "Meiri"]
     c.add_shared_term("Meiri")
@@ -262,7 +262,7 @@ if __name__ == "__main__":
             "versionSource": "http://www.sefaria.org",
             "text": intro
         }
-        post_text(full_title + ", Introduction", send_text, index_count="on")
+        # post_text(full_title + ", Introduction", send_text, index_count="on")
         send_text = {
             "language": "he",
             "versionTitle": "Meiri on Shas",
@@ -270,7 +270,7 @@ if __name__ == "__main__":
             "text": convertDictToArray(lines_in_title)
         }
         mishnah = "משנה"
-        post_text(full_title, send_text, index_count="on")
+        # post_text(full_title, send_text, index_count="on")
         found_refs = []
 
         new_links = []

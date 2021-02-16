@@ -3,20 +3,21 @@ from sources.Meiri.parse_RP import ScoreManager, PM_regular, dher
 
 
 lines_in_title = {}
-with open("Meiri on Berakhot - he - Wikisource.csv", 'r') as f:
+full_title = "Meiri on Eruvin"
+
+with open("Chidushei HaMeiri on Eruvin - he - Chidushei HaMeiri on Eruvin, Warsaw 1914.csv", 'r') as f:
     for row in csv.reader(f):
-        if row[0].startswith("Meiri on Berakhot") and "Introduction" not in row[0]:
+        if full_title in row[0] and "Introduction" not in row[0]:
             daf = row[0].split()[-1].split(":")[0]
             if daf not in lines_in_title:
                 lines_in_title[daf] = []
             lines_in_title[daf].append(row[1])
 
-en_title = "Berakhot"
-full_title = "Meiri on Berakhot"
+en_title = "Eruvin"
 mishnah = "משנה"
 found_refs = []
 links = []
-score_manager = ScoreManager("word_count.json")
+score_manager = ScoreManager("RP/word_count.json")
 
 for actual_daf in lines_in_title:
     comm_title = "{} {}".format(full_title, actual_daf)
@@ -35,11 +36,11 @@ for actual_daf in lines_in_title:
     if len(positions_base) != len(positions_comm) > 0:
         print("Meiri on {} {}".format(en_title, actual_daf))
 
-    with open("berakhot.csv", 'w') as f:
+    with open("{}.csv".format(en_title), 'w') as f:
         writer = csv.writer(f)
         links += PM_regular(lines_in_title[daf], comm_title, base_ref, writer, score_manager)
         links += match_ref_interface(base_ref, comm_title, lines_in_title[daf], lambda x: x.split(), dher,
                                     generated_by="meiri_to_daf")
 
-with open("berakhot_links.json", 'w') as f:
+with open("{}_links.json".format(en_title), 'w') as f:
     json.dump(links, f)

@@ -6,6 +6,36 @@ from sefaria.system.database import ensure_indices
 from sefaria.model.tests.ref_catching_test import *
 from sefaria.helper.link import rebuild_links_from_text as rebuild
 import numpy
+
+assert not Ref("Orot").is_section_level()
+assert Ref("Pesach Haggadah, Magid, First Fruits Declaration 2") .all_context_refs() == [Ref('Pesach Haggadah, Magid, First Fruits Declaration 2'), Ref('Pesach Haggadah, Magid, First Fruits Declaration'), Ref('Pesach Haggadah, Magid')]
+assert not Ref("Orot").is_segment_level()
+
+
+print(Ref("Zohar 1:25a-2:27b").he_normal())
+
+print(Ref("Zohar 1:25a-27b").he_normal())
+
+
+print(Ref("Berakhot 2a-3a").he_normal())
+print(Ref("Bava Metzia 20b-21b").he_normal())
+print(Ref("Bava Metzia 20a:1-20b:1").he_normal())
+print(Ref("Zohar 1-2").he_normal())
+print(Ref("Zohar 1:25a-27b").he_normal())
+
+oref = Ref("Zohar 1:25a-27b")
+oref.normal()
+
+
+assert Ref("Shabbat 5b:10-20").overlaps(Ref("Shabbat 5b:18-20"))
+assert Ref("Shabbat 15b:5-8").range_list() ==  [Ref('Shabbat 15b:5'), Ref('Shabbat 15b:6'), Ref('Shabbat 15b:7'), Ref('Shabbat 15b:8')]
+
+print(Ref("Shabbat 7-8").normal())
+print(Ref("Shabbat 7").normal())
+print(Ref("Shabbat 7a-8b"))
+print(Ref("Shabbat 7a-8a"))
+print(Ref('Shabbat 7b-8b'))
+print(Ref('Shabbat 7b-8a'))
 Ref("Footnotes_to_Teshuvot_haRashba_part_V").version_list()
 print(library.get_refs_in_string("(שו”ע יו”ד קיג:ד)"))
 print(library.get_refs_in_string('(שו"ע יו"ד קיג:ד)', citing_only=True))

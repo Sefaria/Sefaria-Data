@@ -1,4 +1,5 @@
 from sources.functions import *
+from bs4 import BeautifulSoup
 title = "Pesachim"
 text = ""
 with open("{}.csv".format(title), 'r') as f:
@@ -45,7 +46,12 @@ with open("pesachim_ftnote_markers_only.csv", 'w') as f:
     for i, folio in text.items():
         if len(folio) > 0:
             for j, line in enumerate(folio):
-                line = re.sub("<sup>(\d+)</sup>.*?</i>\s", "$fn\g<1> ", line)
-                line = re.sub("<sup>(\d+)</sup>.*?</i>", "$fn\g<1>", line)
+                soup = BeautifulSoup("<body>{}</body>".format(line))
+                for i_tag in soup.find_all("i"):
+                    if i_tag.attrs == {}:
+                        i_tag.name = 'u'
+                line = str(soup).replace("<html><body>", "").replace("</body></html>", "")
+                line = re.sub("<sup>(\d+)</sup><i.*?</i>", "$fn\g<1>", line)
+                line = re.sub("<sup>(\d+)</sup><i.*?</i>\s", "$fn\g<1> ", line)
                 daf = AddressTalmud(0).toStr("en", i)
                 writer.writerow(["Pesachim {}:{}".format(daf, j+1), line])

@@ -1,7 +1,7 @@
 import django
 django.setup()
 from sefaria.model import *
-ls = LinkSet({"refs": {"$regex": "^Meiri on"}})
+ls = LinkSet({"refs": {"$regex": "^Meiri on Eruvin"}})
 i = 0
 for l in ls:
     i += 1

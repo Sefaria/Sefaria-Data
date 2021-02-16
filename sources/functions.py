@@ -23,6 +23,7 @@ from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 from data_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.utils.util import replace_using_regex as reg_replace
+from sefaria.system.exceptions import BookNameError
 import base64
 # import enchant
 import Levenshtein
@@ -813,6 +814,13 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
                         "type": "Commentary", "auto": True}
             links.append(new_link)
     return links
+
+def is_index(poss_index):
+    try:
+        library.get_index(poss_index)
+        return True
+    except BookNameError as e:
+        return False
 
 
 def post_link_in_steps(links, step=0, sleep_amt=5, server=SEFARIA_SERVER):
