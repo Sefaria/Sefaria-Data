@@ -92,19 +92,24 @@ def get_body_html(document, ftnotes):
 def get_body_insert_ftnotes(body, ftnotes):
     def ftnote_range(match, pasuk, book, found_ftnotes):
         char = match.group(1)
+        double_ftnote_exist = False
         if char == match.group(2):
+            double_ftnote_exist = True
             relevant_ftnote = ftnotes_perek[char]
             found_ftnotes.writerow([book, relevant_ftnote])
             i_tag = '<sup>{}</sup><i class="footnotes">{}</i>'.format(char, relevant_ftnote)
-            first_regexes = ["<i>[a-z]{1}</i>", "<i>[a-z]{1}-{1,}</i>", "<i>[a-z]{1}-{1,}footnote\d*-{1,}</i>"]
-            ending_regexes = ["<i>-[a-z]{1}</i>"]
+            first_regexes = ["<i>([a-z]{1})</i>", "<i>([a-z]{1})-{1,}</i>", "<i>([a-z]{1})-{1,}footnote\d*-{1,}</i>",
+                             "<i>-{1,}footnote\d*-{1,}([a-z]{1}</i>)"]
+            ending_regexes = ["<i>-?([a-z]{1})</i>"]
             #first replace beginning parts with actual i_tag
             #then replace ending parts with <sup>char</sup>
             for regex in first_regexes:
-                pasuk = re.sub(regex, i_tag, pasuk)
+                if re.search(regex, pasuk) and re.search(regex, pasuk).group(1) == char:
+                    pasuk = re.sub(regex, i_tag, pasuk)
             for regex in ending_regexes:
-                pasuk = re.sub(regex, "<sup>-{}</sup>".format(char), pasuk)
-        return pasuk
+                if re.search(regex, pasuk) and re.search(regex, pasuk).group(1) == char:
+                    pasuk = re.sub(regex, "<sup>-{}</sup>".format(char), pasuk)
+        return pasuk, double_ftnote_exist
 
     new_body = {}
     curr = 0
@@ -116,14 +121,18 @@ def get_body_insert_ftnotes(body, ftnotes):
                 new_body[book][perek] = []
                 ftnotes_perek = ftnotes[curr]
                 curr += 1
+                last_char_double_ftnotes_spread_across_pasukim = ""
 
                 for p, pasuk in enumerate(body[book][perek]):
-                    double_ftnotes = list(re.finditer("<i>([a-z]{1})</i>.*?footnote\d*.*?<i>-([a-z]{1})</i>", pasuk)) + list(
-                        re.finditer("<i>([a-z]{1})-{1,}</i>.*?<i>-([a-z]{1})</i>", pasuk)) + list(
-                        re.finditer("<i>([a-z]{1})-{1,}footnote\d*-{1,}</i>.*?<i>-([a-z]{1})</i>", pasuk))
+                    double_ftnotes = list(re.finditer("<i>([a-z]{1})</i>.*?footnote\d*.*?<i>-?([a-z]{1})</i>", pasuk)) + list(
+                        re.finditer("<i>([a-z]{1})-{1,}</i>.*?<i>-?([a-z]{1})</i>", pasuk)) + list(
+                        re.finditer("<i>([a-z]{1})-{1,}footnote\d*-{1,}</i>.*?<i>-?([a-z]{1})</i>", pasuk)) + list(
+                        re.finditer("<i>-{1,}footnote\d*-{1,}([a-z]{1})</i>.*?<i>-?([a-z]{1})</i>", pasuk))
 
+                    double_ftnote_exist = False
                     for match in double_ftnotes:
-                        pasuk = ftnote_range(match, pasuk, book, found_ftnotes)
+                        pasuk, double_ftnote_exist = ftnote_range(match, pasuk, book, found_ftnotes)
+
 
                     for match in re.finditer("<.*?>-{1,}footnote\d*-{1,}([a-z]{1})</.*?>", pasuk):
                         char = match.group(1)
@@ -132,13 +141,28 @@ def get_body_insert_ftnotes(body, ftnotes):
                         relevant_ftnote = '<sup>{}</sup><i class="footnotes">{}</i>'.format(char, relevant_ftnote)
                         pasuk = pasuk.replace(match.group(0),
                                               relevant_ftnote)
-                    # for match in re.finditer("-{1,}footnote-{1,}([a-z]{1})</", pasuk):
-                    #     char = match.group(1)
-                    #     relevant_ftnote = ftnotes_perek[char]
-                    #     found_ftnotes.writerow([book, relevant_ftnote])
-                    #     relevant_ftnote = '<sup>{}</sup><i class="footnotes">{}</i>'.format(char, relevant_ftnote)
-                    #     pasuk = pasuk.replace(match.group(0),
-                    #                           relevant_ftnote)
+                    for match in re.finditer("<.*?>([a-z]{1})-{1,}footnote\d*-{1,}</.*?>", pasuk):
+                        char = match.group(1)
+                        relevant_ftnote = ftnotes_perek[char]
+                        found_ftnotes.writerow([book, relevant_ftnote])
+                        relevant_ftnote = '<sup>{}</sup><i class="footnotes">{}</i>'.format(char, relevant_ftnote)
+                        pasuk = pasuk.replace(match.group(0),
+                                              relevant_ftnote)
+
+                    if double_ftnote_exist == False and len(last_char_double_ftnotes_spread_across_pasukim) > 0:
+                        if re.search("<i>-[a-z]{1}</i>", pasuk):
+                            pasuk = pasuk.replace(re.search("<i>-[a-z]{1}</i>", pasuk).group(0), "<sup>{}</sup>".format(last_char_double_ftnotes_spread_across_pasukim))
+                            last_char_double_ftnotes_spread_across_pasukim = ""
+                    if double_ftnote_exist == False:
+                        for only_first_match in ["<i>([a-z]{1})</i>", "<i>([a-z]{1})-{1,}</i>",
+                                                 "<i>([a-z]{1})-{1,}footnote\d*-{1,}</i>"]:
+                            if re.search(only_first_match, pasuk):
+                                m = re.search(only_first_match, pasuk)
+                                char = m.group(1)
+                                last_char_double_ftnotes_spread_across_pasukim = char
+                                relevant_ftnote = ftnotes_perek[last_char_double_ftnotes_spread_across_pasukim]
+                                found_ftnotes.writerow([book, relevant_ftnote])
+                                pasuk = pasuk.replace(match.group(0), relevant_ftnote)
 
                     pasuk = re.sub("-{1,}footnote\d*-{1,}", "", pasuk)
 
