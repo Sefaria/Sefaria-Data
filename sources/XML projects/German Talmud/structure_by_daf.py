@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import os
 vsource = "https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI"
 for file in os.listdir("."):
-    if file.endswith(".csv") and not "ftnote" in file:
+    if file.endswith(".csv") and not "ftnote" in file and "Sukkah" in file:
         title = file.replace(".csv", "")
         text = ""
         with open("{}.csv".format(title), 'r') as f:

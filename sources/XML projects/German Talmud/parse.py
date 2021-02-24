@@ -45,9 +45,9 @@ if __name__ == "__main__":
     post_info["versionTitle"] = "German Talmud"
     post_info["versionSource"] = "https://www.sefaria.org"
 
-    for file in os.listdir("./mishnah"):
-        if file.endswith("xml"):
-            with open("./mishnah/"+file) as f:
+    for file in os.listdir("./"):
+        if file.endswith("xml") and "Sukkah" in file:
+            with open("./"+file) as f:
                 contents = f.read()
             title = file.replace(".xml", "")
             parser = XML_to_JaggedArray(title, contents, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",

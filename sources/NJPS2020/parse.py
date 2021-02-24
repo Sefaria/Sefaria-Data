@@ -7,7 +7,7 @@ def get_body_html(document, ftnotes):
     def add_pasukim(str, pasukim):
         pasukim = re.split("<font size=\"\d+\">[\d ]+</font>", str)
         if re.search("<font size=\"\d+\">[\d ]+</font>", str) is None:
-            new_body[book][curr_perek][-1] += " "+pasukim[0].strip()
+            new_body[book][curr_perek][-1] += "<br/>"+" "+pasukim[0].strip()
         else:
             for pasuk in pasukim:
                 if len(pasuk.strip()) > 1:
