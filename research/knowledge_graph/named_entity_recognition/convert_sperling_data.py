@@ -207,17 +207,14 @@ def get_rabbi_char_loc(context, seg_text, norm_regex=None, repl=None):
         start, end = TextNormalizer.include_trailing_nikkud(mention_indices[0], orig_seg_text)
     return start, end
 
-def convert_to_spacy_format(rabbi_mentions, vtitle='William Davidson Edition - Aramaic', norm_regex=None, repl=None, book_in_vtitle=False):
+def convert_to_spacy_format(rabbi_mentions, vtitle='William Davidson Edition - Aramaic', norm_regex=None, repl=None):
     by_book = defaultdict(lambda: defaultdict(list))
     for row in rabbi_mentions:
         by_book[row["Book"]][row["Segment"]] += [row]
     spacy_formatted = []
     new_rabbi_mentions = []
     for book, segs in tqdm(by_book.items()):
-        temp_vtitle = vtitle
-        if book_in_vtitle:
-            temp_vtitle = f'{book} {temp_vtitle}'
-        book_data = get_mas(book, temp_vtitle)
+        book_data = get_mas(book, vtitle)
         for tref, text in book_data:
             rabbi_contexts = [r["Context"] for r in segs[tref]]
             row = {"text": text, "ents": []}
@@ -606,7 +603,7 @@ def make_new_alt_titles_file():
     with open(f"/home/nss/sefaria/datasets/ner/sefaria/new_alt_titles.json", "w") as fout:
         json.dump(out, fout, ensure_ascii=False, indent=2)
 
-def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1, out_file2, vtitle, book_in_vtitle=False):
+def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1, out_file2, vtitle):
     import json
     mentions = []
     crude_mentions = []
@@ -627,17 +624,13 @@ def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1,
             }]
     print("Issues", issues)
 
-    spacy_formatted, rabbi_mentions = convert_to_spacy_format(crude_mentions, vtitle=vtitle, norm_regex="[\u0591-\u05bd\u05bf-\u05c5\u05c7]+", repl='', book_in_vtitle=book_in_vtitle)
+    spacy_formatted, rabbi_mentions = convert_to_spacy_format(crude_mentions, vtitle=vtitle, norm_regex="[\u0591-\u05bd\u05bf-\u05c5\u05c7]+", repl='')
     srsly.write_jsonl(out_file1, rabbi_mentions)
     convert_to_mentions_file(out_file1, out_file2, only_bonayich_rabbis=False)
     with open('research/knowledge_graph/named_entity_recognition/{out_file2}', 'r') as fin:
         j = json.load(fin)
     for m in j:
-        temp_vtitle = vtitle
-        if book_in_vtitle:
-            book = Ref(m.ref).index.title
-            temp_vtitle = f'{book} {temp_vtitle}'
-        m['versionTitle'] = temp_vtitle
+        m['versionTitle'] = vtitle
         m['language'] = 'he'
     with open(f'{DATA_LOC}/../sefaria/{out_file2}', 'w') as fout:
         json.dump(j, fout, indent=2, ensure_ascii=False)
@@ -656,6 +649,6 @@ if __name__ == "__main__":
     # convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
     
     # convert_mishnah_and_tosefta_to_mentions("Mishnah ", f"{DATA_LOC}/mishna_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_mishnah.jsonl', "sperling_mentions_mishnah.json", "Torat Emet 357")
-    convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", "Tosefta")
+    convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", None)
   
     # make_new_alt_titles_file()
