@@ -583,6 +583,45 @@ def save_manual_mistakes_mishnah():
     with open("/home/nss/sefaria/data/research/knowledge_graph/named_entity_recognition/manual_corrections_mishnah.json", "w") as fout:
         json.dump(out_rows, fout, ensure_ascii=False, indent=2)
 
+def save_mike_noah_differences_csv():
+    from collections import defaultdict
+    manual_sef_id_map = defaultdict(set)
+    with open(f"/home/nss/sefaria/datasets/ner/michael-sperling/Match Bonayich Rabbis with Sefaria Rabbis - Sefaria Rabbis Matched.csv", "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            try:
+                manual_sef_id_map[int(row["Bonayich ID"])].add(row["Slug"])
+            except ValueError:
+                continue
+
+    def save_diff(diff_set, out_file):
+        rows = []
+        diff_list = sorted(diff_set, key=lambda x: Ref(x[3]).order_id())
+        for diff in diff_list:
+            rows += [{
+                "Start": diff[0],
+                "End": diff[1],
+                "Mention": diff[2],
+                "Ref": diff[3],
+            }]
+        with open(out_file, "w") as fout:
+            c = csv.DictWriter(fout, ['Ref', 'Mention', 'Start', 'End'])
+            c.writeheader()
+            c.writerows(rows)
+
+    def get_sets(a_not_bf, b_not_af):
+        with open(a_not_bf, "r") as fin:
+            a_not_b = {(a['start'], a['end'], a['mention'], a['ref']) for a in json.load(fin)}
+        with open(b_not_af, "r") as fin:
+            b_not_a = {(a['start'], a['end'], a['mention'], a['ref']) for a in json.load(fin)}
+        return a_not_b.difference(b_not_a), b_not_a.difference(a_not_b)
+
+    a_not_b, b_not_a = get_sets("/home/nss/sefaria/datasets/ner/sefaria/a_not_b.json", "/home/nss/sefaria/datasets/ner/sefaria/b_not_a.json")
+    save_diff(a_not_b, "/home/nss/sefaria/datasets/ner/michael-sperling/sefaria_not_sperling.csv")
+    save_diff(b_not_a, "/home/nss/sefaria/datasets/ner/michael-sperling/sperling_not_sefaria.csv")
+
+    
+
 if __name__ == "__main__":
     # make_rav_rabbi_csv()
     # make_csv_of_alt_titles()
@@ -597,7 +636,8 @@ if __name__ == "__main__":
     # find_true_bonayich_rabbis()
     # make_levi_shmuel_csv()
     # add_more_mishnah_titles()
-    save_manual_mistakes_mishnah()
+    # save_manual_mistakes_mishnah()
+    save_mike_noah_differences_csv()
 """
 Confirm new rabbis to create
 Create them

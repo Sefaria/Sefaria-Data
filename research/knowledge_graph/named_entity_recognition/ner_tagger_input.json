@@ -24,10 +24,20 @@
             "namedEntityFile": "research/knowledge_graph/named_entity_recognition/sperling_named_entities.json"
         }
     ],
+    "pretagOverrideNamedEntities": [
+        {
+            "id": "rabbi-yaakov-b-qorshai",
+            "idIsSlug": true
+        },
+        {
+            "id": "rabbi-hananyah-b-akabia",
+            "idIsSlug": true
+        }
+    ],
     "rules": [
         {
           "rule": {
-            "id": "namedEntityInVersion",
+            "id": "namedEntityNotInVersionDelete",
             "appliesToVersions": [
                 {
                     "versionTitle": "William Davidson Edition - Aramaic",
@@ -51,7 +61,7 @@
                 "language": "en"
             }
           },
-          "namedEntities": ["rav", "rabbah-b-nachmani", "rabi", "rava", "shemaiah", "rabbi-shemaya", "shmuel-(amora)", "levi-b-sisi"],
+          "namedEntities": ["rav", "rabbah-b-nachmani", "rabi", "rava", "shemaiah", "rabbi-shemaya", "shmuel-(amora)", "levi-b-sisi", "rabbi-yaakov-b-qorshai"],
           "comment": "Rav is very ambiguous in Aramaic and less ambiguous in English"
         }
     ],

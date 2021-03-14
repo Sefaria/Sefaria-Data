@@ -20,12 +20,24 @@
                 "text": "Rabbi",
                 "lang": "en"
             }]
+        },
+        {
+            "id": "rabbi-yehoshua-b-levi",
+            "idIsSlug": true
+        },
+        {
+            "id": "rabban-yochanan-b-zakkai",
+            "idIsSlug": true,
+            "manualTitles": [{
+                "text": "רבי יוחנן בן זכאי",
+                "lang": "he"
+            }]
         }
     ],
     "rules": [
         {
           "rule": {
-            "id": "namedEntityInVersion",
+            "id": "namedEntityNotInVersionDelete",
             "appliesToVersions": [
                 {
                     "versionTitle": "Torat Emet 357",

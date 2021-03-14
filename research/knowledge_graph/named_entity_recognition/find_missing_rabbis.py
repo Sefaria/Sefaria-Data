@@ -202,7 +202,7 @@ def convert_final_en_names_to_ner_tagger_input():
                 "idIsSlug": False,
                 "manualTitles": [{"text": title, "lang": "he" if is_hebrew(title) else "en"} for title in en_titles] + [{"text": row["He"], "lang": "he"}],
                 "gen": bonayich_metadata[int(bid)]["gen"] if (bid != 'N/A' and False) else None,  # manually leave this data out for now
-                "type": bonayich_metadata[int(bid)]["type"] if bid != 'N/A' else None
+                "type": bonayich_metadata.get(int(bid), {}).get("type", '') if bid != 'N/A' else None
             }]
         with open(f"research/knowledge_graph/named_entity_recognition/sperling_named_entities.json", "w") as fout:
             json.dump(sperling_entities, fout, ensure_ascii=False, indent=2)
