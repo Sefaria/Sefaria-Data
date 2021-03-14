@@ -183,21 +183,29 @@ def get_rabbi_char_loc(context, seg_text, norm_regex=None, repl=None):
     if count > 1:
         # print(f"Context\n{context}\nappears {count} times!")
         return None, None
-    rabbi = context.split('~')[1]
-    rabbi_len = len(rabbi)
+    pre_rabbi, rabbi, _ = context.split('~')
     context_start = seg_text.find(matched)
     if matched != context.replace('~', ''):
         # cant assume rabbi_start_rel is same as it was in `context`
-        rcount = matched.count(rabbi)
-        if rcount == 0:
-            # print("NO_RABBI")
+        word_b4_rabbi = pre_rabbi.split()[-1] + ' ' if len(pre_rabbi.strip()) > 0 else ''
+        rabbi_matches = match_text(matched.split(), [word_b4_rabbi + rabbi], with_num_abbrevs=False, place_all=True, place_consecutively=True, verbose=False)
+        rabbi_matched = rabbi_matches["match_text"][0][0]
+        if rabbi_matched == '':
             return None, None
+        rcount = matched.count(rabbi_matched)
         if rcount > 1:
             print("TON_O_RABANAN")
             return None, None
-        rabbi_start_rel = matched.find(rabbi)
+        rabbi_start_rel = matched.find(rabbi_matched)
+        if len(word_b4_rabbi) > 0 and rabbi_matched.startswith(word_b4_rabbi):
+            # first word is not part of rabbi abbreviation (unlike א"ר where first word should be considered part of the rabbi)
+            # wait until now to remove word_b4_rabbi to reduce the rabbi's ambiguity in matched
+            rabbi_matched = rabbi_matched[len(word_b4_rabbi):]
+            rabbi_start_rel += len(word_b4_rabbi)
+        rabbi_len = len(rabbi_matched)
     else:
         rabbi_start_rel = context.find('~')
+        rabbi_len = len(rabbi)
     start = context_start + rabbi_start_rel
     end = start + rabbi_len
     if norm_regex is not None:
@@ -610,14 +618,16 @@ def make_new_alt_titles_file():
     with open(f"/home/nss/sefaria/datasets/ner/sefaria/new_alt_titles.json", "w") as fout:
         json.dump(out, fout, ensure_ascii=False, indent=2)
 
-def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1, out_file2, vtitle):
+def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1, out_file2, vtitle, title_map=None):
     import json
+    title_map = title_map or {}
     mentions = []
     crude_mentions = []
     issues = 0
     with open(in_file, "r") as fin:
         c = csv.DictReader(fin)
         for row in c:
+            row["Tractate"] = title_map.get(row["Tractate"], row["Tractate"])
             tref = f'{row["Tractate"]} {row["Chapter"]}:{row["Number"]}'
             if not row['Tractate'].startswith('Pirkei Avot'):
                 tref = tractate_prefix + tref
@@ -625,7 +635,7 @@ def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1,
             context = row["Context"]
             crude_mentions += [{
                 "Book": oref.index.title,
-                "Segment": tref,
+                "Segment": oref.normal(),
                 "Bonayich ID": row["rabbi_id"],
                 "Context": context
             }]
@@ -653,6 +663,6 @@ if __name__ == "__main__":
     # convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
     
     # convert_mishnah_and_tosefta_to_mentions("Mishnah ", f"{DATA_LOC}/mishna_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_mishnah.jsonl', "sperling_mentions_mishnah.json", "Torat Emet 357")
-    convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", None)
+    convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", None, {"Oholot": "Ohalot", "Oktzin": "Uktsin", "Rosh Hashanah": "Rosh HaShanah"})
   
     # make_new_alt_titles_file()
