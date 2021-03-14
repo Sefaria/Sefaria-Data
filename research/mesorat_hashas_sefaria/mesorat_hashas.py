@@ -402,6 +402,12 @@ class Mesorah_Item:
     def copy(self):
         return Mesorah_Item(self.mesechta, self.mesechta_index, self.location, self.ref, self.min_distance_between_matches)
 
+    def get_text(self, pm):
+        """
+        return text associated with locations of mesorah_item
+        """
+        words = pm.word_list_map[self.mesechta]
+        return " ".join(words[self.location[0]:self.location[1]+1])
 
 class Mesorah_Match:
 
