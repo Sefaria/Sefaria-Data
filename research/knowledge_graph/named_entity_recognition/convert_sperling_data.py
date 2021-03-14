@@ -111,8 +111,9 @@ def get_rabbi_seg(match_seg, snippet):
 def get_mas(mas, vtitle='William Davidson Edition - Aramaic'):
     i = library.get_index(mas)
     trefs = [r.normal() for r in i.all_segment_refs()]
-    text = Ref(mas).text(lang='he', vtitle=vtitle).ja().flatten_to_array()
-    return zip(trefs, text)
+    tc = Ref(mas).text(lang='he', vtitle=vtitle)
+    text = tc.ja().flatten_to_array()
+    return zip(trefs, text), tc.version().versionTitle
     
 def get_rabbi_mention_segments(rows_by_mas, limit=None):
     total = 0
@@ -214,7 +215,7 @@ def convert_to_spacy_format(rabbi_mentions, vtitle='William Davidson Edition - A
     spacy_formatted = []
     new_rabbi_mentions = []
     for book, segs in tqdm(by_book.items()):
-        book_data = get_mas(book, vtitle)
+        book_data, book_vtitle = get_mas(book, vtitle)
         for tref, text in book_data:
             rabbi_contexts = [r["Context"] for r in segs[tref]]
             row = {"text": text, "ents": []}
@@ -229,7 +230,9 @@ def convert_to_spacy_format(rabbi_mentions, vtitle='William Davidson Edition - A
                     "Bonayich ID": segs[tref][icontext]["Bonayich ID"],
                     "Start": start,
                     "End": end,
-                    "Mention": text[start:end]
+                    "Mention": text[start:end],
+                    "Version Title": book_vtitle,
+                    "Language": "he"
                 }]
             spacy_formatted += [row]
     return spacy_formatted, new_rabbi_mentions
@@ -293,7 +296,9 @@ def convert_to_mentions_file(he_mentions_file, output_file, only_bonayich_rabbis
             "end": mention["End"],
             "mention": mention["Mention"],
             "ref": mention["Ref"],
-            "id_matches": [f"BONAYICH:{mention['Bonayich ID']}"] if slug_set is None else list(slug_set)
+            "id_matches": [f"BONAYICH:{mention['Bonayich ID']}"] if slug_set is None else list(slug_set),
+            "versionTitle": mention["Version Title"],
+            "language": mention["Language"]
         }))
     new_new_mentions = []
     for mention in new_mentions:
@@ -302,7 +307,9 @@ def convert_to_mentions_file(he_mentions_file, output_file, only_bonayich_rabbis
             "end": mention.end,
             "mention": mention.mention,
             "ref": mention.ref,
-            "id_matches": mention.id_matches
+            "id_matches": mention.id_matches,
+            "versionTitle": mention.versionTitle,
+            "language": mention.language
         }]
     if False:
         # skipping since we already have these mentions fixed in db
@@ -627,11 +634,8 @@ def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1,
     spacy_formatted, rabbi_mentions = convert_to_spacy_format(crude_mentions, vtitle=vtitle, norm_regex="[\u0591-\u05bd\u05bf-\u05c5\u05c7]+", repl='')
     srsly.write_jsonl(out_file1, rabbi_mentions)
     convert_to_mentions_file(out_file1, out_file2, only_bonayich_rabbis=False)
-    with open('research/knowledge_graph/named_entity_recognition/{out_file2}', 'r') as fin:
+    with open(f'research/knowledge_graph/named_entity_recognition/{out_file2}', 'r') as fin:
         j = json.load(fin)
-    for m in j:
-        m['versionTitle'] = vtitle
-        m['language'] = 'he'
     with open(f'{DATA_LOC}/../sefaria/{out_file2}', 'w') as fout:
         json.dump(j, fout, indent=2, ensure_ascii=False)
 
