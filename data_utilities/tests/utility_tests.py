@@ -192,8 +192,35 @@ def test_restructure_file():
     assert fixed == 'foo!\nbar!\n'
     os.remove('test_file.txt')
 
-def test_get_mapping_after_normalization():
-    text = "a###b##c"
-    find_text_to_remove = lambda x: re.finditer(r"#+", x)
-    rm = util.get_mapping_after_normalization(text, find_text_to_remove)
-    assert rm == {1: 3, 2: 5}
+
+class TestNormalizationMapping:
+    def test_simple_case(self):
+        text = "a###b##c"
+        find_text_to_remove = lambda x: [(m, '') for m in re.finditer(r'#+', x)]
+        rm = util.get_mapping_after_normalization(text, find_text_to_remove)
+        assert rm == {1: 3, 2: 5}
+
+    def test_with_substitution(self):
+        text = "a###b##c"
+        find_text_to_remove = lambda x: [(m, ' ') for m in re.finditer(r'#+', x)]
+        rm = util.get_mapping_after_normalization(text, find_text_to_remove)
+        assert rm == {1: 2, 3: 3}
+
+    def test_real_case(self):
+        norm_mention = "Rabbi Yehuda"
+        norm_regex = r"\s*<[^>]+>\s*"
+        text = """The priest <b>would bring an earthenware</b> drinking <b>vessel [<i>peyalei</i>] and he would pour into it half a <i>log</i> of water from the basin</b> in the Temple. <b>Rabbi Yehuda says:</b> The priest would pour only <b>a quarter</b>-<i>log</i> of water. <b>Just as</b> Rabbi Yehuda <b>minimizes the writing,</b> as he requires"""
+        norm_text = re.sub(norm_regex, ' ', text)
+        find_text_to_remove = lambda x: [(m, ' ') for m in re.finditer(norm_regex, x)]
+        rm = util.get_mapping_after_normalization(text, find_text_to_remove)
+        norm_inds = (222, 234)
+        assert norm_text[norm_inds[0]:norm_inds[1]] == norm_mention
+
+        # include_trailing_chars == False
+        unnorm_s, unnorm_e = util.convert_normalized_indices_to_unnormalized_indices([norm_inds], rm)[0]
+        assert text[unnorm_s:unnorm_e] == norm_mention
+        assert re.sub(norm_regex, '', text[unnorm_s:unnorm_e]) == norm_mention
+
+        # prefix
+        unnorm_s, unnorm_e = util.convert_normalized_indices_to_unnormalized_indices([(norm_inds[0], norm_inds[0])], rm)[0]
+        assert text[unnorm_s:unnorm_e] == ""
