@@ -46,9 +46,10 @@ if __name__ == "__main__":
     post_info["versionSource"] = "https://www.sefaria.org"
 
     for file in os.listdir("./"):
-        if file.endswith("xml") and "Sukkah" in file:
+        if file.endswith("xml"):
             with open("./"+file) as f:
                 contents = f.read()
+            print(file)
             title = file.replace(".xml", "")
             parser = XML_to_JaggedArray(title, contents, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
                                         titled=True, print_bool=True)

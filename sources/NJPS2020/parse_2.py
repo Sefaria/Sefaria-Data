@@ -11,7 +11,7 @@ def get_body_html(document, ftnotes):
         if re.search("<font size=\"\d+\">[\d\t ]+</font>", str) is None:
             pasukim[0] = re.sub("<font size=\"\d+\">", "", pasukim[0])
             pasukim[0] = re.sub("</font>", "", pasukim[0])
-            new_body[book][curr_perek][-1] += "<br/>" + " "+pasukim[0].strip()
+            new_body[book][curr_perek][-1] += "<br/>" +pasukim[0].strip()
         else:
             pasukim[0] = re.sub("<font size=\"\d+\">", "", pasukim[0])
             pasukim[0] = re.sub("</font>", "", pasukim[0])
@@ -19,7 +19,7 @@ def get_body_html(document, ftnotes):
                 if len(new_body[book][curr_perek]) == 0:
                     new_body[book][curr_perek] = [pasukim[0].strip()]
                 else:
-                    new_body[book][curr_perek][-1] += "<br/>" + " " + pasukim[0].strip()
+                    new_body[book][curr_perek][-1] += "<br/>" + pasukim[0].strip()
             for pasuk in pasukim[1:]:
                 if len(pasuk.strip()) > 1:
                     pasuk = pasuk.strip()
@@ -43,7 +43,9 @@ def get_body_html(document, ftnotes):
     total = 0
     body = document.body[0][0][0]
     for c, comment in enumerate(body):
-        comment = comment.replace("1 Kings", "I Kings").replace("2 Kings", "II Kings")
+        comment = comment.replace("1 Kings", "I Kings").replace("2 Kings", "II Kings").replace("LORD", "L<small>ORD</small>")
+        comment = comment.replace(chr(8195), " ")
+        comment = re.sub("[\u05d0-\u05ea]{1,}", "", comment)
         if len(comment) > 0 and is_index(BeautifulSoup(comment).text):
             last_perek = new_body[book].get(curr_perek, []) if len(book) > 0 else []
             book = comment
@@ -72,34 +74,6 @@ def get_body_html(document, ftnotes):
 
             add_pasukim(comment)
     return new_body, ftnotes
-#
-# def get_footnotes(document):
-#     ftnotes = list(document.footnotes[0][0][0])
-#     new_ftnotes = {}
-#     last_ftnote = ""
-#     curr = 0
-#     for i, ftnote in enumerate(ftnotes):
-#         if not ftnote or not " " in ftnote:
-#             continue
-#         ftnote = BeautifulSoup(ftnote).text
-#         basic_pattern = re.search("([a-z]{1}) (.+)", ftnote)
-#         dash_pattern = re.search("([a-z]{1})-[a-z]{1} (.+)", ftnote)
-#         pattern = basic_pattern if basic_pattern else dash_pattern
-#         if pattern:
-#             ftnote = pattern.group(1)
-#             comment = pattern.group(2)
-#             last_ftnote = ftnote
-#             if last_ftnote == "a":
-#                 curr += 1
-#                 new_ftnotes[curr] = {}
-#         else:
-#             comment = ftnote
-#             ftnote = chr(ord(last_ftnote)+1)
-#             last_ftnote = ftnote
-#         new_ftnotes[curr][ftnote] = comment
-#     return convertDictToArray(new_ftnotes)
-
-
 
 def get_body_insert_ftnotes(body, ftnotes):
     def ftnote_range(match, pasuk, book, found_ftnotes):
@@ -112,16 +86,18 @@ def get_body_insert_ftnotes(body, ftnotes):
             i_tag = '<sup>{}</sup><i class="footnote">{}</i>'.format(char, relevant_ftnote)
             first_regexes = ["<i>([a-z]{1})</i>", "<i>([a-z]{1})-{1,}</i>", "<i>([a-z]{1})-{1,}footnote\d*-{1,}</i>",
                              "<i>-{1,}footnote\d*-{1,}([a-z]{1}</i>)"]
-            ending_regexes = ["<i>-?([a-z]{1})</i>"]
+            ending_regexes = ["<i>-?([a-z]{1})[\s-]?</i>"]
             #first replace beginning parts with actual i_tag
             #then replace ending parts with <sup>char</sup>
+            if re.search("<i>.*?(-{1,}footnote\d*-{1,}).*?</i>", pasuk):
+                pasuk = pasuk.replace(re.search("<i>.*?(-{1,}footnote\d*-{1,}).*?</i>", pasuk).group(1), "", 1)
             for regex in first_regexes:
                 if re.search(regex, pasuk) and re.search(regex, pasuk).group(1) == char:
-                    pasuk = re.sub(regex, i_tag, pasuk)
+                    pasuk = re.sub(regex, i_tag, pasuk, 1)
             for regex in ending_regexes:
                 for poss_char in re.findall(regex, pasuk):
                     if poss_char == char:
-                        pasuk = re.sub("<i>-?"+char+"</i>", "<sup>-{}</sup>".format(char), pasuk)
+                        pasuk = re.sub("<i>-?"+char+"\s?</i>", "<sup>-{}</sup>".format(char), pasuk, 1)
         return pasuk, double_ftnote_exist
 
     new_body = {}
@@ -137,6 +113,7 @@ def get_body_insert_ftnotes(body, ftnotes):
                 last_char_double_ftnotes_spread_across_pasukim = ""
 
                 for p, pasuk in enumerate(body[book][perek]):
+                    pasuk = pasuk.replace("\t", "")
                     double_ftnotes = list(re.finditer("<i>([a-z]{1})</i>.*?footnote\d*.*?<i>-?([a-z]{1})</i>", pasuk)) + list(
                         re.finditer("<i>([a-z]{1})-{1,}</i>.*?<i>-?([a-z]{1})</i>", pasuk)) + list(
                         re.finditer("<i>([a-z]{1})-{1,}footnote\d*-{1,}</i>.*?<i>-?([a-z]{1})</i>", pasuk)) + list(
@@ -150,17 +127,28 @@ def get_body_insert_ftnotes(body, ftnotes):
 
                     one_tag_re = "<[\"a-zA-Z\d ]+>"
                     one_tag_closer_re = "</[\"a-zA-Z\d ]+>"
-                    first_case = one_tag_re+"-{1,}footnote\d*-{1,}([a-z]{1})"+one_tag_closer_re
-                    second_case = one_tag_re+"([a-z]{1})-{1,}footnote\d*-{1,}"+one_tag_closer_re
-                    third_case = "<i>([a-z]{1})</i>"
-                    for case in [first_case, second_case, third_case]:
+                    cases = [one_tag_re+"-{1,}footnote\d*-{1,}([a-z]{1})"+one_tag_closer_re,
+                             one_tag_re+"([a-z]{1})-{1,}footnote\d*-{1,}"+one_tag_closer_re,
+                            "<i>([a-z]{1})</i>",
+                             "^-{1,}footnote\d*-{1,}([a-z]{1})",
+                             "-{1,}footnote\d*-{1,}([a-z]{1})$"]
+                    for case in cases:
                         for match in re.finditer(case, pasuk):
                             char = match.group(1)
                             relevant_ftnote = ftnotes_perek[char]
                             found_ftnotes.writerow([book, relevant_ftnote])
                             relevant_ftnote = '<sup>{}</sup><i class="footnote">{}</i>'.format(char, relevant_ftnote)
                             pasuk = pasuk.replace(match.group(0),
-                                                  relevant_ftnote)
+                                                  relevant_ftnote, 1)
+
+                    for c, case in enumerate(["-{1,}footnote\d*-{1,}([a-z]{1})[ <—.;,A-Z]{1}"]):
+                        for match in re.finditer(case, pasuk):
+                            char = match.group(1)
+                            relevant_ftnote = ftnotes_perek[char]
+                            found_ftnotes.writerow([book, relevant_ftnote])
+                            relevant_ftnote = '<sup>{}</sup><i class="footnote">{}</i>'.format(char, relevant_ftnote)
+                            pasuk = re.sub("-{1,}footnote\d*-{1,}" + char, relevant_ftnote, pasuk, 1)
+
 
                     if double_ftnote_exist == False and len(last_char_double_ftnotes_spread_across_pasukim) > 0:
                         if re.search("<i>-[a-z]{1}</i>", pasuk):
@@ -175,14 +163,14 @@ def get_body_insert_ftnotes(body, ftnotes):
                                 last_char_double_ftnotes_spread_across_pasukim = char
                                 relevant_ftnote = ftnotes_perek[last_char_double_ftnotes_spread_across_pasukim]
                                 found_ftnotes.writerow([book, relevant_ftnote])
-                                pasuk = pasuk.replace(match.group(0), relevant_ftnote)
+                                relevant_ftnote = '<sup>{}</sup><i class="footnote">{}</i>'.format(char,
+                                                                                                   relevant_ftnote)
+                                pasuk = pasuk.replace(m.group(0), relevant_ftnote)
 
+                    for regex in ["<i>-?([a-z]{1})[\s-]?</i>"]:
+                        for poss_char in re.findall(regex, pasuk):
+                            pasuk = re.sub("<i>-?([a-z]{1})[\s-]?</i>", "<sup>-{}</sup>".format(poss_char), pasuk)
                     pasuk = re.sub("-{1,}footnote\d*-{1,}", "", pasuk)
-
-
-
-
-
                     new_body[book][perek].append(pasuk)
 
     return new_body
@@ -193,7 +181,7 @@ def post(body):
         pasuk = re.sub("<sup>.{1,2}</sup><i class=\"footnote\">.*?</i>", "", pasuk)
         pasuk = re.sub("<sup>-?[a-z]{1}</sup>", "", pasuk)
         return pasuk
-    probs = set()
+    probs = []
     wout_ftnotes = {}
     for book in body:
         perek_probs = set()
@@ -225,38 +213,53 @@ def post(body):
                             extra += y[-1]
                         elif len(extra) > 0 and extra[-1] != "\n":
                             extra += "\n"
-                    for char in ['’', '.', '’', '-', '\n', ':', ',']:
+                    for char in ['’', '.', '’', '-', '\n', '—', ':', ',', ';', '(', ')', '?']:
                         extra = extra.replace(char, "")
                     extra = extra.strip()
-                    #if len(extra) > 2:
-                    if re.search("\d+", new_text) and len(extra) > 2:
-                        print(pasuk)
-                        prev_prev_prob_ref = prev_prob_ref
-                        prev_prob_ref = curr_prob_ref
-                        curr_prob_ref = "{} {}:{}".format(title, perek, p + 1)
-                        perek_probs.add("{} {}".format(title, perek))
+                    if len(extra) > 0:
+                        # if "footnote" in extra or (len(extra) == 1 and "<" in pasuk):
+                        #     print(pasuk)
+                        #     print("{} {}:{}".format(title, perek, p + 1))
+                        #     print()
+                        # print(extra)
+                        prev = probs[-1] if len(probs) > 0 else ""
+                        curr = Ref("{} {}:{}".format(title, perek, p + 1))
+                        if len(prev) > 0:
+                            prev = Ref(prev)
+                            if curr.section_ref() == prev.section_ref():
+                                probs[-1] = prev.to(curr).normal()
+                            else:
+                                probs.append(curr.normal())
+                        else:
+                            probs.append(curr.normal())
+
+                    # if re.search("\d+", new_text) and len(extra) > 2:
+                    #     print(pasuk)
+                    #     prev_prev_prob_ref = prev_prob_ref
+                    #     prev_prob_ref = curr_prob_ref
+                    #     curr_prob_ref = "{} {}:{}".format(title, perek, p + 1)
+                    #     perek_probs.add("{} {}".format(title, perek))
                         # if prev_prob_ref and prev_prev_prob_ref and Ref(curr_prob_ref).prev_segment_ref() == Ref(prev_prob_ref) and Ref(prev_prob_ref).prev_segment_ref() == Ref(prev_prev_prob_ref):
                         #     print(Ref(prev_prev_prob_ref).to(Ref(curr_prob_ref)))
 
-        print(perek_probs)
         body[book] = convertDictToArray(body[book])
         wout_ftnotes[book] = convertDictToArray(wout_ftnotes[book])
-        print(title)
         send_text = {
             "versionTitle": "NJPS footnotes",
             "language": "en",
             "versionSource": "https://jps.org/books/tanakh-the-holy-scriptures-blue/",
             "text": body[book]
         }
-        #post_text(title, send_text)
-        send_text = {
-            "versionTitle": "NJPS no footnotes",
-            "language": "en",
-            "versionSource": "https://jps.org/books/tanakh-the-holy-scriptures-blue/",
-            "text": wout_ftnotes[book]
-        }
+        if book in ["Psalms", "Isaiah"]:
+            post_text(title, send_text)
+            send_text = {
+                "versionTitle": "NJPS no footnotes",
+                "language": "en",
+                "versionSource": "https://jps.org/books/tanakh-the-holy-scriptures-blue/",
+                "text": wout_ftnotes[book]
+            }
+            post_text(title, send_text)
     print(probs)
-    #post_text(title, send_text)
 
 
 def check_for_ftnotes(body):
@@ -271,7 +274,7 @@ def check_for_ftnotes(body):
                 perek, orig_ftnote_marker, orig_ftnote = row
                 if orig_ftnote not in found:
                     if len(orig_ftnote) > 2:
-                        #print(row[1:])
+                        print(row[1:])
                         pass
                     else:
                         print("Strange case")

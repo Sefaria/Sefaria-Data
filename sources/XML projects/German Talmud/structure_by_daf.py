@@ -1,9 +1,28 @@
 from sources.functions import *
 from bs4 import BeautifulSoup
 import os
+
+def run_checks(folios, title):
+    # check sequence and check total number is same
+    daf = 3
+    our_text_dappim = library.get_index(title).all_section_refs()
+    for folio in folios:
+        if folio.endswith("b") or folio == "Colb." or folio == "Co":
+            daf += 1
+        else:
+            new_daf = (2*int(re.search("\d+", folio).group(0))) - 1
+            if new_daf - daf != 1:
+                print("{} but expected {} in {}".format(AddressTalmud.toStr("en", new_daf), AddressTalmud.toStr("en", daf+1), title))
+                daf += 1
+            else:
+                daf = new_daf
+    if daf != len(our_text_dappim)+2:
+        print("{} but expected {} dappim in {}".format(daf, len(our_text_dappim)+2, title))
+
 vsource = "https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI"
 for file in os.listdir("."):
-    if file.endswith(".csv") and not "ftnote" in file and "Sukkah" in file:
+    if file.endswith(".csv") and not "ftnote" in file:
+        print(file)
         title = file.replace(".csv", "")
         text = ""
         with open("{}.csv".format(title), 'r') as f:
@@ -11,9 +30,11 @@ for file in os.listdir("."):
                 text += row[1]
 
         folios_text = re.findall("<folio>(.*?)</folio>", text)
-        for i, folio in enumerate(re.findall("<folio>(.*?)</folio>", text)):
-            if i % 2 == 0 and not folio.endswith("b"):
-                print(title)
+        # for i, folio in enumerate(re.findall("<folio>(.*?)</folio>", text)):
+        #     if i % 2 == 0 and not folio.endswith("b"):
+        #         print(title)
+
+        run_checks(folios_text, title)
 
 
         sec_refs = library.get_index(title).all_section_refs()
@@ -30,13 +51,14 @@ for file in os.listdir("."):
                 if len(divided_text) > 1:
                     divided_text = divided_text[1:]
                     for amud, text_portion in zip(re.findall("<folio>(.*?)</folio>", row[1]), divided_text):
-                        if "Col" in amud and "b" in amud:
+                        if (("col" in amud or "Col" in amud) and "b" in amud) or "Co" == amud:
                             curr += 1
                             text[curr] = [text_portion]
                         else:
                             daf = re.search(".*?(\d+)", amud).group(1)
                             curr = AddressTalmud(0).toNumber("en", "{}a".format(daf))
                             text[curr] = [text_portion]
+
 
         before_content = """Index Title,{}
 Version Title,"{}"
