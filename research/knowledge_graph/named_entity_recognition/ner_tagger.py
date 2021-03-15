@@ -27,6 +27,7 @@ inputs
                     "getLeaves": <BOOL> (if True, include all leaves of this topic),
                 }
             ],
+            "pretagOverrideNamedEntities": <Same format as namedEntities. these namedEntities will only be used on pretagged segments>
             "corpus": [
                 {
                     "title": <TITLE>,
@@ -71,6 +72,7 @@ output
         }
     ]
 """
+from os import stat
 import django, json, srsly, csv
 from typing import Union
 from sefaria.utils.hebrew import strip_cantillation
@@ -155,9 +157,15 @@ class TextNormalizer:
         normalizing_rep = cls.normalizing_rep_en if lang == 'en' else cls.normalizing_rep_he
         return lambda s: [(m, normalizing_rep) for m in re.finditer(normalizing_reg, s)]
 
+    @classmethod
+    def include_trailing_nikkud(cls, span, text):
+        start, end = span
+        nikkud_match = re.match(cls.normalizing_reg_he, text[end:])
+        return start, end if nikkud_match is None else (end + nikkud_match.end())
+
 class Mention:
 
-    def __init__(self, start=None, end=None, mention=None, id_matches=None, ref=None, versionTitle=None, language=None):
+    def __init__(self, start=None, end=None, mention=None, id_matches=None, ref=None, versionTitle=None, language=None, prefix_span=None):
         self.start = start
         self.end = end
         self.mention = mention
@@ -165,7 +173,8 @@ class Mention:
         self.ref = ref
         self.versionTitle = versionTitle
         self.language = language
-        self.is_non_literal = False  # used for texts that include both literal and non-literal translations
+        self.prefix_span = prefix_span
+        self.is_nonliteral = False  # used for texts that include both literal and non-literal translations
 
 
     def add_metadata(self, **kwargs):
@@ -186,6 +195,11 @@ class Mention:
         self.language = cld['language']
         return self
 
+    def get_mention_wo_prefix(self):
+        if self.prefix_span is None: return self.mention
+        p_start, p_end = self.prefix_span
+        return self.mention[p_end-p_start:]
+
     @classmethod
     def load_ambiguous_map(cls):
         ambiguous_links = IntraTopicLinkSet({"linkType": "possibility-for"})
@@ -193,6 +207,9 @@ class Mention:
         for l in ambiguous_links:
             cls.possibility_map[l.toTopic].add(l.fromTopic)
         
+    @staticmethod
+    def sort(m):
+        return Ref(m.ref).order_id(), m.versionTitle, m.language, m.start, m.end
 
     def serialize(self, delete_keys=None):
         d = {
@@ -202,7 +219,8 @@ class Mention:
             "id_matches": self.id_matches,
             "ref": self.ref,
             "versionTitle": self.versionTitle,
-            "language": self.language
+            "language": self.language,
+            "prefix_span": self.prefix_span and list(self.prefix_span),
         }
         if delete_keys is not None:
             for key in delete_keys:
@@ -247,7 +265,7 @@ class AbstractNamedEntityRecognizer:
         pass
 
 class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
-    word_breakers = r"|".join(re.escape(breaker) for breaker in ['.', ',', '"', '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§', '<', '>', "'s", "׃", "׀", "־"])
+    word_breakers = r"|".join(re.escape(breaker) for breaker in ['.', ',', '"', "'", '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§', '<', '>', "'s", "׃", "׀", "־"])
 
     def __init__(self, named_entities, **kwargs):
         self.named_entities = named_entities
@@ -261,7 +279,8 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
                 for title in ne.get_titles(lang=lang, with_disambiguation=False):
                     title_regs += [re.escape(expansion) for expansion in TextNormalizer.get_rabbi_expansions(title)]
             title_regs.sort(key=lambda x: len(x), reverse=True)
-            self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\s|{self.word_breakers}){lang_params.get('prefixRegex', None) or ''})({'|'.join(title_regs)})(?=\s|{self.word_breakers}|$)")
+            self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\s|{self.word_breakers})(?P<prefix>{lang_params.get('prefixRegex', None) or ''}))(?P<ne>{'|'.join(title_regs)})(?=\s|{self.word_breakers}|$)")
+            # self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\b){lang_params.get('prefixRegex', None) or ''})({'|'.join(title_regs)})(?:\b|$)")
     
     @staticmethod
     def filter_already_found_mentions(mentions, text, lang):
@@ -286,19 +305,21 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
             # end = match.end(1)
             # if not (end == len(norm_text) or re.match(fr"(?:\s|{self.word_breakers}|$)", norm_text[end:end+2])):
             #     continue
-            mentions += [Mention(match.start(1), match.end(1), match.group(1), ref=corpus_segment.ref, versionTitle=corpus_segment.versionTitle, language=corpus_segment.language)]
+            mentions += [Mention(match.start('prefix'), match.end('ne'), match.group('prefix') + match.group('ne'), prefix_span=match.span('prefix'), ref=corpus_segment.ref, versionTitle=corpus_segment.versionTitle, language=corpus_segment.language)]
         mention_indices = [(mention.start, mention.end) for mention in mentions]
         norm_map = get_mapping_after_normalization(corpus_segment.text, TextNormalizer.get_find_text_to_remove(corpus_segment.language))
         mention_indices = convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map)
-        for mention, (unnorm_start, unnorm_end) in zip(mentions, mention_indices):
-            mention.add_metadata(start=unnorm_start, end=unnorm_end, mention=corpus_segment.text[unnorm_start:unnorm_end])
+        for mention, unnorm_span in zip(mentions, mention_indices):
+            unnorm_start, unnorm_end = TextNormalizer.include_trailing_nikkud(unnorm_span, corpus_segment.text)
+            unnorm_prefix_span = TextNormalizer.include_trailing_nikkud(convert_normalized_indices_to_unnormalized_indices([mention.prefix_span], norm_map)[0], corpus_segment.text)
+            mention.add_metadata(start=unnorm_start, end=unnorm_end, mention=corpus_segment.text[unnorm_start:unnorm_end], prefix_span=unnorm_prefix_span)
         mentions = self.filter_already_found_mentions(mentions, corpus_segment.text, corpus_segment.language)
         return mentions
 
     def predict(self, corpus_segments):
         mentions = []
+        if len(self.named_entities) == 0: return mentions  # most likely 0 in the case of pretagOverride
         for corpus_segment in tqdm(corpus_segments, desc="ner predict"):
-            if corpus_segment.is_pretagged: continue
             mentions += self.predict_segment(corpus_segment)
         return mentions
 
@@ -327,7 +348,7 @@ class NaiveEntityLinker(AbstractEntityLinker):
         self.named_entity_table = defaultdict(dict)  # (lang, title) -> list of topics (dict now, but will be changed to list)
         self.rules = rules
         self.lang_specific_params = kwargs.get('langSpecificParams', {})
-        self.literal_text_map = get_literal_text_map(kwargs.get('nonLiteralCorpus', []))
+        self.literal_text_map, self.has_nonliteral_version_set = get_literal_text_map(kwargs.get('nonLiteralCorpus', []))
         self.ambig_map = defaultdict(set)
         for link in IntraTopicLinkSet({"linkType": "possibility-for"}):
             self.ambig_map[link.toTopic].add(link.fromTopic)
@@ -350,7 +371,7 @@ class NaiveEntityLinker(AbstractEntityLinker):
         return list(ne_slug_set)
 
     def get_named_entity_ids_for_mention(self, mention: Mention) -> Union[list, None]:
-        norm_mention = TextNormalizer.normalize_text(mention.language, mention.mention)
+        norm_mention = TextNormalizer.normalize_text(mention.language, mention.get_mention_wo_prefix())
         ne_list = self.named_entity_table.get((mention.language, norm_mention), None)
         if ne_list is None: return
         return self.expand_ambiguous_named_entities([ne.slug for ne in ne_list])
@@ -361,15 +382,18 @@ class NaiveEntityLinker(AbstractEntityLinker):
             grouped_by_ref[mention.ref] += [mention]
 
             # check if mention is in literal text
-            temp_literal_indexes = self.literal_text_map.get((mention.versionTitle, mention.language, mention.ref), None)
-            mention_indices = {i for i in range(mention.start, mention.end)}
-            mention.is_non_literal = temp_literal_indexes is None or len(temp_literal_indexes & mention_indices) == 0
+            has_nonliteral = (Ref(mention.ref).index.title, mention.versionTitle, mention.language) in self.has_nonliteral_version_set
+            if has_nonliteral:
+                # index is included in indexes that have nonliteral text
+                temp_literal_indexes = self.literal_text_map.get((mention.versionTitle, mention.language, mention.ref), None)
+                mention_indices = {i for i in range(mention.start, mention.end)}
+                mention.is_nonliteral = temp_literal_indexes is None or len(temp_literal_indexes & mention_indices) == 0
 
             pretagged_id_matches = getattr(mention, 'id_matches', None)
             if pretagged_id_matches is None:
                 ne_list = self.get_named_entity_ids_for_mention(mention)
                 if ne_list is None:
-                    print(f"No named entity matches '{norm_mention}'. Unnorm mention: '{mention.mention}', Ref: {mention.ref}")
+                    print(f"No named entity matches '{TextNormalizer.normalize_text(mention.language, mention.get_mention_wo_prefix())}'. Unnorm mention: '{mention.mention}', Ref: {mention.ref}")
                     mention.add_metadata(id_matches=[])
                     continue
                 
@@ -431,12 +455,12 @@ class ExactRefRule(AbstractRule):
             if not rule_satisfied:
                 mention.id_matches = list(set(mention.id_matches).difference(self.named_entities))
 
-class NamedEntityInVersionRule(AbstractRule):
+class NamedEntityNotInVersionDeleteRule(AbstractRule):
     """
     deletes mention if equivalent mention doesn't appear in specified version
     """
     def __init__(self, rule_dict):
-        super(NamedEntityInVersionRule, self).__init__(rule_dict)
+        super(NamedEntityNotInVersionDeleteRule, self).__init__(rule_dict)
         self.applies_to_vtitle_set = {x['versionTitle'] for x in self.rule['appliesToVersions']}
         self.applies_to_lang_set = {x['language'] for x in self.rule['appliesToVersions']}
     
@@ -444,7 +468,7 @@ class NamedEntityInVersionRule(AbstractRule):
         applicable_mentions = [mention for mention in mentions if self.is_applicable(mention, mentions)]
         compare_named_entities = set()
         for mention in mentions:
-            if mention.versionTitle != self.rule['versionToCompare']['versionTitle'] or mention.language != self.rule['versionToCompare']['language'] or mention.is_non_literal:
+            if mention.versionTitle != self.rule['versionToCompare']['versionTitle'] or mention.language != self.rule['versionToCompare']['language'] or mention.is_nonliteral:
                 continue
             compare_named_entities |= set(mention.id_matches)
 
@@ -484,7 +508,7 @@ class RuleFactory:
         "minRef": MinMaxRefRule,
         "maxRef": MinMaxRefRule,
         "exactRefs": ExactRefRule,
-        "namedEntityInVersion": NamedEntityInVersionRule,
+        "namedEntityNotInVersionDelete": NamedEntityNotInVersionDeleteRule,
         "manualCorrections": ManualCorrectionsRule,
     }
 
@@ -519,11 +543,14 @@ class CorpusManager:
     def read_tagging_params_file(self, tagging_params_file):
         with open(tagging_params_file, "r") as fin:
             tagging_params = json.load(fin)
-        self.named_entities = self.create_named_entities(tagging_params["namedEntities"])
+        self.named_entities                 = self.create_named_entities(tagging_params["namedEntities"])
+        self.pretag_override_named_entities = self.create_named_entities(tagging_params.get("pretagOverrideNamedEntities", []))
         rules = self.create_rules(tagging_params.get("rules", []))
-        self.ner = NaiveNamedEntityRecognizer(self.named_entities, **tagging_params.get('namedEntityRecognizerParams', {}))
+        self.ner                    = NaiveNamedEntityRecognizer(self.named_entities, **tagging_params.get('namedEntityRecognizerParams', {}))
+        self.pretag_override_ner = NaiveNamedEntityRecognizer(self.pretag_override_named_entities, **tagging_params.get('namedEntityRecognizerParams', {}))
         self.el = NaiveEntityLinker(self.named_entities, rules, **tagging_params.get('namedEntityLinkerParams', {}))
         self.ner.fit()
+        self.pretag_override_ner.fit()
         self.el.fit()
         self.corpus_version_queries = self.create_corpus_version_queries(tagging_params["corpus"])
 
@@ -545,12 +572,21 @@ class CorpusManager:
             if version is None: continue
             is_pretagged = pretagged_file is not None or pretagged_in_db
             version.walk_thru_contents(partial(self.create_corpus_segment, is_pretagged))
-        ner_mentions = self.ner.predict(self.corpus_segments)
-        ner_mentions += pretagged_mentions
+        
+        pretagged_corpus_segments, untagged_corpus_segments = self.partition_corpus_segments()
+        ner_mentions = self.ner.predict(untagged_corpus_segments)
+        pretag_override_ner_mentions = self.pretag_override_ner.predict(pretagged_corpus_segments)
+        ner_mentions += pretagged_mentions + pretag_override_ner_mentions
         el_mentions = self.el.predict(self.corpus_segments, ner_mentions)
         self.mentions = el_mentions
         self.validate_mention_matches_text()
         self.deduplicate_mentions()
+
+    def partition_corpus_segments(self):
+        pretagged_corpus_segments, untagged_corpus_segments = [], []
+        for x in self.corpus_segments:
+            pretagged_corpus_segments.append(x) if x.is_pretagged else untagged_corpus_segments.append(x)
+        return pretagged_corpus_segments, untagged_corpus_segments
 
     def deduplicate_mentions(self):
         self.mentions = list(set(self.mentions))
@@ -563,12 +599,43 @@ class CorpusManager:
         seg_map = {
             (seg.ref, seg.versionTitle, seg.language): seg for seg in self.corpus_segments
         }
+        mismatched_matches = []
         def matches_text(m):
+            nonlocal mismatched_matches
             key = (m.ref, m.versionTitle, m.language)
             if key not in seg_map: return False
-            return m.mention == seg_map[key].text[m.start:m.end]
+            matches_text = m.mention == seg_map[key].text[m.start:m.end]
+            if not matches_text:
+                mismatched_matches += [m]
+            return matches_text
 
         self.mentions = list(filter(matches_text, self.mentions))
+        print("MISMATCHED", len(mismatched_matches))
+        fixed_matches = []
+        still_mismached_matches = []
+        for m in mismatched_matches:
+            max_abs_dist = 3
+            key = (m.ref, m.versionTitle, m.language)
+            if key not in seg_map: continue
+            found_match = False
+            for abs_offset in list(range(1, max_abs_dist)) + [len('<big><strong></strong></big>')]:  # big strong was added into william davidson since last links were created
+                if found_match: break
+                for side in (1,-1):
+                    offset = side*abs_offset
+                    if m.start+offset < 0: continue
+                    if m.mention == seg_map[key].text[m.start+offset:m.end+offset]:
+                        m.start += offset
+                        m.end += offset
+                        fixed_matches += [m]
+                        found_match = True
+                        break
+            if not found_match:
+                still_mismached_matches += [m]
+
+        print("FIXED", len(fixed_matches))
+        for m in still_mismached_matches:
+            print(m)
+        self.mentions += fixed_matches
 
     def save_mentions(self):
         out = [mention.serialize() for mention in tqdm(self.mentions, desc="save mentions")]
@@ -1028,12 +1095,14 @@ def get_literal_text_map(raw_literal_corpus):
     from functools import partial
     literal_walker = LiteralTextWalker()
     version_queries = CorpusManager.create_corpus_version_queries(raw_literal_corpus)
+    has_nonliteral_version_set = set()
     for vquery in tqdm(version_queries, desc="get literal ranges"):
         version = Version().load({"title": vquery['title'], "language": vquery['language'], "versionTitle": vquery['versionTitle']})
         if version is None:
             # print("Version is None for", vquery['title'], vquery['language'], vquery['versionTitle'])
             continue
         version.walk_thru_contents(partial(literal_walker.walk, vquery['literalRegex']))
+        has_nonliteral_version_set.add((vquery['title'], vquery['versionTitle'], vquery['language']))
     
     literal_index_set_map = {}
     for key, temp_ranges in literal_walker.range_map.items():
@@ -1041,13 +1110,37 @@ def get_literal_text_map(raw_literal_corpus):
         for s, e in temp_ranges:
             literal_indexes |= {i for i in range(s, e)}
         literal_index_set_map[key] = literal_indexes
-    return literal_index_set_map
+    return literal_index_set_map, has_nonliteral_version_set
+
+def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle=None, lang=None):
+    """
+    Given 2 filenames, save 2 files; a_not_b.json and b_not_a.json
+    """
+    def get_set(filename):
+        temp_set = {Mention().add_metadata(**m) for m in srsly.read_json(f'{ner_file_prefix}/{filename}')}
+        if vtitle is None: return temp_set
+        return set(filter(lambda m: m.versionTitle == vtitle and m.language == lang, temp_set))
+
+    def save_set(temp_set, filename):
+        j = [m.serialize() for m in sorted(temp_set, key=Mention.sort)]
+        with open(filename, 'w') as fout:
+            json.dump(j, fout, ensure_ascii=False, indent=2)
+
+    a = get_set(filea)
+    b = get_set(fileb)
+    a_not_b = a.difference(b)
+    b_not_a = b.difference(a)
+    print("A not B", len(a_not_b))
+    print("B not A", len(b_not_a))
+    save_set(a_not_b, f'{ner_file_prefix}/a_not_b.json')
+    save_set(b_not_a, f'{ner_file_prefix}/b_not_a.json')
+
 
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "research/knowledge_graph/named_entity_recognition/ner_tagger_input.json",
-        f"{ner_file_prefix}/ner_output_talmud.json",
+        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_mishnah.json",
+        f"{ner_file_prefix}/ner_output_mishnah_prefixes.json",
         f"{ner_file_prefix}/html"
     )
     # corpus_manager.export_named_entities(f"{ner_file_prefix}/named_entities_export.csv")
@@ -1058,11 +1151,19 @@ if __name__ == "__main__":
     # corpus_manager.load_mentions()
     corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi'})
     # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv")
-    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en")
+    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("Mishnah Yomit by Dr. Joshua Kulp", "en"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en")
+    
+    # compare_two_versions_ner_tagger_output('ner_output_talmud.json', 'ner_output_talmud_word_breakers.json', ner_file_prefix)
+    compare_two_versions_ner_tagger_output('ner_output_mishnah_prefixes.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
+
 """
 This file depends on first running
 - find_missing_rabbis.convert_final_en_names_to_ner_tagger_input() which creates sperling_named_entities
 - convert_sperling_data.convert_to_mentions_file() which converts 
 
 Current results: both talmud and mishnah are 97.4% accurate
+
+TODO add NamedEntityInVersionAddRule which checks if named entity is in reference version.
+If so, search for named entity in target versions regardless of if corpus segment is pretagged. 
+This rule should ideally only run at named entity recognizer stage
 """

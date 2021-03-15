@@ -108,10 +108,10 @@ def get_rabbi_seg(match_seg, snippet):
         print("REF", match_seg.normal())
         return None, None
 
-def get_mas(mas):
+def get_mas(mas, vtitle='William Davidson Edition - Aramaic'):
     i = library.get_index(mas)
     trefs = [r.normal() for r in i.all_segment_refs()]
-    text = Ref(mas).text(lang='he', vtitle='William Davidson Edition - Aramaic').ja().flatten_to_array()
+    text = Ref(mas).text(lang='he', vtitle=vtitle).ja().flatten_to_array()
     return zip(trefs, text)
     
 def get_rabbi_mention_segments(rows_by_mas, limit=None):
@@ -166,7 +166,12 @@ def get_rows_by_mas():
         rows_by_mas[k] = amudim
     return rows_by_mas
 
-def get_rabbi_char_loc(context, seg_text):
+def get_rabbi_char_loc(context, seg_text, norm_regex=None, repl=None):
+    from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
+    from research.knowledge_graph.named_entity_recognition.ner_tagger import TextNormalizer
+    orig_seg_text = seg_text
+    if norm_regex is not None:
+        seg_text = re.sub(norm_regex, repl, seg_text)
     matches = match_text(seg_text.split(), [context.replace('~', '')], with_num_abbrevs=False, place_all=True, place_consecutively=True, verbose=False)
     if matches["matches"][0][0] == -1:
         return None, None
@@ -194,21 +199,30 @@ def get_rabbi_char_loc(context, seg_text):
         rabbi_start_rel = context.find('~')
     start = context_start + rabbi_start_rel
     end = start + rabbi_len
+    if norm_regex is not None:
+        def find_text_to_remove(s):
+            return [(m, repl) for m in re.finditer(norm_regex, s)]
+        norm_map = get_mapping_after_normalization(orig_seg_text, find_text_to_remove)
+        mention_indices = convert_normalized_indices_to_unnormalized_indices([(start, end)], norm_map)
+        start, end = TextNormalizer.include_trailing_nikkud(mention_indices[0], orig_seg_text)
     return start, end
 
-def convert_to_spacy_format(rabbi_mentions):
+def convert_to_spacy_format(rabbi_mentions, vtitle='William Davidson Edition - Aramaic', norm_regex=None, repl=None, book_in_vtitle=False):
     by_book = defaultdict(lambda: defaultdict(list))
     for row in rabbi_mentions:
         by_book[row["Book"]][row["Segment"]] += [row]
     spacy_formatted = []
     new_rabbi_mentions = []
     for book, segs in tqdm(by_book.items()):
-        book_data = get_mas(book)
+        temp_vtitle = vtitle
+        if book_in_vtitle:
+            temp_vtitle = f'{book} {temp_vtitle}'
+        book_data = get_mas(book, temp_vtitle)
         for tref, text in book_data:
             rabbi_contexts = [r["Context"] for r in segs[tref]]
             row = {"text": text, "ents": []}
             for icontext, context in enumerate(rabbi_contexts):
-                start, end = get_rabbi_char_loc(context, text)
+                start, end = get_rabbi_char_loc(context, text, norm_regex, repl)
                 if start == None:
                     continue
                 row["ents"] += [{"start": start, "end": end, "label": "PERSON"}]
@@ -227,7 +241,7 @@ def display_displacy(jsonl_loc):
     jsonl_data = list(filter(lambda x: len(x['text']) > 0, srsly.read_jsonl(jsonl_loc)))
     spacy.displacy.serve(jsonl_data, style='ent', manual=True)
 
-def convert_to_mentions_file(only_bonayich_rabbis=True):
+def convert_to_mentions_file(he_mentions_file, output_file, only_bonayich_rabbis=True):
     import json
     from sefaria.utils.hebrew import is_hebrew
     from research.knowledge_graph.named_entity_recognition.ner_tagger import Mention
@@ -262,7 +276,7 @@ def convert_to_mentions_file(only_bonayich_rabbis=True):
     print("NUM DB IDS", len(db_sef_id_map))
     unique_missed = {}
     new_mentions = set()
-    for mention in srsly.read_jsonl(f"{DATA_LOC}/he_mentions.jsonl"):
+    for mention in srsly.read_jsonl(he_mentions_file):
         if int(mention['Bonayich ID']) not in ids_not_in_sefaria_db and only_bonayich_rabbis:
             # already exists in sefaria db. we can skip
             continue
@@ -379,7 +393,7 @@ def convert_to_mentions_file(only_bonayich_rabbis=True):
                 start = old_start - index
                 end = start + len(Missing Title)
             """
-    with open("research/knowledge_graph/named_entity_recognition/sperling_mentions.json", "w") as fout:
+    with open(f"research/knowledge_graph/named_entity_recognition/{output_file}", "w") as fout:
         json.dump(new_new_mentions, fout, ensure_ascii=False, indent=2)
     print("NUM MISSED", len(unique_missed))
     print("NUM GOT", len(new_new_mentions))
@@ -592,6 +606,42 @@ def make_new_alt_titles_file():
     with open(f"/home/nss/sefaria/datasets/ner/sefaria/new_alt_titles.json", "w") as fout:
         json.dump(out, fout, ensure_ascii=False, indent=2)
 
+def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1, out_file2, vtitle, book_in_vtitle=False):
+    import json
+    mentions = []
+    crude_mentions = []
+    issues = 0
+    with open(in_file, "r") as fin:
+        c = csv.DictReader(fin)
+        for row in c:
+            tref = f'{row["Tractate"]} {row["Chapter"]}:{row["Number"]}'
+            if not row['Tractate'].startswith('Pirkei Avot'):
+                tref = tractate_prefix + tref
+            oref = Ref(tref)
+            context = row["Context"]
+            crude_mentions += [{
+                "Book": oref.index.title,
+                "Segment": tref,
+                "Bonayich ID": row["rabbi_id"],
+                "Context": context
+            }]
+    print("Issues", issues)
+
+    spacy_formatted, rabbi_mentions = convert_to_spacy_format(crude_mentions, vtitle=vtitle, norm_regex="[\u0591-\u05bd\u05bf-\u05c5\u05c7]+", repl='', book_in_vtitle=book_in_vtitle)
+    srsly.write_jsonl(out_file1, rabbi_mentions)
+    convert_to_mentions_file(out_file1, out_file2, only_bonayich_rabbis=False)
+    with open('research/knowledge_graph/named_entity_recognition/{out_file2}', 'r') as fin:
+        j = json.load(fin)
+    for m in j:
+        temp_vtitle = vtitle
+        if book_in_vtitle:
+            book = Ref(m.ref).index.title
+            temp_vtitle = f'{book} {temp_vtitle}'
+        m['versionTitle'] = temp_vtitle
+        m['language'] = 'he'
+    with open(f'{DATA_LOC}/../sefaria/{out_file2}', 'w') as fout:
+        json.dump(j, fout, indent=2, ensure_ascii=False)
+
 if __name__ == "__main__":
     # rows_by_mas = get_rows_by_mas()
     # rabbi_mentions = get_rabbi_mention_segments(rows_by_mas)
@@ -600,9 +650,12 @@ if __name__ == "__main__":
     # srsly.write_jsonl(f'{DATA_LOC}/he_training.jsonl', spacy_formatted)
     # display_displacy(f"{DATA_LOC}/he_training.jsonl")
     
-    convert_to_mentions_file(only_bonayich_rabbis=True)
-    convert_mentions_for_alt_version('William Davidson Edition - Vocalized Aramaic', 'sperling_mentions_nikkud.json')
-    convert_mentions_for_alt_version('William Davidson Edition - Vocalized Punctuated Aramaic', 'sperling_mentions_nikkud_punctuated.json')
-    convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
-
+    # convert_to_mentions_file(f"{DATA_LOC}/he_mentions.jsonl", "sperling_mentions.json", only_bonayich_rabbis=True)
+    # convert_mentions_for_alt_version('William Davidson Edition - Vocalized Aramaic', 'sperling_mentions_nikkud.json')
+    # convert_mentions_for_alt_version('William Davidson Edition - Vocalized Punctuated Aramaic', 'sperling_mentions_nikkud_punctuated.json')
+    # convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
+    
+    # convert_mishnah_and_tosefta_to_mentions("Mishnah ", f"{DATA_LOC}/mishna_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_mishnah.jsonl', "sperling_mentions_mishnah.json", "Torat Emet 357")
+    convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", "Tosefta")
+  
     # make_new_alt_titles_file()
