@@ -119,7 +119,7 @@ class EM_Citation(object):
             return vars(self)[variable]
 
 
-def parse_em(filename, passing, errorfilename, EM = True):
+def parse_em(filename, passing, errorfilename, EM = True, em_list=False):
     mass = Massekhet(errorfilename)
     i = 0
     perek = 0
@@ -128,8 +128,11 @@ def parse_em(filename, passing, errorfilename, EM = True):
     smg = Semag()
     tursh = TurSh()
     cit_dictionary = []
-    with codecs.open(filename, 'r', 'utf-8') as fp:
-        pre_lines = fp.readlines()
+    if em_list:
+        pre_lines = em_list
+    else:
+        with codecs.open(filename, 'r', 'utf-8') as fp:
+            pre_lines = fp.readlines()
     # pattern = r'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור)'''
     pattern = r'''(ו?שו?["\u05f4]ע|ו?ב?מיי['\u05f3]|ו?ב?סמ"?ג|ו?ב?טוש["\u05f4]ע|ו?ב?טור|ו?ה?רמב"ם|@11)'''
     if EM == 'Rif':
@@ -965,7 +968,6 @@ def needs_another_cycle(txtfile, mass_name):
             +" other problem " + str(needs_c))
 
 if __name__ == "__main__":
-    # run1('EM_Rif', 'Rif', EM='Rif')
+    run1('EM_Bava Batra', 'Rif', EM='Rif')
     i = 1
-    run15('EM_Rif_{}'.format(i), 'EM_Rif_{}'.format(i+1))
-
+    #run15('EM_Rif_{}'.format(i), 'EM_Rif_{}'.format(i+1))
