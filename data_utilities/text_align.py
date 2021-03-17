@@ -108,7 +108,7 @@ def initialize_indices(word_list, segments):
     return indices
 
 
-class compare_breaks(object):
+class CompareBreaks(object):
 
     def __init__(self, a, b, markers=['α', 'β']):
         # a, b: lists of strings (sections
@@ -119,7 +119,6 @@ class compare_breaks(object):
         self.b = b
         self._marker_a = markers[0]
         self._marker_b = markers[1]
-        self.insert_break_marks()
 
     def insert_break_marks(self):
         # returns the a list with markers of b division.
@@ -139,7 +138,7 @@ class compare_breaks(object):
         z = zip([f'{self._marker_b}{i + 1}{self._marker_b}' for i in range(len(a.split(self._marker_b)))], a.split(self._marker_b))
         a = ''.join([x for y in z for x in y])
         a = a.split(self._marker_a)
-        self.a_with_b_breaks =  a
+        return a
 
     def create_mapping(self):
         # returns dict with a indexes (starting by 1) as keys and set of indexes in b as values
@@ -147,7 +146,7 @@ class compare_breaks(object):
         # returns {1: {1}, 2: {1, 2}, 3:{2}}
         map = {}
         b = 1
-        for i, section in enumerate(self.a_with_b_breaks, 1):
+        for i, section in enumerate(self.insert_break_marks(), 1):
             map[i] = set()
             for b in re.findall(f'{self._marker_b}(\d+){self._marker_b}', section):
                 map[i].add(int(b))
