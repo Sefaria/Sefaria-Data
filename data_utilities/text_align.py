@@ -148,7 +148,8 @@ class CompareBreaks(object):
         b = 1
         for i, section in enumerate(self.insert_break_marks(), 1):
             map[i] = set()
+            if not section.startswith(self._marker_b):
+                map[i].add(int(b))
             for b in re.findall(f'{self._marker_b}(\d+){self._marker_b}', section):
                 map[i].add(int(b))
-            map[i].add(int(b))
         return map
