@@ -1,6 +1,8 @@
 import random
 from functools import partial
 from Levenshtein import distance
+import re
+import diff_match_patch as dmp
 
 
 class LevenshteinCalc(object):
@@ -104,3 +106,50 @@ def initialize_indices(word_list, segments):
         if not retry:
             break
     return indices
+
+
+class CompareBreaks(object):
+
+    def __init__(self, a, b, markers=['α', 'β']):
+        # a, b: lists of strings (sections
+        # markers: pair of chars that aren't contained in the strings
+        assert all(x not in y for x in markers for y in a+b), 'markers should not be in text'
+        assert len(markers) == 2 and markers[0] != markers[1], 'markers should be two different charts'
+        self.a = a
+        self.b = b
+        self._marker_a = markers[0]
+        self._marker_b = markers[1]
+
+    def insert_break_marks(self):
+        # returns the a list with markers of b division.
+        # e.g. for a = ['foo bar', 'foo bar', 'foo bar'], b = ['foo bar foo', 'bar foo bar']
+        # returns ['β1βfoo bar', 'foo β2βbar', 'foo bar']
+        a_text = self._marker_a.join(self.a)
+        b_text = self._marker_b.join(self.b)
+        compared = dmp.diff_match_patch().diff_main(a_text, b_text)
+        a = []
+        for status, word in compared:
+            if status < 1:
+                a.append(word)
+            for _ in range(word.count(self._marker_b)):
+                a.append(self._marker_b)
+        a = ''.join(a)
+        a = re.sub(f'{self._marker_b} *{self._marker_a}', f'{self._marker_a}{self._marker_b}', a)
+        z = zip([f'{self._marker_b}{i + 1}{self._marker_b}' for i in range(len(a.split(self._marker_b)))], a.split(self._marker_b))
+        a = ''.join([x for y in z for x in y])
+        a = a.split(self._marker_a)
+        return a
+
+    def create_mapping(self):
+        # returns dict with a indexes (starting by 1) as keys and set of indexes in b as values
+        # e.g. for a = ['foo bar', 'foo bar', 'foo bar'], b = ['foo bar foo', 'bar foo bar']
+        # returns {1: {1}, 2: {1, 2}, 3:{2}}
+        map = {}
+        b = 1
+        for i, section in enumerate(self.insert_break_marks(), 1):
+            map[i] = set()
+            if not section.startswith(self._marker_b):
+                map[i].add(int(b))
+            for b in re.findall(f'{self._marker_b}(\d+){self._marker_b}', section):
+                map[i].add(int(b))
+        return map
