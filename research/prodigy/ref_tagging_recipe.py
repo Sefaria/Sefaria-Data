@@ -108,8 +108,8 @@ def my_custom_recipe(dataset, input_collection, model_dir, view_id="text", db_ho
     if not model_exists:
         temp_stream = getattr(my_db.db, input_collection).find({}, {"_id": 0})
         train_model(nlp, temp_stream, model_dir)
-    cursor = getattr(my_db.db, input_collection).find({}, {"_id": 0}, no_cursor_timeout=True)  # TODO using no_cursor_timeout means cursor stays in RAM. but is this an issue? when would I close it?
-    stream = split_sentences(nlp, cursor, min_length=200)
+    all_data = list(getattr(my_db.db, input_collection).find({}, {"_id": 0}))  # TODO loading all data into ram to avoid issues of cursor timing out
+    stream = split_sentences(nlp, all_data, min_length=200)
     stream = add_model_predictions(nlp, stream)
     stream = add_tokens(nlp, stream, skip=True)
 

@@ -85,7 +85,7 @@ def make_prodigy_input(title_list, vtitle_list, lang_list):
 
 if __name__ == "__main__":
     title_list = [
-        'Rashba on Eruvin', 'Beit Yosef', 'Chiddushei Ramban on Avodah Zarah', 'Ben Yehoyada on Beitzah',
+        'Rashba on Eruvin', 'Chiddushei Ramban on Avodah Zarah', 'Ben Yehoyada on Beitzah',
         'Tosafot on Shabbat', 'Chidushei Agadot on Rosh Hashanah', 'Chidushei Halachot on Taanit', 'Rabbeinu Gershom on Chullin',
         'Maharam Shif on Gittin', 'Maadaney Yom Tov on Menachot', 'Rashbam on Bava Batra', 'Penei Yehoshua on Bava Metzia',
         'Ran on Nedarim', 'Tosafot Shantz on Sotah', 'Yad Ramah on Bava Batra', 'Shita Mekubetzet on Berakhot'
