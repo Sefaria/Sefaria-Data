@@ -4,6 +4,7 @@ import csv
 import sys
 from sources.functions import *
 new_file = ""
+files = ["Yerushalmi Shekalim Commentaries - Yerushalmi .csv"]
 for new_file in files:
     with open(new_file) as f:
         reader = list(csv.reader(f))
@@ -17,7 +18,7 @@ for new_file in files:
             print(ref)
             tc = TextChunk(Ref(ref), lang=lang, vtitle=vtitle)
             tc.text = comm
-            tc.save()
+            tc.save(force_save=True)
     #     chapter, segment = ref.split()[-1].split(":")
     #     chapter = int(chapter)
     #     segment = int(segment)

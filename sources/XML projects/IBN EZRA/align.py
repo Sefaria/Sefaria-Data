@@ -1,4 +1,5 @@
 from sources.functions import *
+import time
 text = {}
 for f in os.listdir("."):
     if f.endswith("csv"):
@@ -6,21 +7,24 @@ for f in os.listdir("."):
         text[title] = {}
         with open(f) as open_f:
             for row in csv.reader(open_f):
-                is_dh = row[1].split(".")[0].isupper()
                 ch = int(row[0].split(".")[1])
                 if ch not in text[title]:
                     text[title][ch] = {}
                     text[title][ch][1] = []
                     pasuk = 1
-                if re.search("^\d+\. ", row[1]):
-                    pasuk = int(row[1].split()[0].replace(".", ""))
+                pasuk_re = re.search("^\[?(\d+)\. ([A-Z ]{1,}\.?)\]?", row[1])
+                if pasuk_re:
+                    pasuk_and_text = pasuk_re.group(0)
+                    just_text = pasuk_re.group(2)
+                    pasuk = int(pasuk_re.group(1))
+                    row[1] = row[1].replace(pasuk_and_text, just_text)
                     if pasuk not in text[title][ch]:
                         text[title][ch][pasuk] = []
-                    row[1] = " ".join(row[1].split()[1:])
+                is_dh = row[1].split(".")[0].isupper()
                 if is_dh:
                     text[title][ch][pasuk].append(row[1])
                 elif len(text[title][ch][pasuk]) > 0:
-                    text[title][ch][pasuk][-1] += row[1]
+                    text[title][ch][pasuk][-1] += " "+row[1]
                 else:
                     text[title][ch][pasuk] = [row[1]]
 
@@ -41,4 +45,5 @@ for title in text:
         "versionTitle": vtitle,
         "versionSource": vsource
     }
+    time.sleep(30)
     post_text(title, send_text)

@@ -800,7 +800,7 @@ def post_link_weak_connection(info, repeat=10):
 
 
 
-def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle="", generated_by=""):
+def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle="", generated_by="", padding=False):
     generated_by_str = Ref(base_ref).index.title + "_to_" + comm_ref.split()[0] if generated_by == "" else generated_by
     links = []
     base = TextChunk(Ref(base_ref), lang='he', vtitle=vtitle) if vtitle else TextChunk(Ref(base_ref), lang='he', vtitle=vtitle)
@@ -813,6 +813,8 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
                         "type": "Commentary", "auto": True}
             links.append(new_link)
+        elif padding:
+            links.append({})
     return links
 
 def is_index(poss_index):
