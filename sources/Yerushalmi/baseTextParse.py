@@ -85,6 +85,10 @@ def get_sections_ii(chapter: bs4.Tag, tag_factory):
 
     for content in contents:
         if content.name == 'mishna':
+            """
+            Some Halakhot are embedded within a Mishnah. Some tractates don't have any halakhot listed. This logic is 
+            reliable for extracting Talmud from within a <mishna> tag, but the enumeration of halakhot is not.
+            """
             source_paras = content.find_all('source_para')
             if len(source_paras) > 1:
                 new_halacha = tag_factory('halacha', derived=len(halakhot)+1, note=f'extracted from mishna {content["num"]}')
@@ -101,7 +105,12 @@ def get_sections_ii(chapter: bs4.Tag, tag_factory):
             halakhot.append(content)
 
     mishnayot = {m['derived']: m for m in mishanyot}
-    return [(mishnayot.get(halacha['derived'], None), halacha) for halacha in halakhot]
+    halkhot_numbers = {int(h['derived']) for h in halakhot}
+    hanging_mishnayot = [m for d, m in mishnayot.items() if int(d) not in halkhot_numbers]
+    hanging_mishnayot.sort(key=lambda x: int(x['derived']))
+    result = [(mishnayot.get(halacha['derived'], None), halacha) for halacha in halakhot]
+    result += [(m, None) for m in hanging_mishnayot]
+    return result
     # return [(mishna, halacha) for mishna, halacha in zip_longest(mishanyot, halakhot, fillvalue=None)]
 
 
@@ -188,6 +197,9 @@ if __name__ == '__main__':
     ]
 
     for input_file in input_files:
+        # if 'berakhot' not in input_file and 'sabbat' not in input_file:
+        #     continue
+        print(input_file)
         with open(os.path.join("GuggenheimerXmls", input_file)) as fp:
             soup = bs4.BeautifulSoup(fp, 'xml')
         books = soup.find_all('book')

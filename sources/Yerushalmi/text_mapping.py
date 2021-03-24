@@ -10,16 +10,17 @@ from itertools import zip_longest
 import data_utilities.text_align as align
 import simpleaudio
 from data_utilities.util import getGematria, traverse_ja
-from sources.Yerushalmi.sefaria_objects import *
+from sources.Yerushalmi import sefaria_objects
 from sefaria.utils.hebrew import strip_nikkud
 from sefaria.model.schema import AddressTalmud
 from sefaria.datatype.jagged_array import JaggedArray
+from concurrent.futures.process import ProcessPoolExecutor
 from data_utilities.util import ja_to_xml
 from data_utilities.ParseUtil import *
 from data_utilities.dibur_hamatchil_matcher import match_ref, match_text
 
-
 time_start = time.time()
+
 
 # file_list = [os.path.join('mechon-mamre', f) for f in os.listdir('./mechon-mamre') if f.endswith('html')]
 # for f in file_list:
@@ -66,28 +67,29 @@ class DividedSegments:
 
     def realign_mapping(self, map_indices: list) -> dict:
         new_mapping = {'matches': [], 'match_text': []}
-        for segment_number, (segment, division_indices) in enumerate(zip(self._original_segments, self._division_indices)):
+        for segment_number, (segment, division_indices) in enumerate(
+                zip(self._original_segments, self._division_indices)):
             segment_start, segment_end = division_indices
-            first_word, last_word = map_indices[segment_start][0], map_indices[segment_end-1][1]
+            first_word, last_word = map_indices[segment_start][0], map_indices[segment_end - 1][1]
 
             if first_word == -1:
                 if segment_number == 0:
                     first_word = 0
                 else:
                     last_match = new_mapping['matches'][-1][1]
-                    first_word = last_match+1 if last_match > 0 else first_word
+                    first_word = last_match + 1 if last_match > 0 else first_word
 
             if last_word == -1:
                 if segment_number == len(self._division_indices) - 1:
                     last_word = len(self._word_list) - 1
                 else:
                     next_match = map_indices[segment_end][0]
-                    last_word = next_match-1 if next_match > 0 else last_word
+                    last_word = next_match - 1 if next_match > 0 else last_word
 
             if -1 in (first_word, last_word):
                 aligned_text = ''
             else:
-                aligned_text = ' '.join(self._word_list[first_word: last_word+1])
+                aligned_text = ' '.join(self._word_list[first_word: last_word + 1])
             new_mapping['match_text'].append((segment, aligned_text))
             new_mapping['matches'].append((first_word, last_word))
 
@@ -95,7 +97,6 @@ class DividedSegments:
 
     def repair_mapping(self, map_indices: list) -> dict:
         pass
-
 
     @staticmethod
     def divide_segments(segments, division_length, starting_segment_index=0):
@@ -106,11 +107,133 @@ class DividedSegments:
             segment_words = segment.split()
             divider = 0
             while divider < len(segment_words):
-                divided_segments.append(' '.join(segment_words[divider:divider+division_length]))
+                divided_segments.append(' '.join(segment_words[divider:divider + division_length]))
                 divider += division_length
                 current_index += 1
             segment_indices.append((segment_start, current_index))
         return {'segments': divided_segments, 'indices': segment_indices}
+
+
+def create_map_repair(mapping: list, comment_segments: list, base_text_words: list, output_file=None):
+    """
+    :param mapping: match indices. (the value for "matches" returned from match_text)
+    :param comment_segments: list of comments fed to match_text
+    :param base_text_words: list of words that represent the base text fed to match_text
+    :param output_file:
+    :return:
+    """
+    mapping_gaps = get_mapping_gaps(mapping, len(base_text_words))
+    segment_edits, html_rows = [], []
+    for gap in mapping_gaps:
+        gap_start, gap_end = gap['segments']
+        segments = comment_segments[gap_start: gap_end]
+        for seg_num, seg in enumerate(segments, gap_start):
+            segment_edits.append({
+                'index': seg_num,
+                'gap_start': gap['words'][0],
+                'gap_end': gap['words'][1] - 1,  # actual index of the final word, to be consistent with match_text
+                'content': seg,
+                'match_words': ''
+            })
+            if seg_num == gap_start:
+                words = ' '.join(base_text_words[gap['words'][0]:gap['words'][1]])
+                html_rows.append(
+                    f'<tr><td>{seg_num}</td><td>{seg}</td><td rowspan="{len(segments)}">{words}</td></tr>'
+                )
+            else:
+                html_rows.append(
+                    f'<tr><td>{seg_num}</td><td>{seg}</td></tr>'
+                )
+    if output_file:
+        assert output_file.endswith('.csv')
+        with open(output_file, 'w') as fp:
+            fieldnames = ['index', 'gap_start', 'gap_end', 'content', 'match_words']
+            writer = csv.DictWriter(fp, fieldnames)
+            writer.writeheader()
+            writer.writerows(segment_edits)
+    return segment_edits, html_rows
+
+
+def create_helper_html(html_rows, output_file):
+    def create_css():
+        css = '''
+          th, td {
+            padding: 8px;
+            border: 1px solid #ddd
+          }
+          td {
+            direction: rtl;
+            text-align: right;
+          }
+          tr:nth-child(odd) {
+            background-color: #f2f2f2;
+          }
+          tr.bridging, tr.unmatched, tr.exception, tr.nonconsecutive {
+            background-color: #ff0000;
+          }
+          tr:hover {
+            background-color: #ccffff;
+          }
+          td:nth-child(1) {
+            direction: ltr;
+            text-align: left;
+          }
+        '''
+        return css
+
+    table_rows = '\n'.join(html_rows)
+    output = f'''
+    <!DOCTYPE html>
+      <html><meta charset="utf-8">
+        <head>
+          <style type="text/css">{create_css()}</style>
+        </head>
+        <body>
+          <table>
+            <tr><th>Segment Number</th><th>Comment Segment</th><th>Base Text Words (Unmatched)</th></tr>
+            {table_rows}
+          </table>
+        </body>
+      </html>  
+    '''
+    with open(output_file, 'w') as fp:
+        fp.write(output)
+
+
+def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
+    print(tractate.title)
+    output_dir = f'code_output/mapping_files/{tractate.title.replace(" ", "_")}'
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    gug_tractate_chapters = grab_guggenheim_chapters(tractate.title, talmud_only)
+    he_title = re.sub(r'^תלמוד ירושלמי ', '', tractate.get_title('he'))
+    mehon = get_segments_from_raw(f'mechon-mamre/{he_title}.html')
+    mehon_ja = create_chap_ja(mehon, talmud_only)
+    mehon_chaps = three_to1ja(mehon_ja)
+    for chap_num in range(len(mehon_chaps)):
+        mapping_file = os.path.join(output_dir, f'chapter_{chap_num + 1}_mapping.json')
+        if os.path.exists(mapping_file):
+            continue
+        print(tractate.title, chap_num + 1)
+        mehon_text = ' '.join(mehon_chaps[chap_num])
+        mehon_text = re.sub(r'[.:]', '', mehon_text)
+        mehon_text = re.sub(r'(?<=\s)\([^()]+\)\s', '', mehon_text).split()
+        gug_text = [m.replace('־', ' ') for m in gug_tractate_chapters[chap_num]]
+        gug_text = [strip_nikkud(m) for m in gug_text]
+        gug_text = [re.sub(r'[.:]', '', m) for m in gug_text]
+        divide = DividedSegments(15)
+        divide.segments = gug_text
+        mapping = match_text(mehon_text, divide.segments, place_all=True, strict_boundaries='text',
+                             place_consecutively=True, daf_skips=3, rashi_skips=3, overall=4)
+        fixed_mapping = divide.realign_mapping(mapping['matches'])
+        fixed_mapping['matches'] = [tuple(int(j) for j in i) for i in fixed_mapping['matches']]
+        with open(mapping_file, 'w') as fp:
+            json.dump(fixed_mapping, fp)
+        chapter_edits, html_rows = create_map_repair(
+            fixed_mapping['matches'], gug_text, mehon_text,
+            os.path.join(output_dir, f'chapter_{chap_num + 1}_repair.csv')
+        )
+        create_helper_html(html_rows, os.path.join(output_dir, 'chapter_{chap_num + 1}_repair.html'))
 
 
 def divide_segments_from_failed_match(mapping, comment_segments, base_words, division_length):
@@ -132,7 +255,7 @@ def make_noise():
     play.wait_done()
 
 
-def append_in_ja(ja: JaggedArray, index:int, content):
+def append_in_ja(ja: JaggedArray, index: int, content):
     try:
         ja.get_element([index]).append(content)
     except IndexError:
@@ -152,7 +275,7 @@ def get_segments_from_raw(filename) -> list:
                 t.br.decompose()
             # if not bold.string or not t.string:
             #     print(str(t))
-                # print(i, end=', ')
+            # print(i, end=', ')
             results.append({'meta': bold.string, 'content': re.sub(r'<[^<>]+>', '', str(t))})
         return results
 
@@ -169,12 +292,12 @@ def get_daf_from_segment(segment):
 def get_address_from_segment(segment):
     meta = segment['meta']
     reg = re.compile(
-        r'\u05e4\u05e8\u05e7\s*(?P<chp>[\u05d0-\u05ea]{1,3})\s*\u05d4\u05dc\u05db\u05d4\s*(?P<hal>[\u05d0-\u05ea]{1,3})'
+        r'\u05e4\u05e8\u05e7\s*(?P<chp>[\u05d0-\u05ea]{1,3})\s*\u05d4\u05dc\u05db\u05d4\s*(?:\([\u05d0-\u05ea]\)\s*)?(?P<hal>[\u05d0-\u05ea]{1,3})'
     )
     match = reg.search(meta)
     if not match:
         return
-    return [getGematria(match.group('chp'))-1, getGematria(match.group('hal'))-1]
+    return [getGematria(match.group('chp')) - 1, getGematria(match.group('hal')) - 1]
 
 
 def create_daf_ja(segment_list):
@@ -188,7 +311,9 @@ def create_daf_ja(segment_list):
     return ja.array()
 
 
-def create_chap_ja(segment_list):
+def create_chap_ja(segment_list, talmud_only=False):
+    if talmud_only:
+        segment_list = [s for s in segment_list if 'גמרא' in s['meta']]
     ja = JaggedArray()
     for segment in segment_list:
         content = clean_mehon_string(segment['content'])
@@ -215,9 +340,9 @@ def three_to1ja(ja):
 def build_basic_mapping(tractate_name, chapter_ja, daf_ja, new_title=None):
     if not new_title:
         new_title = tractate_name
-        
+
     def get_chap_address(chap_indices):
-        return f'{new_title} {":".join(str(c+1) for c in chap_indices[:2])}'
+        return f'{new_title} {":".join(str(c + 1) for c in chap_indices[:2])}'
 
     chap_list, daf_list = [f['indices'] for f in traverse_ja(chapter_ja)], [f['indices'] for f in traverse_ja(daf_ja)]
     assert len(chap_list) == len(daf_list)
@@ -226,7 +351,7 @@ def build_basic_mapping(tractate_name, chapter_ja, daf_ja, new_title=None):
     last_daf = current_daf = '1a'
     start = end = tuple(chap_list[0][:2])
     for chap_segment, daf_segment in zip(chap_list, daf_list):
-        current_daf = address_class.toStr('en', daf_segment[0]+1)
+        current_daf = address_class.toStr('en', daf_segment[0] + 1)
         if current_daf != last_daf:
             daf_address = f'{tractate_name} {last_daf}'
             result[daf_address] = (get_chap_address(start), get_chap_address(end))
@@ -242,7 +367,7 @@ def align_chapters(commentary_segments, test_words):
     return match_text(commentary_segments, test_words)
 
 
-def grab_guggenheim_chapters(tractate):
+def grab_guggenheim_chapters(tractate, talmud_only=False):
     with open('guggenheimer_titles.json') as fp:
         title_mapping = json.load(fp)
     if 'Jerusalem Talmud' not in tractate:
@@ -250,7 +375,10 @@ def grab_guggenheim_chapters(tractate):
     guggenheimer_tractate = title_mapping[tractate]
 
     with open(f'code_output/csv_reports/{guggenheimer_tractate}.csv') as fp:
-        rows = list(csv.DictReader(fp))
+        if talmud_only:
+            rows = [r for r in csv.DictReader(fp) if r['Type'] != 'Mishnah']
+        else:
+            rows = list(csv.DictReader(fp))
     rows.sort(key=lambda x: [int(i) for i in re.search('(\d+:?)+$', x['Address']).group().split(':')])
 
     chapters = JaggedArray()
@@ -284,7 +412,7 @@ def get_mapping_gaps(mapping, num_words):
             if not matched_segment(segment):  # we need to open a new gap
                 assert start_segment is None and start_word is None
                 start_segment = i
-                start_word = mapping[i-1][-1] + 1 if i > 0 else 0
+                start_word = mapping[i - 1][-1] + 1 if i > 0 else 0
                 gap_open = True
     if gap_open:
         gaps.append({
@@ -294,7 +422,24 @@ def get_mapping_gaps(mapping, num_words):
     return gaps
 
 
+def output_method(trac):
+    return create_tractate_mappings(trac, True)
+
+
 if __name__ == '__main__':
+    stuff = sefaria_objects.library.get_indexes_in_category('Yerushalmi', full_records=True).array()
+    stuff.sort(key=lambda x: x.order)
+    with ProcessPoolExecutor(max_workers=9) as executor:
+        executor.map(output_method, stuff)
+    import sys
+    sys.exit(0)
+    for item_num, thing in enumerate(stuff, 1):
+        print(f'{item_num}/{len(stuff)}')
+        create_tractate_mappings(thing, True)
+        break
+    import sys
+
+    sys.exit(0)
     stuff = get_segments_from_raw('mechon-mamre/שקלים.html')
     for thing in stuff:
         if not get_address_from_segment(thing):
@@ -320,33 +465,39 @@ if __name__ == '__main__':
     # with open('mechon-mamre/ברכות.html') as fp:
     #     soup = bs4.BeautifulSoup(fp, 'html5lib')
 
-    gug_chaps, mehon_ja = grab_guggenheim_chapters('Shekalim'), create_chap_ja(stuff)
-    mehon_chaps = three_to1ja(mehon_ja)
+    # gug_chaps, mehon_ja = grab_guggenheim_chapters('Shekalim'), create_chap_ja(stuff)
+    # mehon_chaps = three_to1ja(mehon_ja)
+    # mehon_text = ' '.join(mehon_chaps[0])
+    # mehon_text = re.sub(r'[.:]', '', mehon_text)
+    # mehon_text = re.sub(r'(?<=\s)\([^()]+\)\s', '', mehon_text).split()
+    # gug_text = [m.replace('־', ' ') for m in gug_chaps[0]]
+    # gug_text = [strip_nikkud(m) for m in gug_text]
+    # gug_text = [re.sub(r'[.:]', '', m) for m in gug_text]
     # print(*mehon_chaps[0], sep='\n\n')
     # print(gug_chaps[0][0])
     # print(mehon_chaps[0][0])
     # print(len(gug_chaps), len(mehon_chaps))
-    for chap_num in range(len(mehon_chaps)):
-        start = time.time()
-        mehon_text = ' '.join(mehon_chaps[chap_num])
-        mehon_text = re.sub(r'[.:]', '', mehon_text)
-        mehon_text = re.sub(r'(?<=\s)\([^()]+\)\s', '', mehon_text).split()
-        gug_text = [m.replace('־', ' ') for m in gug_chaps[chap_num]]
-        gug_text = [strip_nikkud(m) for m in gug_text]
-        gug_text = [re.sub(r'[.:]', '', m) for m in gug_text]
-        divide = DividedSegments(15)
-        divide.segments = gug_text
-        foo = match_text(mehon_text, divide.segments, place_all=True, strict_boundaries='text', place_consecutively=True, daf_skips=3, rashi_skips=3, overall=4)
-        not_matched = sum(-1 in m for m in foo['matches'])
-        total = len(foo['matches'])
-        matched = total - not_matched
-        end = time.time()
-        print(f'chapter {chap_num+1} matched {matched}/{total} ({not_matched} unmatched segments)')
-        print(f'chapter {chap_num+1} required {end-start} seconds to align\n\n\n')
-        for match, pair in zip(foo['matches'], foo['match_text']):
-            print(match, *pair, sep='\n|\n', end='\n\n\n')
-        break
-    initialization = align.initialize_indices(mehon_text, gug_text)
+    # for chap_num in range(len(mehon_chaps)):
+    #     start = time.time()
+    #     mehon_text = ' '.join(mehon_chaps[chap_num])
+    #     mehon_text = re.sub(r'[.:]', '', mehon_text)
+    #     mehon_text = re.sub(r'(?<=\s)\([^()]+\)\s', '', mehon_text).split()
+    #     gug_text = [m.replace('־', ' ') for m in gug_chaps[chap_num]]
+    #     gug_text = [strip_nikkud(m) for m in gug_text]
+    #     gug_text = [re.sub(r'[.:]', '', m) for m in gug_text]
+    #     divide = DividedSegments(15)
+    #     divide.segments = gug_text
+    #     foo = match_text(mehon_text, divide.segments, place_all=True, strict_boundaries='text', place_consecutively=True, daf_skips=3, rashi_skips=3, overall=4)
+    #     not_matched = sum(-1 in m for m in foo['matches'])
+    #     total = len(foo['matches'])
+    #     matched = total - not_matched
+    #     end = time.time()
+    #     print(f'chapter {chap_num+1} matched {matched}/{total} ({not_matched} unmatched segments)')
+    #     print(f'chapter {chap_num+1} required {end-start} seconds to align\n\n\n')
+    #     for match, pair in zip(foo['matches'], foo['match_text']):
+    #         print(match, *pair, sep='\n|\n', end='\n\n\n')
+    #     break
+    # initialization = align.initialize_indices(mehon_text, gug_text)
     # best_indices, score = align.find_best_indices(mehon_text, gug_text, indices=initialization, verbose=True, num_iterations=100000)
     # print(type(best_indices))
     # aligned_mehon = []
@@ -357,7 +508,11 @@ if __name__ == '__main__':
     #     print(g, '\n|\n', m, end='\n\n\n')
     # print(*gug_text, sep='\n\n')
     # # print(*gug_text, sep='\n|\n')
-    # foo = match_text(mehon_text, gug_text, place_all=True, strict_boundaries='text', place_consecutively=True, daf_skips=3, rashi_skips=3, overall=2)
+    foo = match_text(mehon_text, gug_text, place_all=True, strict_boundaries='text', place_consecutively=True,
+                     daf_skips=3, rashi_skips=3, overall=2)
+    print(*foo['matches'], sep='\n')
+    edits, h_rows = create_map_repair(foo['matches'], gug_text, mehon_text, 'code_output/repair.csv')
+    create_helper_html(h_rows, 'code_output/repair.html')
     # for match, pair in zip(foo['matches'], foo['match_text']):
     #     print(match, *pair, sep='\n|\n', end='\n\n\n')
     #
