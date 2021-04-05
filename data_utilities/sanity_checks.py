@@ -4,6 +4,7 @@ This module gives a series of tools designed for analyzing texts received from O
 """
 import re
 import pdb
+import bisect
 from . import util
 
 
@@ -329,3 +330,41 @@ def find_double_tags(tag_a, tag_b, infile):
             results.append(line_num+1)
 
     return results
+
+
+def longest_increasing_subsequence(sequence: list) -> list:
+    """
+    This algorithm is a superior method for finding out of order items. An out of order item can be defined as an item
+    outside the longest increasing subsequence. The advantage this gives over our previous algorithms is this allows us
+    to capture multiple "out of order" elements in a sequence.
+    For example, in the sequence: [1, 2, 4, 8, 3, 5, 6, 7]
+    the longest increasing subsequence is [1, 2, 3, 5, 6, 7]. Which tells us that 4 and 8 are out of order.
+
+    This method returns the *indices* of the longest increasing subsequence. This makes determining out-of-order items
+    simpler, as identifying indices not in the list is trivial.
+    """
+    if len(sequence) == 0:
+        return []
+    subsequences, last_elements = [], []
+    for i, element in enumerate(sequence):
+        loc = bisect.bisect(last_elements, element)
+        if i == 0:
+            last_elements.append(element)
+            subsequences.append([i])  # i == 0, but avoiding hardcoding 0 here to showcase consistency with other cases
+        else:
+            loc = bisect.bisect(last_elements, element)
+            if loc == 0:
+                subsequences[loc] = [i]
+                last_elements[loc] = element
+            else:
+                new_subsequence = subsequences[loc - 1][:]
+                new_subsequence.append(i)
+
+                if loc == len(subsequences):
+                    subsequences.append(new_subsequence)
+                    last_elements.append(element)
+                else:
+                    subsequences[loc] = new_subsequence
+                    last_elements[loc] = element
+    return subsequences[-1]
+
