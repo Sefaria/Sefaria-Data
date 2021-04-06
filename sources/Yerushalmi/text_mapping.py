@@ -6,6 +6,7 @@ import csv
 import bs4
 import time
 import json
+import zipfile
 from itertools import zip_longest
 import data_utilities.text_align as align
 import simpleaudio
@@ -123,6 +124,8 @@ def create_map_repair(mapping: list, comment_segments: list, base_text_words: li
     :return:
     """
     mapping_gaps = get_mapping_gaps(mapping, len(base_text_words))
+    if len(mapping_gaps) == 0:
+        return None, None
     segment_edits, html_rows = [], []
     for gap in mapping_gaps:
         gap_start, gap_end = gap['segments']
@@ -154,9 +157,8 @@ def create_map_repair(mapping: list, comment_segments: list, base_text_words: li
     return segment_edits, html_rows
 
 
-def create_helper_html(html_rows, output_file):
-    def create_css():
-        css = '''
+def create_css():
+    return '''
           th, td {
             padding: 8px;
             border: 1px solid #ddd
@@ -179,8 +181,9 @@ def create_helper_html(html_rows, output_file):
             text-align: left;
           }
         '''
-        return css
 
+
+def create_helper_html(html_rows, output_file):
     table_rows = '\n'.join(html_rows)
     output = f'''
     <!DOCTYPE html>
@@ -200,6 +203,23 @@ def create_helper_html(html_rows, output_file):
         fp.write(output)
 
 
+# def prepare_texts_for_mapping(tractate: sefaria_objects.Index, talmud_only):
+#     gug_tractate_chapters = grab_guggenheim_chapters(tractate.title, talmud_only)
+#     he_title = re.sub(r'^תלמוד ירושלמי ', '', tractate.get_title('he'))
+#     mehon = get_segments_from_raw(f'mechon-mamre/{he_title}.html')
+#     mehon_ja = create_chap_ja(mehon, talmud_only)
+#     mehon_chaps = three_to1ja(mehon_ja)
+#     mehon_text, gug_text = [], []
+#     for chap_num in range(len(mehon_chaps)):
+#         mehon_text = ' '.join(mehon_chaps[chap_num])
+#         mehon_text = re.sub(r'[.:]', '', mehon_text)
+#         mehon_text = re.sub(r'(?<=\s)\([^()]+\)\s', '', mehon_text).split()
+#         gug_text = [m.replace('־', ' ') for m in gug_tractate_chapters[chap_num]]
+#         gug_text = [strip_nikkud(m) for m in gug_text]
+#         gug_text = [re.sub(r'[.:]', '', m) for m in gug_text]
+#     return gug_text, mehon_text
+
+
 def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
     print(tractate.title)
     output_dir = f'code_output/mapping_files/{tractate.title.replace(" ", "_")}'
@@ -212,8 +232,9 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
     mehon_chaps = three_to1ja(mehon_ja)
     for chap_num in range(len(mehon_chaps)):
         mapping_file = os.path.join(output_dir, f'chapter_{chap_num + 1}_mapping.json')
-        if os.path.exists(mapping_file):
-            continue
+        raw_mapping_file = mapping_file.replace('chapter', 'raw_chapter')
+        # if os.path.exists(mapping_file):
+        #     continue
         print(tractate.title, chap_num + 1)
         mehon_text = ' '.join(mehon_chaps[chap_num])
         mehon_text = re.sub(r'[.:]', '', mehon_text)
@@ -223,8 +244,15 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
         gug_text = [re.sub(r'[.:]', '', m) for m in gug_text]
         divide = DividedSegments(15)
         divide.segments = gug_text
-        mapping = match_text(mehon_text, divide.segments, place_all=True, strict_boundaries='text',
-                             place_consecutively=True, daf_skips=3, rashi_skips=3, overall=4)
+        if os.path.exists(raw_mapping_file):
+            with open(raw_mapping_file) as fp:
+                mapping = json.load(fp)
+        else:
+            mapping = match_text(mehon_text, divide.segments, place_all=True, strict_boundaries='text',
+                                 place_consecutively=True, daf_skips=3, rashi_skips=3, overall=4)
+            mapping['matches'] = [tuple(int(j) for j in i) for i in mapping['matches']]
+            with open(raw_mapping_file, 'w') as fp:
+                json.dump(mapping, fp)
         fixed_mapping = divide.realign_mapping(mapping['matches'])
         fixed_mapping['matches'] = [tuple(int(j) for j in i) for i in fixed_mapping['matches']]
         with open(mapping_file, 'w') as fp:
@@ -233,7 +261,25 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
             fixed_mapping['matches'], gug_text, mehon_text,
             os.path.join(output_dir, f'chapter_{chap_num + 1}_repair.csv')
         )
-        create_helper_html(html_rows, os.path.join(output_dir, 'chapter_{chap_num + 1}_repair.html'))
+        if None not in (chapter_edits, html_rows):
+            print(f'making repair file for {tractate.title} {chap_num+1}')
+            create_helper_html(html_rows, os.path.join(output_dir, f'chapter_{chap_num + 1}_repair.html'))
+            review_document = create_review_document(mapping_file, gug_text, mehon_text)
+            with open(os.path.join(output_dir, f'{tractate.title}_{chap_num+1}_review.html'), 'w') as fp:
+                fp.write(review_document)
+
+
+def zip_review_documents():
+
+    review_files = []
+    for directory in os.listdir('code_output/mapping_files'):
+        full_directory = os.path.join('code_output/mapping_files', directory)
+        review_files.extend([os.path.join(full_directory, f) for f in os.listdir(full_directory)
+                             if f.endswith('review.html')])
+
+    with zipfile.ZipFile('code_output/map_review.zip', 'w', zipfile.ZIP_DEFLATED) as zf:
+        for f in review_files:
+            zf.write(f, arcname=re.sub('/?code_output/mapping_files/?', '', f))
 
 
 def divide_segments_from_failed_match(mapping, comment_segments, base_words, division_length):
@@ -390,10 +436,11 @@ def grab_guggenheim_chapters(tractate, talmud_only=False):
 
 def get_mapping_gaps(mapping, num_words):
     def matched_segment(seg_indices):
-        if -1 in seg_indices:
-            assert all(j == -1 for j in seg_indices)
-            return False
-        return True
+        return -1 not in seg_indices
+        # if -1 in seg_indices:
+        #     assert all(j == -1 for j in seg_indices)
+        #     return False
+        # return True
 
     gaps = []
     start_segment, start_word = None, None
@@ -408,11 +455,22 @@ def get_mapping_gaps(mapping, num_words):
                     'words': (start_word, segment[0])
                 })
                 start_segment, start_word = None, None
+            elif segment[1] > 0:
+                assert start_segment is not None and start_word is not None
+                gap_open = False
+                gaps.append({
+                    'segments': (start_segment, i),
+                    'words': (start_word, segment[1])
+                })
+                start_segment, start_word = None, None
         else:
             if not matched_segment(segment):  # we need to open a new gap
                 assert start_segment is None and start_word is None
                 start_segment = i
-                start_word = mapping[i - 1][-1] + 1 if i > 0 else 0
+                if segment[0] == -1:
+                    start_word = mapping[i - 1][-1] + 1 if i > 0 else 0
+                else:
+                    start_word = segment[0]
                 gap_open = True
     if gap_open:
         gaps.append({
@@ -422,15 +480,91 @@ def get_mapping_gaps(mapping, num_words):
     return gaps
 
 
+def create_review_document(mapping_file, comment_segments, base_text_word_list) -> str:
+    """
+    For each segment, place words from mapping next to segment. In case of a gap, leave empty (we have map-repair for
+    that).
+    """
+    def default(lst, indx, default_value=''):
+        try:
+            return lst[indx]
+        except IndexError:
+            return default_value
+
+    with open(mapping_file) as fp:
+        mapping = json.load(fp)['matches']
+
+    if len(mapping) != len(comment_segments):
+        print(f'segments don\'t match mapping length in {mapping_file}')
+
+    table_rows = []
+    for map_index, pair in enumerate(mapping):
+        start_word, end_word = pair
+        end_word += 1
+        base_words = '' if -1 in pair else ' '.join(base_text_word_list[start_word:end_word])
+        comment_segment = default(comment_segments, map_index)
+        table_rows.append(
+            f'<tr><td>{map_index+1}</td><td>{comment_segment}</td><td>{base_words}</td></tr>'
+        )
+    table_rows = '\n'.join(table_rows)
+    return f'''
+    <!DOCTYPE html>
+    <html><meta charset="utf-8">
+      <head>
+        <style type="text/css">{create_css()}</style>
+      </head>
+      <body>
+        <table>
+          <colgroup>
+            <col style="width: 5%;">
+            <col style="width: 45%;">
+            <col style="width: 45%;">
+          </colgroup>
+          <tr><th>Segment Number</th><th>Guggeenheimer</th><th>Mehon Mamre</th></tr>
+          {table_rows}
+        </table>
+      </body>
+    </html>
+    '''
+
+
 def output_method(trac):
     return create_tractate_mappings(trac, True)
 
 
 if __name__ == '__main__':
+    # root = './code_output/mapping_files'
+    # folders = os.listdir(root)
+    # for folder in folders:
+    #     title = re.match(r'^Jerusalem_Talmud_(.*)$', folder)
+    #     if not title:
+    #         print(f'{folder} did not match regex')
+    #         continue
+    #     title = title.group(1)
+    #     full_path = os.path.join(root, folder)
+    #     file_reg = re.compile(r'^chapter_(\d{1,2})_mapping\.json')
+    #     files = [f for f in os.listdir(full_path) if file_reg.match(f)]
+    #     files.sort(key=lambda x: int(file_reg.search(x).group(1)))
+    #     for chapter_num, mapping_file in enumerate(files, 1):
+    #         output_file = f'{title}_{chapter_num}_review.html'
+    # zip_review_documents()
+    # import sys
+    # sys.exit(0)
     stuff = sefaria_objects.library.get_indexes_in_category('Yerushalmi', full_records=True).array()
     stuff.sort(key=lambda x: x.order)
-    with ProcessPoolExecutor(max_workers=9) as executor:
-        executor.map(output_method, stuff)
+    # foo = [s.title == 'Jerusalem Talmud Avodah Zarah' for s in stuff].index(True)
+    # create_tractate_mappings(stuff[foo], True)
+    # make_noise()
+    #
+    for thing in stuff:
+        output_method(thing)
+    # with ProcessPoolExecutor(max_workers=9) as executor:
+    #     executor.map(output_method, stuff)
+    # slack_url = os.environ['SLACK_URL']
+    # import requests
+    # requests.post(slack_url, json={'text': 'Script Complete'})
+    # make_noise()
+    zip_review_documents()
     import sys
     sys.exit(0)
     for item_num, thing in enumerate(stuff, 1):
@@ -438,6 +572,7 @@ if __name__ == '__main__':
         create_tractate_mappings(thing, True)
         break
     import sys
+
 
     sys.exit(0)
     stuff = get_segments_from_raw('mechon-mamre/שקלים.html')
