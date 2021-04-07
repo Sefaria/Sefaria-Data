@@ -7,8 +7,7 @@ import os
 
 #DEST = 'https://www.sefaria.org'
 DEST = 'https://rif-deploy.cauldron.sefaria.org'
-#APIKEY = os.environ['APIKEY']
-APIKEY = 'tqtFa8WngaNO1Gx8MVOU1YRQm03oEPoLvzS0IxX4IGo'
+APIKEY = os.environ['APIKEY']
 
 def deploy_index(index):
     copier = ServerTextCopier(DEST, APIKEY, index, post_index=True)
