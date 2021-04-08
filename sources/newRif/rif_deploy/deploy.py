@@ -4,10 +4,12 @@ from sefaria.model import *
 from scripts.move_draft_text import ServerTextCopier
 import argparse
 import os
+import json
 
 #DEST = 'https://www.sefaria.org'
-DEST = 'https://rif-deploy.cauldron.sefaria.org'
+DEST = os.environ['DEST']
 APIKEY = os.environ['APIKEY']
+print(DEST, APIKEY)
 
 def deploy_index(index):
     copier = ServerTextCopier(DEST, APIKEY, index, post_index=True)
@@ -27,9 +29,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
     begin = int(args.begin)
     end = int(args.end) if args.end else None
+    dirname = os.path.dirname((os.path.realpath(__file__)))
+    outpath = os.path.join(dirname, 'finished_texts.json')
+    if os.path.exists(outpath):
+        with open(outpath) as fp:
+            done = set(json.load(fp))
+    else:
+        done = set(library.get_indexes_in_category('Bavli'))
+
     if args.i:
         indexes = set(library.get_indexes_in_category('Rif', include_dependant=True)[begin:end])
-        done = set(library.get_indexes_in_category('Bavli'))
         while indexes - done:
             for index in indexes - done:
                 bases = getattr(library.get_index(index), 'base_text_titles', False)
@@ -37,7 +46,16 @@ if __name__ == '__main__':
                     print(index)
                     deploy_index(index)
                     done.add(index)
+                    with open(outpath, 'w') as fp:
+                        json.dump(list(done), fp)
+                    print(len(indexes - done), 'remaining')
 
     if args.t:
-        for index in library.get_indexes_in_category('Rif', include_dependant=True)[begin:end]:
+        for text_num, index in enumerate(library.get_indexes_in_category('Rif', include_dependant=True)[begin:end], begin):
+            if index.title in done:
+                continue
+            print(f'deploying text {text_num}')
             deploy_text(index)
+            done.add(index.title)
+            with open(outpath, 'w') as fp:
+                json.dump(list(done), fp)
