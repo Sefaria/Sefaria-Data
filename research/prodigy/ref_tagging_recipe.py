@@ -103,7 +103,7 @@ def score_stream(nlp, stream):
     db_host=("Mongo host", "option", None, str),
     db_port=("Mongo port", "option", None, int),
 )
-def my_custom_recipe(dataset, output_collection, input_collection, model_dir, view_id="text", db_host="localhost", db_port=27017):
+def my_custom_recipe(dataset, input_collection, output_collection, model_dir, view_id="text", db_host="localhost", db_port=27017):
     my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
     nlp, model_exists = load_model(model_dir)
     if not model_exists:
