@@ -4,6 +4,7 @@ from sefaria.model import *
 from scripts.move_draft_text import ServerTextCopier
 import argparse
 import os
+import time
 import json
 
 #DEST = 'https://www.sefaria.org'
@@ -21,14 +22,14 @@ def deploy_text(index):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--i', help='deploy indexes', action="store_true")
-    parser.add_argument('--t', help='deploy texts', action="store_true")
+    parser.add_argument('-i', '--indices', help='deploy indexes', action="store_true")
+    parser.add_argument('-t', '--texts', help='deploy texts', action="store_true")
     parser.add_argument('-b', '--begin', default=0)
-    parser.add_argument('-e', '--end', default=None)
+    parser.add_argument('-n', '--number', default=None, help='number of texts to deploy in this run')
 
     args = parser.parse_args()
     begin = int(args.begin)
-    end = int(args.end) if args.end else None
+    end = int(args.number) + begin if args.number else None
     dirname = os.path.dirname((os.path.realpath(__file__)))
     outpath = os.path.join(dirname, 'finished_texts.json')
     if os.path.exists(outpath):
@@ -37,7 +38,7 @@ if __name__ == '__main__':
     else:
         done = set(library.get_indexes_in_category('Bavli'))
 
-    if args.i:
+    if args.indices:
         indexes = set(library.get_indexes_in_category('Rif', include_dependant=True)[begin:end])
         while indexes - done:
             for index in indexes - done:
@@ -50,12 +51,11 @@ if __name__ == '__main__':
                         json.dump(list(done), fp)
                     print(len(indexes - done), 'remaining')
 
-    if args.t:
-        for text_num, index in enumerate(library.get_indexes_in_category('Rif', include_dependant=True)[begin:end], begin):
-            if index.title in done:
-                continue
-            print(f'deploying text {text_num}')
+    if args.texts:
+        text_list = library.get_indexes_in_category('Rif', include_dependant=True)
+        for text_num, index in enumerate(text_list[begin:end], begin):
+            print(f'deploying text {text_num}/{len(text_list)};', f'{end-text_num} remaining for this run')
+            start = time.time()
             deploy_text(index)
-            done.add(index.title)
-            with open(outpath, 'w') as fp:
-                json.dump(list(done), fp)
+            completed = time.time()
+            print('text uploaded. time elapsed:', completed-start)
