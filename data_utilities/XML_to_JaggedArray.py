@@ -25,7 +25,7 @@ class XML_to_JaggedArray:
     def __init__(self, title, xml_text, allowedTags, allowedAttributes, post_info=None,
                  dict_of_names={}, print_bool=False, array_of_names=[], deleteTitles=True,
                  change_name=False, assertions=False, image_dir=None, titled=False, remove_chapter=True,
-                 versionInfo=[]):
+                 versionInfo=[], use_fn=False):
         self.title = title
         self.writer = csv.writer(open("{}.csv".format(title), 'w'))
         self.post_info = post_info
@@ -53,6 +53,7 @@ class XML_to_JaggedArray:
         self.versionInfo = versionInfo
         self.remove_chapter_when_cleaning = remove_chapter
         self.word_count = 0
+        self.use_fn = use_fn
 
     def set_title(self, title):
         self.title = title
@@ -327,13 +328,16 @@ class XML_to_JaggedArray:
                 return " ".join(text.split(" ")[1:])
             return text
 
-        def buildFtnoteText(num, text):
+        def buildFtnoteText(num, text, fn):
             sup_match = re.compile("^<sup>\d+</sup>").match(text)
             if sup_match:
                 text = text.replace(sup_match.group(0), "")
             if text[0].isdigit():
                 text = " ".join(text.split()[1:])
-            return '<sup>{}</sup><i class="footnote">{}</i>'.format(num, text)
+            if not self.use_fn:
+                return '<sup>{}</sup><i class="footnote">{}</i>'.format(num, text)
+            else:
+                return '<sup>{}</sup><i class="footnote">{},{}</i>'.format(num, fn, text)
 
         #parse code begins...
         key_of_xref = 'rid'
@@ -358,7 +362,7 @@ class XML_to_JaggedArray:
                 for i in range(len(ft_ids)):
                     reverse_i = len(ft_ids) - i - 1
                     ftnote_text = footnotes_to_use[ft_ids[reverse_i]]
-                    text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text)
+                    text_to_insert = buildFtnoteText(ft_sup_nums[reverse_i], ftnote_text, ft_ids[reverse_i])
                     pos = ft_pos[reverse_i]
                     modified_text = u"{}{}{}".format(text_arr[index][0:pos], text_to_insert, text_arr[index][pos:])
                     text_arr[index] = modified_text

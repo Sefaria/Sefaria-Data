@@ -2,6 +2,7 @@ from sources.functions import *
 from docx2python import docx2python
 import difflib
 from bs4 import BeautifulSoup
+import time
 
 
 def get_body_html(document, ftnotes):
@@ -11,20 +12,28 @@ def get_body_html(document, ftnotes):
         if re.search("<font size=\"\d+\">[\d\t ]+</font>", str) is None:
             pasukim[0] = re.sub("<font size=\"\d+\">", "", pasukim[0])
             pasukim[0] = re.sub("</font>", "", pasukim[0])
+            pasukim[0] = pasukim[0].replace("LORD", "L<small>ORD</small>")
             new_body[book][curr_perek][-1] += "<br/>" +pasukim[0].strip()
         else:
             pasukim[0] = re.sub("<font size=\"\d+\">", "", pasukim[0])
             pasukim[0] = re.sub("</font>", "", pasukim[0])
+            pasukim[0] = pasukim[0].replace("LORD", "L<small>ORD</small>")
             if len(pasukim[0].strip()) > 2:
                 if len(new_body[book][curr_perek]) == 0:
                     new_body[book][curr_perek] = [pasukim[0].strip()]
                 else:
                     new_body[book][curr_perek][-1] += "<br/>" + pasukim[0].strip()
-            for pasuk in pasukim[1:]:
+            for p, pasuk in enumerate(pasukim):
+                if p == 0:
+                    continue
                 if len(pasuk.strip()) > 1:
                     pasuk = pasuk.strip()
                     pasuk = re.sub("<font size=\"\d+\">", "", pasuk)
                     pasuk = re.sub("</font>", "", pasuk)
+                    pasuk = pasuk.replace("LORD", "L<small>ORD</small>")
+                    if pasuk.endswith("(") and ")" in pasukim[p+1]:
+                        pasuk = pasuk[:-1]
+                        pasukim[p+1] = "("+pasukim[p+1]
                     new_body[book][curr_perek].append(pasuk)
 
     def are_ftnotes_in_perek(perek):
@@ -43,7 +52,7 @@ def get_body_html(document, ftnotes):
     total = 0
     body = document.body[0][0][0]
     for c, comment in enumerate(body):
-        comment = comment.replace("1 Kings", "I Kings").replace("2 Kings", "II Kings").replace("LORD", "L<small>ORD</small>")
+        comment = comment.replace("1 Kings", "I Kings").replace("2 Kings", "II Kings")
         comment = comment.replace(chr(8195), " ")
         comment = re.sub("[\u05d0-\u05ea]{1,}", "", comment)
         if len(comment) > 0 and is_index(BeautifulSoup(comment).text):
@@ -184,10 +193,6 @@ def post(body):
     probs = []
     wout_ftnotes = {}
     for book in body:
-        perek_probs = set()
-        prev_prob_ref = None
-        prev_prev_prob_ref = None
-        curr_prob_ref = None
         try:
             library.get_index(book)
             title = book
@@ -250,15 +255,15 @@ def post(body):
             "versionSource": "https://jps.org/books/tanakh-the-holy-scriptures-blue/",
             "text": body[book]
         }
-        if book in ["Psalms", "Isaiah"]:
-            post_text(title, send_text)
-            send_text = {
-                "versionTitle": "NJPS no footnotes",
-                "language": "en",
-                "versionSource": "https://jps.org/books/tanakh-the-holy-scriptures-blue/",
-                "text": wout_ftnotes[book]
-            }
-            post_text(title, send_text)
+        post_text(title, send_text)
+        send_text = {
+            "versionTitle": "NJPS no footnotes",
+            "language": "en",
+            "versionSource": "https://jps.org/books/tanakh-the-holy-scriptures-blue/",
+            "text": wout_ftnotes[book]
+        }
+        post_text(title, send_text)
+        time.sleep(5)
     print(probs)
 
 
