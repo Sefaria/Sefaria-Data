@@ -97,20 +97,21 @@ def score_stream(nlp, stream):
     "ref-tagging-recipe",
     dataset=("Dataset to save answers to", "positional", None, str),
     input_collection=("Mongo collection to input data from", "positional", None, str),
+    output_collection=("Mongo collection to output data to", "positional", None, str),
     model_dir=("Spacy model location", "positional", None, str),
     view_id=("Annotation interface", "option", "v", str),
     db_host=("Mongo host", "option", None, str),
     db_port=("Mongo port", "option", None, int),
 )
-def my_custom_recipe(dataset, input_collection, model_dir, view_id="text", db_host="localhost", db_port=27017):
-    my_db = MongoProdigyDBManager(db_host, db_port)
+def my_custom_recipe(dataset, input_collection, output_collection, model_dir, view_id="text", db_host="localhost", db_port=27017):
+    my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
     nlp, model_exists = load_model(model_dir)
     if not model_exists:
         temp_stream = getattr(my_db.db, input_collection).find({}, {"_id": 0})
         train_model(nlp, temp_stream, model_dir)
     all_data = list(getattr(my_db.db, input_collection).find({}, {"_id": 0}))  # TODO loading all data into ram to avoid issues of cursor timing out
-    stream = split_sentences(nlp, all_data, min_length=200)
-    stream = add_model_predictions(nlp, stream)
+    # stream = split_sentences(nlp, all_data, min_length=200)
+    stream = add_model_predictions(nlp, all_data)
     stream = add_tokens(nlp, stream, skip=True)
 
 
@@ -130,7 +131,7 @@ def my_custom_recipe(dataset, input_collection, model_dir, view_id="text", db_ho
         "view_id": view_id,
         "stream": stream,
         "progress": progress,
-        "update": update,
+        # "update": update,
         "config": {
             "labels": LABELS,
             "global_css": """
@@ -150,6 +151,10 @@ command to run
 
 cd research/prodigy
 prodigy ref-tagging-recipe ref_tagging test_input models/ref_tagging --view-id ner_manual -db-host localhost -db-port 27017 -F ref_tagging_recipe.py
+
+command to run on examples1_input
+prodigy ref-tagging-recipe ref_tagging2 examples1_input output/ref_tagging_cpu/model-last --view-id ner_manual -db-host localhost -db-port 27017 -F ref_tagging_recipe.py
+
 """
 
 """
