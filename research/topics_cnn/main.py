@@ -25,10 +25,11 @@ DATA = "/home/nss/Documents/Forks/Yishai-Sefaria-Project/ML/data/concat_english_
 EMBEDDING_HE = "/home/nss/sefaria/datasets/text classification/fasttext_he_no_prefixes_20.bin"
 EMBEDDING_EN = "/home/nss/sefaria/datasets/text classification/fasttext_en_no_prefixes_20.bin"
 EMBEDDING_LINKS = "/home/nss/sefaria/datasets/text classification/link_embeddings_he.json"
+MODEL_LOC = "/home/nss/sefaria/data/research/topics_cnn/cnn_models"
 
 MAX_DOCUMENT_LENGTH = 100
 EMBEDDING_SIZE = 20
-LINK_EMBEDDING_SIZE = 50
+LINK_EMBEDDING_SIZE = 20
 LINK_INPUT_LENGTH = 1000
 WINDOW_SIZE = EMBEDDING_SIZE
 STRIDE = int(WINDOW_SIZE/2)
@@ -97,32 +98,64 @@ class CnnClfEnsemble:
     def __init__(self, klass_name):
         self.klass_name = klass_name
 
-    def build_model(self, embedding_matrix_dict, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
-        self.embedding_matrix_dict = embedding_matrix_dict
+    def build_model(self, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
         he_inputs = keras.Input(shape=(input_length,), name="hebrew")        
         en_inputs = keras.Input(shape=(input_length,), name="english")
         link_inputs = keras.Input(shape=(link_input_length,), name="links")
 
-        he_outputs = self.get_text_model(embedding_matrix_dict["hebrew"], embedding_size, input_length)(he_inputs)
-        en_outputs = self.get_text_model(embedding_matrix_dict["english"], embedding_size, input_length)(en_inputs)
-        link_outputs = self.get_link_model(embedding_matrix_dict["hebrew"], embedding_size, link_input_length)(link_inputs)
-        x = layers.Concatenate()([he_outputs, en_outputs, link_outputs])
-        x = layers.Dense(128, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
-        x = layers.Dropout(0.5)(x)
-        x = layers.Dense(64, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
-        outputs = layers.Dropout(0.5)(x)
-        outputs = layers.Dense(2, activation='softmax', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        assert getattr(self, 'he_embed_model', None) is not None, "CnnClfEnsemble.load_all_embedding_models() needs to be called before calling build_model()"
+        he_embed = self.he_embed_model(he_inputs)
+        en_embed = self.en_embed_model(en_inputs)
+        link_embed = self.link_embed_model(link_inputs)
+   
+        self.model_head = self.get_model_head()
+        outputs = self.model_head([he_embed, en_embed, link_embed])
+
         self.model = keras.Model(inputs=[he_inputs, en_inputs, link_inputs], outputs=outputs)
         self.model.compile(optimizer=optimizers.Adam(), #learning_rate=0.001), 
                     loss=losses.CategoricalCrossentropy(from_logits=False), 
                     metrics=[metrics.CategoricalAccuracy(), metrics.Recall(class_id=0), metrics.Precision(class_id=0)])
         # self.model.summary()
 
+    @classmethod
+    def load_all_embedding_models(cls, embedding_matrix_dict, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
+        cls.he_embed_model = cls.get_embed_model(embedding_matrix_dict["hebrew"], embedding_size, input_length)
+        cls.en_embed_model = cls.get_embed_model(embedding_matrix_dict["english"], embedding_size, input_length)
+        cls.link_embed_model = cls.get_embed_model(embedding_matrix_dict["hebrew"], link_embedding_size, link_input_length)
+
+    @classmethod
+    def save_all_embedding_models(cls, folder=MODEL_LOC):
+        # these models shouldn't be changing so safe to save at class level
+        for embed_model_attr in ['he_embed_model', 'en_embed_model', 'link_embed_model']:
+            getattr(cls, embed_model_attr).save_weights(f'{folder}/_{embed_model_attr}/{embed_model_attr}')
+
     @staticmethod
-    def get_link_model(link_embedding_matrix, link_embedding_size, link_input_length):
-        inputs = keras.Input(shape=(link_input_length,))
-        x = layers.Embedding(link_embedding_matrix.shape[0], link_embedding_size, input_length=link_input_length, embeddings_initializer=initializers.Constant(link_embedding_matrix), trainable=False)(inputs)
-        x = layers.Dropout(0.1)(x)
+    def get_model_head(embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
+        he_inputs = keras.Input(shape=(input_length, embedding_size))        
+        en_inputs = keras.Input(shape=(input_length, embedding_size))
+        link_inputs = keras.Input(shape=(link_input_length, link_embedding_size))
+
+        he_outputs = CnnClfEnsemble.get_text_model()(he_inputs)
+        en_outputs = CnnClfEnsemble.get_text_model()(en_inputs)
+        link_outputs = CnnClfEnsemble.get_link_model()(link_inputs)
+
+        x = layers.Concatenate()([he_outputs, en_outputs, link_outputs])
+        x = layers.Dense(128, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        x = layers.Dropout(0.5)(x)
+        x = layers.Dense(64, activation='relu', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        outputs = layers.Dense(2, activation='softmax', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
+        return keras.Model(inputs=[he_inputs, en_inputs, link_inputs], outputs=outputs)
+
+    @staticmethod
+    def get_embed_model(embedding_matrix, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH):
+        inputs = keras.Input(shape=(input_length,))
+        outputs = layers.Embedding(embedding_matrix.shape[0], embedding_size, input_length=input_length, embeddings_initializer=initializers.Constant(embedding_matrix), trainable=False)(inputs)
+        return keras.Model(inputs, outputs)
+
+    @staticmethod
+    def get_link_model(embedding_size=EMBEDDING_SIZE, input_length=LINK_INPUT_LENGTH):
+        inputs = keras.Input(shape=(input_length, embedding_size))
+        x = layers.Dropout(0.1)(inputs)
         x = layers.Convolution1D(16, kernel_size=4, activation='relu', strides=1, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
         x = layers.Dropout(0.5)(x)
         x = layers.Convolution1D(12, kernel_size=8, activation='relu', strides=2, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
@@ -133,10 +166,9 @@ class CnnClfEnsemble:
         return keras.Model(inputs, outputs)
  
     @staticmethod
-    def get_text_model(embedding_matrix, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH):
-        inputs = keras.Input(shape=(input_length,))
-        x = layers.Embedding(embedding_matrix.shape[0], embedding_size, input_length=input_length, embeddings_initializer=initializers.Constant(embedding_matrix), trainable=False)(inputs)
-        x = layers.Dropout(0.1)(x)
+    def get_text_model(embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH):
+        inputs = keras.Input(shape=(input_length, embedding_size))
+        x = layers.Dropout(0.1)(inputs)
         x = layers.Convolution1D(16, kernel_size=4, activation='relu', strides=1, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
         x = layers.Dropout(0.5)(x)
         x = layers.Convolution1D(12, kernel_size=8, activation='relu', strides=2, padding='same', kernel_constraint=constraints.MaxNorm(max_value=3))(x)
@@ -155,15 +187,15 @@ class CnnClfEnsemble:
     def evaluate(self, x_test, y_test, **kwargs):
         return self.model.evaluate(x_test, y_test, **kwargs)
 
-    def save(self, folder):
-        self.model.save_weights(f'{folder}/{self.klass_name}/{self.klass_name}')
+    def save(self, folder=MODEL_LOC):
+        # only save model_head weights. embed model weights don't change.
+        self.model_head.save_weights(f'{folder}/{self.klass_name}/{self.klass_name}')
         with open(f'{folder}/{self.klass_name}/{self.klass_name}.history.json', 'w') as fout:
             json.dump(self.history.history, fout, ensure_ascii=False)
 
-    def load(self, folder, embedding_matrix_dict, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
-        self.build_model(embedding_matrix_dict, embedding_size, input_length, link_embedding_size, link_input_length)
-        self.model.load_weights(f'{folder}/{self.klass_name}/{self.klass_name}')
-
+    def load(self, folder=MODEL_LOC, embedding_size=EMBEDDING_SIZE, input_length=MAX_DOCUMENT_LENGTH, link_embedding_size=LINK_EMBEDDING_SIZE, link_input_length=LINK_INPUT_LENGTH):
+        self.build_model(embedding_size, input_length, link_embedding_size, link_input_length)
+        self.model_head.load_weights(f'{folder}/{self.klass_name}/{self.klass_name}')
 
     def get_callbacks(self, verbose):
         if verbose == 0:
@@ -182,15 +214,16 @@ class BinaryRelevance:
         self.results = {}
         self.models = {}
 
-    def load_models(self, folder, embedding_dict):
-        for klass in tqdm(self.klasses, desc="load models"):
-            temp_clf = self.clf_klass(klass, **self.clf_params)
-            temp_clf.load(folder, embedding_dict)
-            self.models[klass] = temp_clf
+    # too much to load all models into RAM. will load them at inference time
+    # def load_models(self, folder, embedding_dict):
+    #     for klass in tqdm(self.klasses, desc="load models"):
+    #         temp_clf = self.clf_klass(klass, **self.clf_params)
+    #         temp_clf.load(folder, embedding_dict)
+    #         self.models[klass] = temp_clf
     
-    def fit_and_evaluate(self, get_dataset_for_klass, embedding_dict, return_dict, **clf_fit_kwargs):
+    def fit_and_evaluate(self, get_dataset_for_klass, return_dict, **clf_fit_kwargs):
         for iklass, klass in tqdm(enumerate(self.klasses), total=len(self.klasses)):
-            self.fit_and_evaluate_class(iklass, klass, get_dataset_for_klass, embedding_dict, return_dict, **clf_fit_kwargs)
+            self.fit_and_evaluate_class(iklass, klass, get_dataset_for_klass, return_dict, **clf_fit_kwargs)
         f1_mean = sum([r['f1']*r['weight'] for r in self.results.values()])/sum([r['weight'] for r in self.results.values()])
         recall_mean = sum([r['recall']*r['weight'] for r in self.results.values()])/sum([r['weight'] for r in self.results.values()])
         precision_mean = sum([r['precision']*r['weight'] for r in self.results.values()])/sum([r['weight'] for r in self.results.values()])
@@ -201,17 +234,18 @@ class BinaryRelevance:
             'precision_mean': precision_mean,
             'results_by_class': self.results
         }
-        with open('research/topics_cnn/cnn_models/results.json', 'w') as fout:
+        with open(f'{MODEL_LOC}/results.json', 'w') as fout:
             json.dump(out, fout, ensure_ascii=False, indent=2)
 
-    def fit_and_evaluate_class(self, iklass, klass, get_dataset_for_klass, embedding_dict, return_dict, **clf_fit_kwargs):
-        X_train, X_test, Y_train, Y_test = get_dataset_for_klass(klass)
+    def fit_and_evaluate_class(self, iklass, klass, get_dataset_for_klass, return_dict, folder=MODEL_LOC, **clf_fit_kwargs):
+        neg_klass_set = {slug for slug in self.klasses if slug != klass}
+        X_train, X_test, Y_train, Y_test = get_dataset_for_klass(klass, neg_klass_set)
         temp_clf = self.clf_klass(klass, **self.clf_params)
-        temp_clf.build_model(embedding_dict)
+        temp_clf.build_model()
         
         # fit
         train_history = temp_clf.fit(X_train, Y_train, validation_data=(X_test, Y_test), **clf_fit_kwargs)
-        temp_clf.save('research/topics_cnn/cnn_models')
+        temp_clf.save(folder)
         # self.models[klass] = temp_clf
 
         # evaluate
@@ -235,28 +269,34 @@ class BinaryRelevance:
         results['weight'] = X_test['hebrew'].shape[0]
         print("RESULTS", klass, results['f1'], results['f-half'], results['precision'], results['recall'])
         self.results[klass] = results
+        return temp_clf
 
-    def infer_one(self, data):
+    def infer_one(self, data, folder=MODEL_LOC):
         inferences = set()
         inference_percent_dict = {}
         for klass in self.klasses:
-            tensor_out = self.models[klass].model(data)
+            temp_clf = self.clf_klass(klass, **self.clf_params)
+            temp_clf.load(folder)
+            tensor_out = temp_clf.model(data)
             if tf.argmax(tensor_out, axis=1).numpy()[0] == 0:
                 inferences.add(klass)
             inference_percent_dict[klass] = self.softmax(tensor_out.numpy())[0]
         return inferences, inference_percent_dict
 
-    def infer_many(self, data):
-        inferences = [set() for _ in range(len(data))]
-        inference_percent_dict_list = [{} for _ in range(len(data))]
-        for klass in self.klasses:
-            tensor_out = self.models[klass].model(data)
+    def infer_many(self, data, folder=MODEL_LOC):
+        inferences = [set() for _ in range(len(data['hebrew']))]
+        inference_percent_dict_list = [{} for _ in range(len(data['hebrew']))]
+        for klass in tqdm(self.klasses):
+            temp_clf = self.clf_klass(klass, **self.clf_params)
+            temp_clf.load(folder)
+            tensor_out = temp_clf.model.predict(data, batch_size=BATCH_SIZE)
             softmaxed = tf.argmax(tensor_out, axis=1).numpy()
             for i, choice in enumerate(softmaxed):
                 if choice == 0:
                     inferences[i].add(klass)
-            inference_percent_dict_list[i][klass] = self.softmax(tensor_out.numpy())[0]
-        return inferences, inference_percent_dict_list    
+                inference_percent_dict_list[i][klass] = self.softmax(tensor_out[i])[0]
+        return inferences, inference_percent_dict_list   
+    
     @staticmethod
     def softmax(x): 
         """Compute softmax values for each sets of scores in x.""" 
@@ -289,7 +329,7 @@ class DataManager:
         self.embedding_size = embedding_size
         self.link_embedding_size = link_embedding_size
 
-    def load_tokenizers_and_embeddings(self, folder='research/topics_cnn/cnn_models'):
+    def load_tokenizers_and_embeddings(self, folder=MODEL_LOC):
         with open(f"{folder}/tokenizers_and_embeddings.pickle", 'rb') as fin:
             tok_and_emb = pickle.load(fin)
         self.tokenizer_dict = tok_and_emb['tokenizers']
@@ -310,9 +350,9 @@ class DataManager:
                     self.topic_counts[y] += 1         
         return X, Y
 
-    def get_binary_dataset_for_slug_set(self, slug_set, neg_pos_ratio):
-        pos_X = [x for x, y in filter(lambda a: len(set(a[1]) & slug_set) > 0, zip(self.X, self.Y))]
-        neg_X = [x for x, y in filter(lambda a: len(set(a[1]) & slug_set) == 0, zip(self.X, self.Y))]
+    def get_binary_dataset_for_slug_set(self, pos_slug_set, neg_slug_set, neg_pos_ratio): 
+        pos_X = [x for x, y in filter(lambda a: len(set(a[1]) & pos_slug_set) > 0, zip(self.X, self.Y))]
+        neg_X = [x for x, y in filter(lambda a: len(set(a[1]) & neg_slug_set) > 0, zip(self.X, self.Y))]
         random.shuffle(neg_X)
         if neg_pos_ratio is not None:
             neg_X = neg_X[:len(pos_X)*neg_pos_ratio]
@@ -437,18 +477,28 @@ class DataManager:
             toc_mapping[root.slug] = list(set([child.slug for child in children]))
         return toc_mapping
 
-    def get_dataset_for_super_topic(self, super_topic):
+    def get_dataset_for_super_topic(self, super_topic, negative_topics):
         sub_topics = self.toc_mapping[super_topic]
-        X, Y = self.get_binary_dataset_for_slug_set(set(sub_topics), 4)
+        neg_topics = {}
+        for other_super_topic, other_sub_topics in self.toc_mapping.items():
+            if other_super_topic == super_topic:
+                continue
+            neg_topics |= set(other_sub_topics)
+        X, Y = self.get_binary_dataset_for_slug_set(set(sub_topics), neg_topics, 4)
         return self.get_train_test_sets(X, Y)
 
     def get_ensemble_dataset_for_super_topic(self, super_topic):
         sub_topics = self.toc_mapping[super_topic]
-        X, Y = self.get_binary_dataset_for_slug_set(set(sub_topics), 4)
+        neg_topics = {}
+        for other_super_topic, other_sub_topics in self.toc_mapping.items():
+            if other_super_topic == super_topic:
+                continue
+            neg_topics |= set(other_sub_topics)
+        X, Y = self.get_binary_dataset_for_slug_set(set(sub_topics), neg_topics, 4)
         return self.get_ensemble_dataset(X, Y)
 
-    def get_ensemble_dataset_for_sub_topic(self, sub_topic):
-        X, Y = self.get_binary_dataset_for_slug_set({sub_topic}, 4)
+    def get_ensemble_dataset_for_sub_topic(self, sub_topic, neg_topic_set):
+        X, Y = self.get_binary_dataset_for_slug_set({sub_topic}, neg_topic_set, 4)
         return self.get_ensemble_dataset(X, Y)
 
     def get_ensemble_dataset(self, X, Y):
@@ -468,8 +518,11 @@ class DataManager:
     def get_sub_topics(self, super_topic):
         return self.toc_mapping[super_topic]
 
-    def get_topics_above_count(self, count):
-        return [x[0] for x in filter(lambda x: x[1] >= count, self.topic_counts.items())]
+    def get_topics_above_count(self, count, type_set=None):
+        topics = [x[0] for x in filter(lambda x: x[1] >= count, self.topic_counts.items())]
+        if type_set is not None:
+            topics = list(filter(lambda x: Topic.init(x) is not None and Topic.init(x).has_types(type_set), topics))
+        return topics
 
     def get_ensemble_input_for_inference(self, X_he, X_en, X_links):
         X_he_seq = self.get_sequenced_text(X_he, self.tokenizer_dict['hebrew'])
@@ -521,12 +574,11 @@ if __name__ == "__main__":
     # super_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_super_topics())
     # super_topic_clf.fit_class(1, "biblical-figures", dm.get_ensemble_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
     
-    all_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_topics_above_count(100)[-24:])
-    # all_topic_clf.load_models('research/topics_cnn/cnn_models', dm.embedding_dict)
-    all_topic_clf.fit_and_evaluate(dm.get_ensemble_dataset_for_sub_topic, dm.embedding_dict, True, epochs=N_EPOCHS, verbose=0, batch_size=BATCH_SIZE)
+    # all_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_topics_above_count(100)[-24:])
+    # all_topic_clf.fit_and_evaluate(dm.get_ensemble_dataset_for_sub_topic, True, epochs=N_EPOCHS, verbose=0, batch_size=BATCH_SIZE)
 
-
-    # sub_topic_clf.fit_class(1, "abraham", dm.get_ensemble_dataset_for_sub_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
+    sub_topic_clf = BinaryRelevance(CnnClfEnsemble, dm.get_topics_above_count(100, {'people', 'holidays'}))
+    sub_topic_clf.fit_and_evaluate_class(1, "abraham", dm.get_ensemble_dataset_for_sub_topic, True, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)
 
 
     # super_topic_clf.fit(dm.get_dataset_for_super_topic, epochs=N_EPOCHS, verbose=1, batch_size=BATCH_SIZE)

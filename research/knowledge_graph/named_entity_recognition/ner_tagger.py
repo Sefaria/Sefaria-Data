@@ -563,13 +563,19 @@ class CorpusManager:
                 with open(pretagged_file, "r") as fin:
                     raw_pretagged_mentions = json.load(fin)
                     for mention in raw_pretagged_mentions:
-                        pretagged_mentions += [Mention().add_metadata(versionTitle=version_query['versionTitle'], language=version_query['language'], **mention)]
+                        for key in ('versionTitle', 'language'):
+                            mention[key] = version_query.get(key) or mention[key]
+                        pretagged_mentions += [Mention().add_metadata(**mention)]
             if pretagged_in_db:
                 mention_links = RefTopicLinkSet({"linkType": "mention", "charLevelData.versionTitle": version_query['versionTitle'], "charLevelData.language": version_query['language']})
                 for link in mention_links:
                     pretagged_mentions += [Mention().add_metadata_from_link(link)]
-            version = Version().load({"title": version_query['title'], "versionTitle": version_query['versionTitle'], "language": version_query['language']})
-            if version is None: continue
+            query = {"title": version_query['title'], "language": version_query['language']}
+            if version_query.get('versionTitle'):
+                query['versionTitle'] = version_query['versionTitle']
+            version_set = VersionSet(query).array()
+            if len(version_set) == 0: continue
+            version = version_set[0]
             is_pretagged = pretagged_file is not None or pretagged_in_db
             version.walk_thru_contents(partial(self.create_corpus_segment, is_pretagged))
         
@@ -1097,10 +1103,14 @@ def get_literal_text_map(raw_literal_corpus):
     version_queries = CorpusManager.create_corpus_version_queries(raw_literal_corpus)
     has_nonliteral_version_set = set()
     for vquery in tqdm(version_queries, desc="get literal ranges"):
-        version = Version().load({"title": vquery['title'], "language": vquery['language'], "versionTitle": vquery['versionTitle']})
-        if version is None:
-            # print("Version is None for", vquery['title'], vquery['language'], vquery['versionTitle'])
+        query = {"title": vquery['title'], "language": vquery['language']}
+        if vquery.get('versionTitle') is not None:
+            query['versionTitle'] = vquery['versionTitle']
+        version_set = VersionSet(query).array()  # load versionset in case versionTitle is None and you want top priority version
+        if len(version_set) == 0:
+            print("Version is None for", vquery['title'], vquery['language'], vquery['versionTitle'])
             continue
+        version = version_set[0]
         version.walk_thru_contents(partial(literal_walker.walk, vquery['literalRegex']))
         has_nonliteral_version_set.add((vquery['title'], vquery['versionTitle'], vquery['language']))
     
@@ -1139,8 +1149,8 @@ def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_mishnah.json",
-        f"{ner_file_prefix}/ner_output_mishnah_prefixes.json",
+        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_tosefta.json",
+        f"{ner_file_prefix}/ner_output_tosefta.json",
         f"{ner_file_prefix}/html"
     )
     # corpus_manager.export_named_entities(f"{ner_file_prefix}/named_entities_export.csv")
@@ -1151,10 +1161,10 @@ if __name__ == "__main__":
     # corpus_manager.load_mentions()
     corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi'})
     # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv")
-    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("Mishnah Yomit by Dr. Joshua Kulp", "en"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en")
+    # corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("Mishnah Yomit by Dr. Joshua Kulp", "en"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en")
     
     # compare_two_versions_ner_tagger_output('ner_output_talmud.json', 'ner_output_talmud_word_breakers.json', ner_file_prefix)
-    compare_two_versions_ner_tagger_output('ner_output_mishnah_prefixes.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
+    # compare_two_versions_ner_tagger_output('ner_output_mishnah_prefixes.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
 
 """
 This file depends on first running

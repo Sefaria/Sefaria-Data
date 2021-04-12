@@ -76,7 +76,7 @@ for masechet in tags_map:
     except:
         continue
     print(masechet)
-    mefresh = [mef for mef in ['Ran', 'Nimmukei Yosef', 'R. Yehonatan of Lunel'] if tags_map[masechet][mef] == 'Digitized'][0]
+    mefresh = [mef for mef in ['Ran', 'Nimmukei Yosef', 'Rabbenu Yehonatan of Lunel'] if tags_map[masechet][mef] == 'Digitized'][0]
     with open(path+'/Mefaresh/{}_{}.txt'.format(mefresh, masechet), encoding='utf-8') as fp:
         data = fp.read()
     check_sequence(shut)
