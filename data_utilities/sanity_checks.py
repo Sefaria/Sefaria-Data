@@ -368,3 +368,16 @@ def longest_increasing_subsequence(sequence: list) -> list:
                     last_elements[loc] = element
     return subsequences[-1]
 
+
+def find_out_of_order(sequence: list, key=None):
+    """
+    Gives the indices of items that are not out of order in a given sequence
+    :param sequence: list of items
+    :param key: function that can be used to convert each item of sequence to something that can be compared
+    :return: list of indices. Items at these indices are out of order
+    """
+    if key:
+        sequence = [key(i) for i in sequence]
+    in_order = set(longest_increasing_subsequence(sequence))
+    return [i for i in range(len(sequence)) if i not in in_order]
+
