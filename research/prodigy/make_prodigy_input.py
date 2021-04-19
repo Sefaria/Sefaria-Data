@@ -135,11 +135,11 @@ def combine_all_sentences_to_paragraphs():
 
 
 if __name__ == "__main__":
-    # title_list = [
-    #     'Rashba on Eruvin', 'Chiddushei Ramban on Avodah Zarah', 'Ben Yehoyada on Beitzah',
-    #     'Tosafot on Shabbat', 'Chidushei Agadot on Rosh Hashanah', 'Chidushei Halachot on Taanit', 'Rabbeinu Gershom on Chullin',
-    #     'Maharam Shif on Gittin', 'Maadaney Yom Tov on Menachot', 'Rashbam on Bava Batra', 'Penei Yehoshua on Bava Metzia',
-    #     'Ran on Nedarim', 'Tosafot Shantz on Sotah', 'Yad Ramah on Bava Batra', 'Shita Mekubetzet on Berakhot'
-    # ]
-    # make_prodigy_input(title_list, [None]*len(title_list), ['he']*len(title_list))
-    combine_all_sentences_to_paragraphs()
+    title_list = [
+        'Rashba on Gittin', 'Chiddushei Ramban on Shabbat', 'Ben Yehoyada on Berakhot',
+        'Tosafot on Bekhorot', 'Chidushei Agadot on Zevachim', 'Chidushei Halachot on Bava Kamma', 'Rabbeinu Gershom on Meilah',
+        'Maharam Shif on Sanhedrin', 'Maadaney Yom Tov on Niddah', 'Rashbam on Menachot', 'Penei Yehoshua on Shevuot',
+        'Yad Ramah on Sanhedrin', 'Shita Mekubetzet on Ketubot'
+    ]
+    make_prodigy_input(title_list, [None]*len(title_list), ['he']*len(title_list))
+    # combine_all_sentences_to_paragraphs()

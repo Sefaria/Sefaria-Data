@@ -11,16 +11,17 @@ from spacy.training import Example
 from spacy.language import Language
 
 @spacy.registry.readers("mongo_reader")
-def stream_data(db_host: str, db_port: int, collection: str, random_state: int, train_perc: float, corpus_type: str) -> Callable[[Language], Iterator[Example]]:
-    my_db = MongoProdigyDBManager(db_host, db_port)
+def stream_data(db_host: str, db_port: int, input_collection: str, output_collection: str, random_state: int, train_perc: float, corpus_type: str) -> Callable[[Language], Iterator[Example]]:
+    my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
     def generate_stream(nlp):
-        data = [d for d in getattr(my_db.db, collection).find({}) if len(d['text']) > 20]
+        data = [d for d in getattr(my_db.db, input_collection).find({}) if len(d['text']) > 20]
         # make data unique
         data = list({(d['meta']['Ref'], d['text']): d for d in data}.values())
         train_data, test_data = train_test_split(data, random_state=random_state, train_size=train_perc)
         corpus_data = train_data if corpus_type == "train" else test_data
         for raw_example in corpus_data:
             doc = nlp.make_doc(raw_example['text'])
+            doc.user_data = raw_example['meta']
             entities = [(span['start'], span['end'], span['label']) for span in raw_example['spans']]
             example = Example.from_dict(doc, {"entities": entities})
             yield example
@@ -70,12 +71,26 @@ def make_evaluation_files(evaluation_data, ner_model, output_folder):
             "text": doc.text,
             "tp": [list(ent) for ent in temp_tp],
             "fp": [list(ent) for ent in temp_fp],
-            "fn": [list(ent) for ent in temp_fn]
+            "fn": [list(ent) for ent in temp_fn],
+            "ref": example.predicted.user_data['Ref']
         }]
     
     srsly.write_jsonl(f"{output_folder}/doc_evaluation.jsonl", output_json)
-    make_evaluation_html(output_json, output_folder)
+    make_evaluation_html(output_json, output_folder, 'doc_evaluation.html')
     return tp, fp, tn, fn
+
+def export_tagged_data_as_html(tagged_data, output_folder):
+    output_json = []
+    for example in tagged_data:
+        ents_x2y = example.get_aligned_spans_x2y(example.reference.ents)
+        output_json += [{
+            "text": example.text,
+            "tp": [[span.start_char, span.end_char, span.label_] for span in ents_x2y],
+            "fp": [],
+            "fn": [],
+            "ref": example.predicted.user_data['Ref']
+        }]
+    make_evaluation_html(output_json, output_folder, 'doc_export.html')
 
 def wrap_chars(s, chars_to_wrap, get_wrapped_text):
     dummy_char = "█"
@@ -95,7 +110,22 @@ def wrap_chars(s, chars_to_wrap, get_wrapped_text):
         return f"""{get_wrapped_text(mention, metadata)}"""
     return re.sub(fr"{dummy_char}+", repl, dummy_text)
 
-def make_evaluation_html(data, output_folder):
+def wrap_chars_with_overlaps(s, chars_to_wrap, get_wrapped_text):
+    chars_to_wrap.sort(key=lambda x: (x[0],x[0]-x[1]))
+    for i, (start, end, metadata) in enumerate(chars_to_wrap):
+        wrapped_text, start_added, end_added = get_wrapped_text(s[start:end], metadata)
+        s = s[:start] + wrapped_text + s[end:]
+        for j, (start2, end2, metadata2) in enumerate(chars_to_wrap[i+1:]):
+            if start2 > end:
+                start2 += end_added
+            start2 += start_added
+            if end2 > end:
+                end2 += end_added
+            end2 += start_added
+            chars_to_wrap[i+j+1] = (start2, end2, metadata2)
+    return s
+
+def make_evaluation_html(data, output_folder, output_filename):
     html = """
     <html>
       <head>
@@ -111,20 +141,23 @@ def make_evaluation_html(data, output_folder):
       <body>
     """
     def get_wrapped_text(mention, metadata):
-        return f'<span class="{metadata} tag">{mention}</span>'
-    for d in data:
+        start = f'<span class="{metadata} tag">'
+        end = '</span>'
+        return f'{start}{mention}{end}', len(start), len(end)
+    for i, d in enumerate(data):
         chars_to_wrap  = [(s, e, 'tp') for (s, e, _) in d['tp']]
         chars_to_wrap += [(s, e, 'fp') for (s, e, _) in d['fp']]
         chars_to_wrap += [(s, e, 'fn') for (s, e, _) in d['fn']]
-        wrapped_text = wrap_chars(d['text'], chars_to_wrap, get_wrapped_text)
+        wrapped_text = wrap_chars_with_overlaps(d['text'], chars_to_wrap, get_wrapped_text)
         html += f"""
+        <p class="ref">{i}) {d['ref']}</p>
         <p dir="rtl" class="doc">{wrapped_text}</p>
         """
     html += """
       </body>
     </html>
     """
-    with open(f"{output_folder}/doc_evaluation.html", "w") as fout:
+    with open(f"{output_folder}/{output_filename}", "w") as fout:
         fout.write(html)
 
 def convert_jsonl_to_json(filename):
@@ -176,11 +209,14 @@ def convert_jsonl_to_csv(filename):
         c.writerows(rows)
 
 if __name__ == "__main__":
-    # nlp = spacy.load('./research/prodigy/output/ref_tagging_cpu/model-last')
-    # data = stream_data('localhost', 27017, 'examples', 613, 0.8, 'test')(nlp)
-    # print(make_evaluation_files(data, nlp, './research/prodigy/output/evaluation_results'))
-    # convert_jsonl_to_json('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
-    convert_jsonl_to_csv('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
+    nlp = spacy.load('./research/prodigy/output/ref_tagging_cpu/model-last')
+    data = stream_data('localhost', 27017, 'examples2_output', 'examples3', 613, 0.8, 'test')(nlp)
+    print(make_evaluation_files(data, nlp, './research/prodigy/output/evaluation_results'))
+
+    # data = stream_data('localhost', 27017, 'examples2_output', 'examples2_input', 613, 0.9999, 'train')(nlp)
+    # export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results')
+    convert_jsonl_to_json('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
+    # convert_jsonl_to_csv('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
     # spacy.training.offsets_to_biluo_tags(doc, entities)
 """
 to run gpu
@@ -188,8 +224,9 @@ python -m spacy train ./research/prodigy/configs/ref_tagging.cfg --output ./rese
 
 to run cpu
 python -m spacy train ./research/prodigy/configs/ref_tagging_cpu.cfg --output ./research/prodigy/output/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0
- 21    6600        373.19     42.73   57.39   61.05   54.15    0.57
- 
+600 segments
+ 69    5000          0.36      0.03   71.26   72.94   69.66    0.71 (0.71, 0.66)
+0.71
 debug data
 python -m spacy debug data ./research/prodigy/configs/ref_tagging.cfg -c ./research/prodigy/functions.py
 
