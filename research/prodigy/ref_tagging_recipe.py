@@ -7,12 +7,13 @@ from prodigy.components.sorters import prefer_uncertain
 from prodigy.components.preprocess import add_tokens
 
 # for local dev
-#from research.prodigy.db_manager import MongoProdigyDBManager
-#from research.prodigy.functions import custom_tokenizer_factory
-
-# for remote dev
-from db_manager import MongoProdigyDBManager
-from functions import custom_tokenizer_factory
+try:
+    from research.prodigy.db_manager import MongoProdigyDBManager
+    from research.prodigy.functions import custom_tokenizer_factory
+except ImportError:
+    # for remote dev
+    from db_manager import MongoProdigyDBManager
+    from functions import custom_tokenizer_factory
 
 from pathlib import Path
 
@@ -166,7 +167,7 @@ cd research/prodigy
 prodigy ref-tagging-recipe ref_tagging test_input models/ref_tagging --view-id ner_manual -db-host localhost -db-port 27017 -F ref_tagging_recipe.py
 
 command to run on examples1_input
-prodigy ref-tagging-recipe ref_tagging2 examples1_input examples2_output ./research/prodigy/output/ref_tagging_cpu/model-last --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/ref_tagging_recipe.py --code ./research/prodigy/functions.py
+prodigy ref-tagging-recipe ref_tagging2 examples2_input examples3_output ./research/prodigy/output/ref_tagging_cpu/model-last --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/ref_tagging_recipe.py
 
 """
 

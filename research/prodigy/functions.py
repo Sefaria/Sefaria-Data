@@ -1,13 +1,5 @@
 from typing import Callable, Iterator, List
-
 from spacy.util import ensure_path
-
-# for local dev
-# from research.prodigy.db_manager import MongoProdigyDBManager
-
-# for remote dev
-from db_manager import MongoProdigyDBManager
-
 import spacy, re, srsly, json, csv
 from tqdm import tqdm
 from spacy.tokenizer import Tokenizer
@@ -15,6 +7,13 @@ from spacy.lang.he import Hebrew
 from sklearn.model_selection import train_test_split
 from spacy.training import Example
 from spacy.language import Language
+
+try:
+    from research.prodigy.db_manager import MongoProdigyDBManager
+except ImportError:
+    # remote
+    from db_manager import MongoProdigyDBManager
+
 
 @spacy.registry.readers("mongo_reader")
 def stream_data(db_host: str, db_port: int, input_collection: str, output_collection: str, random_state: int, train_perc: float, corpus_type: str) -> Callable[[Language], Iterator[Example]]:
