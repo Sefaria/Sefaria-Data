@@ -9,6 +9,7 @@ import json
 import zipfile
 from itertools import zip_longest
 import data_utilities.text_align as align
+from data_utilities.sanity_checks import find_out_of_order
 import simpleaudio
 from data_utilities.util import getGematria, traverse_ja
 from sources.Yerushalmi import sefaria_objects
@@ -72,6 +73,8 @@ class DividedSegments:
                 zip(self._original_segments, self._division_indices)):
             segment_start, segment_end = division_indices
             first_word, last_word = map_indices[segment_start][0], map_indices[segment_end - 1][1]
+            if last_word <= first_word:  # end must be larger than beginning, otherwise set this to a miss
+                last_word = -1
 
             if first_word == -1:
                 if segment_number == 0:
@@ -84,8 +87,11 @@ class DividedSegments:
                 if segment_number == len(self._division_indices) - 1:
                     last_word = len(self._word_list) - 1
                 else:
+                    next_segment = map_indices[segment_end]
                     next_match = map_indices[segment_end][0]
-                    last_word = next_match - 1 if next_match > 0 else last_word
+
+                    # we don't want to fill in missing information if there is bad data in the next segment
+                    last_word = next_match - 1 if -1 not in next_segment else last_word
 
             if -1 in (first_word, last_word):
                 aligned_text = ''
@@ -129,7 +135,7 @@ def create_map_repair(mapping: list, comment_segments: list, base_text_words: li
     segment_edits, html_rows = [], []
     for gap in mapping_gaps:
         gap_start, gap_end = gap['segments']
-        segments = comment_segments[gap_start: gap_end]
+        segments = comment_segments[gap_start: gap_end+1]
         for seg_num, seg in enumerate(segments, gap_start):
             segment_edits.append({
                 'index': seg_num,
@@ -180,6 +186,12 @@ def create_css():
             direction: ltr;
             text-align: left;
           }
+          tr.error {
+            background-color: #ff4242;
+          }
+          tr.error:hover {
+            background-color: #fa7a7a
+          }
         '''
 
 
@@ -220,6 +232,32 @@ def create_helper_html(html_rows, output_file):
 #     return gug_text, mehon_text
 
 
+def out_of_order_segments(mapping):
+    """
+    We can define two types of "out of order" segments:
+    Fully out of order, e.g [1, 5], [10, 14], [6, 9]
+    Partially out of order, e.g [1, 5], [4, 9], [10, 14]
+    In the scope of this mdoule, we enforce that for every mapping segment n, n[0] < n[1] which makes the following
+    impossible: [1, 5], [6, 3], [10, 14]
+    :param mapping:
+    :return:
+    """
+    # partially out of order
+    out_of_order = set()
+    for i, _ in enumerate(mapping[1:], 1):
+        current, previous = mapping[i], mapping[i-1]
+        if current[0] <= previous[1]:
+            out_of_order.add(i)
+
+    # fully out of order
+    temp_mapping = [j[0] if i not in out_of_order else 9999 for i, j in enumerate(mapping) ]
+    for i in find_out_of_order(temp_mapping):
+        out_of_order.add(i)
+
+    return sorted(list(out_of_order))
+
+
+
 def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
     print(tractate.title)
     output_dir = f'code_output/mapping_files/{tractate.title.replace(" ", "_")}'
@@ -230,6 +268,7 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
     mehon = get_segments_from_raw(f'mechon-mamre/{he_title}.html')
     mehon_ja = create_chap_ja(mehon, talmud_only)
     mehon_chaps = three_to1ja(mehon_ja)
+    errors = [0] * len(mehon_chaps)
     for chap_num in range(len(mehon_chaps)):
         mapping_file = os.path.join(output_dir, f'chapter_{chap_num + 1}_mapping.json')
         raw_mapping_file = mapping_file.replace('chapter', 'raw_chapter')
@@ -257,16 +296,23 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
         fixed_mapping['matches'] = [tuple(int(j) for j in i) for i in fixed_mapping['matches']]
         with open(mapping_file, 'w') as fp:
             json.dump(fixed_mapping, fp)
+        out_of_order = out_of_order_segments(fixed_mapping['matches'])
         chapter_edits, html_rows = create_map_repair(
             fixed_mapping['matches'], gug_text, mehon_text,
             os.path.join(output_dir, f'chapter_{chap_num + 1}_repair.csv')
         )
+        if chapter_edits:
+            errors[chap_num] += len(chapter_edits)
+        bad_segments = out_of_order + [c['index'] for c in chapter_edits] if chapter_edits else out_of_order
         if None not in (chapter_edits, html_rows):
             print(f'making repair file for {tractate.title} {chap_num+1}')
             create_helper_html(html_rows, os.path.join(output_dir, f'chapter_{chap_num + 1}_repair.html'))
-            review_document = create_review_document(mapping_file, gug_text, mehon_text)
-            with open(os.path.join(output_dir, f'{tractate.title}_{chap_num+1}_review.html'), 'w') as fp:
-                fp.write(review_document)
+        review_document = create_review_document(mapping_file, gug_text, mehon_text, bad_segments)
+        with open(os.path.join(output_dir, f'{tractate.title}_{chap_num+1}_review.html'), 'w') as fp:
+            fp.write(review_document)
+
+        errors[chap_num] += len(out_of_order)
+    return errors
 
 
 def zip_review_documents():
@@ -480,7 +526,7 @@ def get_mapping_gaps(mapping, num_words):
     return gaps
 
 
-def create_review_document(mapping_file, comment_segments, base_text_word_list) -> str:
+def create_review_document(mapping_file, comment_segments, base_text_word_list, error_list) -> str:
     """
     For each segment, place words from mapping next to segment. In case of a gap, leave empty (we have map-repair for
     that).
@@ -498,14 +544,18 @@ def create_review_document(mapping_file, comment_segments, base_text_word_list) 
         print(f'segments don\'t match mapping length in {mapping_file}')
 
     table_rows = []
+    error_set = set(error_list)
     for map_index, pair in enumerate(mapping):
         start_word, end_word = pair
         end_word += 1
         base_words = '' if -1 in pair else ' '.join(base_text_word_list[start_word:end_word])
         comment_segment = default(comment_segments, map_index)
-        table_rows.append(
-            f'<tr><td>{map_index+1}</td><td>{comment_segment}</td><td>{base_words}</td></tr>'
-        )
+        if map_index in error_set:
+            table_rows.append(f'<tr class="error"><td>{map_index+1}</td><td>{comment_segment}</td><td>{base_words}</td></tr>')
+        else:
+            table_rows.append(
+                f'<tr><td>{map_index+1}</td><td>{comment_segment}</td><td>{base_words}</td></tr>'
+            )
     table_rows = '\n'.join(table_rows)
     return f'''
     <!DOCTYPE html>
@@ -552,12 +602,15 @@ if __name__ == '__main__':
     # sys.exit(0)
     stuff = sefaria_objects.library.get_indexes_in_category('Yerushalmi', full_records=True).array()
     stuff.sort(key=lambda x: x.order)
+    # stuff = [s for s in stuff if s.title == "Jerusalem Talmud Eruvin"]
+    error_dict = {}
     # foo = [s.title == 'Jerusalem Talmud Avodah Zarah' for s in stuff].index(True)
     # create_tractate_mappings(stuff[foo], True)
     # make_noise()
-    #
     for thing in stuff:
-        output_method(thing)
+        error_dict[thing.title] = output_method(thing)
+    with open('code_output/errors.json', 'w') as fp:
+        json.dump(error_dict, fp)
     # with ProcessPoolExecutor(max_workers=9) as executor:
     #     executor.map(output_method, stuff)
     # slack_url = os.environ['SLACK_URL']
@@ -567,6 +620,7 @@ if __name__ == '__main__':
     zip_review_documents()
     import sys
     sys.exit(0)
+
     for item_num, thing in enumerate(stuff, 1):
         print(f'{item_num}/{len(stuff)}')
         create_tractate_mappings(thing, True)
