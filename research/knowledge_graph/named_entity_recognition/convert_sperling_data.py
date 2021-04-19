@@ -657,12 +657,12 @@ if __name__ == "__main__":
     # srsly.write_jsonl(f'{DATA_LOC}/he_training.jsonl', spacy_formatted)
     # display_displacy(f"{DATA_LOC}/he_training.jsonl")
     
-    # convert_to_mentions_file(f"{DATA_LOC}/he_mentions.jsonl", "sperling_mentions.json", only_bonayich_rabbis=True)
-    # convert_mentions_for_alt_version('William Davidson Edition - Vocalized Aramaic', 'sperling_mentions_nikkud.json')
-    # convert_mentions_for_alt_version('William Davidson Edition - Vocalized Punctuated Aramaic', 'sperling_mentions_nikkud_punctuated.json')
-    # convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
+    convert_to_mentions_file(f"{DATA_LOC}/he_mentions.jsonl", "sperling_mentions.json", only_bonayich_rabbis=True)
+    convert_mentions_for_alt_version('William Davidson Edition - Vocalized Aramaic', 'sperling_mentions_nikkud.json')
+    convert_mentions_for_alt_version('William Davidson Edition - Vocalized Punctuated Aramaic', 'sperling_mentions_nikkud_punctuated.json')
+    convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
     
-    # convert_mishnah_and_tosefta_to_mentions("Mishnah ", f"{DATA_LOC}/mishna_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_mishnah.jsonl', "sperling_mentions_mishnah.json", "Torat Emet 357")
-    convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", None, {"Oholot": "Ohalot", "Oktzin": "Uktsin", "Rosh Hashanah": "Rosh HaShanah"})
+    # convert_mishnah_and_tosefta_to_mentions("Mishnah ", f"{DATA_LOC}/mishna_names.csv", f'{DATA_LOC}/he_mentions_mishnah.jsonl', "sperling_mentions_mishnah.json", "Torat Emet 357")
+    # convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", None, {"Oholot": "Ohalot", "Oktzin": "Uktsin", "Rosh Hashanah": "Rosh HaShanah"})
   
     # make_new_alt_titles_file()
