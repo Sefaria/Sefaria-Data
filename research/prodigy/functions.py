@@ -1,7 +1,13 @@
 from typing import Callable, Iterator, List
 
 from spacy.util import ensure_path
-from research.prodigy.db_manager import MongoProdigyDBManager
+
+# for local dev
+# from research.prodigy.db_manager import MongoProdigyDBManager
+
+# for remote dev
+from db_manager import MongoProdigyDBManager
+
 import spacy, re, srsly, json, csv
 from tqdm import tqdm
 from spacy.tokenizer import Tokenizer
