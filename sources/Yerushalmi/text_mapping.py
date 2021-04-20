@@ -67,12 +67,37 @@ class DividedSegments:
     segments = property(get_segments, set_segments)
     words = property(get_words, set_words)
 
-    def realign_mapping(self, map_indices: list) -> dict:
+    def realign_mapping(self, map_indices: list, drop_ooo=False) -> dict:
+        """
+
+        :param map_indices: mapping indices. key 'matches' from `match_text
+        :param drop_ooo: drop Out Of Order indices. If this is true, we will regard indices that are out of order as
+        a miss. For example
+        (0, 4), (10, 14), (5, 9)  -> (0, 4), (-1, -1), (5, 9)
+        :return:
+        """
         new_mapping = {'matches': [], 'match_text': []}
+        if drop_ooo:
+            out_of_order = set(out_of_order_segments(map_indices))
+        else:
+            out_of_order = set()
+
         for segment_number, (segment, division_indices) in enumerate(
                 zip(self._original_segments, self._division_indices)):
             segment_start, segment_end = division_indices
-            first_word, last_word = map_indices[segment_start][0], map_indices[segment_end - 1][1]
+
+            if segment_start in out_of_order:
+                first_word = -1
+            else:
+                first_word = map_indices[segment_start][0]
+
+            if (segment_end - 1) in out_of_order:
+                last_word = -1
+            else:
+                last_word = map_indices[segment_end - 1][1]
+
+            # first_word, last_word = map_indices[segment_start][0], map_indices[segment_end - 1][1]
+
             if last_word <= first_word:  # end must be larger than beginning, otherwise set this to a miss
                 last_word = -1
 
@@ -257,6 +282,13 @@ def out_of_order_segments(mapping):
     return sorted(list(out_of_order))
 
 
+def mark_out_of_order_as_miss(mapping_dict):
+    mapping = mapping_dict['matches']
+    indices = out_of_order_segments(mapping)
+    for item in indices:
+        mapping[item] = (-1, -1)
+
+
 
 def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
     print(tractate.title)
@@ -290,9 +322,13 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
             mapping = match_text(mehon_text, divide.segments, place_all=True, strict_boundaries='text',
                                  place_consecutively=True, daf_skips=3, rashi_skips=3, overall=4)
             mapping['matches'] = [tuple(int(j) for j in i) for i in mapping['matches']]
-            with open(raw_mapping_file, 'w') as fp:
-                json.dump(mapping, fp)
-        fixed_mapping = divide.realign_mapping(mapping['matches'])
+
+        # we want to place the data necessary to bring back the original segments into the file
+        mapping['realignment'] = divide.get_division_indices()
+        with open(raw_mapping_file, 'w') as fp:
+            json.dump(mapping, fp)
+
+        fixed_mapping = divide.realign_mapping(mapping['matches'], True)
         fixed_mapping['matches'] = [tuple(int(j) for j in i) for i in fixed_mapping['matches']]
         with open(mapping_file, 'w') as fp:
             json.dump(fixed_mapping, fp)
@@ -609,6 +645,7 @@ if __name__ == '__main__':
     # make_noise()
     for thing in stuff:
         error_dict[thing.title] = output_method(thing)
+    error_dict['total'] = sum(sum(c) for c in error_dict.values())
     with open('code_output/errors.json', 'w') as fp:
         json.dump(error_dict, fp)
     # with ProcessPoolExecutor(max_workers=9) as executor:
