@@ -1250,5 +1250,37 @@ def convert_normalized_indices_to_unnormalized_indices(normalized_indices, remov
     return unnormalized_indices
 
 
-def word_to_char_index_map(input_string, split_regex=None):
-    pass
+def char_indices_from_word_indices(input_string, word_ranges, split_regex=None):
+    """
+    ***Important***
+    We use regular expression matching to solve this problem. We use the regex \s+ as default. This *should* replicate
+    the behavior of str.split(), but use this with caution. It would be advisable to send the exact regex that was used
+    to split the string in the first place.
+
+    :param input_string: Original string that was split into a word list
+
+    :param word_ranges: list of tuples, where each tuple represents a range of words from the word list.
+    (first_word, last_word) where last_word is the actual index of the last word
+    (the range of words would be word_list[first_word:last_word+1]).
+    This matches the results returned from dibbur_hamtchil_matcher.match_text
+
+    :param split_regex: Regular expression pattern to split. If none is supplied will use r'\s+'. see note above.
+    :return:
+    """
+
+    if not split_regex:
+        split_regex = r'\s+'
+    regex = re.compile(split_regex)
+    split_words = regex.split(input_string)
+    count, word_indices = 0, []
+    for word in split_words:
+        start = count
+        count += len(word)
+        end = count
+        word_indices.append((start, end))
+    removal_map = get_mapping_after_normalization(input_string, lambda x: [(m, '') for m in regex.finditer(x)])
+    normalized_char_indices = []
+    for words in word_ranges:
+        first_word, last_word = words
+        normalized_char_indices.append((word_indices[first_word][0], word_indices[last_word][1]))
+    return convert_normalized_indices_to_unnormalized_indices(normalized_char_indices, removal_map)
