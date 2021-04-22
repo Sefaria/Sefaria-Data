@@ -438,7 +438,7 @@ class AbbrevMatch:
 
 
 class GemaraDaf:
-    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x,prev_matched_results=None,dh_split=None, daf_skips=2, rashi_skips=1, overall_skips=2, lang="he"):
+    def __init__(self,word_list,comments,dh_extraction_method=lambda x: x, prev_matched_results=None,dh_split=None, daf_skips=2, rashi_skips=1, overall_skips=2, lang="he"):
         self.allWords = word_list
         self.matched_words = [False for _ in range(len(self.allWords))]
         self.gemaraText = " ".join(self.allWords)
@@ -1127,7 +1127,7 @@ def GetAllApproximateMatchesWithAbbrev(curDaf, curRashi, startBound, endBound,
 
 
 def GetAllMatches(curDaf, curRashi, startBound, endBound,
-                             word_threshold, char_threshold, daf_skips=2, rashi_skips=1, overall=2,with_num_abbrevs=True, lang="he"):
+                             word_threshold, char_threshold, daf_skips=2, rashi_skips=1, overall=2, with_num_abbrevs=True, lang="he"):
     allMatches = []
     global normalizingFactor
 
@@ -1225,7 +1225,19 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
     return allMatches
 
 
-def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), min_dh_len=0, max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
+def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), min_dh_len=1, max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
+    '''
+    This function's strength is that it doesn't need a DH tokonizer/ or DH words to search for. It searches for them (from beggening of comment text) to find the best option of DH to fit the base text. and returns a match obj (if found)
+    :param base_text:
+    :param comment:
+    :param tokenizer:
+    :param min_dh_len: look for a dh that is at least this length
+    :param max_dh_len: look for a dh (from the beginning of the textChunk at least this length)
+    :param word_threshold:
+    :param char_threshold:
+    :return: match obj
+    '''
+
     if isinstance(base_text, list):
         base_word_list = base_text
     else:
@@ -1261,10 +1273,39 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), m
             temp_best_match = min(matches, key=lambda x: x.score)
             if best_match is None or temp_best_match.score < best_match.score:
                 best_match = temp_best_match
-        else:
-            break
 
     return best_match
+
+def best_reflinks_for_maximum_dh(base_text, comment_text, **kwargs):
+    '''
+    Using get_maximum_dh this function will find the best match segment ref to the comment without an explicit comment DH
+    :param base_text: Ref: Ref obj of the base text
+    :param comment: Ref: Ref object of the comment that we want to match under the assumption that the few first words of the comment match words in one of the segments of the base_text
+    :return: Ref, Ref, string, match: a segment Ref from the base_text or None, comment ref, best dh match words, match obj
+    '''
+    #todo: where do we test that the texts given are infact good Refs
+    final_link_matchs = []
+    if not isinstance(comment_text, Ref):
+        comment_text = Ref(comment_text)
+    if comment_text.is_segment_level():
+        comment_text = [comment_text]
+    else:
+        comment_text = comment_text.all_segment_refs()
+
+    if not isinstance(base_text, Ref):
+        base_text = Ref(base_text)
+
+    link_options = []
+    for comment in comment_text:
+        for base_seg in base_text.all_segment_refs():
+            reflink_match = get_maximum_dh(TextChunk(base_seg, lang='he'), TextChunk(comment, lang='he'), **kwargs)
+            if reflink_match:
+                link_options.append([base_seg, comment, reflink_match.textMatched, reflink_match])
+        final_link_match = min([match for match in link_options], default=None,key=lambda m: m[3].score)
+        if final_link_match:
+            final_link_matchs.append(final_link_match)
+        link_options = []
+    return final_link_matchs
 
 
 def filter_matches_out_of_order(matched_words, temprashimatch):
