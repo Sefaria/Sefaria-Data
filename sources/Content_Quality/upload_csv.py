@@ -4,21 +4,25 @@ import csv
 import sys
 from sources.functions import *
 new_file = ""
-files = ["Yerushalmi Shekalim Commentaries - Yerushalmi .csv"]
+import os
+import csv
+files = [f for f in os.listdir(".") if f.endswith(".csv")]
 for new_file in files:
-    with open(new_file) as f:
-        reader = list(csv.reader(f))
-        title = reader[0][1]
-        vtitle = reader[1][1]
-        lang = reader[2][1]
-        vsource = reader[3][1]
-        text = {}
-        for row in reader[5:]:
-            ref, comm = row
-            print(ref)
-            tc = TextChunk(Ref(ref), lang=lang, vtitle=vtitle)
-            tc.text = comm
-            tc.save(force_save=True)
+    # if "Moed" not in new_file or "Rosh" not in new_file:
+    #     continue
+    print(new_file)
+with open("Leshon_Chakhamim") as f:
+    reader = list(csv.reader(f))
+    title = reader[0][1]
+    vtitle = reader[1][1]
+    lang = reader[2][1]
+    vsource = reader[3][1]
+    text = {}
+    for row in reader[5:]:
+        ref, comm = row
+        tc = TextChunk(Ref(ref), lang=lang, vtitle=vtitle)
+        tc.text = comm
+        tc.save(force_save=True)
     #     chapter, segment = ref.split()[-1].split(":")
     #     chapter = int(chapter)
     #     segment = int(segment)

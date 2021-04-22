@@ -4,16 +4,18 @@ import copy
 ftnotes = {}
 found_ftnotes = {}
 version = """Index Title,{}
-    Version Title,"Talmud Bavli. German. Lazarus Goldschmidt. 1929 -- footnotes"
-    Language,en
-    Version Source,https://www.sefaria.org
-    Version Notes,"""
+Version Title,"Talmud Bavli. German. Lazarus Goldschmidt. 1929 -- footnotes"
+Language,en
+Version Source,https://www.sefaria.org
+Version Notes,"""
 if __name__ == "__main__":
     probs = []
+    german_blank = []
+    fn_probs = []
     transitions = {}
-    lookfor = "Beitzah"
+    lookfor = "Berakhot"
     for f in os.listdir("./just ftnotes"):
-        if f.endswith("txt"):
+        if f.endswith("txt") and lookfor in f:
             title = f.replace(" just ftnotes.txt", "")
             transitions[title] = {}
             prev_ftnote_num = 0
@@ -42,10 +44,6 @@ if __name__ == "__main__":
                         found_ftnotes[sec_ref][perek-1].append(found_ftnotes[sec_ref][perek][0])
                         found_ftnotes[sec_ref][perek] = []
                         perek -= 1
-                    # else:
-                    #     print(seg_ref)
-                    #     print("SKIP BACK")
-                    #     print("{} before {}".format(ftnote_num, found_skip))
                     found_skip = -1
                 else:
                     found_skip = -1
@@ -77,6 +75,9 @@ if __name__ == "__main__":
     ftnotes = copy.deepcopy(new_found_ftnotes)
     for f in os.listdir("3 - aligned txt files 2"):
             title = f.split("_")[1]
+            if title != "Berakhot":
+                continue
+            print(title)
             text = {}
             perek = 1
             curr_segment = 0
@@ -90,21 +91,24 @@ if __name__ == "__main__":
                 for line in open("3 - aligned txt files 2/"+f, 'r'):
                     ref, comm = line.split("\t", 1)
                     ref = ref.replace(chr(65279), "")
+                    if ref.endswith(","):
+                        ref = ref[:-1]
                     no_hadran = ("הַדְרָן" not in Ref(ref).text('he').text and "הָדְרָן" not in Ref(ref).text('he').text and "הדרן" not in Ref(ref).text('he').text and "הֲדַרַן" not in Ref(ref).text('he').text)
                     if comm.strip() == "" and no_hadran:
-                        print("Blank German Segment Ref {}".format(ref))
-                        print(Ref(ref).text('he').text)
-                        print()
+                        german_blank.append("Blank German Segment Ref {}\n{}".format(ref, Ref(ref).text('he').text))
                     if Ref(ref).section_ref().normal() not in text:
                         text[Ref(ref).section_ref().normal()] = []
                     sec_ref = Ref(ref).index.title
                     fns = re.findall("\$fn\d+", comm)
                     rows.append([ref, comm])
 
-
                 found_skip = 0
                 for i, row in enumerate(rows):
                     ref, comm = row
+                    if comm.strip() == "":
+                        next_ref = Ref(ref).next_segment_ref()
+                        if next_ref is None or next_ref.section_ref() != Ref(ref).section_ref():
+                            continue
                     fns = re.findall("\$fn\d+", comm)
                     for fn in fns:
                         num = int(fn.replace("$fn", ""))
@@ -115,28 +119,36 @@ if __name__ == "__main__":
 
                         before_loop = curr_segment
                         while curr_segment < len(ftnotes[sec_ref][perek]) and not ftnotes[sec_ref][perek][curr_segment].startswith("{},".format(num)):
-                            #print("not finding footnote in {} {}: {}".format(sec_ref, perek, num))
                             curr_segment += 1
                         if curr_segment >= len(ftnotes[sec_ref][perek]):
                             curr_segment = before_loop
                         else:
                             ftnotes[sec_ref][perek][curr_segment] = ftnotes[sec_ref][perek][curr_segment].replace("{},".format(num), "")
-                            comm = comm.replace(fn, ftnotes[sec_ref][perek][curr_segment])
+                            assert len(ftnotes[sec_ref][perek][curr_segment].split("<i>")) in [1, 2]
+                            if len(ftnotes[sec_ref][perek][curr_segment].split("<i>")) == 2:
+                                ftnotes[sec_ref][perek][curr_segment] += "</i>"
+                            comm = comm.replace(fn, "<sup>{}</sup><i class='footnote'>{}</i>".format(num, ftnotes[sec_ref][perek][curr_segment]))
                             ftnotes[sec_ref][perek][curr_segment] = ""
                             prev_ftnote_num = num
                         #curr_segment += 1
                     text[Ref(ref).section_ref().normal()].append(comm)
                     if "$fn" in comm:
-                        print("$fn in {}".format(ref))
+                        fn_probs.append("$fn in {}".format(ref))
                     writer.writerow([ref, comm])
 
             if len(text) != len(library.get_index(title).all_section_refs()):
-                print("Incorrect # of dappim in {}.  Should be {} but is {}".format(title, len(library.get_index(title).all_section_refs()),
+                probs.append("Incorrect # of dappim in {}.  Should be {} but is {}".format(title, len(library.get_index(title).all_section_refs()),
                                                                                       len(text)))
             for sec in text:
                 if len(Ref(sec).text('en').text) != len(text[sec]):
-                    print("Incorrect # of refs in {}.  Should be {} but is {}".format(sec, len(Ref(sec).text('en').text),
+                    probs.append("Incorrect # of refs in {}.  Should be {} but is {}".format(sec, len(Ref(sec).text('en').text),
                                                                                           len(text[sec])))
 
-    for p in list(probs):
+    for p in probs:
+        print(p)
+
+    for p in fn_probs:
+        print(p)
+
+    for p in german_blank:
         print(p)

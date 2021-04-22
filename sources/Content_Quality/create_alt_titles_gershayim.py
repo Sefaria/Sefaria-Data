@@ -1,7 +1,6 @@
 import django
 django.setup()
 from sefaria.model import *
-from sefaria.helper.text import get_other_quote_titles
 count = 0
 changed = []
 i = library.get_index("Rashi on Bereshit Rabbah")
@@ -18,7 +17,7 @@ for i in IndexSet({"is_cited": True}):
 
     for title in index_titles:
         title = title.replace('״', '"').replace('”', '"')
-        new_titles = [title] + get_other_quote_titles(title)
+        new_titles = [title] + Index.get_title_quotations_variants(title)
         for new_title in new_titles:
             if new_title not in index_titles:
                 i.nodes.add_title(new_title, 'he')
@@ -32,21 +31,18 @@ for i in IndexSet({"is_cited": True}):
             node_titles = node.get_titles('he')
             for node_title in node_titles:
                 node_title = node_title.replace('״', '"').replace('”', '"')
-                new_titles = [node_title] + get_other_quote_titles(node_title)
+                new_titles = [node_title] + Index.get_title_quotations_variants(node_title)
                 for new_title in new_titles:
                     if new_title not in node_titles:
                         change = True
                         node.add_title(new_title, 'he')
     count += 1
-    print(count)
+    if count % 100 == 0:
+        print(count)
 
     if change == True:
         changed.append(i.title)
-        # try:
         i.save()
-        # except Exception as e:
-        #     print("!!!!!!")
-        #     print(e)
 
 print("***********")
 print(changed)
