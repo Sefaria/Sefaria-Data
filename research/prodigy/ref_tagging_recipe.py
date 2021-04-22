@@ -4,8 +4,17 @@ from spacy.lang.en import English
 from spacy.lang.he import Hebrew
 from spacy.util import minibatch, compounding
 from prodigy.components.sorters import prefer_uncertain
-from prodigy.components.preprocess import add_tokens, split_sentences
-from db_manager import MongoProdigyDBManager
+from prodigy.components.preprocess import add_tokens
+
+# for local dev
+try:
+    from research.prodigy.db_manager import MongoProdigyDBManager
+    from research.prodigy.functions import custom_tokenizer_factory
+except ImportError:
+    # for remote dev
+    from db_manager import MongoProdigyDBManager
+    from functions import custom_tokenizer_factory
+
 from pathlib import Path
 
 # LABELS = ["פשוט", "שם", "דיבור המתחיל"]
@@ -31,7 +40,7 @@ def test_tokenizer(nlp):
         print(t)
 
 def import_file_to_collection(input_file, collection, db_host='localhost', db_port=27017):
-    my_db = MongoProdigyDBManager(db_host, db_port)
+    my_db = MongoProdigyDBManager('blah', db_host, db_port)
     stream = srsly.read_jsonl(input_file)
     getattr(my_db.db, collection).delete_many({})
     getattr(my_db.db, collection).insert_many(stream)
@@ -43,12 +52,8 @@ def load_model(model_dir):
     except OSError:
         model_exists = False
         nlp = Hebrew()
-    if "sentencizer" not in nlp.pipe_names:
-        sentencizer = nlp.create_pipe("sentencizer")
-        nlp.add_pipe(sentencizer)
     if "ner" not in nlp.pipe_names:
-        ner = nlp.create_pipe("ner")
-        nlp.add_pipe(ner, last=True)
+        nlp.add_pipe("ner", last=True)
     else:
         ner = nlp.get_pipe("ner")
     for label in LABELS:
@@ -92,6 +97,15 @@ def score_stream(nlp, stream):
         docs = nlp(example['text'])
         score = ner.predict(docs)
         yield (score[0], example)
+
+def train_on_current_output(output_collection='examples2_output'):
+    model_dir = '/prodigy-disk/ref_tagging_model_output'
+    nlp, model_exists = load_model(model_dir)
+    my_db = MongoProdigyDBManager(output_collection, 'mongo', 27017)
+    prev_annotations = list(my_db.output_collection.find({}, {"_id": 0}))
+    print(len(prev_annotations))
+    losses = train_model(nlp, prev_annotations, model_dir)
+    print(losses.get('ner', None))
 
 @prodigy.recipe(
     "ref-tagging-recipe",
@@ -145,7 +159,7 @@ def my_custom_recipe(dataset, input_collection, output_collection, model_dir, vi
 
 if __name__ == "__main__":
     # test_tokenizer(nlp)
-    import_file_to_collection('research/prodigy/data/test_input.jsonl', 'test_input')
+    import_file_to_collection('research/prodigy/data/test_input.jsonl', 'examples2_input')
 """
 command to run
 
@@ -153,7 +167,7 @@ cd research/prodigy
 prodigy ref-tagging-recipe ref_tagging test_input models/ref_tagging --view-id ner_manual -db-host localhost -db-port 27017 -F ref_tagging_recipe.py
 
 command to run on examples1_input
-prodigy ref-tagging-recipe ref_tagging2 examples1_input output/ref_tagging_cpu/model-last --view-id ner_manual -db-host localhost -db-port 27017 -F ref_tagging_recipe.py
+prodigy ref-tagging-recipe ref_tagging2 examples2_input examples3_output ./research/prodigy/output/ref_tagging_cpu/model-last --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/ref_tagging_recipe.py
 
 """
 

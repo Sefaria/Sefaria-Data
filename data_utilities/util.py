@@ -4,12 +4,17 @@ import sys
 import re
 import math
 import codecs
+from bisect import bisect_right
+from typing import Callable
 from collections import defaultdict
 from xml.etree import ElementTree as ET
 from urllib.error import HTTPError, URLError
 import json
 import urllib.request, urllib.error, urllib.parse
 from functools import reduce
+
+from typing import List
+
 try:
     p = os.path.dirname(os.path.abspath(__file__))+"/sources"
     from sources.local_settings import *
@@ -118,147 +123,6 @@ num_to_char_dict = {1: "א",
 21: "ש",
 22: "ת",
 }
-
-class Util:
-    def __init__(self, output_file, fail):
-        self.output_file = output_file
-        self.fail = fail
-
-    def in_order_multiple_segments(self, line, curr_num, increment_by):
-         if len(line) > 0 and line[0] == ' ':
-             line = line[1:]
-         if len(line) > 0 and line[len(line)-1] == ' ':
-             line = line[:-1]
-         if len(line.split(" "))>1:
-             all = line.split(" ")
-             num_list = []
-             for i in range(len(all)):
-                 num_list.append(getGematria(all[i]))
-             num_list = sorted(num_list)
-             for poss_num in num_list:
-                 poss_num = fixChetHay(poss_num, curr_num)
-                 if poss_num < curr_num:
-                     return -1
-                 else:
-                     curr_num = poss_num
-         return curr_num
-
-    def fixChetHay(self, poss_num, curr_num):
-        if poss_num == 8 and curr_num == 4:
-            return 5
-        elif poss_num == 5 and curr_num == 7:
-            return 8
-        else:
-            return poss_num
-
-    def in_order_caller(self, reg_exp_tag, file, reg_exp_reset):
-        ##open file, create an array based on reg_exp,
-        ##when hit reset_tag, call in_order
-        in_order_array = []
-        for line in open(file):
-            reset = re.findall(reg_exp_reset, line)
-            if len(reset) > 0:
-                in_order(in_order_array, reg_exp_tag)
-                in_order_array = []
-            find_all = re.findall(reg_exp_tag, line)
-            for each_one in find_all:
-                in_order_array.append(each_one)
-        in_order(in_order_array)
-
-
-
-
-    def in_order(list, multiple_segments=False, dont_count=[], increment_by=1):
-         poss_num = 0
-         curr_num = 0
-         perfect = True
-         for line in list:
-             for word in dont_count:
-                line = line.replace(word, "")
-             if multiple_segments == True:
-                 curr_num = in_order_multiple_segments(line, curr_num, increment_by)
-             else:
-                 poss_num = getGematria(line)
-                 poss_num = fixChetHay(poss_num, curr_num)
-                 if increment_by > 0:
-                     if poss_num - curr_num != increment_by:
-                         perfect = False
-                 if poss_num < curr_num:
-                     perfect = False
-                 curr_num = poss_num
-                 if perfect == False:
-                     self.fail()
-                 prev_line = line
-
-    def getHebrewTitle(sefer):
-        sefer_url = SEFARIA_SERVER+'api/index/'+sefer.replace(" ","_")
-        req = urllib.request.Request(sefer_url)
-        res = urllib.request.urlopen(req)
-        data = json.load(res)
-        return data['heTitle']
-
-    def convertDictToArray(dict, empty=[]):
-        array = []
-        count = 1
-        text_array = []
-        sorted_keys = sorted(dict.keys())
-        for key in sorted_keys:
-            if count == key:
-                array.append(dict[key])
-                count+=1
-            else:
-                diff = key - count
-                while(diff>0):
-                    array.append(empty)
-                    diff-=1
-                array.append(dict[key])
-                count = key+1
-        return array
-
-
-
-    def strip_nekud(word):
-        data = word.replace("\u05B0", "")
-        data = data.replace("\u05B1", "")
-        data = data.replace("\u05B2", "")
-        data = data.replace("\u05B3", "")
-        data = data.replace("\u05B4", "")
-        data = data.replace("\u05B5", "")
-        data = data.replace("\u05B6", "")
-        data = data.replace("\u05B7", "")
-        data = data.replace("\u05B8", "")
-        data = data.replace("\u05B9", "")
-        data = data.replace("\u05BB", "")
-        data = data.replace("\u05BC", "")
-        data = data.replace("\u05BD", "")
-        data = data.replace("\u05BF", "")
-        data = data.replace("\u05C1", "")
-        data = data.replace("\u05C2", "")
-        data = data.replace("\u05C3", "")
-        data = data.replace("\u05C4", "")
-        return data
-
-    def wordHasNekudot(word):
-        data = word.decode('utf-8')
-        data = data.replace("\u05B0", "")
-        data = data.replace("\u05B1", "")
-        data = data.replace("\u05B2", "")
-        data = data.replace("\u05B3", "")
-        data = data.replace("\u05B4", "")
-        data = data.replace("\u05B5", "")
-        data = data.replace("\u05B6", "")
-        data = data.replace("\u05B7", "")
-        data = data.replace("\u05B8", "")
-        data = data.replace("\u05B9", "")
-        data = data.replace("\u05BB", "")
-        data = data.replace("\u05BC", "")
-        data = data.replace("\u05BD", "")
-        data = data.replace("\u05BF", "")
-        data = data.replace("\u05C1", "")
-        data = data.replace("\u05C2", "")
-        data = data.replace("\u05C3", "")
-        data = data.replace("\u05C4", "")
-        return data != word.decode('utf-8')
 
 
 def isGematria(txt):
@@ -1378,7 +1242,7 @@ def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list
     return removal_map
 
 def convert_normalized_indices_to_unnormalized_indices(normalized_indices, removal_map):
-    from bisect import bisect_right
+
     removal_keys = sorted(removal_map.keys())
     unnormalized_indices = []
     for start, end in normalized_indices:
@@ -1389,3 +1253,123 @@ def convert_normalized_indices_to_unnormalized_indices(normalized_indices, remov
         unnorm_end = end if unnorm_end_index < 0 else end + removal_map[removal_keys[unnorm_end_index]]
         unnormalized_indices += [(unnorm_start, unnorm_end)]
     return unnormalized_indices
+
+
+def char_indices_from_word_indices(input_string, word_ranges, split_regex=None):
+    """
+    ***Important***
+    We use regular expression matching to solve this problem. We use the regex \s+ as default. This *should* replicate
+    the behavior of str.split(), but use this with caution. It would be advisable to send the exact regex that was used
+    to split the string in the first place.
+
+    :param input_string: Original string that was split into a word list
+
+    :param word_ranges: list of tuples, where each tuple represents a range of words from the word list.
+    (first_word, last_word) where last_word is the actual index of the last word
+    (the range of words would be word_list[first_word:last_word+1]).
+    This matches the results returned from dibbur_hamtchil_matcher.match_text
+
+    :param split_regex: Regular expression pattern to split. If none is supplied will use r'\s+'. see note above.
+    :return:
+    """
+
+    if not split_regex:
+        split_regex = r'\s+'
+    regex = re.compile(split_regex)
+    split_words = regex.split(input_string)
+    count, word_indices = 0, []
+    for word in split_words:
+        start = count
+        count += len(word)
+        end = count
+        word_indices.append((start, end))
+    removal_map = get_mapping_after_normalization(input_string, lambda x: [(m, '') for m in regex.finditer(x)])
+    normalized_char_indices = []
+    for words in word_ranges:
+        first_word, last_word = words
+        normalized_char_indices.append((word_indices[first_word][0], word_indices[last_word][1]))
+    return convert_normalized_indices_to_unnormalized_indices(normalized_char_indices, removal_map)
+
+
+class TextSanitizer:
+    """
+    This class is designed so we can easily move from a list of segments to the flat list of words necessary
+    for use in move draft text. It is primarily helpful when we need to keep track of text before and after edits were
+    made to said text that were necessary for improving text matching.
+    """
+    def __init__(self, section: List[str], divider_pattern: str):
+        self._original_segments = tuple(section)
+        self._sanitized_segments = None
+        self.sanitizer = None
+        self._dividing_expression = divider_pattern
+
+        # these variables hold the indices of the first word for each segment
+        self._sanitzed_word_indices = None
+        self._unsanitized_word_indices = None
+        self._set_unsanitzed_word_indices()
+
+    def get_original_segments(self):
+        return self._original_segments
+
+    def set_sanitizer(self, sanitizer: Callable[[str], str]):
+        self.sanitizer = sanitizer
+
+    def sanitize(self):
+        if not self.sanitizer:
+            raise AttributeError("no sanitization method set for this instance")
+        self._sanitized_segments = tuple(self.sanitizer(x) for x in self._original_segments)
+        self._set_sanitized_word_indices()
+
+    def get_sanitized_segments(self):
+        return self._sanitized_segments
+
+    def _set_unsanitzed_word_indices(self):
+        self._unsanitized_word_indices = self.get_segment_start_indices(
+            self._original_segments, self._dividing_expression)
+
+    def _set_sanitized_word_indices(self):
+        self._sanitzed_word_indices = self.get_segment_start_indices(
+            self._sanitized_segments, self._dividing_expression
+        )
+
+    def set_dividing_expression(self, regex_pattern: str):
+        self._dividing_expression = regex_pattern
+
+    @staticmethod
+    def make_word_list(section, dividing_expression):
+        word_list = []
+        for segment in section:
+            segment_list = re.split(dividing_expression, segment)
+            word_list.extend(segment_list)
+        return word_list
+
+    def get_sanitized_word_list(self):
+        if not self._sanitized_segments:
+            raise AttributeError("Segments were not sanitized")
+        return self.make_word_list(self._sanitized_segments, self._dividing_expression)
+
+    def get_unsanitized_word_list(self):
+        return self.make_word_list(self._original_segments, self._dividing_expression)
+
+    @staticmethod
+    def get_segment_start_indices(segment_list, divider_pattern):
+        segment_start_indices = []
+        word_count = 0
+        for segment in segment_list:
+            segment_start_indices.append(word_count)
+            word_count += len(re.split(divider_pattern, segment))
+
+        return segment_start_indices
+
+    @staticmethod
+    def get_segment_index_from_word_index(word_index, start_segment_list):
+        return bisect_right(start_segment_list, word_index) - 1
+
+    def check_sanitized_index(self, word_index: int):
+        """
+        given a word index from a sanitized word list, find what segment it originated from
+        """
+        return self.get_segment_index_from_word_index(word_index, self._sanitzed_word_indices)
+
+    def check_unsanitized_word_index(self, word_index:int):
+        return self.get_segment_index_from_word_index(word_index, self._unsanitized_word_indices)
