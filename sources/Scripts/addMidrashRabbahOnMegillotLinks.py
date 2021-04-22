@@ -168,7 +168,7 @@ if __name__ == '__main__':
     # Eichah_query = {"generated_by": {"$regex": "midrash_rabbah.*"}, "$and": [{"refs": {"$regex":"Eichah.*"}}]}
     # post_links(Eichah_query)
     # Ref_base, Ref_comm, dh, match
-    final_link_matches = best_reflinks_for_maximum_dh('Lamentations 2', 'Eichah Rabbah.2', tokenizer=tok, max_dh_len=7)
+    final_link_matches = best_reflinks_for_maximum_dh(Ref('Lamentations 1'), Ref('Eichah Rabbah.1'), tokenizer=tok, max_dh_len=7)
     # print(dh)
     # dh_length = len(dh.split())
     # comment_text = TextChunk(Ref_comm, lang="he").text

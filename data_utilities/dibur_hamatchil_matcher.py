@@ -1276,35 +1276,24 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), m
 
     return best_match
 
+
 def best_reflinks_for_maximum_dh(base_text, comment_text, **kwargs):
     '''
     Using get_maximum_dh this function will find the best match segment ref to the comment without an explicit comment DH
     :param base_text: Ref: Ref obj of the base text
     :param comment: Ref: Ref object of the comment that we want to match under the assumption that the few first words of the comment match words in one of the segments of the base_text
-    :return: Ref, Ref, string, match: a segment Ref from the base_text or None, comment ref, best dh match words, match obj
+    :return: list of tuples (Ref, Ref, string, match): a list of tuples for the comment_refs that a base_ref was found to a match according to words form the begginig of the comment. each item in the list containes [base_ref, comment ref, best dh match words, match obj]
     '''
-    #todo: where do we test that the texts given are infact good Refs
     final_link_matchs = []
-    if not isinstance(comment_text, Ref):
-        comment_text = Ref(comment_text)
-    if comment_text.is_segment_level():
-        comment_text = [comment_text]
-    else:
-        comment_text = comment_text.all_segment_refs()
-
-    if not isinstance(base_text, Ref):
-        base_text = Ref(base_text)
-
-    link_options = []
-    for comment in comment_text:
+    for comment in comment_text.all_segment_refs():
+        link_options = []
         for base_seg in base_text.all_segment_refs():
             reflink_match = get_maximum_dh(TextChunk(base_seg, lang='he'), TextChunk(comment, lang='he'), **kwargs)
             if reflink_match:
                 link_options.append([base_seg, comment, reflink_match.textMatched, reflink_match])
-        final_link_match = min([match for match in link_options], default=None,key=lambda m: m[3].score)
+        final_link_match = min(link_options, default=None, key=lambda m: m[-1].score)
         if final_link_match:
             final_link_matchs.append(final_link_match)
-        link_options = []
     return final_link_matchs
 
 
