@@ -35,13 +35,18 @@ from sefaria.s3 import HostedFile
 from sefaria.system.exceptions import InputError
 from sefaria.datatype.jagged_array import JaggedTextArray
 
+LOGIN_PATH=os.environ.get('LOGIN_PATH', 'login_details.json')
+if not os.path.exists(LOGIN_PATH):
+    print('path to login details does not exist - exiting')
+    sys.exit(1)
+
 
 class MidreshetCursor(object):
     __metaclass__ = Singleton
 
     def __init__(self):
         try:
-            with open('login_details.json') as fp:
+            with open(LOGIN_PATH) as fp:
                 login_details = json.load(fp)
         except IOError as e:
             print("Please save your username and password as json in file login_details.json")

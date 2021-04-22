@@ -224,3 +224,12 @@ class TestNormalizationMapping:
         # prefix
         unnorm_s, unnorm_e = util.convert_normalized_indices_to_unnormalized_indices([(norm_inds[0], norm_inds[0])], rm)[0]
         assert text[unnorm_s:unnorm_e] == ""
+
+    def test_word_to_char(self):
+        test_string = 'some words go here\n\nhello world'
+        words = ['go', 'here', 'hello']
+        word_indices = (2, 4)
+        result = util.char_indices_from_word_indices(test_string, [word_indices])[0]
+        start, end = result
+        assert test_string[start:end] == 'go here\n\nhello'
+        assert test_string[start:end].split() == words

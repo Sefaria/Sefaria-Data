@@ -1267,18 +1267,19 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), m
     return best_match
 
 
-def filter_matches_out_of_order(matched_words, temprashimatch):
-    num_unmatched = temprashimatch.endWord - temprashimatch.startWord + 1
+def get_percent_word_overlap(matched_words, temprashimatch):
+    # higher percent word overlap is worse
+    if (temprashimatch.endWord - temprashimatch.startWord + 1) == 0:
+        return 1.0
+    num_overlap = 0
     for imatchedword in range(temprashimatch.startWord, temprashimatch.endWord + 1):
         if matched_words[imatchedword]:
-            num_unmatched -= 1
+            num_overlap += 1
 
-    if (temprashimatch.endWord - temprashimatch.startWord + 1) == 0:
-        return False
-    percent_matched = 1.0 * num_unmatched / (temprashimatch.endWord - temprashimatch.startWord + 1)
+    percent_overlap = num_overlap / (temprashimatch.endWord - temprashimatch.startWord + 1)
     #if percent_matched <= 0.3:
     #    print "DELETING {}".format(percent_matched)
-    return percent_matched > 0.3
+    return percent_overlap
 
 
 def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi, nextMatchedRashi, startbound, endbound,
@@ -1335,7 +1336,7 @@ def RecalculateDisambiguities(allRashis, rashisByDisambiguity, prevMatchedRashi,
 def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,word_threshold=0.27,char_threshold=0.2,
                prev_matched_results=None,with_abbrev_matches=False,with_num_abbrevs=True,
                boundaryFlexibility=0,dh_split=None,rashi_filter=None,
-               strict_boundaries=None, place_all=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he"):
+               strict_boundaries=None, place_all=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he", max_overlap_percent=0.7):
     """
     base_text: list - list of words
     comments: list - list of comment strings
@@ -1355,6 +1356,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     daf_skips: int, max number of words to skip in base text
     rashi_skips: int, max number of words to skip in commentary
     overall: int, max number of overall skips, in both base and commentary
+    max_overlap_percent: float between 0 and 1. after matching, the top match is score based on how many words overlap with other matches. if the top match exceeds `max_overlap_percent`, we will consider swapping it for a lower match that is within a score of 10. set to 1 to avoid this logic.
 
     :returns: dict
     {"matches": list of (start,end) indexes for each comment. indexes correspond to words matched in base_text,
@@ -1415,7 +1417,7 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
                         tobesorted.append(temp_rashimatchi)
 
                 # sort those top rashis by closeness to previous top rashi match end word
-                tobesorted.sort(key=lambda x: x.startWord if icurru == 0 or len(rashisByDisambiguity[icurru-1].rashimatches) == 0 else abs(rashisByDisambiguity[icurru-1].rashimatches[0].endWord - x.startWord))
+                tobesorted.sort(key=lambda x: x.startWord if curru.place == 0 or len(rashisByDisambiguity[icurru-1].rashimatches) == 0 else abs(rashisByDisambiguity[icurru-1].rashimatches[0].endWord - x.startWord))
                 # now add the rest
                 for temp_rashimatchi in curru.rashimatches[len(tobesorted):]:
                     tobesorted.append(temp_rashimatchi)
@@ -1576,10 +1578,13 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
 
 
             #find first rashimatch which doesn't overlap too many words in already matched gemara
-            if len(curru.rashimatches) > 0 and not filter_matches_out_of_order(curDaf.matched_words, curru.rashimatches[0]):
-                if len(curru.rashimatches) > 1 and abs(curru.rashimatches[0].score - curru.rashimatches[1].score) < 10:
-                    #only delete if you know the one after is close in score
-                    del curru.rashimatches[0]
+            if len(curru.rashimatches) > 1:
+                overlap_scores = [get_percent_word_overlap(curDaf.matched_words, temprashimatch) for temprashimatch in filter(lambda x: abs(x.score - curru.rashimatches[0].score) < 10, curru.rashimatches)]
+                if overlap_scores[0] >= max_overlap_percent:
+                    for iscore, score in enumerate(overlap_scores):
+                        if score < max_overlap_percent:
+                            curru.rashimatches = curru.rashimatches[iscore:]  # this match is within 10 of the best match and has an acceptable overlap percentage
+                            break
 
             if len(curru.rashimatches) == 0:
                 if curru in rashisByDisambiguity:
@@ -1784,7 +1789,7 @@ def set_ranges(results, base_text):
 
 def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
               with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=None, place_all=False,
-              create_ranges=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he"):
+              create_ranges=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he", max_overlap_percent=0.7):
     """
     base_text: TextChunk
     comments: TextChunk or list of comment strings
@@ -1806,6 +1811,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     rashi_skips: int, max number of words to skip in commentary
     overall: int, max number of overall skips, in both base and commentary
     lang: language of text you are matching. either "he" or "en"
+    max_overlap_percent: float between 0 and 1. after matching, the top match is score based on how many words overlap with other matches. if the top match exceeds `max_overlap_percent`, we will consider swapping it for a lower match that is within a score of 10. set to 1 to avoid this logic.
 
     :returns: dict
     {"matches": list of base_refs. each element corresponds to each comment in comments,
@@ -1844,7 +1850,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     matched = match_text(bas_word_list,comment_list,dh_extract_method,verbose,word_threshold,char_threshold,prev_matched_results=prev_matched_results,
                          with_abbrev_matches=with_abbrev_matches,with_num_abbrevs=with_num_abbrevs,boundaryFlexibility=boundaryFlexibility,
                          dh_split=dh_split,rashi_filter=rashi_filter,strict_boundaries=strict_boundaries,
-                         place_all=place_all, place_consecutively=place_consecutively, daf_skips=daf_skips, rashi_skips=rashi_skips, overall=overall, lang=lang)
+                         place_all=place_all, place_consecutively=place_consecutively, daf_skips=daf_skips, rashi_skips=rashi_skips, overall=overall, lang=lang, max_overlap_percent=max_overlap_percent)
     start_end_map = matched['matches']
     text_matches = matched['match_text']
     if with_abbrev_matches:

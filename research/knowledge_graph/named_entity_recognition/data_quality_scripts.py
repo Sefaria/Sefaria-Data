@@ -611,9 +611,18 @@ def save_mike_noah_differences_csv():
 
     def get_sets(a_not_bf, b_not_af):
         with open(a_not_bf, "r") as fin:
-            a_not_b = {(a['start'], a['end'], a['mention'], a['ref']) for a in json.load(fin)}
+            # doing re.sub to get rid of trailing punctuation which seems to exist in sperling's mentions. not sure how it got there.
+            a_not_b = set()
+            for a in json.load(fin):
+                mention = re.sub(r'[\.,:]+$', '', a['mention'])
+                end = a['end'] - (len(a['mention']) - len(mention))
+                a_not_b.add((a['start'], end, mention, a['ref']))
         with open(b_not_af, "r") as fin:
-            b_not_a = {(a['start'], a['end'], a['mention'], a['ref']) for a in json.load(fin)}
+            b_not_a = set()
+            for a in json.load(fin):
+                mention = re.sub(r'[\.,:]+$', '', a['mention'])
+                end = a['end'] - (len(a['mention']) - len(mention))
+                b_not_a.add((a['start'], end, mention, a['ref']))
         return a_not_b.difference(b_not_a), b_not_a.difference(a_not_b)
 
     a_not_b, b_not_a = get_sets("/home/nss/sefaria/datasets/ner/sefaria/a_not_b.json", "/home/nss/sefaria/datasets/ner/sefaria/b_not_a.json")
