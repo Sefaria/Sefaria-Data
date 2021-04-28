@@ -4,12 +4,17 @@ import sys
 import re
 import math
 import codecs
+from bisect import bisect_right
+from typing import Callable
 from collections import defaultdict
 from xml.etree import ElementTree as ET
 from urllib.error import HTTPError, URLError
 import json
 import urllib.request, urllib.error, urllib.parse
 from functools import reduce
+
+from typing import List
+
 try:
     p = os.path.dirname(os.path.abspath(__file__))+"/sources"
     from sources.local_settings import *
@@ -1237,7 +1242,7 @@ def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list
     return removal_map
 
 def convert_normalized_indices_to_unnormalized_indices(normalized_indices, removal_map):
-    from bisect import bisect_right
+
     removal_keys = sorted(removal_map.keys())
     unnormalized_indices = []
     for start, end in normalized_indices:
@@ -1284,3 +1289,87 @@ def char_indices_from_word_indices(input_string, word_ranges, split_regex=None):
         first_word, last_word = words
         normalized_char_indices.append((word_indices[first_word][0], word_indices[last_word][1]))
     return convert_normalized_indices_to_unnormalized_indices(normalized_char_indices, removal_map)
+
+
+class TextSanitizer:
+    """
+    This class is designed so we can easily move from a list of segments to the flat list of words necessary
+    for use in move draft text. It is primarily helpful when we need to keep track of text before and after edits were
+    made to said text that were necessary for improving text matching.
+    """
+    def __init__(self, section: List[str], divider_pattern: str):
+        self._original_segments = tuple(section)
+        self._sanitized_segments = None
+        self.sanitizer = None
+        self._dividing_expression = divider_pattern
+
+        # these variables hold the indices of the first word for each segment
+        self._sanitzed_word_indices = None
+        self._unsanitized_word_indices = None
+        self._set_unsanitzed_word_indices()
+
+    def get_original_segments(self):
+        return self._original_segments
+
+    def set_sanitizer(self, sanitizer: Callable[[str], str]):
+        self.sanitizer = sanitizer
+
+    def sanitize(self):
+        if not self.sanitizer:
+            raise AttributeError("no sanitization method set for this instance")
+        self._sanitized_segments = tuple(self.sanitizer(x) for x in self._original_segments)
+        self._set_sanitized_word_indices()
+
+    def get_sanitized_segments(self):
+        return self._sanitized_segments
+
+    def _set_unsanitzed_word_indices(self):
+        self._unsanitized_word_indices = self.get_segment_start_indices(
+            self._original_segments, self._dividing_expression)
+
+    def _set_sanitized_word_indices(self):
+        self._sanitzed_word_indices = self.get_segment_start_indices(
+            self._sanitized_segments, self._dividing_expression
+        )
+
+    def set_dividing_expression(self, regex_pattern: str):
+        self._dividing_expression = regex_pattern
+
+    @staticmethod
+    def make_word_list(section, dividing_expression):
+        word_list = []
+        for segment in section:
+            segment_list = re.split(dividing_expression, segment)
+            word_list.extend(segment_list)
+        return word_list
+
+    def get_sanitized_word_list(self):
+        if not self._sanitized_segments:
+            raise AttributeError("Segments were not sanitized")
+        return self.make_word_list(self._sanitized_segments, self._dividing_expression)
+
+    def get_unsanitized_word_list(self):
+        return self.make_word_list(self._original_segments, self._dividing_expression)
+
+    @staticmethod
+    def get_segment_start_indices(segment_list, divider_pattern):
+        segment_start_indices = []
+        word_count = 0
+        for segment in segment_list:
+            segment_start_indices.append(word_count)
+            word_count += len(re.split(divider_pattern, segment))
+
+        return segment_start_indices
+
+    @staticmethod
+    def get_segment_index_from_word_index(word_index, start_segment_list):
+        return bisect_right(start_segment_list, word_index) - 1
+
+    def check_sanitized_index(self, word_index: int):
+        """
+        given a word index from a sanitized word list, find what segment it originated from
+        """
+        return self.get_segment_index_from_word_index(word_index, self._sanitzed_word_indices)
+
+    def check_unsanitized_word_index(self, word_index:int):
+        return self.get_segment_index_from_word_index(word_index, self._unsanitized_word_indices)
