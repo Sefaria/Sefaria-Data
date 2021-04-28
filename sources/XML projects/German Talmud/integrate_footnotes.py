@@ -4,9 +4,9 @@ import copy
 ftnotes = {}
 found_ftnotes = {}
 version = """Index Title,{}
-Version Title,"Talmud Bavli. German. Lazarus Goldschmidt. 1929 -- footnotes"
+Version Title,"Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]"
 Language,en
-Version Source,https://www.sefaria.org
+Version Source,https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI
 Version Notes,"""
 if __name__ == "__main__":
     probs = []
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     transitions = {}
     lookfor = "Berakhot"
     for f in os.listdir("./just ftnotes"):
-        if f.endswith("txt") and lookfor in f:
+        if f.endswith("txt"):
             title = f.replace(" just ftnotes.txt", "")
             transitions[title] = {}
             prev_ftnote_num = 0
@@ -75,8 +75,6 @@ if __name__ == "__main__":
     ftnotes = copy.deepcopy(new_found_ftnotes)
     for f in os.listdir("3 - aligned txt files 2"):
             title = f.split("_")[1]
-            if title != "Berakhot":
-                continue
             print(title)
             text = {}
             perek = 1

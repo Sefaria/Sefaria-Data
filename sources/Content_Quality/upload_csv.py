@@ -11,8 +11,7 @@ for new_file in files:
     # if "Moed" not in new_file or "Rosh" not in new_file:
     #     continue
     print(new_file)
-with open("Leshon_Chakhamim") as f:
-    reader = list(csv.reader(f))
+    reader = list(csv.reader(open(new_file, 'r')))
     title = reader[0][1]
     vtitle = reader[1][1]
     lang = reader[2][1]

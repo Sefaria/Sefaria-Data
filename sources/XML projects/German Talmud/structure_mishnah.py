@@ -12,7 +12,7 @@ def check_perek_mishnah(text, title):
 
 before_content = """Index Title,{}
 Version Title,"{}"
-Language,he
+Language,en
 Version Source,{}
 Version Notes,"""
 for f in os.listdir("./mishnah"):
@@ -32,7 +32,7 @@ for f in os.listdir("./mishnah"):
                     text[perek] = []
                 text[perek].append(comment)
         check_perek_mishnah(text, title)
-        vtitle = "Talmud Bavli. German. Lazarus Goldschmidt. 1929"
+        vtitle = "Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]"
         vsource = "https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI"
         with open("./mishnah/{}_structured.csv".format(title), 'w') as open_f:
             writer = csv.writer(open_f)
