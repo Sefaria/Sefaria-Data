@@ -5,19 +5,18 @@ API_KEY = SEFARIA_SERVER = ""
 
 
 import os
-cat = "Meiri"
-indices = library.get_indices_by_collective_title(cat)
+cat = "Tanakh"
+indices = library.get_indexes_in_category(cat)
 results = []
 start = "Nazir"
 found_start = True
+version = "en:Tanakh: The Holy Scriptures, published by JPS -- updated"
 for m in indices:
      print(m)
-     #cmd = "./run scripts/move_draft_text.py '{}' -d '{}' -k '{}'".format(m, SEFARIA_SERVER, API_KEY)
-     #results.append(os.popen(cmd).read())
      # if found_start or start == m:
      #      found_start = True
      # else:
      #      continue
-     cmd = "./run scripts/move_draft_text.py '{}' -l '2' -v 'all' -d '{}' -k '{}' --noindex".format(m, SEFARIA_SERVER, API_KEY)
+     cmd = "./run scripts/move_draft_text.py '{}' -l '2' -v '{}' -d '{}' -k '{}' --noindex".format(m, version, SEFARIA_SERVER, API_KEY)
      results.append(os.popen(cmd).read())
 

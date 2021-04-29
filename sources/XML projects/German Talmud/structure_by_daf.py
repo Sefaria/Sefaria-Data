@@ -22,8 +22,8 @@ def run_checks(folios, title):
 vsource = "https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI"
 for file in os.listdir("."):
     if file.endswith(".csv") and not "ftnote" in file:
-        print(file)
         title = file.replace(".csv", "")
+        print(file)
         text = ""
         with open("{}.csv".format(title), 'r') as f:
             for row in csv.reader(f):
@@ -55,9 +55,13 @@ for file in os.listdir("."):
                             curr += 1
                             text[curr] = [text_portion]
                         else:
-                            daf = re.search(".*?(\d+)", amud).group(1)
-                            curr = AddressTalmud(0).toNumber("en", "{}a".format(daf))
-                            text[curr] = [text_portion]
+                            dig = re.search(".*?(\d+)", amud)
+                            if not dig:
+                                print("Uh oh... {}".format(amud))
+                            else:
+                                daf = dig.group(1)
+                                curr = AddressTalmud(0).toNumber("en", "{}a".format(daf))
+                                text[curr] = [text_portion]
 
 
         before_content = """Index Title,{}

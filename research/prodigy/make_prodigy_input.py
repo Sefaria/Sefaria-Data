@@ -4,6 +4,7 @@ from tqdm import tqdm
 django.setup()
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
+from research.prodigy.db_manager import MongoProdigyDBManager
 
 class ProdigyInputWalker:
     def __init__(self):
@@ -30,6 +31,8 @@ class ProdigyInputWalker:
                 return None
             except ValueError:
                 return None
+            except KeyError:
+                return None
 
         refs_with_loc = []
         if lang == "en":
@@ -49,26 +52,36 @@ class ProdigyInputWalker:
         return text.split('. ')
 
     def get_input(self, text, en_tref, language):
-        refs_with_loc = ProdigyInputWalker.get_refs_with_location(text, language)
-        temp_input = {
-            "text": text,
-            "spans": [
-                {"start": s, "end": e, "label": "מקור"} for _, _, s, e in refs_with_loc
-            ],
-            "meta": {
-                "Ref": en_tref
+        text_list = text.split('\n')
+        temp_input_list = []
+        for t in text_list:
+            if len(t) <= 20: continue
+            refs_with_loc = ProdigyInputWalker.get_refs_with_location(t, language)
+            temp_input = {
+                "text": t,
+                "spans": [
+                    {"start": s, "end": e, "label": "מקור"} for _, _, s, e in refs_with_loc
+                ],
+                "meta": {
+                    "Ref": en_tref
+                }
             }
-        }
-        return temp_input
+            temp_input_list += [temp_input]
+        return temp_input_list
     
     def action(self, text, en_tref, he_tref, version):
         norm_text = self.normalize(text)
-        temp_input = self.get_input(norm_text, en_tref, version.language)
-        self.prodigyInputByVersion[(version.versionTitle, version.title, version.language)] += [temp_input]
+        temp_input_list = self.get_input(norm_text, en_tref, version.language)
+        self.prodigyInputByVersion[(version.versionTitle, version.title, version.language)] += temp_input_list
         
     def make_final_input(self, sample_size):
+        import statistics
+        lens = []
         for temp_input_list in self.prodigyInputByVersion.values():
+            lens += [len(t['text']) for t in temp_input_list]
             self.prodigyInput += random.sample(temp_input_list, min(len(temp_input_list), sample_size))
+        print(statistics.mean(lens))
+        print(statistics.stdev(lens))
         random.shuffle(self.prodigyInput)
 
 
@@ -83,11 +96,50 @@ def make_prodigy_input(title_list, vtitle_list, lang_list):
     walker.make_final_input(400)
     srsly.write_jsonl('research/prodigy/data/test_input.jsonl', walker.prodigyInput)
 
+def combine_sentences_to_paragraph(sentences):
+    if len(sentences) == 0: return
+    full_text = ""
+    full_spans = []
+    curr_tokens = 0
+    already_seen_text = set()
+    for s in sentences:
+        if s['text'] in already_seen_text: continue
+        already_seen_text.add(s['text'])
+        if len(full_text) > 0: full_text += " "
+        full_spans += [{
+            "start": span['start'] + len(full_text),
+            "end": span['end'] + len(full_text),
+            "token_start": span['token_start'] + curr_tokens,
+            "token_end": span['token_end'] + curr_tokens,
+            "label": span['label']
+        } for span in s['spans']]
+        curr_tokens += len(s['tokens'])
+        full_text += s['text']
+    return {
+        'text': full_text,
+        'spans': full_spans,
+        'meta': sentences[0]['meta']
+    }
+
+def combine_all_sentences_to_paragraphs():
+    my_db = MongoProdigyDBManager('localhost', 27017)
+    examples = my_db.db.examples
+    combined_examples = []
+    examples_by_ref = defaultdict(list)
+    for example in examples.find({}):
+        examples_by_ref[example['meta']['Ref']] += [example]
+    combined_examples = [combine_sentences_to_paragraph(sentences) for sentences in examples_by_ref.values()]
+    my_db.db.examples1_input.delete_many({})
+    my_db.db.examples1_input.insert_many(combined_examples)
+
+
+
 if __name__ == "__main__":
     title_list = [
-        'Rashba on Eruvin', 'Chiddushei Ramban on Avodah Zarah', 'Ben Yehoyada on Beitzah',
-        'Tosafot on Shabbat', 'Chidushei Agadot on Rosh Hashanah', 'Chidushei Halachot on Taanit', 'Rabbeinu Gershom on Chullin',
-        'Maharam Shif on Gittin', 'Maadaney Yom Tov on Menachot', 'Rashbam on Bava Batra', 'Penei Yehoshua on Bava Metzia',
-        'Ran on Nedarim', 'Tosafot Shantz on Sotah', 'Yad Ramah on Bava Batra', 'Shita Mekubetzet on Berakhot'
+        'Rashba on Gittin', 'Chiddushei Ramban on Shabbat', 'Ben Yehoyada on Berakhot',
+        'Tosafot on Bekhorot', 'Chidushei Agadot on Zevachim', 'Chidushei Halachot on Bava Kamma', 'Rabbeinu Gershom on Meilah',
+        'Maharam Shif on Sanhedrin', 'Maadaney Yom Tov on Niddah', 'Rashbam on Menachot', 'Penei Yehoshua on Shevuot',
+        'Yad Ramah on Sanhedrin', 'Shita Mekubetzet on Ketubot'
     ]
     make_prodigy_input(title_list, [None]*len(title_list), ['he']*len(title_list))
+    # combine_all_sentences_to_paragraphs()

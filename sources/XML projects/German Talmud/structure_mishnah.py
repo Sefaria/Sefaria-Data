@@ -1,8 +1,18 @@
 from sources.functions import *
 import os
+def check_perek_mishnah(text, title):
+    masechet = library.get_index("Mishnah {}".format(title.title()))
+    if len(masechet.all_section_refs()) != len(text):
+        print("Section refs off in {}, {} vs {}".format(title, len(masechet.all_section_refs()), len(text)))
+        return
+    for i in range(len(text)):
+        subrefs = Ref("Mishnah {} {}".format(title.title(), i+1)).all_subrefs()
+        if len(subrefs) != len(text[i+1]):
+            print("Segment refs off in {}, {} vs {}".format("Mishnah {} {}".format(title.title(), i+1), len(subrefs), len(text[i+1])))
+
 before_content = """Index Title,{}
 Version Title,"{}"
-Language,he
+Language,en
 Version Source,{}
 Version Notes,"""
 for f in os.listdir("./mishnah"):
@@ -10,6 +20,7 @@ for f in os.listdir("./mishnah"):
     perakim = []
     if f.endswith("csv") and "structured" not in f:
         title = f.replace(".csv", "")
+        print(title)
         with open("./mishnah/"+f, 'r') as open_f:
             for row in csv.reader(open_f):
                 ref, comment = row
@@ -20,7 +31,8 @@ for f in os.listdir("./mishnah"):
                 if perek not in text:
                     text[perek] = []
                 text[perek].append(comment)
-        vtitle = "Talmud Bavli. German. Lazarus Goldschmidt. 1929"
+        check_perek_mishnah(text, title)
+        vtitle = "Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]"
         vsource = "https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI"
         with open("./mishnah/{}_structured.csv".format(title), 'w') as open_f:
             writer = csv.writer(open_f)
@@ -28,4 +40,4 @@ for f in os.listdir("./mishnah"):
                 writer.writerow(c.split(","))
             for perek in text:
                 for i, line in enumerate(text[perek]):
-                   writer.writerow(["{} {}:{}".format(title.title(), perek, i+1), line])
+                   writer.writerow(["Mishnah {} {}:{}".format(title.title(), perek, i+1), line])

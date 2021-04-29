@@ -585,8 +585,8 @@ class CorpusManager:
         ner_mentions += pretagged_mentions + pretag_override_ner_mentions
         el_mentions = self.el.predict(self.corpus_segments, ner_mentions)
         self.mentions = el_mentions
-        self.validate_mention_matches_text()
         self.deduplicate_mentions()
+        self.validate_mention_matches_text()
 
     def partition_corpus_segments(self):
         pretagged_corpus_segments, untagged_corpus_segments = [], []
@@ -624,7 +624,8 @@ class CorpusManager:
             key = (m.ref, m.versionTitle, m.language)
             if key not in seg_map: continue
             found_match = False
-            for abs_offset in list(range(1, max_abs_dist)) + [len('<big><strong></strong></big>')]:  # big strong was added into william davidson since last links were created
+            num_punct = len(list(re.finditer(r'[\.,;—:?!״]', seg_map[key].text)))  # common cause of rabbis being offset is added punctuation
+            for abs_offset in list(range(1, max(max_abs_dist, num_punct+3))) + [len('<big><strong></strong></big>')]:  # big strong was added into william davidson since last links were created
                 if found_match: break
                 for side in (1,-1):
                     offset = side*abs_offset
@@ -1149,8 +1150,8 @@ def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_tosefta.json",
-        f"{ner_file_prefix}/ner_output_tosefta.json",
+        "research/knowledge_graph/named_entity_recognition/ner_tagger_input.json",
+        f"{ner_file_prefix}/ner_output_talmud.json",
         f"{ner_file_prefix}/html"
     )
     # corpus_manager.export_named_entities(f"{ner_file_prefix}/named_entities_export.csv")
@@ -1161,10 +1162,10 @@ if __name__ == "__main__":
     # corpus_manager.load_mentions()
     corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi'})
     # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv")
-    # corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("Mishnah Yomit by Dr. Joshua Kulp", "en"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en")
+    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en")
     
     # compare_two_versions_ner_tagger_output('ner_output_talmud.json', 'ner_output_talmud_word_breakers.json', ner_file_prefix)
-    # compare_two_versions_ner_tagger_output('ner_output_mishnah_prefixes.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
+    # compare_two_versions_ner_tagger_output('ner_output_mishnah.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
 
 """
 This file depends on first running

@@ -167,24 +167,24 @@ def get_rows_by_mas():
         rows_by_mas[k] = amudim
     return rows_by_mas
 
-def get_rabbi_char_loc(context, seg_text, norm_regex=None, repl=None):
-    from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
-    from research.knowledge_graph.named_entity_recognition.ner_tagger import TextNormalizer
+def get_rabbi_char_loc_list(context_list, seg_text, norm_regex=None, repl=None, **match_text_kwargs):
     orig_seg_text = seg_text
     if norm_regex is not None:
         seg_text = re.sub(norm_regex, repl, seg_text)
-    matches = match_text(seg_text.split(), [context.replace('~', '')], with_num_abbrevs=False, place_all=True, place_consecutively=True, verbose=False)
-    if matches["matches"][0][0] == -1:
+    matches = match_text(seg_text.split(), [context.replace('~', '') for context in context_list], with_num_abbrevs=False, place_all=True, place_consecutively=True, verbose=False, max_overlap_percent=1.1, **match_text_kwargs)
+    rabbi_span_list = []
+    for match_span, matched_text, context in zip(matches["matches"], matches["match_text"], context_list):
+        rabbi_span_list += [get_rabbi_char_loc(match_span, matched_text, context, seg_text, orig_seg_text, norm_regex, repl)]
+    return rabbi_span_list
+
+def get_rabbi_char_loc(match_span, matched_text, context, seg_text, orig_seg_text, norm_regex, repl):
+    from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
+    from research.knowledge_graph.named_entity_recognition.ner_tagger import TextNormalizer
+    if match_span[0] == -1:
         return None, None
-    matched = matches["match_text"][0][0]
-    count = seg_text.count(matched)
-    if count == 0:
-        return None, None
-    if count > 1:
-        # print(f"Context\n{context}\nappears {count} times!")
-        return None, None
+    matched = matched_text[0]
     pre_rabbi, rabbi, _ = context.split('~')
-    context_start = seg_text.find(matched)
+    context_start = list(re.finditer(r'\S+', seg_text))[match_span[0]].start()
     if matched != context.replace('~', ''):
         # cant assume rabbi_start_rel is same as it was in `context`
         word_b4_rabbi = pre_rabbi.split()[-1] + ' ' if len(pre_rabbi.strip()) > 0 else ''
@@ -216,22 +216,28 @@ def get_rabbi_char_loc(context, seg_text, norm_regex=None, repl=None):
         start, end = TextNormalizer.include_trailing_nikkud(mention_indices[0], orig_seg_text)
     return start, end
 
-def convert_to_spacy_format(rabbi_mentions, vtitle='William Davidson Edition - Aramaic', norm_regex=None, repl=None):
+def convert_to_spacy_format(rabbi_mentions, vtitle='William Davidson Edition - Aramaic', norm_regex=None, repl=None, **match_text_kwargs):
     by_book = defaultdict(lambda: defaultdict(list))
     for row in rabbi_mentions:
         by_book[row["Book"]][row["Segment"]] += [row]
     spacy_formatted = []
     new_rabbi_mentions = []
+    found_set = set()
     for book, segs in tqdm(by_book.items()):
         book_data, book_vtitle = get_mas(book, vtitle)
         for tref, text in book_data:
             rabbi_contexts = [r["Context"] for r in segs[tref]]
             row = {"text": text, "ents": []}
-            for icontext, context in enumerate(rabbi_contexts):
-                start, end = get_rabbi_char_loc(context, text, norm_regex, repl)
+            rabbi_spans = get_rabbi_char_loc_list(rabbi_contexts, text, norm_regex, repl, **match_text_kwargs)
+            for icontext, (start, end) in enumerate(rabbi_spans):
                 if start == None:
                     continue
                 row["ents"] += [{"start": start, "end": end, "label": "PERSON"}]
+                found_key = f"{tref}|{start}|{end}"
+                if found_key in found_set:
+                    print("Already found", found_key, text[start:end])
+                    continue
+                found_set.add(found_key)
                 new_rabbi_mentions += [{
                     "Book": book,
                     "Ref": tref,
@@ -641,7 +647,7 @@ def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1,
             }]
     print("Issues", issues)
 
-    spacy_formatted, rabbi_mentions = convert_to_spacy_format(crude_mentions, vtitle=vtitle, norm_regex="[\u0591-\u05bd\u05bf-\u05c5\u05c7]+", repl='')
+    spacy_formatted, rabbi_mentions = convert_to_spacy_format(crude_mentions, vtitle=vtitle, norm_regex="[\u0591-\u05bd\u05bf-\u05c5\u05c7]+", repl='', daf_skips=0, rashi_skips=0, overall=0)
     srsly.write_jsonl(out_file1, rabbi_mentions)
     convert_to_mentions_file(out_file1, out_file2, only_bonayich_rabbis=False)
     with open(f'research/knowledge_graph/named_entity_recognition/{out_file2}', 'r') as fin:
@@ -662,7 +668,7 @@ if __name__ == "__main__":
     # convert_mentions_for_alt_version('William Davidson Edition - Vocalized Punctuated Aramaic', 'sperling_mentions_nikkud_punctuated.json')
     # convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
     
-    # convert_mishnah_and_tosefta_to_mentions("Mishnah ", f"{DATA_LOC}/mishna_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_mishnah.jsonl', "sperling_mentions_mishnah.json", "Torat Emet 357")
-    convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names_with_ID.xlsx - Sheet1.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", None, {"Oholot": "Ohalot", "Oktzin": "Uktsin", "Rosh Hashanah": "Rosh HaShanah"})
+    convert_mishnah_and_tosefta_to_mentions("Mishnah ", f"{DATA_LOC}/mishna_names.csv", f'{DATA_LOC}/he_mentions_mishnah.jsonl', "sperling_mentions_mishnah.json", "Torat Emet 357")
+    # convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", None, {"Oholot": "Ohalot", "Oktzin": "Uktsin", "Rosh Hashanah": "Rosh HaShanah"})
   
     # make_new_alt_titles_file()

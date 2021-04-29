@@ -5,7 +5,7 @@ import os
 from sefaria.views import _get_text_version_file
 masechtot = [f for f in os.listdir("CSVs/") if ".csv" in f]
 mishnayot = [f for f in os.listdir("mishnah/") if "structured" in f]
-for arr, dir in [(mishnayot, "mishnah/"), (masechtot, "CSVs/")]:
+for arr, dir in [(mishnayot, "mishnah/")]:
     for title in arr:
         with open(dir+title, 'r') as f:
             reader = csv.reader(f)
