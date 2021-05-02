@@ -1232,7 +1232,7 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), m
     :param comment:
     :param tokenizer:
     :param min_dh_len: look for a dh that is at least this length
-    :param max_dh_len: look for a dh (from the beginning of the textChunk at least this length)
+    :param max_dh_len: look for a dh at most this length
     :param word_threshold:
     :param char_threshold:
     :return: match obj
