@@ -1227,7 +1227,7 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
 
 def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), min_dh_len=1, max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
     '''
-    This function's strength is that it doesn't need a DH tokonizer/ or DH words to search for. It searches for them (from beggening of comment text) to find the best option of DH to fit the base text. and returns a match obj (if found)
+    This function's strength is that it doesn't need a DH tokonizer/ or DH words to search for. It searches for them (from the beginning of the comment text) to find the best option of DH to fit the base text. and returns a match obj (if found)
     :param base_text:
     :param comment:
     :param tokenizer:
