@@ -1283,7 +1283,7 @@ def best_reflinks_for_maximum_dh(base_text, comment_text, **kwargs):
     :param base_text: Ref: Ref obj of the base text
     :param comment: Ref: Ref object of the comment that we want to match under the assumption that the few first words of the comment match words in one of the segments of the base_text
     :param kwargs see get_maximum_dh
-    :return: list of tuples (Ref, Ref, string, match): a list of tuples for the comment_refs that a base_ref was found to a match according to words form the begginig of the comment. each item in the list containes [base_ref, comment ref, best dh match words, match obj]
+    :return: list of tuples (Ref, Ref, string, match): a list of tuples for the comment_refs that a base_ref was found to a match according to words form the beginning of the comment. each item in the list contains [base_ref, comment ref, best dh match words, match obj]
     '''
     final_link_matchs = []
     for comment in comment_text.all_segment_refs():
