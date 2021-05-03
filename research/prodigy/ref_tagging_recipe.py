@@ -17,35 +17,13 @@ except ImportError:
 
 from pathlib import Path
 
-# LABELS = ["פשוט", "שם", "דיבור המתחיל"]
-LABELS = ['מקור']
-
-def custom_tokenizer(nlp):
-    tag_re = r'<[^>]+>'
-    class_re = r'<[a-z]+ class="[a-z]+">'
-    prefix_re = re.compile(rf'''^(?:[\[({{:"'\u05F4\u05F3§\u05c0\u05c3]|{tag_re}|class="[a-zA-Z\-]+">)''')
-    suffix_re =  re.compile(rf'''(?:[\])}}.,;:?!"'\u05F4\u05F3\u05c0\u05c3]|{tag_re})$''')
-    infix_re = re.compile(rf'''([-~]|{tag_re})''')
-    return Tokenizer(nlp.vocab, prefix_search=prefix_re.search,
-                                suffix_search=suffix_re.search,
-                                infix_finditer=infix_re.finditer,
-                                token_match=None)
-
-def test_tokenizer(nlp):
-
-    test_text = Ref("Peninei Halakhah, Family 1:6:2").text('he').text
-    tokenizer = custom_tokenizer(nlp)
-    tokens = tokenizer(test_text)
-    for t in tokens[-90:-70]:
-        print(t)
-
 def import_file_to_collection(input_file, collection, db_host='localhost', db_port=27017):
     my_db = MongoProdigyDBManager('blah', db_host, db_port)
     stream = srsly.read_jsonl(input_file)
     getattr(my_db.db, collection).delete_many({})
     getattr(my_db.db, collection).insert_many(stream)
 
-def load_model(model_dir):
+def load_model(model_dir, labels):
     model_exists = True
     try:
         nlp = spacy.load(model_dir)
@@ -54,9 +32,8 @@ def load_model(model_dir):
         nlp = Hebrew()
     if "ner" not in nlp.pipe_names:
         nlp.add_pipe("ner", last=True)
-    else:
-        ner = nlp.get_pipe("ner")
-    for label in LABELS:
+    ner = nlp.get_pipe("ner")
+    for label in labels:
         ner.add_label(label)
     if not model_exists:
         nlp.begin_training()
@@ -113,14 +90,17 @@ def train_on_current_output(output_collection='examples2_output'):
     input_collection=("Mongo collection to input data from", "positional", None, str),
     output_collection=("Mongo collection to output data to", "positional", None, str),
     model_dir=("Spacy model location", "positional", None, str),
+    labels=("Labels for classification", "positional", None, str),
     view_id=("Annotation interface", "option", "v", str),
     db_host=("Mongo host", "option", None, str),
     db_port=("Mongo port", "option", None, int),
+    train_on_input=("Should empty model be trained on input spans?", "option", None, int),
 )
-def my_custom_recipe(dataset, input_collection, output_collection, model_dir, view_id="text", db_host="localhost", db_port=27017):
+def my_custom_recipe(dataset, input_collection, output_collection, model_dir, labels, view_id="text", db_host="localhost", db_port=27017, train_on_input=1):
     my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
-    nlp, model_exists = load_model(model_dir)
-    if not model_exists:
+    labels = labels.split(',')
+    nlp, model_exists = load_model(model_dir, labels)
+    if not model_exists and train_on_input == 1:
         temp_stream = getattr(my_db.db, input_collection).find({}, {"_id": 0})
         train_model(nlp, temp_stream, model_dir)
     all_data = list(getattr(my_db.db, input_collection).find({}, {"_id": 0}))  # TODO loading all data into ram to avoid issues of cursor timing out
@@ -147,7 +127,7 @@ def my_custom_recipe(dataset, input_collection, output_collection, model_dir, vi
         "progress": progress,
         # "update": update,
         "config": {
-            "labels": LABELS,
+            "labels": labels,
             "global_css": """
                 [data-prodigy-view-id='ner_manual'] .prodigy-content {
                     direction: rtl;
@@ -159,16 +139,22 @@ def my_custom_recipe(dataset, input_collection, output_collection, model_dir, vi
 
 if __name__ == "__main__":
     # test_tokenizer(nlp)
-    import_file_to_collection('research/prodigy/data/test_input.jsonl', 'examples2_input')
+    import_file_to_collection('research/prodigy/data/test_input.jsonl', 'gilyon_input2')
 """
+ספר,דה,מספר,שם,לקמן-להלן,תת-ספר,שם-עצמי,קטגוריה
 command to run
 
 cd research/prodigy
 prodigy ref-tagging-recipe ref_tagging test_input models/ref_tagging --view-id ner_manual -db-host localhost -db-port 27017 -F ref_tagging_recipe.py
 
 command to run on examples1_input
-prodigy ref-tagging-recipe ref_tagging2 examples2_input examples3_output ./research/prodigy/output/ref_tagging_cpu/model-last --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/ref_tagging_recipe.py
+prodigy ref-tagging-recipe ref_tagging2 examples2_input examples3_output ./research/prodigy/output/ref_tagging_cpu/model-last מקור --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/ref_tagging_recipe.py
 
+command to run on gilyon hashas
+prodigy ref-tagging-recipe ref_tagging2 gilyon_input gilyon_output ./research/prodigy/output/ref_tagging_cpu/model-last מקור --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/ref_tagging_recipe.py
+
+command to run on gilyon hashas sub citation
+prodigy ref-tagging-recipe sub_ref_tagging gilyon_sub_citation_input gilyon_sub_citation_output ./research/prodigy/output/sub_citation/model-best ספר,דה,מספר,שם,לקמן-להלן,תת-ספר,שם-עצמי --view-id ner_manual -db-host localhost -db-port 27017 -train-on-input 0 -F ./research/prodigy/ref_tagging_recipe.py
 """
 
 """

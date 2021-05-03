@@ -16,13 +16,17 @@ except ImportError:
 
 
 @spacy.registry.readers("mongo_reader")
-def stream_data(db_host: str, db_port: int, input_collection: str, output_collection: str, random_state: int, train_perc: float, corpus_type: str) -> Callable[[Language], Iterator[Example]]:
+def stream_data(db_host: str, db_port: int, input_collection: str, output_collection: str, random_state: int, train_perc: float, corpus_type: str, min_len: int) -> Callable[[Language], Iterator[Example]]:
     my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
     def generate_stream(nlp):
-        data = [d for d in getattr(my_db.db, input_collection).find({}) if len(d['text']) > 20]
+        data = [d for d in getattr(my_db.db, input_collection).find({}) if len(d['text']) > min_len]
         # make data unique
-        data = list({(d['meta']['Ref'], d['text']): d for d in data}.values())
-        train_data, test_data = train_test_split(data, random_state=random_state, train_size=train_perc)
+        data = list({(tuple(sorted(d['meta'].items(), key=lambda x: x[0])), d['text']): d for d in data}.values())
+        print("Num examples", len(data))
+        if random_state == -1:
+            train_data, test_data = (data, []) if corpus_type == "train" else ([], data)
+        else:
+            train_data, test_data = train_test_split(data, random_state=random_state, train_size=train_perc)
         corpus_data = train_data if corpus_type == "train" else test_data
         for raw_example in corpus_data:
             doc = nlp.make_doc(raw_example['text'])
@@ -141,18 +145,19 @@ def make_evaluation_html(data, output_folder, output_filename):
         .tp { background-color: greenyellow; border: 5px lightgreen solid; }
         .fp { background-color: pink; border: 5px lightgreen solid; }
         .fn { background-color: greenyellow; border: 5px pink solid; }
+        .label { font-weight: bold; font-size: 75%; color: #666; padding-right: 5px; }
         </style>
       </head>
       <body>
     """
     def get_wrapped_text(mention, metadata):
-        start = f'<span class="{metadata} tag">'
-        end = '</span>'
+        start = f'<span class="{metadata["true condition"]} tag">'
+        end = f'<span class="label">{metadata["label"]}</span></span>'
         return f'{start}{mention}{end}', len(start), len(end)
     for i, d in enumerate(data):
-        chars_to_wrap  = [(s, e, 'tp') for (s, e, _) in d['tp']]
-        chars_to_wrap += [(s, e, 'fp') for (s, e, _) in d['fp']]
-        chars_to_wrap += [(s, e, 'fn') for (s, e, _) in d['fn']]
+        chars_to_wrap  = [(s, e, {"label": l, "true condition": 'tp'}) for (s, e, l) in d['tp']]
+        chars_to_wrap += [(s, e, {"label": l, "true condition": 'fp'}) for (s, e, l) in d['fp']]
+        chars_to_wrap += [(s, e, {"label": l, "true condition": 'fn'}) for (s, e, l) in d['fn']]
         wrapped_text = wrap_chars_with_overlaps(d['text'], chars_to_wrap, get_wrapped_text)
         html += f"""
         <p class="ref">{i}) {d['ref']}</p>
@@ -214,11 +219,12 @@ def convert_jsonl_to_csv(filename):
         c.writerows(rows)
 
 if __name__ == "__main__":
-    nlp = spacy.load('./research/prodigy/output/ref_tagging_cpu/model-last')
-    data = stream_data('localhost', 27017, 'examples2_output', 'examples3', 613, 0.8, 'test')(nlp)
+    # nlp = spacy.load('./research/prodigy/output/ref_tagging_cpu/model-last')
+    nlp = spacy.load('./research/prodigy/output/sub_citation/model-best')
+    data = stream_data('localhost', 27017, 'gilyon_sub_citation_output', 'gilyon_input', 613, 0.8, 'test', 0)(nlp)
     print(make_evaluation_files(data, nlp, './research/prodigy/output/evaluation_results'))
 
-    # data = stream_data('localhost', 27017, 'examples2_output', 'examples2_input', 613, 0.9999, 'train')(nlp)
+    # data = stream_data('localhost', 27017, 'gilyon_sub_citation_output', 'gilyon_input', -1, 1.0, 'train', 0)(nlp)
     # export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results')
     convert_jsonl_to_json('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
     # convert_jsonl_to_csv('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
@@ -232,6 +238,10 @@ python -m spacy train ./research/prodigy/configs/ref_tagging_cpu.cfg --output ./
 600 segments
  69    5000          0.36      0.03   71.26   72.94   69.66    0.71 (0.71, 0.66)
 0.71
+
+to train sub citation
+python -m spacy train ./research/prodigy/configs/sub_citation.cfg --output ./research/prodigy/output/sub_citation --code ./research/prodigy/functions.py --gpu-id 0
+
 debug data
 python -m spacy debug data ./research/prodigy/configs/ref_tagging.cfg -c ./research/prodigy/functions.py
 
