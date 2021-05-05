@@ -53,7 +53,7 @@ def getDhNum(dh_ref, to_link_name_he, to_link_index_en, curr_get_around_name):
                                         dh_ref.normal_sections()[1])
     subrefs = Ref(commentator_ref).all_subrefs()
     if len(subrefs) == 1:
-        print "(new)"
+        print("(new)")
     base = dh_ref.text("he")
     text = Ref(commentator_ref).text("he")
     ref_list = [ref.normal() for ref in Ref(commentator_ref).all_subrefs()]
@@ -64,11 +64,11 @@ def getDhNum(dh_ref, to_link_name_he, to_link_index_en, curr_get_around_name):
     if match_dict:
         max_match = max(match_dict, key=match_dict.get)
         if max_match.score > 0:
-            print "second chance link: " + dh_ref.tref + " " + str(max_match.b.location) + " --> " + max_match.a.mesechta + " " + str(max_match.a.location)
+            print("second chance link: " + dh_ref.tref + " " + str(max_match.b.location) + " --> " + max_match.a.mesechta + " " + str(max_match.a.location))
             trash, pasuk, dh = max_match.a.mesechta.split(":")
             return pasuk, dh
         else:
-            print "Match was bad for {}".format(dh_ref.normal())
+            print("Match was bad for {}".format(dh_ref.normal()))
 
     matcher2 = ParallelMatcher(tokenizer=tokenizer, min_words_in_match=2, ngram_size=3, all_to_all=False,
                               only_match_first=True, min_distance_between_matches=0, verbose=False,
@@ -81,12 +81,12 @@ def getDhNum(dh_ref, to_link_name_he, to_link_index_en, curr_get_around_name):
     if match_dict2:
         max_match2 = max(match_dict2, key=match_dict2.get)
         if max_match2.score > 0:
-            print "last resort link: " + dh_ref.tref + " " + str(max_match2.b.location) + " --> " + max_match2.a.mesechta + " " + str(max_match2.a.location)
+            print("last resort link: " + dh_ref.tref + " " + str(max_match2.b.location) + " --> " + max_match2.a.mesechta + " " + str(max_match2.a.location))
             trash, pasuk, dh = max_match2.a.mesechta.split(":")
             return pasuk, dh
-        print "Match was bad for {}".format(dh_ref.normal())
+        print("Match was bad for {}".format(dh_ref.normal()))
 
-    print "getDhNum didn't work for ref {}".format(dh_ref.tref)
+    print("getDhNum didn't work for ref {}".format(dh_ref.tref))
     return -1, -1
 
 def get_around_name(text, name):
@@ -118,13 +118,13 @@ def get_around_name(text, name):
 
 
 def clean(s):
-    s = unicodedata.normalize("NFD", unicode(s))
+    s = unicodedata.normalize("NFD", s)
     s = strip_cantillation(s, strip_vowels=True)
     s = re.sub(u"(^|\s)(?:\u05d4['\u05f3])($|\s)", u"\1יהוה\2", s)
-    s = re.sub(ur"[,'\":?.!;־״׳]", u" ", s)
-    s = re.sub(ur"\([^)]+\)", u" ", s)
+    s = re.sub(u"[,'\":?.!;־״׳]", u" ", s)
+    s = re.sub(u"\([^)]+\)", u" ", s)
     # s = re.sub(ur"\((?:\d{1,3}|[\u05d0-\u05ea]{1,3})\)", u" ", s)  # sefaria automatically adds pasuk markers. remove them
-    s = re.sub(ur"<[^>]+>", u" ", s)
+    s = re.sub(u"<[^>]+>", u" ", s)
     s = u" ".join(s.split())
     return s
 
