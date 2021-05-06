@@ -9,6 +9,7 @@ from sources.Scripts.commentatorToCommentatorLinking import tokenizer, get_score
 from data_utilities.dibur_hamatchil_matcher import *
 from sefaria.utils.hebrew import strip_cantillation
 import math
+import random
 
 def get_zip_ys(): #lista_listb(text_a, text_b):
     '''
@@ -71,7 +72,13 @@ def get_matches(coupled_refs):
     return match_list
 
 
-def link_options_to_links(link_options, link_type='', post=False, qa_url=True):
+def link2url(link):
+    ref1, ref2 = link.refs
+    url = re.sub(" ", "_", f'www.sefaria.org/{ref1}?lang=he&p2={ref2}&lang2=he')
+    return url
+
+
+def link_options_to_links(link_options, link_type='', post=False, qa_url=True, max_score = 500):
     links=[]
     for link_option in link_options:
         link = Link({"type": link_type,
@@ -80,13 +87,14 @@ def link_options_to_links(link_options, link_type='', post=False, qa_url=True):
             "auto": True
              })
         score = link_option[3].score
-        if score < 50:
+        if score < max_score:
             links.append(link)
+        else:
+            link_options.remove(link_option)
         if qa_url:
             # print(f'www.sefaria.org/{link_option[0]}?lang=he&p2={link_option[1]}&lang2=he&aliyot2=0')
-            if score > 30:
-                print(link_option[3].score)
-                print(re.sub(" ", "_", f'www.sefaria.org/{link_option[0]}?lang=he&p2={link_option[1]}&lang2=he&aliyot2=0'))
+            print(link_option[3].score)
+            print(link2url(link))
             matched_wds_1 = link_option[3].textMatched
             matched_wds_2 = link_option[3].textToMatch
             if matched_wds_1 != matched_wds_2:
@@ -94,11 +102,10 @@ def link_options_to_links(link_options, link_type='', post=False, qa_url=True):
 
     if post:
         post_link(links)
-    return links
+    return links, link_options
 
 
 if __name__ == '__main__':
-    import random
     peared = get_zip_ys()
     book =random.sample(range(5), 1)[0]
     pear = peared[book][random.sample(range(len(peared[book])), 1)[0]]
