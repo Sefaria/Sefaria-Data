@@ -18,15 +18,15 @@ class TanakhRow(object):
             self.refs = []
             pos = 0
             while start.book != end.book or start.follows(end):
-                self.refs.insert(0, end)
+                self.refs.insert(0, end.normal())
                 pos -= 1
                 end = Ref(parasha["aliyot"][pos-1]).ending_ref()
             first_ref = start.to(end)
-            self.refs.insert(0, first_ref)
+            self.refs.insert(0, first_ref.normal())
         else:
             start = Ref(start)
             end = Ref(end)
-            self.refs = [configure_refs(start, end)]
+            self.refs = configure_refs(start, end)
 
 
 
@@ -58,14 +58,17 @@ with open("Tanach_Yomi_Sedarim_Calendar_-_updated.csv") as fp:
         try:
             rows.append(TanakhRow(*r))
         except Exception as e:
-            print(r)
-            asdf = True
-            if asdf:
-                TanakhRow(*r)
+            break
 
-
+entries = [
+    {
+        "date": datetime.strptime(row.date, "%d/%m/%Y"),
+        "refs": row.refs
+    }
+    for row in rows
+]
 collection = db.tanakh_yomi
 db.drop_collection(collection)
-for entry in rows:
+for entry in entries:
     collection.insert_one(entry)
 collection.create_index("date")

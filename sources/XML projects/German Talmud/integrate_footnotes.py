@@ -13,9 +13,9 @@ if __name__ == "__main__":
     german_blank = []
     fn_probs = []
     transitions = {}
-    lookfor = "Berakhot"
+    lookfor = "Chullin"
     for f in os.listdir("./just ftnotes"):
-        if f.endswith("txt"):
+        if f.endswith("txt") and lookfor in f:
             title = f.replace(" just ftnotes.txt", "")
             transitions[title] = {}
             prev_ftnote_num = 0

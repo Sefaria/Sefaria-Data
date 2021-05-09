@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import os
 for f in os.listdir("./up to date txt files/"):
     if f.endswith("ftnotes_embedded.txt"):
-
         text = {}
         ftnotes = {}
         print(f)

@@ -46,7 +46,7 @@ if __name__ == "__main__":
     post_info["versionSource"] = "https://www.sefaria.org"
 
     for file in os.listdir("./"):
-        if file.endswith("xml"):
+        if file.endswith("xml") and "Chullin" in file:
             with open("./" + file) as f:
                 contents = f.read()
             print(file)
