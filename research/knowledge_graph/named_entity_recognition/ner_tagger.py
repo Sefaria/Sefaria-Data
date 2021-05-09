@@ -1150,8 +1150,8 @@ def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "research/knowledge_graph/named_entity_recognition/ner_tagger_input.json",
-        f"{ner_file_prefix}/ner_output_talmud.json",
+        "research/knowledge_graph/named_entity_recognition/ner_tagger_input_mishnah.json",
+        f"{ner_file_prefix}/ner_output_mishnah.json",
         f"{ner_file_prefix}/html"
     )
     # corpus_manager.export_named_entities(f"{ner_file_prefix}/named_entities_export.csv")
@@ -1162,10 +1162,10 @@ if __name__ == "__main__":
     # corpus_manager.load_mentions()
     corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi'})
     # corpus_manager.cross_validate_mentions_by_lang(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv")
-    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en")
+    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("Mishnah Yomit by Dr. Joshua Kulp", "en"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he")
     
     # compare_two_versions_ner_tagger_output('ner_output_talmud.json', 'ner_output_talmud_word_breakers.json', ner_file_prefix)
-    # compare_two_versions_ner_tagger_output('ner_output_mishnah.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
+    compare_two_versions_ner_tagger_output('ner_output_mishnah.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
 
 """
 This file depends on first running

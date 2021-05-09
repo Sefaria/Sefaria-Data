@@ -30,7 +30,7 @@ footnote_re = re.compile("(\[[0123456789]+\])")
 # le'eil and le'halan
 self_re = re.compile("(?<=\(.*)(\u05dc\u05e2\u05d9\u05dc|\u05dc\u05d4\u05dc\u05df|בהמשך) (\S*), (\S*).*\)")
 # shulchan arukh
-sa_re = re.compile('\(.*שו"ע(?!\s*(חו"מ|יו"ד|אב"ה|או"ח|אה"ע)).*\)')#re.compile("\(.*\u05e9\u05d5\"\u05e2(?!\s*\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
+sa_re = re.compile('\(.*שו"ע(?!\s*(חו"מ|יו"ד|אב"ה|או"ח|אה"ע)).*\)') # re.compile("\(.*\u05e9\u05d5\"\u05e2(?!\s*\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7|\u05d0\u05d4\"\u05e2).*\)")
 # arukh hashulchan
 ah_re = re.compile("\(.*\u05e2\u05e8\u05d5\u05d4\"\u05e9 (?!\u05d7\u05d5\"\u05de|\u05d9\u05d5\"\u05d3|\u05d0\u05d1\"\u05d4|\u05d0\u05d5\"\u05d7).*\)")
 # mishnah berurah
@@ -1228,10 +1228,10 @@ if __name__ == "__main__":
 
     for lang, book_list in enumerate([he_book_list, both_book_list]):
         for curr_book in book_list:
-            # do_peninei_halakhah(books[curr_book][0], books[curr_book][1], books[curr_book][2], title_translations_tsv=tsv_translations_file, title_changes_tsv=tsv_title_changes_file, lang=langs[lang], only_chapters_translated=False)
+            do_peninei_halakhah(books[curr_book][0], books[curr_book][1], books[curr_book][2], title_translations_tsv=tsv_translations_file, title_changes_tsv=tsv_title_changes_file, lang=langs[lang], only_chapters_translated=False)
             # library.refresh_index_record_in_cache("Peninei Halakhah, {}".format(books[curr_book][0]))
             # # FOR POSTING LINKS, FIRST RUN SCRIPT WITH THE LINE BELOW COMMENTED OUT, THEN RESET EACH INDEX, THEN RUN SCRIPT WITH THE ABOVE LINES COMMENTED OUT
-            post_self_links(books[curr_book][0])
+            # post_self_links(books[curr_book][0])
 
     if print_titles_to_be_changed:
         for num, list in enumerate(titles_to_print):

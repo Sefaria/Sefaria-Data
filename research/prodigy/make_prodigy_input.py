@@ -1,4 +1,4 @@
-import django, regex, srsly, random
+import django, regex, srsly, random, re
 from collections import defaultdict
 from tqdm import tqdm
 django.setup()
@@ -132,14 +132,34 @@ def combine_all_sentences_to_paragraphs():
     my_db.db.examples1_input.delete_many({})
     my_db.db.examples1_input.insert_many(combined_examples)
 
+def make_prodigy_input_by_refs(ref_list):
+    walker = ProdigyInputWalker()
+    input_list = []
+    for tref in ref_list:
+        oref = Ref(tref)
+        text = walker.normalize(oref.text('he').text)
+        temp_input_list = walker.get_input(text, tref, 'he')
+        input_list += temp_input_list
+    srsly.write_jsonl('research/prodigy/data/test_input.jsonl', input_list)
 
+def make_prodigy_input_sub_citation(citation_collection, output_collection):
+    my_db = MongoProdigyDBManager('blah', 'localhost', 27017)
+    getattr(my_db.db, output_collection).delete_many({})
+    for doc in getattr(my_db.db, citation_collection).find({}):
+        for span in doc['spans']:
+            span_text = doc['text'][span['start']:span['end']]
+            getattr(my_db.db, output_collection).insert_one({"text": span_text, "spans": [], "meta": {"Ref": doc['meta']['Ref'], "Start": span['start'], "End": span['end']}})
 
 if __name__ == "__main__":
-    title_list = [
-        'Rashba on Gittin', 'Chiddushei Ramban on Shabbat', 'Ben Yehoyada on Berakhot',
-        'Tosafot on Bekhorot', 'Chidushei Agadot on Zevachim', 'Chidushei Halachot on Bava Kamma', 'Rabbeinu Gershom on Meilah',
-        'Maharam Shif on Sanhedrin', 'Maadaney Yom Tov on Niddah', 'Rashbam on Menachot', 'Penei Yehoshua on Shevuot',
-        'Yad Ramah on Sanhedrin', 'Shita Mekubetzet on Ketubot'
-    ]
-    make_prodigy_input(title_list, [None]*len(title_list), ['he']*len(title_list))
+    # title_list = [
+    #     'Rashba on Gittin', 'Chiddushei Ramban on Shabbat', 'Ben Yehoyada on Berakhot',
+    #     'Tosafot on Bekhorot', 'Chidushei Agadot on Zevachim', 'Chidushei Halachot on Bava Kamma', 'Rabbeinu Gershom on Meilah',
+    #     'Maharam Shif on Sanhedrin', 'Maadaney Yom Tov on Niddah', 'Rashbam on Menachot', 'Penei Yehoshua on Shevuot',
+    #     'Yad Ramah on Sanhedrin', 'Shita Mekubetzet on Ketubot'
+    # ]
+    # title_list = [i.title for i in IndexSet({"title": re.compile(r'Gilyon HaShas on')})]
+    # print(title_list)
+    # make_prodigy_input(title_list, [None]*len(title_list), ['he']*len(title_list))
+
     # combine_all_sentences_to_paragraphs()
+    make_prodigy_input_sub_citation('gilyon_output', 'gilyon_sub_citation_input')

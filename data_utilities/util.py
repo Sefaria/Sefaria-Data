@@ -1373,3 +1373,15 @@ class TextSanitizer:
 
     def check_unsanitized_word_index(self, word_index:int):
         return self.get_segment_index_from_word_index(word_index, self._unsanitized_word_indices)
+def get_window_around_match(start_char:int, end_char:int, text:str, window:int=10) -> tuple:
+    before_window, after_window = '', ''
+
+    before_text = text[:start_char]
+    before_window_words = list(filter(lambda x: len(x) > 0, before_text.split()))[-window:]
+    before_window = " ".join(before_window_words)
+
+    after_text = text[end_char:]
+    after_window_words = list(filter(lambda x: len(x) > 0, after_text.split()))[:window]
+    after_window = " ".join(after_window_words)
+
+    return before_window, after_window

@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 import django
 django.setup()
-from sefaria.model import *
+
+import string
 from sources.functions import *
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
-from commentatorToCommentatorLinking import tokenizer, get_score
+from sources.Scripts.commentatorToCommentatorLinking import tokenizer, get_score
+from data_utilities.dibur_hamatchil_matcher import *
+from sefaria.utils.hebrew import strip_cantillation
 
 
 def addMidrashRabbahMegillotLinks(midrash_name):
@@ -74,11 +77,11 @@ def megillah_match(comment_ref, megillah_name, perek=None, pasuk=None):
     if match_dict:
         max_match = max(match_dict, key=match_dict.get)
         if max_match.score < 0:
-            print "Match was bad for {}".format(comment_ref.normal())
+            print("Match was bad for {}".format(comment_ref.normal()))
             return 0
         location_index = len(max_match.a.mesechta.split()) - 1
         perek, pasuk = max_match.a.ref.normal().split()[location_index].split(":")
-        print "Match found."
+        print("Match found.")
         return perek, pasuk
 
 
@@ -91,19 +94,83 @@ def megillah_match(comment_ref, megillah_name, perek=None, pasuk=None):
     if match_dict2:
         max_match2 = max(match_dict2, key=match_dict2.get)
         if max_match2.score < 0:
-            print " (2nd try) Match was bad for {}".format(comment_ref.normal())
+            print(" (2nd try) Match was bad for {}".format(comment_ref.normal()))
             return 0
         location_index = len(max_match2.a.mesechta.split()) - 1
         perek, pasuk = max_match2.a.ref.normal().split()[location_index].split(":")
-        print "(2nd try) Match found."
+        print("(2nd try) Match found.")
         return perek, pasuk
 
-    print "No match was found for {}".format(comment_ref.normal())
+    print("No match was found for {}".format(comment_ref.normal()))
     return 0
+
 
 def get_around_name(text):
     return " ".join(text.split()[0:15] + text.split()[len(text.split())-15:])
 
 
+def tok(st):
+    st = strip_cantillation(st, strip_vowels=True)
+    st = re.sub(f'[{string.punctuation}־]', ' ', st)
+    st = st.split()
+    return st
+
+
+def get_link_option(pasuk, comment_ref):
+    match = get_maximum_dh(base_text=TextChunk(pasuk, lang='he'), comment=TextChunk(comment_ref, lang='he').text,
+                           tokenizer=tok, max_dh_len=7)
+    link_option = (comment_ref, pasuk, match)
+    return link_option
+
+
+def eichah_DH_match(base_text, comment):
+    link_options =[]
+    flo = []
+    chapter = Ref(base_text)
+    comment_text = Ref(comment)
+    for pasuk in chapter.all_segment_refs():
+        for comment_ref in comment_text.all_segment_refs():
+            link_option = get_link_option(pasuk, comment_ref)
+            link_options.append(link_option)
+
+    for comment_ref in comment_text.all_segment_refs():
+        final_link_option = min([t for t in link_options if t[0] == comment_ref and t[2]], default=None, key=lambda t: t[2].score)
+        if final_link_option:
+            flo.append(final_link_option)
+    return flo
+
+
+def post_links(query):
+    linkset = LinkSet(query)
+    links = [l.contents() for l in linkset]
+    post_link(links)
+    return links
+
+
+def link_options_to_links(link_options, post=False):
+    links=[]
+    for link_option in link_options:
+        link = Link({"type": 'midrash',
+            "refs": [link_option[0].normal(), link_option[1].normal()],
+            "generated_by": "midrash_rabbah_to_megillot_linker"
+             })
+        links.append(link.contents())
+    if post:
+        post_link(links)
+    return links
+
+
 if __name__ == '__main__':
-    result = addMidrashRabbahMegillotLinks("Eichah Rabbah")
+
+    # result = addMidrashRabbahMegillotLinks("Eichah Rabbah")
+    # link_options = eichah_DH_match('Lamentations 2', 'Eichah Rabbah.2')
+    # links = link_options_to_links(link_options, post=False)
+    # Eichah_query = {"generated_by": {"$regex": "midrash_rabbah.*"}, "$and": [{"refs": {"$regex":"Eichah.*"}}]}
+    # post_links(Eichah_query)
+    # Ref_base, Ref_comm, dh, match
+    final_link_matches = best_reflinks_for_maximum_dh(Ref('Lamentations 1'), Ref('Eichah Rabbah.1'), tokenizer=tok, max_dh_len=7)
+    # print(dh)
+    # dh_length = len(dh.split())
+    # comment_text = TextChunk(Ref_comm, lang="he").text
+    # print(f'<em>{comment_text[0:dh_length]}<\em>{comment_text[dh_length::]}') #wrong approach
+    pass
