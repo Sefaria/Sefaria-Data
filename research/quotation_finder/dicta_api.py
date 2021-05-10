@@ -85,28 +85,28 @@ def write_to_csv(links, link_datas, filename='quotation_links'):
         row = {"url": link2url(link),
                "pasuk": link.refs[0],
                base_text_name: link.refs[1],
-               "words (in text)": link_data[2],
-               "words (in pasuk)": link_data[3].textToMatch,
+               "words 1": link_data[2],
+               "words 2": link_data[3].textToMatch,
                "score": link_data[3].score,
-                "dh": True if len(link_data)>4 and link_data[4]=="dh" else False}
+                "dh": True if len(link_data)>4 and link_data[4]=="dh" else None}
         list_dict.append(row)
 
     with open(u'{}.csv'.format(filename), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, ['url', 'pasuk', base_text_name, 'words (in text)', 'score', "dh"])  # fieldnames = obj_list[0].keys())
+        writer = csv.DictWriter(csv_file, ['url', 'pasuk', base_text_name, 'words 1', 'words 2', 'score', "dh"])  # fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(list_dict)
 
 
 if __name__ == '__main__':
     from sources.Scripts.pesukim_linking import *
-    peared = get_zip_ys()
+    peared = get_zip_ys() # ys, perek (Torah)
     books = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
     book = random.sample(range(5), 1)[0]
     pear = peared[book][random.sample(range(len(peared[book])), 1)[0]]
 
     # dicta code
     base_refs = pear[1].all_segment_refs()
-    link_options = get_dicta_matches(base_refs, onlyDH=True)
+    link_options = get_dicta_matches(base_refs, onlyDH=False)
     links, link_data = link_options_to_links(link_options)
     os.mkdir(pear[1].normal())  # os.mkdir(f"{os.getcwd()}/{pear[1].normal()}")
     os.chdir(pear[1].normal())
