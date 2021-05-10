@@ -15,7 +15,7 @@ class MongoProdigyDBManager:
         return len(self.datasets)
 
     def __contains__(self, name):
-        return self.output_collection.find_one({"name": name}) is not None
+        return self.db.datasets.find_one({"name": name}) is not None
 
     def get_meta(self, name):
         pass

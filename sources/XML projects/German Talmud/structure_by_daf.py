@@ -23,6 +23,10 @@ vsource = "https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI"
 for file in os.listdir("."):
     if file.endswith(".csv") and not "ftnote" in file:
         title = file.replace(".csv", "")
+        if not file[0].isupper():
+            continue
+        if "Chullin" not in file:
+            continue
         print(file)
         text = ""
         with open("{}.csv".format(title), 'r') as f:

@@ -75,7 +75,7 @@ def parse_general(filename):
     regs = [u'@22 ?(\u05e4\u05e8\u05e7)? ?(?P<gim>[\u05d0-\u05ea]{1,3})', u'\{(?P<gim>[\u05d0-\u05ea]{1,3})\}']
     with codecs.open(filename, 'r', 'utf-8') as infile:
         bs_ja = file_to_ja_g(3, infile, regs, cleaner).array()
-        print bs_ja
+        print(bs_ja)
         ja_to_xml(bs_ja,['perek','pasuk','comment'], '{}xml'.format(re.search(u'.*\.',filename).group()))
         return bs_ja
 

@@ -52,21 +52,7 @@ def combine_lines(base_ref, lines, results):
 
 
 def delete_old_links():
-    indices = """Rabbeinu Chananel on Shabbat
-Rabbeinu Chananel on Eruvin
-Rabbeinu Chananel on Pesachim
-Rabbeinu Chananel on Rosh Hashanah
-Rabbeinu Chananel on Yoma
-Rabbeinu Chananel on Sukkah
-Rabbeinu Chananel on Beitzah
-Rabbeinu Chananel on Moed Katan
-Rabbeinu Chananel on Chagigah
-Rabbeinu Chananel on Bava Metzia
-Rabbeinu Chananel on Sanhedrin
-Rabbeinu Chananel on Makkot
-Rabbeinu Chananel on Shevuot
-Rav Nissim Gaon on Shabbat
-Rav Nissim Gaon on Berakhot""".splitlines()
+    indices = """Rabbeinu Chananel on Sanhedrin""".splitlines()
     relevant_indices = set()
 
     start_at = "Yoma"
@@ -95,30 +81,30 @@ Rav Nissim Gaon on Berakhot""".splitlines()
     for i in relevant_indices:
         print(i)
         count += 1
-        delete_link(i, server="https://www.sefaria.org")
+        delete_link(i, server="https://germantalmud.cauldron.sefaria.org")
         time.sleep(count*10)
-#
-# def just_post_as_is(ref, results, text):
-#     links = []
-#     for m, match in enumerate(results):
-#         if match:
-#             comm_ref = "{}:{}".format(ref.top_section_ref(), 1 + m)
-#             link = {"refs": [comm_ref, match.normal()], "generated_by": "redo_chananel", "type": "Commentary",
-#                     "auto": True}
-#             links.append(link)
-#     if daf_as_num not in new_text:
-#         new_text[daf_as_num] = []
-#     lines = text.split(". ")
-#     for n, line in enumerate(lines):
-#         if line.endswith(":"):
-#             new_text[daf_as_num].append(line)
-#         elif not line.endswith("."):
-#             new_text[daf_as_num].append(line + ".")
-#         else:
-#             assert n == len(lines) - 1
-#             new_text[daf_as_num].append(line)
-#
-#     return links, new_text
+
+def just_post_as_is(ref, results, text):
+    links = []
+    for m, match in enumerate(results):
+        if match:
+            comm_ref = "{}:{}".format(ref.top_section_ref(), 1 + m)
+            link = {"refs": [comm_ref, match.normal()], "generated_by": "redo_chananel", "type": "Commentary",
+                    "auto": True}
+            links.append(link)
+    if daf_as_num not in new_text:
+        new_text[daf_as_num] = []
+    lines = text.split(". ")
+    for n, line in enumerate(lines):
+        if line.endswith(":"):
+            new_text[daf_as_num].append(line)
+        elif not line.endswith("."):
+            new_text[daf_as_num].append(line + ".")
+        else:
+            assert n == len(lines) - 1
+            new_text[daf_as_num].append(line)
+
+    return links, new_text
 
 def dher(str):
     dh = " ".join(str.split()[:3])
@@ -129,11 +115,13 @@ def base_tokenizer(str):
 
 
 def create_new_links():
-
     links = []
+    links_dict = {}
     chananel = library.get_indexes_in_category("Rabbeinu Chananel", include_dependant=True)
     nissim = library.get_indexes_in_category("Rav Nissim Gaon", include_dependant=True)
     for title in chananel:
+        if "Avodah Zarah" not in title:
+            continue
         print(title)
         new_text = {}
         index = library.get_index(title)
@@ -141,6 +129,8 @@ def create_new_links():
             continue
 
         for sec_ref in library.get_index(title).all_section_refs():
+            # if "90a" not in sec_ref.normal():
+            #     continue
             for ref in sec_ref.all_segment_refs():
                 daf = ref.top_section_ref().normal().split()[-1]
                 daf_as_num = ref.sections[0]
@@ -169,6 +159,9 @@ def create_new_links():
                     rabbeinu_ref = "{} {}:{}".format(title, daf, m+1)
                     links.append({"refs": [rabbeinu_ref, match.normal()], "generated_by": "redo_chananel",
                                   "type": "Commentary", "auto": True})
+                    if rabbeinu_ref in links_dict:
+                        print()
+                    links_dict[rabbeinu_ref] = links[-1]
         new_text = convertDictToArray(new_text)
         send_text = {
             "text": new_text,
@@ -177,7 +170,8 @@ def create_new_links():
             "versionSource": "http://primo.nli.org.il/primo-explore/fulldisplay?vid=NLI&docid=NNL_ALEPH001300957&context=L"
         }
         #post_text(title, send_text, server="https://www.sefaria.org")
-        post_link(links)
+        post_link_in_steps(links, server="https://germantalmud.cauldron.sefaria.org")
+        print(links)
 
 
 def func_to_profile():
@@ -201,7 +195,9 @@ def func_to_profile():
     after = time.time()
     print(after - before)
 
+#delete_old_links()
+#delete_link("Rabbeinu Chananel on Sanhedrin", server="https://germantalmud.cauldron.sefaria.org")
 
+create_new_links()
 #prof('func_to_profile()')
-delete_old_links()
 #create_new_links()
