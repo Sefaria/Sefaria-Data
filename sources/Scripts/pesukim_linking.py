@@ -93,10 +93,10 @@ def match_to_link_json(match, link_type='', generated_by=None, auto=True):
     return link
 
 
-def link_options_to_links(link_options, link_type='', post=False, qa_url=None, max_score = 500, max_dh = True):
+def link_options_to_links(link_options, link_type='', post=False, qa_url=None, max_score = 500, max_dh = True, generated_by=""):
     links=[]
     for link_option in link_options:
-        link = match_to_link_json(link_option, link_type=link_type, generated_by="yalkut_shimoni_linker", auto=True)
+        link = match_to_link_json(link_option, link_type=link_type, generated_by=generated_by, auto=True)
         if max_dh:
             # link = Link(link)
             score = link_option[3].score
@@ -119,6 +119,48 @@ def link_options_to_links(link_options, link_type='', post=False, qa_url=None, m
         post_link(links)
     return links, link_options
 
+def get_dme_linking(peared, post =True):
+    ls_ys = LinkSet({"$and": [{"refs": {"$regex": "Degel Machaneh Ephraim.*"}},
+                           {"generated_by": {"$ne": "yalkut_shimoni_linker"}}]})
+    old_ys_links = [l["refs"][0] for l in ls_ys.contents()]
+    cnt_topost_ys_links = 0
+    for torah, dme in peared:
+        topost_ys_links = []
+    #     matches = get_matches((torah, dme))
+        matches_dict = match_ref(torah.text('he'), dme.text('he'),
+                        base_tokenizer=tok, dh_extract_method=lambda st:[x for x in re.split("<b>(.*?)<.b>", re.sub("וכו", ' ', st)) if x][0])
+        raw_matches = list(zip(matches_dict['matches'], matches_dict['comment_refs']))
+        matches = [m for m in raw_matches if m[0] and m[1]]
+        matches2 = get_matches((torah, dme))
+        links1, link_data1 = link_options_to_links(matches, link_type='chasidut', post=False, max_dh=False, generated_by="yalkut_shimoni_linker")  #, qa_url='chasidutlinking')
+        links2, link_data2 = link_options_to_links(matches2, link_type='chasidut', post=False, max_dh=True, max_score=40, generated_by="yalkut_shimoni_linker")  #, qa_url='chasidutlinking')
+        for link in links2:
+            if link["refs"][1] in old_ys_links:
+                links2.remove(link)
+                continue  # this seg has a manual link already
+            if link['refs'] in [l['refs'] for l in links1]:  # hence in both links1 and links2 => probabaly correct
+                topost_ys_links.append(link)
+                continue
+            # only in links2
+            link_dh = [l for l in links1 if l["refs"][1] == link["refs"][1]]
+            if link_dh and Ref(link_dh[0]["refs"][0]).is_range():
+                topost_ys_links.append(link_dh[0])
+                links1.remove(link_dh[0])
+                continue
+            # last add the left links2:
+            topost_ys_links.append(link)
+        for link in links1: # not sure what to do with these, are they good links?
+            if link["refs"][1] in old_ys_links:
+                links1.remove(link)
+                continue # this seg has a manual link already
+            if link['refs'][1] not in [l['refs'][1] for l in links2]:
+                topost_ys_links.append(link)
+                print(link2url(link, "chasidutlinking"))
+        if post:
+            post_link(topost_ys_links)
+        cnt_topost_ys_links += len(topost_ys_links)
+    print(cnt_topost_ys_links)
+
 
 if __name__ == '__main__':
     # peared = get_zip_ys()
@@ -130,34 +172,4 @@ if __name__ == '__main__':
     peared = get_zip_parashot_refs("Degel Machaneh Ephraim")
     # peared = get_zip_parashot_refs("Ohev Yisrael")
     # # print(len(peared))
-    cnt_links1 = 0
-    cnt_links2 = 0
-    ls_ys = LinkSet({"$and": [{"refs": {"$regex": "Degel Machaneh Ephraim.*"}},
-                           {"generated_by": {"$ne": "yalkut_shimoni_linker"}}]})
-    old_ys_links = ls_ys.contents()
-    topost_links = []
-    for torah, dme in peared:
-    #     matches = get_matches((torah, dme))
-        matches_dict = match_ref(torah.text('he'), dme.text('he'),
-                        base_tokenizer=tok, dh_extract_method=lambda st:[x for x in re.split("<b>(.*?)<.b>", re.sub("וכו", ' ', st)) if x][0])
-        raw_matches = list(zip(matches_dict['matches'], matches_dict['comment_refs']))
-        matches = [m for m in raw_matches if m[0] and m[1]]
-        matches2 = get_matches((torah, dme))
-        links1, link_data1 = link_options_to_links(matches, link_type='chasidut2', post=False, max_dh=False) #, qa_url='chasidutlinking')
-        links2, link_data2 = link_options_to_links(matches2, link_type='chasidut', post=False, max_dh=True, max_score=40) #, qa_url='chasidutlinking')
-        ys_linked_segs = []
-        if links2 != links1:
-            print("links dh <b>:")
-            for link in links1:
-                if link['refs'] not in [l['refs'] for l in links2]:
-                    print(link2url(link, "chasidutlinking"))
-            print("links max dh guess <b>:")
-            for link in links2:
-                if link['refs'] not in [l['refs'] for l in links1]:
-                    print(link2url(link, "chasidutlinking"))
-        cnt_links1 += len(links1)
-        cnt_links2 += len(links2)
-    print(cnt_links1)
-    print(cnt_links2)
-
-
+    get_dme_linking(peared, post=False)
