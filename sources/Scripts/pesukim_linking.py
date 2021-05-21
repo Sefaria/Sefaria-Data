@@ -33,7 +33,14 @@ def get_zip_parashot_refs(ind_name, only_first_seg_comment=False):
     :return:
     """
     ind = library.get_index(ind_name)
-    nodes = [node["key"] for node in ind.schema["nodes"]]
+    if len(ind.schema["nodes"]) == 5:
+        parasha_nodes = []
+        for b in ind.schema["nodes"]:
+            parasha_nodes += b["nodes"]
+    else:
+        parasha_nodes = ind.schema["nodes"]
+    nodes = [node["key"] for node in parasha_nodes]
+
     peared = []
     for node in nodes:
         try:
@@ -93,14 +100,14 @@ def match_to_link_json(match, link_type='', generated_by=None, auto=True):
     return link
 
 
-def link_options_to_links(link_options, link_type='', post=False, qa_url=None, max_score = 500, max_dh = True, generated_by=""):
+def link_options_to_links(link_options, link_type='', post=False, qa_url=None, max_score=1000, min_score=0, max_dh = True, generated_by=""):
     links=[]
     for link_option in link_options:
         link = match_to_link_json(link_option, link_type=link_type, generated_by=generated_by, auto=True)
         if max_dh:
             # link = Link(link)
             score = link_option[3].score
-            if score < max_score:
+            if score < max_score and score > min_score:
                 links.append(link)
             else:
                 link_options.remove(link_option)
@@ -118,6 +125,7 @@ def link_options_to_links(link_options, link_type='', post=False, qa_url=None, m
     if post and links:
         post_link(links)
     return links, link_options
+
 
 def get_dme_linking(peared, post =True):
     ls_ys = LinkSet({"$and": [{"refs": {"$regex": "Degel Machaneh Ephraim.*"}},
@@ -160,16 +168,17 @@ def get_dme_linking(peared, post =True):
             post_link(topost_ys_links)
         cnt_topost_ys_links += len(topost_ys_links)
     print(cnt_topost_ys_links)
+    return cnt_topost_ys_links
 
 
 if __name__ == '__main__':
     # peared = get_zip_ys()
-    # book =random.sample(range(5), 1)[0]
-    # pear = peared[book][random.sample(range(len(peared[book])), 1)[0]]
+    peared = get_zip_parashot_refs("Sefat Emet")
+    book =random.sample(range(5), 1)[0]
+    pear = peared[book][random.sample(range(len(peared[book])), 1)[0]]
     # for torah, ys in peared[book]:
     #     matches = get_matches((torah, ys))
     #     link_options_to_links(matches, link_type="Midrash")
-    peared = get_zip_parashot_refs("Degel Machaneh Ephraim")
     # peared = get_zip_parashot_refs("Ohev Yisrael")
     # # print(len(peared))
-    get_dme_linking(peared, post=False)
+    topost_links = get_dme_linking(pear, post=False)
