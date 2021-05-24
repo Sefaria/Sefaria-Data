@@ -61,7 +61,7 @@ def get_dicta_matches(base_refs, mode="tanakh", onlyDH = False, thresh=0, min_th
     :param min_thresh:
     :return: list (as long as the list of base_refs - segs) of matches
     """
-    Match = namedtuple("Match", ["textMatched", "textToMatch", "score", "startIChar", "endIChar", "pasukStartIChar", "pasukEndIChar"])
+    Match = namedtuple("Match", ["textMatched", "textToMatch", "score", "startIChar", "endIChar", "pasukStartIChar", "pasukEndIChar", "dh"])
     link_options = []
     dh_link_options = []
     for base_ref in base_refs:
@@ -84,7 +84,7 @@ def get_dicta_matches(base_refs, mode="tanakh", onlyDH = False, thresh=0, min_th
             matched_wds_pasuk = retreive_bold(matched['matchedText'])
             # print(f"{matched_wds_base} | {matched_wds_pasuk}")
             score = matched['score']
-            m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"], matched_pasuk_start, matched_pasuk_end)
+            m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"], matched_pasuk_start, matched_pasuk_end, result in dh_res)
             link_option = [pasuk_ref, base_ref, m.textMatched, m]
             if result in dh_res:
                 link_option.append("dh")
@@ -95,45 +95,49 @@ def get_dicta_matches(base_refs, mode="tanakh", onlyDH = False, thresh=0, min_th
     return link_options
 
 
-def data_to_link(link_option, generated_by = "", auto = True):
+def data_to_link(link_option, generated_by="", auto=True):
     match = link_option[3]
     pasuk_ref = link_option[0]
     book_match = link_option[1]
     link_json = {"type": "qutation",
      "refs": [pasuk_ref.normal(), book_match.normal()],
      "auto": auto,
-     "charLevelDataBook": {},
-     "charLevelDataPasuk": {},
+     "charLevelData": {},
     "score": match.score
      }
     if generated_by:
         link_json.update({"generated_by": generated_by})
-    link_json["charLevelDataBook"] = {"startChar" :match.startIChar,
-                                     "endChar": match.endIChar,
-                                     "versionTitle": link_option[1].text('he').version().versionTitle,
-                                     "language": "he"}
-    link_json["charLevelDataPasuk"] = {"startWord" :match.pasukStartIChar,
-                                     "endWord": match.pasukEndIChar,
-                                     "versionTitle": link_option[0].text('he').version().versionTitle,
-                                     "language": "he"}
-    return link_json
+    link_json["charLevelData"] = {
+        "charLevelDataBook": {
+            "startChar": match.startIChar,
+             "endChar": match.endIChar,
+             "versionTitle": link_option[1].text('he').version().versionTitle,
+             "language": "he"
+        },
+     "charLevelDataPasuk": {
+         "startWord": match.pasukStartIChar,
+         "endWord": match.pasukEndIChar,
+         "versionTitle": link_option[0].text('he').version().versionTitle,
+         "language": "he"}
+        }
+    return link_json, match
 
 
-def write_to_csv(links, link_datas, filename='quotation_links'):
+def write_to_csv(links, linkMatchs,  filename='quotation_links'):
     list_dict = []
     base_text_name = Ref(links[0]["refs"][1]).book
-    for link, link_data in zip(links, link_datas):
+    for link, linkMatch in zip(links, linkMatchs):
         row = {"url": link2url(link),
                "pasuk": link["refs"][0],
                base_text_name: link["refs"][1],
-               "words 1": link_data[2],
-               "words 2": link_data[3].textToMatch,
-               "score": link_data[3].score,
-                "dh": True if len(link_data)>4 and link_data[4]=="dh" else None}
+               "words pasuk": linkMatch.textToMatch,
+               "words base": linkMatch.textMatched,
+               "score": linkMatch.score,
+                "dh": linkMatch.dh}
         list_dict.append(row)
 
     with open(u'{}.csv'.format(filename), 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, ['url', 'pasuk', base_text_name, 'words 1', 'words 2', 'score', "dh"])  # fieldnames = obj_list[0].keys())
+        writer = csv.DictWriter(csv_file, ['url', 'pasuk', base_text_name, 'words pasuk', 'words base', 'score', "dh"])  # fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(list_dict)
 
@@ -144,7 +148,6 @@ if __name__ == '__main__':
     books = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
     book = random.sample(range(5), 1)[0]
     pear = peared[book][random.sample(range(len(peared[book])), 1)[0]]
-    pear = (Ref('Leviticus 21'), Ref('Yalkut Shimoni on Torah 626:6-643:11'))
     print(pear)
     # from pathlib import Path
     # Path(f"{os.getcwd()}/{pear[0]}").mkdir(parents=True, exist_ok=True)
@@ -154,10 +157,11 @@ if __name__ == '__main__':
     for thresh in [10, 22, 50]:
         base_refs = pear[1].all_segment_refs()
         link_options = get_dicta_matches(base_refs, onlyDH=False)
-        links = [data_to_link(link_option, generated_by="Yalkut_shimoni_quotations") for link_option in link_options]
+        links, linkMatchs = zip(*[data_to_link(link_option, generated_by="Yalkut_shimoni_quotations") for link_option in link_options])
         # links, link_data = link_options_to_links(link_options, min_score=thresh)
-        # write_to_csv(links, links, filename=f"dicta_{thresh}")
-        pass
+        write_to_csv(links, linkMatchs, filename=f"dicta_{thresh}")
+        print(len(links))
+        post_link(links)
 
     # # dh code
     # matches = get_matches(pear)
