@@ -7,17 +7,20 @@ import bs4
 import time
 import json
 import zipfile
+from typing import List
+from functools import reduce
 from itertools import zip_longest
 import data_utilities.text_align as align
 from data_utilities.sanity_checks import find_out_of_order
 import simpleaudio
-from data_utilities.util import getGematria, traverse_ja
+from sources.functions import post_text, post_index, add_term, add_category
+from data_utilities.util import getGematria, traverse_ja, word_index_from_char_index
 from sources.Yerushalmi import sefaria_objects
 from sefaria.utils.hebrew import strip_nikkud
 from sefaria.model.schema import AddressTalmud
 from sefaria.datatype.jagged_array import JaggedArray
 from concurrent.futures.process import ProcessPoolExecutor
-from data_utilities.util import ja_to_xml
+from data_utilities.util import ja_to_xml, TextSanitizer, sanitized_words_to_unsanitized_words, traverse_ja
 from data_utilities.ParseUtil import *
 from data_utilities.dibur_hamatchil_matcher import match_ref, match_text
 
@@ -30,6 +33,137 @@ time_start = time.time()
 #     with open(f) as fp:
 #         soup = bs4.BeautifulSoup(fp, 'html5lib')
 #         print(f, soup.h2.text)
+
+
+"""
+For the sake of this script, I'm going to collect all the sanitizers and mapping data into one place. That
+will allow me to easily pull out individual pieces of data in a more limited scope. The drawback is this is an
+incredibly stateful approach, which I usually abhor. Although ultimately, this object is nearly the final result
+of the script. For the sake of this project, I believe this will ultimately help make the final push a little
+easier.
+
+ {
+  <tractate-title>: [
+    {
+      guggenheimer: <guggenheimer-segments>,
+      mehon-sanitizer: <sanitizer-for-mehon>  # this contains both the word list and original division,
+      mapping: the result from create_tractate_mappings,
+      halkha-indices: <array>
+    }
+  ]
+
+}
+"""
+
+ASSEMBLER = {}
+SANITIZATION_REGEX = r'((?<=\s)\([^()]+\)\s)|[.:]'
+
+
+"""
+In order to put the mehon text together, I need to convert the sanitized index into a non-sanitized index. The method
+util.convert_normalized_indices_to_unnormalized_indices will do this for a character index. I need to be able to take
+a word index, convert to a character index, get the unsanitzed char index then the unsanitized word index. It might be
+more beneficial to not use exact char-to-word indices, but rather to "round down" or rather "backwards" to the nearest
+space.
+
+Let's start easy. Take the guggenheimer. Work out which segments are start of a new halakha. Then assemble a JaggedArray
+"""
+
+
+def assemble_guggenheimer_chapter(segments, mappings, halakha_segments, mishnayot_included=True, verbose=False):
+
+    def correct_halakha(halkha_number, segment_number):
+        if segment_number == -1:
+            return True  # no halakha transition if we couldn't match the segment
+        return halakha_segments[halkha_number] <= segment_number < halakha_segments[halkha_number + 1]
+
+    segment_map, clean_divisions = mappings['word_mapping'], mappings['clean']
+    assert len(segments) == len(segment_map) == len(clean_divisions)
+    current_halakha = 0
+    clean = True
+
+    ja, error_list = JaggedArray(), []
+    for i, segment in enumerate(segments):
+        segment_start, segment_end = segment_map[i]
+        first_check = True
+
+        """
+        check that:
+        1. if advancing, check that ja isn't blank - can do this at the end?
+        2. if advancing, check that we have a clean break
+        3. always check that start and end are in the same halakha
+        """
+
+        while not correct_halakha(current_halakha, segment_start):
+            current_halakha += 1
+            if first_check:
+                first_check = False
+                # we expect guggenheimer to end a segment at the exact location where a Vilna halakha ends
+                clean_break = clean_divisions[i][0] and clean_divisions[i-1][1]
+                if not clean_break:
+                    clean = False
+                    error_message = f'issue with first segment of halakha {current_halakha} segment number: {i+1}'
+                    error_list.append(error_message)
+                    if verbose:
+                        print(error_message)
+        if not correct_halakha(current_halakha, segment_end):
+            clean = False
+
+            try:
+                segment_number = len(ja.get_element([current_halakha]))
+            except IndexError:
+                segment_number = 1 if mishnayot_included else 2
+            error_message = f'{current_halakha+1}:{segment_number} segment num: {i+1} bridges two halakhot (one indexed)'
+            error_list.append(error_message)
+            if verbose:
+                print(error_message)
+                print(segment)
+                
+        if not mishnayot_included and current_halakha >= len(ja):
+            append_in_ja(ja, current_halakha, 'חסרה משנה')  # add a placeholder segment as a placeholder for mishnah
+        append_in_ja(ja, current_halakha, segment)
+
+    if not all([len(x) > 0 for x in ja.array()]):
+        clean = False
+        error_message = 'empty halakhot found'
+        error_list.append(error_message)
+        if verbose:
+            print(error_message)
+    return ja.array(), clean, error_list
+
+
+def assemble_mehon_segments(mehon_chapter, sanitized_chapter, mappings, sanitizer):
+    word_indices = mappings['matches']
+    unsanitized_word_indices = sanitized_words_to_unsanitized_words(mehon_chapter, sanitized_chapter, sanitizer, word_indices)
+    unsanitzed_word_list = mehon_chapter.split()
+    segments = []
+    for indices in unsanitized_word_indices:
+        start, end = indices
+        # if start == 0:
+        #     debugging_method(mehon_chapter, end)
+        if -1 in indices:
+            segments.append('')
+        else:
+            segments.append(' '.join(unsanitzed_word_list[start:end+1]))
+    return segments
+
+
+def assemble_mehon_chapter(mehon_segments, guggenheimer_ja, mishnayot):
+    ja = JaggedArray()
+    reversed_mishnayot = mishnayot[::-1]
+    prev_halakha = -1
+    for mehon_segment, gugg_segment in zip(mehon_segments, traverse_ja(guggenheimer_ja)):
+        current_halakha = gugg_segment['indices'][0]
+        if current_halakha != prev_halakha:  # new halakha
+            try:
+                mishna = reversed_mishnayot.pop()
+            except IndexError:
+                mishna = 'חסרה משנה'
+            prev_halakha = current_halakha
+            append_in_ja(ja, current_halakha, mishna)
+        append_in_ja(ja, current_halakha, mehon_segment)
+
+    return ja.array()
 
 
 class DividedSegments:
@@ -116,14 +250,24 @@ class DividedSegments:
                     next_match = map_indices[segment_end][0]
 
                     # we don't want to fill in missing information if there is bad data in the next segment
-                    last_word = next_match - 1 if -1 not in next_segment else last_word
+                    if segment_end not in out_of_order and -1 not in next_segment and next_match-1 > first_word:
+                        last_word = next_match -1
+                    # last_word = next_match - 1 if -1 not in next_segment or segment_end in out_of_order else last_word
 
             if -1 in (first_word, last_word):
                 aligned_text = ''
             else:
                 aligned_text = ' '.join(self._word_list[first_word: last_word + 1])
+
             new_mapping['match_text'].append((segment, aligned_text))
             new_mapping['matches'].append((first_word, last_word))
+
+        # sanity check. The error correction code can make mistakes in rare cases
+        out_of_order = out_of_order_segments(new_mapping['matches'])
+        for index in out_of_order:
+            if new_mapping['matches'][index][0] > -1:
+                new_mapping['matches'][index] = (-1, new_mapping['matches'][index][1])
+                new_mapping['match_text'][index] = (new_mapping['match_text'][index][0], '')
 
         return new_mapping
 
@@ -144,6 +288,63 @@ class DividedSegments:
                 current_index += 1
             segment_indices.append((segment_start, current_index))
         return {'segments': divided_segments, 'indices': segment_indices}
+
+
+def get_mehon_halakhot(mehon_chapter):
+    """
+    obtain the indices at which halakhot start in a list of mehon segments
+    :return:
+    """
+    result = [0]
+    for halakha in mehon_chapter:
+        result.append(result[-1] + len(halakha))
+    return result
+
+
+def word_mapping_to_segments(word_mapping: List[tuple], sanitizer: TextSanitizer) -> dict:
+    """
+    match_text returns word mappings. This method will convert a mapping list into a segment map.
+
+    Returns a dict with keys: { mapping, clean }.
+    clean maps to an array of boolean pairs. If a value is True, that means that the mapping index is exactly at the
+    segment boundary.
+    :param word_mapping:
+    :param sanitizer:
+    :return:
+    """
+    def get_segment(word_index):
+        if word_index < 0:
+            return -1
+        else:
+            return sanitizer.check_sanitized_index(word_index)
+
+    result = {
+        'word_mapping': [],
+        'clean': [],
+    }
+    segment_start_indices = sanitizer.get_sanitized_word_indices()
+    for pair in word_mapping:
+        start, end = pair
+        start_segment, end_segment = get_segment(start), get_segment(end)
+        result['word_mapping'].append((start_segment, end_segment))
+
+        if start == -1:
+            start_clean = False
+        else:
+            start_clean = start == segment_start_indices[start_segment]
+
+        # working out if the end is clean has more edge cases to handle
+        if end == -1:
+            end_clean = False
+        elif end_segment < len(segment_start_indices) - 1:
+            # the end is clean if the next segment begins on the next word
+            end_clean = end + 1 == segment_start_indices[end_segment+1]
+        else:
+            # if this is the last segment, we need to know how many words are in the section
+            end_clean = end == len(sanitizer.get_sanitized_word_list()) - 1
+        result['clean'].append((start_clean, end_clean))
+    return result
+
 
 
 def create_map_repair(mapping: list, comment_segments: list, base_text_words: list, output_file=None):
@@ -290,26 +491,43 @@ def mark_out_of_order_as_miss(mapping_dict):
 
 
 
-def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
+def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only=True):
     print(tractate.title)
+    tractate_assembler = []
     output_dir = f'code_output/mapping_files/{tractate.title.replace(" ", "_")}'
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     gug_tractate_chapters = grab_guggenheim_chapters(tractate.title, talmud_only)
     he_title = re.sub(r'^תלמוד ירושלמי ', '', tractate.get_title('he'))
     mehon = get_segments_from_raw(f'mechon-mamre/{he_title}.html')
-    mehon_ja = create_chap_ja(mehon, talmud_only)
-    mehon_chaps = three_to1ja(mehon_ja)
+    mehon_ja = create_chap_ja(mehon, lambda x: 'גמרא' in x['meta'])
+    mishnayot_ja = create_chap_ja(mehon, lambda x: 'משנה' in x['meta'])
+    mehon_chaps, mishnayot_chaps = three_to1ja(mehon_ja), three_to1ja(mishnayot_ja)
     errors = [0] * len(mehon_chaps)
     for chap_num in range(len(mehon_chaps)):
+        # halakha_indices = [0] + [len(c) for c in mehon_ja[chap_num]]
+        halakha_indices = get_mehon_halakhot(mehon_ja[chap_num])
         mapping_file = os.path.join(output_dir, f'chapter_{chap_num + 1}_mapping.json')
         raw_mapping_file = mapping_file.replace('chapter', 'raw_chapter')
         # if os.path.exists(mapping_file):
         #     continue
         print(tractate.title, chap_num + 1)
-        mehon_text = ' '.join(mehon_chaps[chap_num])
-        mehon_text = re.sub(r'[.:]', '', mehon_text)
-        mehon_text = re.sub(r'(?<=\s)\([^()]+\)\s', '', mehon_text).split()
+        sanitizer = TextSanitizer(mehon_chaps[chap_num], r'\s+')
+        sanitizer.set_sanitizer(lambda x: re.sub(SANITIZATION_REGEX, '', x))
+        sanitizer.sanitize()
+        # mehon_text_original = ' '.join(mehon_chaps[chap_num])
+        # mehon_text_1 = re.sub(r'[.:]', '', mehon_text_original)
+        # mehon_text_1 = re.sub(r'(?<=\s)\([^()]+\)\s', '', mehon_text_1)
+
+        # mehon_text_2 = re.sub(r'((?<=\s)\([^()]+\)\s)|[.:]', '', mehon_text_original)
+        # print('both versions equivalent?', mehon_text_1.split() == sanitizer.get_sanitized_word_list())
+        mehon_text = sanitizer.get_sanitized_word_list()
+
+        """
+        I need to be able to say Halakha x is equivalent to words[x:y]. Even better, I just need to say "this group of
+        words belong in segment x".
+        """
+
         gug_text = [m.replace('־', ' ') for m in gug_tractate_chapters[chap_num]]
         gug_text = [strip_nikkud(m) for m in gug_text]
         gug_text = [re.sub(r'[.:]', '', m) for m in gug_text]
@@ -330,6 +548,16 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
 
         fixed_mapping = divide.realign_mapping(mapping['matches'], True)
         fixed_mapping['matches'] = [tuple(int(j) for j in i) for i in fixed_mapping['matches']]
+        fixed_mapping.update(word_mapping_to_segments(fixed_mapping['matches'], sanitizer))
+
+        tractate_assembler.append({
+            'guggenheimer': gug_tractate_chapters[chap_num],
+            'mehon-sanitizer': sanitizer,
+            'mapping': fixed_mapping,
+            'halakha-indices': halakha_indices,
+            'mehon-mishnayot': mishnayot_chaps[chap_num]
+        })
+
         with open(mapping_file, 'w') as fp:
             json.dump(fixed_mapping, fp)
         out_of_order = out_of_order_segments(fixed_mapping['matches'])
@@ -348,6 +576,7 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only):
             fp.write(review_document)
 
         errors[chap_num] += len(out_of_order)
+    ASSEMBLER[tractate.title] = tractate_assembler
     return errors
 
 
@@ -439,11 +668,12 @@ def create_daf_ja(segment_list):
     return ja.array()
 
 
-def create_chap_ja(segment_list, talmud_only=False):
-    if talmud_only:
-        segment_list = [s for s in segment_list if 'גמרא' in s['meta']]
+def create_chap_ja(segment_list, filter_method=lambda x: True):
+    filtered_segment_list = filter(filter_method, segment_list)
+    # if talmud_only:
+    #     segment_list = [s for s in segment_list if 'גמרא' in s['meta']]
     ja = JaggedArray()
-    for segment in segment_list:
+    for segment in filtered_segment_list:
         content = clean_mehon_string(segment['content'])
         address = get_address_from_segment(segment)
         try:
@@ -615,7 +845,53 @@ def create_review_document(mapping_file, comment_segments, base_text_word_list, 
 
 
 def output_method(trac):
-    return create_tractate_mappings(trac, True)
+    return create_tractate_mappings(trac)
+
+
+def debugging_method(input_string, start_character, end_character):
+    """
+    use word indexes and words. print out word and characters from previous match.end() to next match.end()
+    :return:
+    """
+    from itertools import zip_longest
+    from data_utilities.util import get_word_indices
+    input_string = input_string[start_character:end_character]
+    indices = get_word_indices(input_string, r'\s+|$')
+    words = input_string.split()
+    prev_space = 0
+    for i, (space_index, word) in enumerate(zip_longest(indices, words, fillvalue='exhausted')):
+        try:
+            chars = input_string[prev_space:space_index]
+        except TypeError:
+            chars = 'exhausted'
+        print(i, chars, word, sep='\n', end='\n\n')
+        prev_space = space_index
+
+
+def get_moc_index(tractate):
+    jnode = JaggedArrayNode()
+    # en_title = f'JTmock {tractate}'
+    # he_title = 'ירושלמי דמע ' + library.get_index(tractate).get_title('he').replace('תלמוד ירושלמי', 'ירושלמי דמע')
+    en_title = tractate.replace("Jerusalem Talmud", "JTmock")
+    he_title = library.get_index(tractate).get_title('he').replace('תלמוד ירושלמי', 'ירושלמי דמע')
+    jnode.add_primary_titles(en_title, he_title)
+    jnode.add_structure(['Chapter', 'Halakhah', 'Segment'], ['Integer', 'Halakhah', 'Integer'])
+    jnode.validate()
+    return {
+        'title': en_title,
+        'categories': ['Talmud', 'Yerushalmi', 'Mock Yerushalmi'],
+        'schema': jnode.serialize()
+    }
+
+
+def get_moc_version(version_title, ja):
+    return {
+        'text': ja,
+        'language': 'he',
+        'versionTitle': version_title,
+        'versionSource': 'foo',
+    }
+
 
 
 if __name__ == '__main__':
@@ -637,6 +913,7 @@ if __name__ == '__main__':
     # import sys
     # sys.exit(0)
     stuff = sefaria_objects.library.get_indexes_in_category('Yerushalmi', full_records=True).array()
+    stuff = [s for s in stuff if 'JTmock' not in s.title]
     stuff.sort(key=lambda x: x.order)
     # stuff = [s for s in stuff if s.title == "Jerusalem Talmud Eruvin"]
     error_dict = {}
@@ -645,6 +922,7 @@ if __name__ == '__main__':
     # make_noise()
     for thing in stuff:
         error_dict[thing.title] = output_method(thing)
+        # break
     error_dict['total'] = sum(sum(c) for c in error_dict.values())
     with open('code_output/errors.json', 'w') as fp:
         json.dump(error_dict, fp)
@@ -655,6 +933,38 @@ if __name__ == '__main__':
     # requests.post(slack_url, json={'text': 'Script Complete'})
     # make_noise()
     zip_review_documents()
+    # berakhot = ASSEMBLER['Jerusalem Talmud Shabbat']
+    for title, tractate in ASSEMBLER.items():
+        text_ja = []
+        for chap_num, chapter in enumerate(tractate, 1):
+            print(title, chap_num)
+            chap_ja, clean_chap, error_list = assemble_guggenheimer_chapter(
+                chapter['guggenheimer'], chapter['mapping'], chapter['halakha-indices'], False, True
+            )
+            text_ja.append(chap_ja)
+        mehon_ja = []
+        for chap_num, chapter in enumerate(tractate):
+            print(chap_num+1)
+            segment_sanitizer = chapter['mehon-sanitizer']
+            full_chapter = ' '.join(segment_sanitizer.get_original_segments())
+
+            segment_list = assemble_mehon_segments(full_chapter,
+                                                   ' '.join(segment_sanitizer.get_sanitized_segments()),
+                                                   chapter['mapping'],
+                                                   lambda x: [(m, '') for m in re.finditer(SANITIZATION_REGEX, x)])
+
+            mehon_ja.append(assemble_mehon_chapter(segment_list, text_ja[chap_num], chapter['mehon-mishnayot']))
+        # print(*list(berakhot[0].keys()), sep='\n')
+        # ja_to_xml(berakhot_ja, ['Chapter', 'Halakha', 'Segment'], 'code_output/berakhot_gugg_test.xml')
+        # ja_to_xml(mehon_berakhot, ['Chapter', 'Halakha', 'Segment'], 'code_output/berakhot_mehon_test.xml')
+        # server = 'http://localhost:8000'
+        server = 'https://jtmock.cauldron.sefaria.org'
+        # add_term('Mock Yerushalmi', 'ירושלמי דמ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ע', server=server)
+        # add_category('Mock Yerushalmi', ['Talmud', 'Yerushalmi', 'Mock Yerushalmi'], server=server)
+        ind = get_moc_index(title)
+        post_index(ind, server)
+        post_text(ind['title'], get_moc_version('Guggenheimer', text_ja), server=server)
+        post_text(ind['title'], get_moc_version('Mehon-Mamre', mehon_ja), server=server, index_count="on")
     import sys
     sys.exit(0)
 

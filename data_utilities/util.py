@@ -11,7 +11,7 @@ from xml.etree import ElementTree as ET
 from urllib.error import HTTPError, URLError
 import json
 import urllib.request, urllib.error, urllib.parse
-from functools import reduce
+from functools import reduce, lru_cache
 
 from typing import List
 
@@ -1285,16 +1285,45 @@ def char_indices_from_word_indices(input_string, word_ranges, split_regex=None):
         word_indices.append((start, end))
     removal_map = get_mapping_after_normalization(input_string, lambda x: [(m, '') for m in regex.finditer(x)])
     normalized_char_indices = []
-    for words in word_ranges:
-        first_word, last_word = words
-        normalized_char_indices.append((word_indices[first_word][0], word_indices[last_word][1]))
+    for i, words in enumerate(word_ranges):
+        first_word, last_word = [w if w < len(word_indices) else -1 for w in words]
+        normalized_char_indices.append(
+            (
+                word_indices[first_word][0] if first_word >=0 else -1,
+                word_indices[last_word][1] if last_word >= 0 else -1
+            )
+        )
     return convert_normalized_indices_to_unnormalized_indices(normalized_char_indices, removal_map)
+
+
+@lru_cache(maxsize=32)
+def get_word_indices(input_string, split_regex=r'\s+'):
+    """
+    helper method for word_index_from_char_index. Broken out for memoization purposes
+    """
+    return [r.end() for r in re.finditer(split_regex, input_string)]
+
+
+def word_index_from_char_index(full_string, char_index, split_regex=r'\s+'):
+    word_indices = get_word_indices(full_string, split_regex)
+    return bisect_right(word_indices, char_index) if char_index >= 0 else -1
+
+
+def sanitized_words_to_unsanitized_words(input_string, sanitized_string, sanitization_method, sanitized_word_ranges):
+    removal_map = get_mapping_after_normalization(input_string, sanitization_method)
+    sanitized_char_ranges = char_indices_from_word_indices(sanitized_string, sanitized_word_ranges)
+    unsanitzied_char_ranges = convert_normalized_indices_to_unnormalized_indices(sanitized_char_ranges, removal_map)
+    # for char_range in unsanitied_char_ranges:
+    #     word_range = tuple(word_index_from_char_index(input_string, i) for i in char_range)
+    #     stuff.append(word_range)
+    return [tuple(word_index_from_char_index(input_string, i) for i in char_range)
+            for char_range in unsanitzied_char_ranges]
 
 
 class TextSanitizer:
     """
     This class is designed so we can easily move from a list of segments to the flat list of words necessary
-    for use in move draft text. It is primarily helpful when we need to keep track of text before and after edits were
+    for use in dibbur_hamatchil_matcher.match_text. It is primarily helpful when we need to keep track of text before and after edits were
     made to said text that were necessary for improving text matching.
     """
     def __init__(self, section: List[str], divider_pattern: str):
@@ -1321,6 +1350,8 @@ class TextSanitizer:
         self._set_sanitized_word_indices()
 
     def get_sanitized_segments(self):
+        if self.sanitizer and not self._sanitized_segments:
+            self.sanitize()
         return self._sanitized_segments
 
     def _set_unsanitzed_word_indices(self):
@@ -1331,6 +1362,18 @@ class TextSanitizer:
         self._sanitzed_word_indices = self.get_segment_start_indices(
             self._sanitized_segments, self._dividing_expression
         )
+
+    def get_unsanitized_word_indices(self):
+        return tuple(self._unsanitized_word_indices)
+
+    def get_sanitized_word_indices(self):
+        if self._sanitzed_word_indices:
+            return tuple(self._sanitzed_word_indices)
+        elif self.sanitizer:
+            self.sanitize()
+            return tuple(self._sanitzed_word_indices)
+        else:
+            raise AttributeError('Cannot get sanitied word indices: No sanitizer set')
 
     def set_dividing_expression(self, regex_pattern: str):
         self._dividing_expression = regex_pattern
@@ -1345,7 +1388,10 @@ class TextSanitizer:
 
     def get_sanitized_word_list(self):
         if not self._sanitized_segments:
-            raise AttributeError("Segments were not sanitized")
+            if self.sanitizer:
+                self.sanitize()
+            else:
+                raise AttributeError("Sanitizer not set")
         return self.make_word_list(self._sanitized_segments, self._dividing_expression)
 
     def get_unsanitized_word_list(self):
@@ -1353,6 +1399,13 @@ class TextSanitizer:
 
     @staticmethod
     def get_segment_start_indices(segment_list, divider_pattern):
+        """
+        Calculates the word number at which each segment starts. Helpful if trying to move from a flat list of words
+        back to a segment division.
+        :param segment_list:
+        :param divider_pattern:
+        :return:
+        """
         segment_start_indices = []
         word_count = 0
         for segment in segment_list:
