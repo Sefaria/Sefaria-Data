@@ -2,6 +2,7 @@ from PIL import Image
 import requests
 import time
 import io
+import sys
 
 def combine_tiles_1d(images, dimension, id_name=None):
     widths, heights = zip(*(i.size for i in images))
