@@ -8,6 +8,7 @@ from time import sleep
 import random
 from collections import namedtuple
 import unicodecsv as csv
+from sources.functions import *
 
 min_thresh=22
 find_url = "https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/markpsukim"
