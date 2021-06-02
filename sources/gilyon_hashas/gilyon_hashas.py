@@ -95,21 +95,27 @@ for line in data:
         if not levs:
             continue
         ref = levs[min(levs)]
-        ref2 = ':'.join(ref.split(':')[:-1])
+        ref2 = ':'.join(ref.split('on ')[1].split(':')[:-1])
 
     links.append({"refs": [ref, f'{book} on {mas} {page}:{sec}'],
                         "type": "Commentary",
                         "auto": True,
                         "generated_by": 'gilyon hashas'})
+    if ref2:
+        links.append({"refs": [ref2, f'{book} on {mas} {page}:{sec}'],
+                      "type": "Commentary",
+                      "auto": True,
+                      "generated_by": 'gilyon hashas'})
     Y+=1
 
 #SERVER = 'http://localhost:9000'
-SERVER = 'https://gilyon.cauldron.sefaria.org'
-add_term(book, 'גליון הש"ס', server=SERVER)
+#SERVER = 'https://gilyon.cauldron.sefaria.org'
+#add_term(book, 'גליון הש"ס', server=SERVER)
 path = ['Talmud', 'Bavli', 'Acharonim on Talmud', book]
-add_category(book, path, server=SERVER)
+#add_category(book, path, server=SERVER)
 for seder in ['Zeraim', 'Moed', 'Nashim', 'Nezikin', 'Kodashim', 'Tahorot']:
-    add_category(f'Seder {seder}', path+[f'Seder {seder}'], server=SERVER)
+    #add_category(f'Seder {seder}', path+[f'Seder {seder}'], server=SERVER)
+    pass
 for mas in mases:
     schema = JaggedArrayNode()
     title = f'{book} on {mas}'
@@ -139,6 +145,6 @@ for mas in mases:
         'text': mases[mas]
     }
     #post_text(title, text_version, index_count='on', server=SERVER)
-
-post_link(links, server=SERVER, VERBOSE=False)
+print(len(links))
+#post_link(links, server=SERVER, VERBOSE=False)
 print(A,Y)
