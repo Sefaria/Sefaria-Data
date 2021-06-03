@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __builtin__ import enumerate
+#from __builtin__ import enumerate
 
 from sefaria.model import *
 import codecs
@@ -23,7 +23,7 @@ class Massekhet(object):
     def write_shgia(self, txt):
         self.error_flag = txt
         self.ErrorFile.write(str(self.line_num) + ': ' + txt + '\n')
-        print self.line_num, txt
+        print(self.line_num, txt)
 
 
 def resolveExceptin(tr,book, sectionList):
@@ -97,7 +97,7 @@ class EM_Citation(object):
                 u'original': self._original,
                 u'problem': u'error missing little or big letter'
             }
-            print u'error missing little or big letter'
+            print(u'error missing little or big letter')
         for key in dict.keys():
             if isinstance(dict[key], list):
                 dict[key] = [ref.normal() for ref in dict[key] if (isinstance(ref, Ref))]
@@ -131,8 +131,8 @@ def parse_em(filename, passing, errorfilename, EM = True):
     for line in lines:
         mass.error_flag = False
         i += 1
-        print i, filename
-        print line
+        print(i, filename)
+        print(line)
         mass.line_num = i
         line = clean_line(line.strip())
         if not line:  # ignore empty lines
@@ -192,7 +192,7 @@ def parse_em(filename, passing, errorfilename, EM = True):
         cit_dictionary.extend(cit.obj2dict(passing))
         if cit_dictionary[-1][u'problem'] != u'error missing little or big letter' and cit_dictionary[-1][u'problem'] != u'error, cit with the perek/page counters':
             cit_dictionary[-1][u'problem'] = mass.error_flag
-        print cit_dictionary[-1]
+        print(cit_dictionary[-1])
     return cit_dictionary
 
 
@@ -414,7 +414,7 @@ class TurSh(object):
                         mass.write_shgia(u'error tsh, missing seif')
                         if mass.error_flag:
                             mass.error_flag = [mass.error_flag, u'error tsh, missing seif']
-                            print u'error tsh, missing seif'
+                            print(u'error tsh, missing seif')
                             return
                 elif re.search(reg_seif, word):
                     to_res = True
@@ -492,7 +492,7 @@ class Rambam(object):
 
         reg2 = u'''({}|{}|ו?שם)'''.format(reg21,reg22)  # before the halacha
         reg_double_cit = u''' (ופ'|ופ[א-ת]?"[א-ת]|ופרק|ושם)'''
-        reg_for_book = ur'''{} (.+?){}'''.format(reg1,reg2)
+        reg_for_book = u'''{} (.+?){}'''.format(reg1,reg2)
 
         # check for multiple citation
         multiple = re.search(reg_double_cit, str)
@@ -505,7 +505,7 @@ class Rambam(object):
 
         # book
         if not re.search(reg2, str):
-            reg_for_book = ur'''{} (.+)'''.format(reg1)
+            reg_for_book = u'''{} (.+)'''.format(reg1)
         book = re.search(reg_for_book, str)
         if book:
             book = book.group(2).strip()
@@ -519,7 +519,7 @@ class Rambam(object):
                     key = self._conv_table.keys(book)
                     book = self._conv_table[key[0]]
             except:
-                print "error mim, couldn't find this book name in table", book
+                print("error mim, couldn't find this book name in table", book)
                 mass.error_flag = "error mim, couldn't find this book name in table"
                 mass.write_shgia("error mim, couldn't find this book name in table" + book)
         # perek
@@ -529,7 +529,7 @@ class Rambam(object):
             perek = getGematriaVav(perek, mass)
 
         if combi:
-            str = re.sub(reg22, u'הלכה {}'.format(ur'\1'), str)
+            str = re.sub(reg22, u'הלכה {}'.format(u'\1'), str)
 
         # halacha
         halacha = re.search(u'''{} (.+)'''.format(reg2), str) or re.search(u'''{}'''.format(reg22), str)
@@ -545,7 +545,7 @@ class Rambam(object):
             elif re.search(u'ו?שם', str):
                 halacha = None
             # else:
-            #     print 'error mim, No halcha stated'
+            #     print('error mim, No halcha stated')
             #     return
 
         # clean halacha
@@ -776,7 +776,7 @@ def hebrew_number_regex():
     :return string:
     \p{Hebrew} ~= [\u05d0–\u05ea]
     """
-    rx = ur"""                                    # 1 of 3 styles:
+    rx = u"""                                    # 1 of 3 styles:
     ((?=[\u05d0-\u05ea]+(?:"|\u05f4|'')[\u05d0-\u05ea])    # (1: ") Lookahead:  At least one letter, followed by double-quote, two single quotes, or gershayim, followed by  one letter
             \u05ea*(?:"|\u05f4|'')?                    # Many Tavs (400), maybe dbl quote
             [\u05e7-\u05ea]?(?:"|\u05f4|'')?        # One or zero kuf-tav (100-400), maybe dbl quote
@@ -914,7 +914,7 @@ def convert_smg(smg_str):
 
 def needs_another_cycle(txtfile, mass_name):
     if os.stat(txtfile).st_size == 0:
-        print '\n' + mass_name + ' is empty from errors'
+        print('\n' + mass_name + ' is empty from errors')
     else:
         with codecs.open(txtfile, 'r', 'utf-8') as fp:
             lines = fp.readlines()
@@ -928,11 +928,11 @@ def needs_another_cycle(txtfile, mass_name):
             if re.search(reg_missing_indicator, line):
                 indicator_c  += 1
         if not needs_c and not indicator_c:
-            print '\n' + mass_name + ' is empty from errors'
+            print('\n' + mass_name + ' is empty from errors')
         else:
-            print '\n' + mass_name + '\n' \
+            print('\n' + mass_name + '\n' \
             +" indicator count " + str(indicator_c)\
-            +" other problem " + str(needs_c)
+            +" other problem " + str(needs_c))
 
 if __name__ == "__main__":
 #     # test = parse_em('test.txt')
@@ -997,7 +997,7 @@ if __name__ == "__main__":
 #     filenames_he = re.split('\s*', ls)
 #     filenames_he = [item[:-4] for item in filenames_he]
 #
-#     print filenames_he
+#     print(filenames_he
 #     for m_he in filenames_he:
 #         parsed = run2(massechet_he=u'csvQA/{}'.format(m_he), massechet_en = u'csvQA/{}'.format(m_he))
 #
@@ -1012,7 +1012,7 @@ if __name__ == "__main__":
 #
 #     # txtfile = u'repeating/{}_error'.format(ls[:-4])
 #     # needs_another_cycle(txtfile, ls[:-4])
-#         # print 'done'
+#         # print('done'
 #
 #     # parsed = run15('done/mk_fixed', 'done/mk_fixed')
 #     # needs_another_cycle('done/mk_fixed_error', 'done/mk_fixed')

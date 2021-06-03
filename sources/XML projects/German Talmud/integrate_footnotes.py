@@ -1,10 +1,23 @@
 from sources.functions import *
 import os
 import copy
+html_tags = ['</small <small>', '<img/>', '</i <i>', '<n den\xa0Frieden\xa0in\xa0der\xa0Welt,\xa0denn\xa0es\xa0heißt\xa0:<sup>']
+
+
+
+indxs = library.get_indexes_in_category("Bavli")
+for i in indxs:
+    i = library.get_index(i)
+    for v in i.versionSet():
+        if v.language == "en" and v.versionTitle == 'Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]':
+            print(i)
+            v.versionTitle = 'Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]'
+            v.save()
+    print("***")
 ftnotes = {}
 found_ftnotes = {}
 version = """Index Title,{}
-Version Title,"Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]"
+Version Title,Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]
 Language,en
 Version Source,https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI
 Version Notes,"""
@@ -13,7 +26,6 @@ if __name__ == "__main__":
     german_blank = []
     fn_probs = []
     transitions = {}
-    lookfor = "Berakhot"
     for f in os.listdir("./just ftnotes"):
         if f.endswith("txt"):
             title = f.replace(" just ftnotes.txt", "")
@@ -25,6 +37,7 @@ if __name__ == "__main__":
             found_skip = -1
             for row in reader:
                 seg_ref, ftnote_num, ftnote_comment = row
+                ftnote_num = ftnote_num.replace("<sup>", "").replace("</sup>", "")
                 ftnote_comment = re.sub("fn\d+\,", "", ftnote_comment)
                 ftnote_num = int(ftnote_num)
                 sec_ref = Ref(seg_ref).index.title
@@ -73,7 +86,8 @@ if __name__ == "__main__":
 
 
     ftnotes = copy.deepcopy(new_found_ftnotes)
-    for f in os.listdir("3 - aligned txt files 2"):
+    for f in os.listdir("3 - aligned txt files 3"):
+        if f.endswith("txt"):
             title = f.split("_")[1]
             print(title)
             text = {}
@@ -86,7 +100,7 @@ if __name__ == "__main__":
                 for row in version_list:
                     writer.writerow(row.split(",", 1))
                 rows = []
-                for line in open("3 - aligned txt files 2/"+f, 'r'):
+                for line in open("3 - aligned txt files 3/"+f, 'r'):
                     ref, comm = line.split("\t", 1)
                     ref = ref.replace(chr(65279), "")
                     if ref.endswith(","):
@@ -122,16 +136,26 @@ if __name__ == "__main__":
                             curr_segment = before_loop
                         else:
                             ftnotes[sec_ref][perek][curr_segment] = ftnotes[sec_ref][perek][curr_segment].replace("{},".format(num), "")
-                            assert len(ftnotes[sec_ref][perek][curr_segment].split("<i>")) in [1, 2]
-                            if len(ftnotes[sec_ref][perek][curr_segment].split("<i>")) == 2:
+                            italics_open = len([x for x in ftnotes[sec_ref][perek][curr_segment].split("<i>") if len(x) > 0])
+                            italics_close = len([x for x in ftnotes[sec_ref][perek][curr_segment].split("</i>") if len(x) > 0])
+                            if italics_open == italics_close + 1:
                                 ftnotes[sec_ref][perek][curr_segment] += "</i>"
-                            comm = comm.replace(fn, "<sup>{}</sup><i class='footnote'>{}</i>".format(num, ftnotes[sec_ref][perek][curr_segment]))
+                                italics_close += 1
+                            if italics_open != italics_close:
+                                print("{} vs {}".format(italics_open, italics_close))
+                            comm = comm.replace(fn, "<sup>{}</sup>{}".format(num, ftnotes[sec_ref][perek][curr_segment]))
                             ftnotes[sec_ref][perek][curr_segment] = ""
                             prev_ftnote_num = num
                         #curr_segment += 1
                     text[Ref(ref).section_ref().normal()].append(comm)
                     if "$fn" in comm:
                         fn_probs.append("$fn in {}".format(ref))
+                    for tag in re.findall("<.*?>", comm):
+                        if tag in html_tags:
+                            print("tags")
+                            print(ref)
+                            print(tag)
+                            print()
                     writer.writerow([ref, comm])
 
             if len(text) != len(library.get_index(title).all_section_refs()):
@@ -142,11 +166,13 @@ if __name__ == "__main__":
                     probs.append("Incorrect # of refs in {}.  Should be {} but is {}".format(sec, len(Ref(sec).text('en').text),
                                                                                           len(text[sec])))
 
-    for p in probs:
-        print(p)
+    #
+    # for p in probs:
+    #     print(p)
+    #
+    # for p in fn_probs:
+    #     print(p)
+    #
+    # for p in german_blank:
+    #     print(p)
 
-    for p in fn_probs:
-        print(p)
-
-    for p in german_blank:
-        print(p)
