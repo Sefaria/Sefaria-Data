@@ -1,14 +1,14 @@
 from sources.functions import *
 def dher(str):
     if "." in " ".join(str.split()[:10]):
-        return str.split(".")[0]
+        return str.split(".")[0].replace('וכו\'', '').strip()
     else:
-        return " ".join(str.split()[:6])
+        return " ".join(str.split()[:5])
 
 root = JaggedArrayNode()
-root.add_primary_titles("Chiddushei Ramban on Nedarim", 'חידושי רמב"ן על נדרים')
+root.add_primary_titles("Hilkhot HaRamban on Nedarim", 'הלכות הרמב"ן על נדרים')
 root.add_structure(["Daf", "Paragraph"], address_types=["Talmud", "Integer"])
-root.key = "Chiddushei Ramban on Nedarim"
+root.key = "Hilkhot HaRamban on Nedarim"
 root.validate()
 indx = {
     "title": root.key,
@@ -39,7 +39,7 @@ with open("Nedarim.txt", 'r') as f:
 links = []
 for daf in text:
     print(daf)
-    new_links = match_ref_interface("Nedarim", "Chiddushei Ramban on Nedarim {}".format(AddressTalmud(0).toStr("en", daf)), text[daf], lambda x: x.split(), dher)
+    new_links = match_ref_interface("Nedarim {}".format(AddressTalmud(0).toStr("en", daf)), "Hilkhot HaRamban on Nedarim {}".format(AddressTalmud(0).toStr("en", daf)), text[daf], lambda x: x.split(), dher)
     links += new_links
     print("{} vs {}".format(len(text[daf]), len(new_links)))
 text = convertDictToArray(text)
@@ -49,5 +49,6 @@ send_text = {
     "versionTitle": "Vilna, 1884",
     "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH003807843/NLI"
 }
-post_text("Chiddushei Ramban on Nedarim", send_text)
-post_link(links)
+#post_text(root.key, send_text)
+post_link_in_steps(links, server="https://arukhtanakh.cauldron.sefaria.org")
+print(len(links))

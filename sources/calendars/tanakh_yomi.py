@@ -5,28 +5,53 @@ from sefaria.system.database import db
 import csv
 from datetime import datetime
 from sefaria.utils.calendars import get_parasha
+from sefaria.utils.hebrew import *
+from sefaria.system.exceptions import BookNameError
 
 class TanakhRow(object):
-    __slots__ = "date", "refs"
+    __slots__ = "date", "ref", "displayValue", "heDisplayValue"
 
     def __init__(self, date, title, start, end):
         self.date = date
         if title == "Parasha":
             parasha = get_parasha(datetime.strptime(self.date, "%d/%m/%Y"))
+            self.displayValue = parasha["parasha"]
+            try:
+                self.heDisplayValue = Term().load({"name": self.displayValue.replace("-", " ")}).get_primary_title('he')
+            except AttributeError as e:
+                parts = self.displayValue.split("-")
+                self.heDisplayValue = []
+                for part in parts:
+                    self.heDisplayValue.append(Term().load({"name": part}).get_primary_title('he'))
+                self.heDisplayValue = "-".join(self.heDisplayValue)
             start = Ref(parasha["aliyot"][0]).starting_ref()
-            end = Ref(parasha["aliyot"][-1]).ending_ref()
-            self.refs = []
-            pos = 0
-            while start.book != end.book or start.follows(end):
-                self.refs.insert(0, end.normal())
-                pos -= 1
-                end = Ref(parasha["aliyot"][pos-1]).ending_ref()
-            first_ref = start.to(end)
-            self.refs.insert(0, first_ref.normal())
+            for aliyah in range(1, 8):
+                next_aliyah = Ref(parasha["aliyot"][aliyah]).starting_ref()
+                prev_aliyah_last_ref = Ref(parasha["aliyot"][aliyah-1]).ending_ref()
+                if prev_aliyah_last_ref.next_segment_ref() != next_aliyah:
+                    self.ref = start.to(prev_aliyah_last_ref).normal()
+                    break
+            assert len(self.ref) > 0
         else:
             start = Ref(start)
             end = Ref(end)
-            self.refs = configure_refs(start, end)
+            index, sec = " ".join(title.split()[:-1]), title.split()[-1]
+            if "." in sec:
+                self.displayValue = "{} Seder {}".format(index, sec)
+                sec_1 = encode_small_hebrew_numeral(int(sec.split(".")[0]))
+                sec_2 = encode_small_hebrew_numeral(int(sec.split(".")[1]))
+                sec = "{}.{}".format(sec_1, sec_2)
+            else:
+                self.displayValue = "{} Seder {}".format(index, sec)
+                sec = encode_small_hebrew_numeral(int(sec))
+            try:
+                index = library.get_index(index).get_title('he')
+            except BookNameError as e:
+                replace_titles = {"Chronicles": "דברי הימים", "Kings": "מלכים", "Samuel": "שמואל"}
+                for en_title in replace_titles:
+                    index = index.replace(en_title, replace_titles[en_title])
+            self.heDisplayValue = "{} סדר {}".format(index, sec)
+            self.ref = configure_refs(start, end)[0]
 
 
 
@@ -59,11 +84,13 @@ with open("Tanach_Yomi_Sedarim_Calendar_-_updated.csv") as fp:
             rows.append(TanakhRow(*r))
         except Exception as e:
             break
-
+print(len(rows))
 entries = [
     {
         "date": datetime.strptime(row.date, "%d/%m/%Y"),
-        "refs": row.refs
+        "ref": row.ref,
+        "displayValue": row.displayValue,
+        "heDisplayValue": row.heDisplayValue
     }
     for row in rows
 ]
