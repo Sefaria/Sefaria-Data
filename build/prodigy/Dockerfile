@@ -14,7 +14,7 @@ RUN pip3 install ./prodigy*.whl
 COPY build/prodigy/requirements.txt ./ 
 RUN pip3 install -r ./requirements.txt
 
-
+RUN cd ./prodigy_package && python setup.py develop
 
 ENTRYPOINT [ "/bin/bash", "-c" ]
 EXPOSE 8080
