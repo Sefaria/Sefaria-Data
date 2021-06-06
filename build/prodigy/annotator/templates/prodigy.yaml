@@ -39,7 +39,7 @@ spec:
         - name: prodigy
           image: "{{ .Values.prodigyAnnotator.imageName }}:{{ .Values.prodigyAnnotator.imageTag }}"
           # args: [ "while true; do echo Waiting; sleep 100; done" ]
-          args: ["prodigy ref-tagging-recipe ref_tagging input silver_output_binary /prodigy-disk/model-last --view-id ner -db-host $MONGO_HOST -db-port 27017 -F ./functions.py"]
+          args: ["prodigy ref-tagging-recipe ref_tagging input silver_output_binary /prodigy-disk/model-last --view-id ner -db-host $MONGO_HOST -db-port 27017 -F ./functions.py --labels מקור"]
           ports: 
             - containerPort: 8080
               protocol: TCP
