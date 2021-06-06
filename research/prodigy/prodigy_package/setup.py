@@ -11,6 +11,7 @@ setup(
         ]
     },
     install_requires=[
+        'starlette>=0.14.2',
         'prodigy>=1.10.0',
         'pymongo',
         'spacy>=3.0.0',
