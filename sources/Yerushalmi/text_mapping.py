@@ -102,7 +102,7 @@ def assemble_guggenheimer_chapter(segments, mappings, halakha_segments, mishnayo
                 clean_break = clean_divisions[i][0] and clean_divisions[i-1][1]
                 if not clean_break:
                     clean = False
-                    error_message = f'issue with first segment of halakha {current_halakha} segment number: {i+1}'
+                    error_message = f'possible issue with first gemarra segment of halakha {current_halakha} segment number: {i+1}'
                     error_list.append(error_message)
                     if verbose:
                         print(error_message)
@@ -152,7 +152,10 @@ def assemble_mehon_chapter(mehon_segments, guggenheimer_ja, mishnayot):
     ja = JaggedArray()
     reversed_mishnayot = mishnayot[::-1]
     prev_halakha = -1
-    for mehon_segment, gugg_segment in zip(mehon_segments, traverse_ja(guggenheimer_ja)):
+    # for mehon_segment, gugg_segment in zip(mehon_segments, traverse_ja(guggenheimer_ja)):
+    gug_iter = traverse_ja(guggenheimer_ja)
+    for mehon_segment in mehon_segments:
+        gugg_segment = next(gug_iter)
         current_halakha = gugg_segment['indices'][0]
         if current_halakha != prev_halakha:  # new halakha
             try:
@@ -160,7 +163,14 @@ def assemble_mehon_chapter(mehon_segments, guggenheimer_ja, mishnayot):
             except IndexError:
                 mishna = 'חסרה משנה'
             prev_halakha = current_halakha
-            append_in_ja(ja, current_halakha, mishna)
+            # append_in_ja(ja, current_halakha, mishna)
+            try:
+                h = ja.get_element([current_halakha])
+                h.insert(0, mishna)
+            except IndexError:
+                ja.set_element([current_halakha, 0], mishna)
+            gugg_segment = next(gug_iter)
+            current_halakha = gugg_segment['indices'][0]
         append_in_ja(ja, current_halakha, mehon_segment)
 
     return ja.array()
@@ -498,10 +508,15 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only=True):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     gug_tractate_chapters = grab_guggenheim_chapters(tractate.title, talmud_only)
+    gug_mishnayot_chapters = three_to1ja(grab_guggenheim_chapters(tractate.title, mishna_only=True))
     he_title = re.sub(r'^תלמוד ירושלמי ', '', tractate.get_title('he'))
     mehon = get_segments_from_raw(f'mechon-mamre/{he_title}.html')
     mehon_ja = create_chap_ja(mehon, lambda x: 'גמרא' in x['meta'])
     mishnayot_ja = create_chap_ja(mehon, lambda x: 'משנה' in x['meta'])
+    for i, mishna_chapter in enumerate(mishnayot_ja):
+        for j, halakha in enumerate(mishna_chapter):
+            if len(halakha) > 1:
+                mishnayot_ja[i][j] = [' '.join(halakha)]
     mehon_chaps, mishnayot_chaps = three_to1ja(mehon_ja), three_to1ja(mishnayot_ja)
     errors = [0] * len(mehon_chaps)
     for chap_num in range(len(mehon_chaps)):
@@ -555,7 +570,8 @@ def create_tractate_mappings(tractate: sefaria_objects.Index, talmud_only=True):
             'mehon-sanitizer': sanitizer,
             'mapping': fixed_mapping,
             'halakha-indices': halakha_indices,
-            'mehon-mishnayot': mishnayot_chaps[chap_num]
+            'mehon-mishnayot': mishnayot_chaps[chap_num],
+            'gugg-mishnayot': gug_mishnayot_chapters[chap_num],
         })
 
         with open(mapping_file, 'w') as fp:
@@ -725,7 +741,7 @@ def align_chapters(commentary_segments, test_words):
     return match_text(commentary_segments, test_words)
 
 
-def grab_guggenheim_chapters(tractate, talmud_only=False):
+def grab_guggenheim_chapters(tractate, talmud_only=False, mishna_only=False):
     with open('guggenheimer_titles.json') as fp:
         title_mapping = json.load(fp)
     if 'Jerusalem Talmud' not in tractate:
@@ -735,6 +751,8 @@ def grab_guggenheim_chapters(tractate, talmud_only=False):
     with open(f'code_output/csv_reports/{guggenheimer_tractate}.csv') as fp:
         if talmud_only:
             rows = [r for r in csv.DictReader(fp) if r['Type'] != 'Mishnah']
+        elif mishna_only:
+            rows = [r for r in csv.DictReader(fp) if r['Type'] == 'Mishnah']
         else:
             rows = list(csv.DictReader(fp))
     rows.sort(key=lambda x: [int(i) for i in re.search('(\d+:?)+$', x['Address']).group().split(':')])
@@ -848,6 +866,12 @@ def output_method(trac):
     return create_tractate_mappings(trac)
 
 
+def align_mishnayot(guggenheimer, mehon):
+    cb = align.CompareBreaks([' '.join(guggenheimer)], mehon, markers=['φ', 'ψ'])
+    with_markers = cb.insert_break_marks()[0]
+    return [r for r in re.split(r'ψ\d+ψ', with_markers) if r]
+
+
 def debugging_method(input_string, start_character, end_character):
     """
     use word indexes and words. print out word and characters from previous match.end() to next match.end()
@@ -934,6 +958,15 @@ if __name__ == '__main__':
     # make_noise()
     zip_review_documents()
     # berakhot = ASSEMBLER['Jerusalem Talmud Shabbat']
+    error_report, mishnayot_report = [], []
+    mishnayot_dict = {}
+    for key, value in ASSEMBLER.items():
+        mishnayot_dict[key] = [{
+            'mehon-mishnayot': c['mehon-mishnayot'],
+            'gugg-mishnayot':  c['gugg-mishnayot'],
+        } for c in value]
+    with open('./code_output/mishnayot.json', 'w') as fp:
+        json.dump(mishnayot_dict, fp)
     for title, tractate in ASSEMBLER.items():
         text_ja = []
         for chap_num, chapter in enumerate(tractate, 1):
@@ -941,7 +974,40 @@ if __name__ == '__main__':
             chap_ja, clean_chap, error_list = assemble_guggenheimer_chapter(
                 chapter['guggenheimer'], chapter['mapping'], chapter['halakha-indices'], False, True
             )
+            # if number of halakhot (length of the chapter) matches the number of mishnayot
+            # place a mishna at the beginning of each halakha
+            if len(chapter['gugg-mishnayot']) == len(chap_ja):
+                mishnayot_report.append({
+                    'Tractate': title,
+                    'Chapter': chap_num,
+                    'Method': 'Simple'
+                })
+                mishnayot = chapter['gugg-mishnayot']
+            else:
+                mishnayot_report.append({
+                    'Tractate': title,
+                    'Chapter': chap_num,
+                    'Method': 'Algorithmic'
+                })
+                mishnayot = align_mishnayot(chapter['gugg-mishnayot'], chapter['mehon-mishnayot'])
+
+            for i, mishna in enumerate(mishnayot):
+                try:
+                    chap_ja[i][0] = mishna
+                except IndexError:
+                    try:
+                        chap_ja[i].append(mishna)
+                        error_list.append('Missing Halakha')
+                    except IndexError:
+                        error_list.append('Missing Chapter')
+                        chap_ja.append([mishna])
+
             text_ja.append(chap_ja)
+            error_report.extend([{
+                'Tractate': title,
+                'Chapter': chap_num,
+                "Error Message": e
+            } for e in error_list])
         mehon_ja = []
         for chap_num, chapter in enumerate(tractate):
             print(chap_num+1)
@@ -954,17 +1020,25 @@ if __name__ == '__main__':
                                                    lambda x: [(m, '') for m in re.finditer(SANITIZATION_REGEX, x)])
 
             mehon_ja.append(assemble_mehon_chapter(segment_list, text_ja[chap_num], chapter['mehon-mishnayot']))
+        with open('code_output/mishnayot_report.csv', 'w') as fp:
+            writer = csv.DictWriter(fp, fieldnames=['Tractate', 'Chapter', 'Method'])
+            writer.writeheader()
+            writer.writerows(mishnayot_report)
         # print(*list(berakhot[0].keys()), sep='\n')
         # ja_to_xml(berakhot_ja, ['Chapter', 'Halakha', 'Segment'], 'code_output/berakhot_gugg_test.xml')
         # ja_to_xml(mehon_berakhot, ['Chapter', 'Halakha', 'Segment'], 'code_output/berakhot_mehon_test.xml')
-        # server = 'http://localhost:8000'
-        server = 'https://jtmock.cauldron.sefaria.org'
+        server = 'http://localhost:8000'
+        # server = 'https://jtmock.cauldron.sefaria.org'
         # add_term('Mock Yerushalmi', 'ירושלמי דמ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ע', server=server)
         # add_category('Mock Yerushalmi', ['Talmud', 'Yerushalmi', 'Mock Yerushalmi'], server=server)
         ind = get_moc_index(title)
         post_index(ind, server)
         post_text(ind['title'], get_moc_version('Guggenheimer', text_ja), server=server)
         post_text(ind['title'], get_moc_version('Mehon-Mamre', mehon_ja), server=server, index_count="on")
+    with open("./code_output/general_report.csv", "w") as fp:
+        writer = csv.DictWriter(fp, fieldnames=["Tractate", "Chapter", "Error Message"])
+        writer.writeheader()
+        writer.writerows(error_report)
     import sys
     sys.exit(0)
 
