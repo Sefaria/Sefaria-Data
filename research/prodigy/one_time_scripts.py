@@ -4,7 +4,10 @@ from tqdm import tqdm
 import django
 django.setup()
 from sefaria.model import *
-from research.prodigy.db_manager import MongoProdigyDBManager
+from functools import reduce
+from research.prodigy.prodigy_package.db_manager import MongoProdigyDBManager
+from research.prodigy.prodigy_package.recipes import load_model
+from research.prodigy.functions import custom_tokenizer_factory
 
 def dh_filter(span_text, span):
     return re.search(r"\u05d3(?:\"|''|\u05f4|\u05f3\u05f3)\u05d4", span_text) is not None
@@ -79,6 +82,78 @@ def modify_data_based_on_csv(in_file, input_collection, output_collection):
     for key in input_keys:
         if key not in used_keys:
             print("unused", key)
+
+def move_binary_output_to_own_collection():
+   my_db = MongoProdigyDBManager('blah')
+   binary_output = list(my_db.db.examples2_output.find({"_view_id": "ner"}))
+   my_db.db.examples2_binary.insert_many(binary_output)
+
+def get_all_sequence_match_inds(seq, words):
+    seq_str = "$$$".join(seq)
+    word_str = "$$$".join(words)
+    match_inds = []
+    match_start_char = 0
+    while True:
+        try:
+            start_char = seq_str.index(word_str, match_start_char)
+            if start_char > 0:
+                # safe to add $$$ to force beginning of word match
+                # TODO too lazy to deal with end of word. not relevant right now.
+                start_char = seq_str.index("$$$" + word_str, match_start_char)
+                start_char += 3
+            match_start_char = start_char + len(word_str)
+            start_ind = seq_str[:start_char].count("$$$")
+            end_ind = start_ind + len(words)
+            match_inds += [(start_ind, end_ind)]
+        except ValueError:
+            break
+    return match_inds
+
+
+def fix_perek():
+    db_mng = MongoProdigyDBManager("Copy_of_examples2_output")
+    curr_ref = None
+    nlp, model_exists = load_model('./research/prodigy/output/ref_tagging_cpu/model-last', ['מקור'])
+    tokenizer = custom_tokenizer_factory()(nlp)
+    with open("/home/nss/Downloads/fix_perek.txt", "r") as fin:
+        for line in fin:
+            line=line.strip()
+            if curr_ref is None:
+                curr_ref = line
+            elif len(line) == 0:
+                curr_ref = None
+            else:
+                doc = db_mng.output_collection.find_one({"meta.Ref": curr_ref})
+                if doc is None:
+                    print("oh no", curr_ref)
+                mult_split = line.split('x')
+                if len(mult_split) == 1:
+                    mult = 1
+                else:
+                    line, mult = mult_split
+                    mult = int(mult)
+                words = [t.text for t in tokenizer(line)]
+                already_matched_inds = reduce(lambda a, b: a | b, [set(range(span['token_start'], span['token_end'])) for span in doc['spans']], set())
+                match_inds = get_all_sequence_match_inds([t['text'] for t in doc['tokens']], words)
+                match_inds = list(filter(lambda x: len(set(range(x[0], x[1])) & already_matched_inds) == 0, match_inds))
+                if len(match_inds) > mult:
+                    print(line, curr_ref, words, mult)
+                    continue
+                # All checks have passed! Do edit
+                for token_start, token_end in match_inds:
+                    start_token = next(x for x in doc['tokens'] if x['id'] == token_start)
+                    end_token = next(x for x in doc['tokens'] if (x['id'] == token_end-1))
+                    doc['spans'] += [{
+                        "label": "מקור",
+                        "start": start_token['start'],
+                        "end": end_token['end'],
+                        "token_start": token_start,
+                        "token_end": token_end-1  # classic off-by-one...
+                    }]
+                db_mng.output_collection.update_one({"_id": doc['_id']}, {"$set": {"spans": doc['spans']}})
+
 if __name__ == "__main__":
     # make_csv_by_filter('examples2_output', 'research/prodigy/output/one_time_output/paren_at_end_list.csv', paren_at_end_filter)
-    modify_data_based_on_csv('/home/nss/Downloads/Dibur Hamatchil Editing - Sheet2.csv', 'examples2_output', 'examples2_output_paren')
+    # modify_data_based_on_csv('/home/nss/Downloads/Dibur Hamatchil Editing - Sheet2.csv', 'examples2_output', 'examples2_output_paren')
+    # move_binary_output_to_own_collection()
+    fix_perek()
