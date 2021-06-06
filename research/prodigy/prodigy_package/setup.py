@@ -11,7 +11,6 @@ setup(
         ]
     },
     install_requires=[
-        'prodigy>=1.11.0a7',
         'pymongo',
         'spacy>=3.0.5',
         'srsly==2.4.0'
