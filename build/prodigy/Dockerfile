@@ -9,6 +9,8 @@ WORKDIR /home/prodigy
 
 # Expects the Prodigy python wheel to exist at ./research/prodigy/*
 COPY ./research/prodigy/* ./
+RUN mkdir ./prodigy_package
+COPY ./research/prodigy/prodigy_package/* ./prodigy_package/
 RUN pip3 install ./prodigy*.whl
 
 COPY build/prodigy/requirements.txt ./ 
