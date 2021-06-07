@@ -1031,10 +1031,10 @@ if __name__ == '__main__':
         # server = 'https://jtmock.cauldron.sefaria.org'
         # add_term('Mock Yerushalmi', 'ירושלמי דמ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ע', server=server)
         # add_category('Mock Yerushalmi', ['Talmud', 'Yerushalmi', 'Mock Yerushalmi'], server=server)
-        ind = get_moc_index(title)
-        post_index(ind, server)
-        post_text(ind['title'], get_moc_version('Guggenheimer', text_ja), server=server)
-        post_text(ind['title'], get_moc_version('Mehon-Mamre', mehon_ja), server=server, index_count="on")
+        # ind = get_moc_index(title)
+        # post_index(ind, server)
+        # post_text(ind['title'], get_moc_version('Guggenheimer', text_ja), server=server)
+        # post_text(ind['title'], get_moc_version('Mehon-Mamre', mehon_ja), server=server, index_count="on")
     with open("./code_output/general_report.csv", "w") as fp:
         writer = csv.DictWriter(fp, fieldnames=["Tractate", "Chapter", "Error Message"])
         writer.writeheader()
