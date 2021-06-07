@@ -2,6 +2,9 @@ import django
 django.setup()
 from sefaria.model import *
 
+#"Lehem Mishneh" needs to be replaced by "Lechem Mishneh".  This script updates the relevant term, categories,
+#subcategories, and indices.
+
 rambam_paths = [p.full_path[-1] for p in Category().load({"path": ["Halakhah", "Mishneh Torah"]}).get_toc_object().children[1:-1]]
 rambam_paths = rambam_paths[:6]
 lechem_path = ["Halakhah", "Mishneh Torah", "Commentary", "Lechem Mishneh"]
@@ -47,4 +50,5 @@ if c:
 		t.delete()
 t = Term().load({"name": "Lechem Mishneh"})
 t.add_title("לחם משנה", 'he', True, True)
+t.remove_title("לחם משנה ב", 'he')
 t.save()
