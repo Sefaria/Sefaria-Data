@@ -487,7 +487,7 @@ class ManualCorrectionsRule(AbstractRule):
         self.manual_corrections = srsly.read_json(self.rule['correctionsFile'])
         self.applies_to_dict = {}
         for correction in self.manual_corrections:
-            self.applies_to_dict[self.get_applies_to_key(correction)] = correction['correctionType']
+            self.applies_to_dict[self.get_applies_to_key(correction)] = correction
 
     @staticmethod
     def get_applies_to_key(mention):
@@ -499,9 +499,12 @@ class ManualCorrectionsRule(AbstractRule):
     def apply(self, mentions):
         mentions = filter(lambda m: self.is_applicable(m, mentions), mentions)
         for mention in mentions:
-            correction_type = self.applies_to_dict[self.get_applies_to_key(mention)]
-            if correction_type == 'mistake':
+            correction = self.applies_to_dict[self.get_applies_to_key(mention)]
+            if correction['correctionType'] == 'mistake':
                 mention.id_matches = []
+            elif correction['correctionType'] == 'manualIds':
+                mention.id_matches = correction['id_matches']
+
 class RuleFactory:
 
     key_rule_map = {

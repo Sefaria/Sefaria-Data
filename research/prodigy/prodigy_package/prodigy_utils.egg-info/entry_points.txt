@@ -1,0 +1,6 @@
+[prodigy_db]
+mongodb = db_manager:db_manager
+
+[prodigy_recipes]
+ref-tagging-recipe = recipes:ref_tagging_recipe
+

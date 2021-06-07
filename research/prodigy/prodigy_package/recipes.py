@@ -4,16 +4,9 @@ from spacy.lang.en import English
 from spacy.lang.he import Hebrew
 from spacy.util import minibatch, compounding
 from prodigy.components.sorters import prefer_uncertain
-from prodigy.components.preprocess import add_tokens
+from prodigy.components.preprocess import add_tokens, split_spans
 
-# for local dev
-try:
-    from research.prodigy.db_manager import MongoProdigyDBManager
-    from research.prodigy.functions import custom_tokenizer_factory
-except ImportError:
-    # for remote dev
-    from db_manager import MongoProdigyDBManager
-    from functions import custom_tokenizer_factory
+from db_manager import MongoProdigyDBManager
 
 from pathlib import Path
 
@@ -75,6 +68,12 @@ def score_stream(nlp, stream):
         score = ner.predict(docs)
         yield (score[0], example)
 
+def filter_existing_refs(in_data, my_db:MongoProdigyDBManager):
+    out_refs = set(my_db.output_collection.find({}).distinct('meta.Ref'))
+    for in_doc in in_data:
+        if in_doc['meta']['Ref'] in out_refs: continue
+        yield in_doc
+
 def train_on_current_output(output_collection='examples2_output'):
     model_dir = '/prodigy-disk/ref_tagging_model_output'
     nlp, model_exists = load_model(model_dir)
@@ -96,7 +95,7 @@ def train_on_current_output(output_collection='examples2_output'):
     db_port=("Mongo port", "option", None, int),
     train_on_input=("Should empty model be trained on input spans?", "option", None, int),
 )
-def my_custom_recipe(dataset, input_collection, output_collection, model_dir, labels, view_id="text", db_host="localhost", db_port=27017, train_on_input=1):
+def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, labels, view_id="text", db_host="localhost", db_port=27017, train_on_input=1):
     my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
     labels = labels.split(',')
     nlp, model_exists = load_model(model_dir, labels)
@@ -104,9 +103,12 @@ def my_custom_recipe(dataset, input_collection, output_collection, model_dir, la
         temp_stream = getattr(my_db.db, input_collection).find({}, {"_id": 0})
         train_model(nlp, temp_stream, model_dir)
     all_data = list(getattr(my_db.db, input_collection).find({}, {"_id": 0}))  # TODO loading all data into ram to avoid issues of cursor timing out
+    stream = filter_existing_refs(all_data, my_db)
     # stream = split_sentences(nlp, all_data, min_length=200)
-    stream = add_model_predictions(nlp, all_data)
+    stream = add_model_predictions(nlp, stream)
     stream = add_tokens(nlp, stream, skip=True)
+    if view_id == "ner":
+        stream = split_spans(stream)
 
 
     def update(annotations):
@@ -128,18 +130,31 @@ def my_custom_recipe(dataset, input_collection, output_collection, model_dir, la
         # "update": update,
         "config": {
             "labels": labels,
-            "global_css": """
-                [data-prodigy-view-id='ner_manual'] .prodigy-content {
+            "global_css": f"""
+                [data-prodigy-view-id='{view_id}'] .prodigy-content {{
                     direction: rtl;
                     text-align: right;
-                }
+                }}
+            """,
+            "javascript": """
+            function scrollToFirstAnnotation() {
+                var scrollableEl = document.getElementsByClassName('prodigy-annotator')[0];
+                var markEl = document.getElementsByTagName('mark')[0];
+                scrollableEl.scrollTop = markEl.offsetTop;
+            }
+            document.addEventListener('prodigymount', function(event) {
+                scrollToFirstAnnotation();
+            })
+            document.addEventListener('prodigyanswer', function(event) {
+                scrollToFirstAnnotation();
+            })
             """
         }
     }
 
 if __name__ == "__main__":
     # test_tokenizer(nlp)
-    import_file_to_collection('research/prodigy/data/test_input.jsonl', 'gilyon_input2')
+    import_file_to_collection('research/prodigy/data/test_input.jsonl', 'input')
 """
 ספר,דה,מספר,שם,לקמן-להלן,תת-ספר,שם-עצמי,קטגוריה
 command to run
@@ -148,13 +163,13 @@ cd research/prodigy
 prodigy ref-tagging-recipe ref_tagging test_input models/ref_tagging --view-id ner_manual -db-host localhost -db-port 27017 -F ref_tagging_recipe.py
 
 command to run on examples1_input
-prodigy ref-tagging-recipe ref_tagging2 examples2_input examples3_output ./research/prodigy/output/ref_tagging_cpu/model-last מקור --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/ref_tagging_recipe.py
+prodigy ref-tagging-recipe ref_tagging2 examples1_input examples2_binary ./research/prodigy/output/ref_tagging_cpu/model-last מקור --view-id ner -db-host localhost -db-port 27017 -F ./research/prodigy/functions.py
 
 command to run on gilyon hashas
-prodigy ref-tagging-recipe ref_tagging2 gilyon_input gilyon_output ./research/prodigy/output/ref_tagging_cpu/model-last מקור --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/ref_tagging_recipe.py
+prodigy ref-tagging-recipe ref_tagging2 gilyon_input gilyon_output ./research/prodigy/output/ref_tagging_cpu/model-last מקור --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/functions.py
 
 command to run on gilyon hashas sub citation
-prodigy ref-tagging-recipe sub_ref_tagging gilyon_sub_citation_input gilyon_sub_citation_output ./research/prodigy/output/sub_citation/model-best ספר,דה,מספר,שם,לקמן-להלן,תת-ספר,שם-עצמי --view-id ner_manual -db-host localhost -db-port 27017 -train-on-input 0 -F ./research/prodigy/ref_tagging_recipe.py
+prodigy ref-tagging-recipe sub_ref_tagging gilyon_sub_citation_input gilyon_sub_citation_output ./research/prodigy/output/sub_citation/model-best ספר,דה,מספר,שם,לקמן-להלן,תת-ספר,שם-עצמי --view-id ner_manual -db-host localhost -db-port 27017 -train-on-input 0 -F ./research/prodigy/functions.py
 """
 
 """
