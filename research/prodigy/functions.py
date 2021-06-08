@@ -60,10 +60,10 @@ def make_evaluation_files(evaluation_data, ner_model, output_folder):
     for doc, example in tqdm(ner_model.pipe(data_tuples, as_tuples=True)):
         # correct_ents
         ents_x2y = example.get_aligned_spans_x2y(example.reference.ents)
-        correct_ents = [(e.start_char, e.end_char, e.label_) for e in ents_x2y]
+        correct_ents = {(e.start_char, e.end_char, e.label_) for e in ents_x2y}
         # predicted_ents
         ents_x2y = example.get_aligned_spans_x2y(doc.ents)
-        predicted_ents = [(e.start_char, e.end_char, e.label_) for e in ents_x2y]
+        predicted_ents = {(e.start_char, e.end_char, e.label_) for e in ents_x2y}
         # false positives
         temp_fp = [ent for ent in predicted_ents if ent not in correct_ents]
         fp += len(temp_fp)
@@ -86,6 +86,10 @@ def make_evaluation_files(evaluation_data, ner_model, output_folder):
     
     srsly.write_jsonl(f"{output_folder}/doc_evaluation.jsonl", output_json)
     make_evaluation_html(output_json, output_folder, 'doc_evaluation.html')
+    print('PRECISION', 100*round(tp/(tp+fp), 4))
+    print('RECALL   ', 100*round(tp/(tp+fn), 4))
+    print('F1       ', 100*round(tp/(tp + 0.5 * (fp + fn)),4))
+    print(doc_spans)
     return tp, fp, tn, fn
 
 def export_tagged_data_as_html(tagged_data, output_folder):
@@ -219,12 +223,12 @@ def convert_jsonl_to_csv(filename):
         c.writerows(rows)
 
 if __name__ == "__main__":
-    # nlp = spacy.load('./research/prodigy/output/ref_tagging_cpu/model-last')
-    nlp = spacy.load('./research/prodigy/output/sub_citation/model-best')
-    data = stream_data('localhost', 27017, 'gilyon_sub_citation_output', 'gilyon_input', 613, 0.8, 'test', 0)(nlp)
+    nlp = spacy.load('./research/prodigy/output/ref_tagging_cpu/model-last')
+    # nlp = spacy.load('./research/prodigy/output/sub_citation/model-best')
+    data = stream_data('localhost', 27017, 'examples2_output', 'gilyon_input', 614, 0.8, 'train', 0)(nlp)
     print(make_evaluation_files(data, nlp, './research/prodigy/output/evaluation_results'))
 
-    # data = stream_data('localhost', 27017, 'gilyon_sub_citation_output', 'gilyon_input', -1, 1.0, 'train', 0)(nlp)
+    # data = stream_data('localhost', 27017, 'Copy_of_examples2_output', 'gilyon_input', -1, 1.0, 'train', 0)(nlp)
     # export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results')
     convert_jsonl_to_json('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
     # convert_jsonl_to_csv('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
@@ -235,15 +239,15 @@ python -m spacy train ./research/prodigy/configs/ref_tagging.cfg --output ./rese
 
 to run cpu
 python -m spacy train ./research/prodigy/configs/ref_tagging_cpu.cfg --output ./research/prodigy/output/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0
-600 segments
- 69    5000          0.36      0.03   71.26   72.94   69.66    0.71 (0.71, 0.66)
-0.71
+Num examples 795
+ 60    6600         39.41      2.24   70.42   74.26   66.96    0.70
+
 
 to train sub citation
 python -m spacy train ./research/prodigy/configs/sub_citation.cfg --output ./research/prodigy/output/sub_citation --code ./research/prodigy/functions.py --gpu-id 0
 
 debug data
-python -m spacy debug data ./research/prodigy/configs/ref_tagging.cfg -c ./research/prodigy/functions.py
+python -m spacy debug data ./research/prodigy/configs/ref_tagging_cpu.cfg -c ./research/prodigy/functions.py
 
 pretrain cpu
 python -m spacy pretrain ./research/prodigy/configs/ref_tagging_cpu.cfg ./research/prodigy/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0

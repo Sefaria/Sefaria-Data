@@ -647,7 +647,7 @@ def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1,
             }]
     print("Issues", issues)
 
-    spacy_formatted, rabbi_mentions = convert_to_spacy_format(crude_mentions, vtitle=vtitle, norm_regex="[\u0591-\u05bd\u05bf-\u05c5\u05c7]+", repl='', daf_skips=0, rashi_skips=0, overall=0)
+    spacy_formatted, rabbi_mentions = convert_to_spacy_format(crude_mentions, vtitle=vtitle, norm_regex="[,\-:;\u0591-\u05bd\u05bf-\u05c5\u05c7]+", repl='', daf_skips=0, rashi_skips=0, overall=0)
     srsly.write_jsonl(out_file1, rabbi_mentions)
     convert_to_mentions_file(out_file1, out_file2, only_bonayich_rabbis=False)
     with open(f'research/knowledge_graph/named_entity_recognition/{out_file2}', 'r') as fin:

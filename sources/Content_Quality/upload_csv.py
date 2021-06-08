@@ -4,6 +4,8 @@ import csv
 import sys
 from sources.functions import *
 new_file = ""
+
+
 import os
 import csv
 files = [f for f in os.listdir(".") if f.endswith(".csv")]

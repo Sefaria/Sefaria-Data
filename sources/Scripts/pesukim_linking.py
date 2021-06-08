@@ -10,6 +10,8 @@ from data_utilities.dibur_hamatchil_matcher import *
 from sefaria.utils.hebrew import strip_cantillation
 import math
 import random
+from sefaria.model.link import update_link_language_availabiliy
+
 
 def get_zip_ys(): #lista_listb(text_a, text_b):
     '''
@@ -33,19 +35,21 @@ def get_zip_parashot_refs(ind_name, only_first_seg_comment=False):
     :return:
     """
     ind = library.get_index(ind_name)
-    if len(ind.schema["nodes"]) == 5:
+    if 10 > len(ind.schema["nodes"]) >= 5:
         parasha_nodes = []
+        books = True
         for b in ind.schema["nodes"]:
             parasha_nodes += b["nodes"]
     else:
         parasha_nodes = ind.schema["nodes"]
+        books = False
     nodes = [node["key"] for node in parasha_nodes]
 
     peared = []
     for node in nodes:
         try:
             r_parasha = Ref(f"Parashat {node}")
-            r_comment = Ref(f"{ind_name}, {node}")
+            r_comment = Ref(f"{ind_name}, {f'{r_parasha.book}, ' if books else ''}{node}")
         except:
             continue
         if only_first_seg_comment:
@@ -127,7 +131,7 @@ def link_options_to_links(link_options, link_type='', post=False, qa_url=None, m
     return links, link_options
 
 
-def get_dme_linking(peared, post =True):
+def get_dme_linking(peared, post=True):
     ls_ys = LinkSet({"$and": [{"refs": {"$regex": "Degel Machaneh Ephraim.*"}},
                            {"generated_by": {"$ne": "yalkut_shimoni_linker"}}]})
     old_ys_links = [l["refs"][0] for l in ls_ys.contents()]
@@ -170,15 +174,29 @@ def get_dme_linking(peared, post =True):
     print(cnt_topost_ys_links)
     return cnt_topost_ys_links
 
+def tweek_and_post_links(query):
+    read_links = LinkSet(query)
+    links = []
+    for link in read_links:
+        l = link.contents()
+        l['generated_by'] = 'quotation_linker_dh'
+        l['type'] = 'commentary'
+        links.append(l)
+    post_link(links)
+    # update_link_language_availabiliy()
 
 if __name__ == '__main__':
     # peared = get_zip_ys()
-    peared = get_zip_parashot_refs("Sefat Emet")
-    book =random.sample(range(5), 1)[0]
-    pear = peared[book][random.sample(range(len(peared[book])), 1)[0]]
-    # for torah, ys in peared[book]:
-    #     matches = get_matches((torah, ys))
-    #     link_options_to_links(matches, link_type="Midrash")
-    # peared = get_zip_parashot_refs("Ohev Yisrael")
-    # # print(len(peared))
-    topost_links = get_dme_linking(pear, post=False)
+    # peared = get_zip_parashot_refs("Noam_Elimelech")
+    # book =random.sample(range(5), 1)[0]
+    # pear = peared[book][random.sample(range(len(peared[book])), 1)[0]]
+    # # for torah, ys in peared[book]:
+    # #     matches = get_matches((torah, ys))
+    # #     link_options_to_links(matches, link_type="Midrash")
+    # # peared = get_zip_parashot_refs("Ohev Yisrael")
+    # # # print(len(peared))
+    # topost_links = get_dme_linking(pear, post=False)
+    # query = {"$and": [{"refs": {"$regex": "Degel Machaneh Ephraim.*"}}, {"generated_by": "yalkut_shimoni_linker"}]}
+    query = {"$and": [{"refs": {"$regex": "Chiddushei HaRim on Torah.*"}}, {"type": "qutation"}]}
+    tweek_and_post_links(query)
+

@@ -17,13 +17,13 @@ for f in os.listdir("./up to date txt files/"):
         for daf in text:
             ftnotes[daf] = {}
             for i, comment in enumerate(text[daf]):
-                i_tags = re.findall("<sup>(\d+)</sup><i class.*?>(.*?)</i>", comment)
-                ftnotes[daf][i+1] = i_tags
-                # soup = BeautifulSoup("<body>{}</body>".format(comment), parser='lxml')
-                # i_tags = [x for x in soup.find_all("i") if "class" in x.attrs]
-                # sup_tags = [x for x in soup.find_all("sup") if x.text.isdigit()]
-                # assert len(i_tags) == len(sup_tags)
-                # #for i, sup in zip(i_tags, sup_tags):
+                ftnotes[daf][i + 1] = []
+                soup = BeautifulSoup("<body>{}</body>".format(comment), parser='lxml')
+                i_tags = [x for x in soup.find_all("i") if "class" in x.attrs]
+                for i_tag in i_tags:
+                    assert i_tag.previousSibling.name == "sup"
+                    sup = i_tag.previousSibling
+                    ftnotes[daf][i+1].append([str(sup), str(i_tag)])
 
         title = f.replace("_ftnotes_embedded.txt", "")
         print(title)

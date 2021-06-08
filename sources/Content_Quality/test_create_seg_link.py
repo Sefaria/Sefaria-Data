@@ -7,6 +7,14 @@ from sefaria.model.tests.ref_catching_test import *
 from sefaria.helper.link import rebuild_links_from_text as rebuild
 import numpy
 # #
+print(Ref("סוכה דף יג-יד"))
+print(Ref("Shabbat 7-8"))
+print(Ref("Zohar 3:7-8"))
+r = Ref('עירובין פב-פג')
+print(r)
+Ref("Zohar 1:251")
+print(Ref("שבת לג, א–ב").normal())
+
 print(Ref("Shabbat 7:1-2"))
 print(Ref("Shabbat 2a:1"))
 print(Ref("Shabbat 2a:1-7"))
@@ -18,7 +26,6 @@ print(Ref("שבת לג, א–ב").he_normal())
 print(Ref("Yoma 2a-b").normal())
 assert Ref("Yoma 88") == Ref("Yoma 88a")
 assert Ref("Yoma 87-90") == Ref("Yoma 87a-88a")
-assert Ref("Zohar 1:251") == Ref("Zohar 1:251a")
 assert Ref("Zohar 1:250-251") == Ref("Zohar 1:250a-251a")
 
 

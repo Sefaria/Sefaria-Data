@@ -4,13 +4,15 @@ from tqdm import tqdm
 django.setup()
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
-from research.prodigy.db_manager import MongoProdigyDBManager
+from research.prodigy.prodigy_package.db_manager import MongoProdigyDBManager
+from research.word2vec_xprmnts.fasttext_trainer import normalize
 
 class ProdigyInputWalker:
-    def __init__(self):
+    def __init__(self, prev_tagged_refs):
         self.prodigyInput = []
         self.prodigyInputByVersion = defaultdict(list)
-    
+        self.prev_tagged_refs = prev_tagged_refs
+
     @staticmethod
     def get_refs_with_location(text, lang, citing_only=True):
         unique_titles = set(library.get_titles_in_string(text, lang, citing_only))
@@ -45,9 +47,6 @@ class ProdigyInputWalker:
         refs_with_loc = list(filter(None, refs_with_loc))
         return refs_with_loc
 
-    def normalize(self, text):
-        return regex.sub(r"\s*<[^>]+>\s*", " ", text)
-
     def split_text(self, text):
         return text.split('. ')
 
@@ -70,7 +69,10 @@ class ProdigyInputWalker:
         return temp_input_list
     
     def action(self, text, en_tref, he_tref, version):
-        norm_text = self.normalize(text)
+        if en_tref in self.prev_tagged_refs:
+            print("ignoring", en_tref)
+            return
+        norm_text = normalize(text, 'he')
         temp_input_list = self.get_input(norm_text, en_tref, version.language)
         self.prodigyInputByVersion[(version.versionTitle, version.title, version.language)] += temp_input_list
         
@@ -85,8 +87,8 @@ class ProdigyInputWalker:
         random.shuffle(self.prodigyInput)
 
 
-def make_prodigy_input(title_list, vtitle_list, lang_list):
-    walker = ProdigyInputWalker()
+def make_prodigy_input(title_list, vtitle_list, lang_list, prev_tagged_refs):
+    walker = ProdigyInputWalker(prev_tagged_refs)
     for title, vtitle, lang in tqdm(zip(title_list, vtitle_list, lang_list), total=len(title_list)):
         if vtitle is None:
             version = VersionSet({"title": title, "language": lang}, sort=[("priority", -1)], limit=1).array()[0]
@@ -137,7 +139,7 @@ def make_prodigy_input_by_refs(ref_list):
     input_list = []
     for tref in ref_list:
         oref = Ref(tref)
-        text = walker.normalize(oref.text('he').text)
+        text = normalize(oref.text('he').text, 'he')
         temp_input_list = walker.get_input(text, tref, 'he')
         input_list += temp_input_list
     srsly.write_jsonl('research/prodigy/data/test_input.jsonl', input_list)
@@ -150,16 +152,25 @@ def make_prodigy_input_sub_citation(citation_collection, output_collection):
             span_text = doc['text'][span['start']:span['end']]
             getattr(my_db.db, output_collection).insert_one({"text": span_text, "spans": [], "meta": {"Ref": doc['meta']['Ref'], "Start": span['start'], "End": span['end']}})
 
+def get_prev_tagged_refs(collection):
+    my_db = MongoProdigyDBManager(collection,'localhost', 27017)
+    return set(my_db.output_collection.find({}).distinct('meta.Ref'))
+
 if __name__ == "__main__":
-    # title_list = [
-    #     'Rashba on Gittin', 'Chiddushei Ramban on Shabbat', 'Ben Yehoyada on Berakhot',
-    #     'Tosafot on Bekhorot', 'Chidushei Agadot on Zevachim', 'Chidushei Halachot on Bava Kamma', 'Rabbeinu Gershom on Meilah',
-    #     'Maharam Shif on Sanhedrin', 'Maadaney Yom Tov on Niddah', 'Rashbam on Menachot', 'Penei Yehoshua on Shevuot',
-    #     'Yad Ramah on Sanhedrin', 'Shita Mekubetzet on Ketubot'
-    # ]
+    title_list = [
+        'Rashba on Chullin', 'Chiddushei Ramban on Beitzah',
+        'Tosafot on Shevuot', 'Rabbeinu Gershom on Meilah',
+        'Rashbam on Menachot',
+        'Yad Ramah on Sanhedrin', 'Rashi on Taanit', "Chidushei HaRa'ah on Berakhot",
+        "Commentary of the Rosh on Nedarim", "Mefaresh on Tamid", "Meiri on Bava Kamma",
+        "Mordechai on Bava Batra", "Rav Nissim Gaon on Shabbat", "Rosh on Kiddushin", "Tosafot Chad Mikamei on Yevamot",
+        "Tosafot HaRosh on Horayot", "Tosafot Rid on Avodah Zarah Third Recension", "Tosafot Shantz on Sotah",
+        "Tosafot Yeshanim on Keritot", "HaMaor HaKatan on Eruvin", "Nimukei Yosef on Bava Metzia"
+    ]
+    prev_tagged_refs = get_prev_tagged_refs('gold_output_full')
     # title_list = [i.title for i in IndexSet({"title": re.compile(r'Gilyon HaShas on')})]
     # print(title_list)
-    # make_prodigy_input(title_list, [None]*len(title_list), ['he']*len(title_list))
+    make_prodigy_input(title_list, [None]*len(title_list), ['he']*len(title_list), prev_tagged_refs)
 
     # combine_all_sentences_to_paragraphs()
-    make_prodigy_input_sub_citation('gilyon_output', 'gilyon_sub_citation_input')
+    # make_prodigy_input_sub_citation('gilyon_output', 'gilyon_sub_citation_input')
