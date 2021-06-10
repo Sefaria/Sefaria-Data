@@ -8,7 +8,7 @@ from sources.Scripts.pesukim_linking import *
 
 min_thresh=22
 find_url = "https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/markpsukim"
-parse_url = f"https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/parsetogroups?smin={min_thresh}&smax=10000"
+# parse_url = f"https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/parsetogroups?smin={min_thresh}&smax=10000"
 SLEEP_TIME = 1
 
 sandbox = SEFARIA_SERVER.split(".")[0]
@@ -18,6 +18,22 @@ def retreive_bold(st):
 
 
 def find_pesukim(base_text, mode="tanakh", thresh=0):
+    """
+    Using the dicta citations finder returns results of optional pesukim that correspond to text in the base text and other metadata
+    :param base_text: stripped text to look through.
+    :param mode: defaults to Tanakh because we are looking to match text to Pesukim can potentially also be 'mishna' and 'talmud'
+    :param thresh: from learning the api it seams to always be 0 and not make a difference when changed.
+    :return: dictionary: {'downloadId': int,
+                             'allText' : st | it is the base_text
+                             'results': list of dicts | {
+                                                'mode' :0,
+                                                'iVerse': int,
+                                                'ijWordPairs': list of dicts ot keys: item1, item2 values: int,
+                                                'score':int (0-1000),
+                                                'debScore':None
+                                                }
+                                }
+    """
     data_text = {
         "data": base_text,
         "mode": mode,
@@ -48,9 +64,10 @@ def dicta_parse(response_json, min_thresh=22):
     sleep(SLEEP_TIME)
     return parsed_results
 
+
 def get_dicta_matches(base_refs, mode="tanakh", onlyDH = False, thresh=0, min_thresh=22, prioraty_tanakh_chunk=None, wrods_to_wipe=''):
     """
-
+    the heart of the quotation finder input Ref and output links
     :param base_refs:
     :param mode:
     :param onlyDH:
@@ -63,8 +80,8 @@ def get_dicta_matches(base_refs, mode="tanakh", onlyDH = False, thresh=0, min_th
     dh_link_options = []
     for base_ref in base_refs:
         base_text = base_ref.text('he').text
-        base_text = strip_cantillation(bleach.clean(base_text, tags=[], strip=True), strip_vowels=True)
-        base_text = re.sub(f"{wrods_to_wipe}", "", base_text)
+        # base_text = strip_cantillation(bleach.clean(base_text, tags=[], strip=True), strip_vowels=True)
+        # base_text = re.sub(f"{wrods_to_wipe}", "", base_text)
         response_json = find_pesukim(base_text, mode, thresh=thresh)
         # response_json["results"][0]["ijWordPairs"]
         parsed_results = dicta_parse(response_json, min_thresh=min_thresh)
@@ -151,11 +168,18 @@ def write_to_csv(links, linkMatchs,  filename='quotation_links'):
         writer.writeheader()
         writer.writerows(list_dict)
 
-def get_links_ys():
-    peared = get_zip_ys()  # ys, perek (Torah)
-    books = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
-    book = random.sample(range(5), 1)[0]
-    pear = peared[book][random.sample(range(len(peared[book])), 1)[0]]
+
+def get_links_ys(pear=None, post=False):
+    """
+    :param post: boolean to post to SEFARIA_SERVER
+    :param pear: tuple (oRef Tanakh, oRef base book)
+    :return: list of links (to be posted)
+    """
+    if not pear:
+        peared = get_zip_ys()  # ys, perek (Torah)
+        books = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
+        book = random.sample(range(5), 1)[0]
+        pear = peared[book][random.sample(range(len(peared[book])), 1)[0]]
     print(pear)
     # from pathlib import Path
     # Path(f"{os.getcwd()}/{pear[0]}").mkdir(parents=True, exist_ok=True)
@@ -165,12 +189,17 @@ def get_links_ys():
     thresh = ''
     # for thresh in [10, 22, 50]:
     base_refs = pear[1].all_segment_refs()
-    link_options = get_dicta_matches(base_refs, onlyDH=False)
+    link_options = get_dicta_matches(base_refs, onlyDH=False, prioraty_tanakh_chunk=pear[0], min_thresh=0)
     links, linkMatchs = zip(*[data_to_link(link_option, generated_by="Yalkut_shimoni_quotations") for link_option in link_options])
     # links, link_data = link_options_to_links(link_options, min_score=thresh)
     write_to_csv(links, linkMatchs, filename=f"dicta_{thresh}")
     print(len(links))
-    post_link(links)
+
+    write_links_to_json("ys_links", links)
+
+    if post:
+        post_link(links)
+    return links
 
     # # dh code
     # matches = get_matches(pear)
@@ -178,8 +207,54 @@ def get_links_ys():
     # write_to_csv(links, link_data, filename="dh")
 
 
-def link_a_parashah_node_struct_index(index, onlyDH=False, post=False):
-    peared = get_zip_parashot_refs(index)
+def write_links_to_json(filename, links):
+    with open(f'{filename}.txt', "w+") as fl:
+        json.dump(links, fl)
+
+
+def get_links_from_file(file_name):
+    with open(file_name, "r") as link_file:
+        links = json.load(link_file)
+    return links
+
+
+def post_links_from_file(file_name, score=22):
+    links_to_post = []
+    links = get_links_from_file(file_name)
+    for l in links:
+        if l["score"] > score:
+            links_to_post.append(l)
+    post_link(links_to_post, server="http://localhost:8000")
+
+
+def dicta_links_from_ref(tref, post=False, onlyDH=False):
+    all_links = []
+    oref = Ref(tref)
+    base_refs = oref.all_segment_refs()
+    link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=22)
+    if not link_options:
+        print("no links found")
+        return
+    links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder', type='quotation') for link_option in link_options])
+    write_to_csv(links, linkMatchs, filename=f"dicta_{tref}")
+    print(links)
+    all_links.extend(links)
+    if post:
+        post_link(links, server="http://localhost:8000")
+    write_links_to_json(f'{oref.book}',links)
+    return all_links
+
+
+def link_a_parashah_node_struct_index(index_name, onlyDH=False, post=False):
+    """
+    input index with an assumed Parashah structure
+    :param index_name: index name
+    :param onlyDH: choses to look only at quotations in the beginning of the segment for the commentary type of linking
+    :param post: option to post atomatically to SEFARIA-SERVER
+    :return: list(:Link): list of all the links
+    """
+    peared = get_zip_parashot_refs(index_name)
+    all_links = []
     for pear in peared:
         base_refs = pear[1].all_segment_refs()
         link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=22, prioraty_tanakh_chunk=pear[0], wrods_to_wipe='''(ב?מדרש|ב?פסוק|והנה|כתיב|פ?רש"?י|ו?כו'?)''')
@@ -188,17 +263,24 @@ def link_a_parashah_node_struct_index(index, onlyDH=False, post=False):
         links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_linker_dh', type='commentary') for link_option in link_options])
         write_to_csv(links, linkMatchs, filename=f"dicta_{base_refs[0].index.title}")
         print(links)
+        all_links.extend(links)
         if post:
             post_link(links)
             print(f"posted Parashah {pear[1]}")
             f.write(f"posted Parashah {pear[1]}\n")
-
+    return all_links
 
 if __name__ == '__main__':
-    index_name = "Noam_Elimelech"
-    f = open("intraTanakhLinks.txt", "a+")  # not the right place to open this for the other functions. read doc.
-    f.write(index_name)
-    link_a_parashah_node_struct_index(index_name, onlyDH=True, post=True)
-    # get_links_ys()
+    index_name = 'Siddur Sefard, Kiddush Levanah'# "Noam_Elimelech"
+    f = open(f"intraTanakhLinks.txt_{index_name}", "a+")  # not the right place to open this for the other functions. read doc.
+    # f.write(index_name)
+    # link_a_parashah_node_struct_index(index_name, onlyDH=True, post=True)
+    # pear = (Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך")) #(Ref('Numbers 13:1-15:41'), Ref('Yalkut Shimoni on Torah 742'))  # :7-750:13 ( Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך"))
+    # pear = (Ref('Numbers 16'), Ref("Yalkut_Shimoni_on_Torah.750.15"))
+    # links = get_links_ys(pear, post=False)
+    links = dicta_links_from_ref('Selichot_Nusach_Ashkenaz_Lita, Erev_Rosh_Hashana.13', post=False)
     f.close()
+
+
+    # post_links_from_file("/home/shanee/www/Sefaria-Data/research/quotation_finder/Numbers 13:1-15:41/ys_links.txt", score=10)
 
