@@ -72,6 +72,7 @@ class ProdigyInputWalker:
         if en_tref in self.prev_tagged_refs:
             print("ignoring", en_tref)
             return
+        text = TextChunk._strip_itags(text)
         norm_text = normalize(text, 'he')
         temp_input_list = self.get_input(norm_text, en_tref, version.language)
         self.prodigyInputByVersion[(version.versionTitle, version.title, version.language)] += temp_input_list

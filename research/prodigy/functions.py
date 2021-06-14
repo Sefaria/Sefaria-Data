@@ -16,12 +16,13 @@ except ImportError:
 
 
 @spacy.registry.readers("mongo_reader")
-def stream_data(db_host: str, db_port: int, input_collection: str, output_collection: str, random_state: int, train_perc: float, corpus_type: str, min_len: int) -> Callable[[Language], Iterator[Example]]:
+def stream_data(db_host: str, db_port: int, input_collection: str, output_collection: str, random_state: int, train_perc: float, corpus_type: str, min_len: int, unique_by_metadata=True) -> Callable[[Language], Iterator[Example]]:
     my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
     def generate_stream(nlp):
         data = [d for d in getattr(my_db.db, input_collection).find({}) if len(d['text']) > min_len]
         # make data unique
-        data = list({(tuple(sorted(d['meta'].items(), key=lambda x: x[0])), d['text']): d for d in data}.values())
+        if unique_by_metadata:
+            data = list({(tuple(sorted(d['meta'].items(), key=lambda x: x[0])), d['text']): d for d in data}.values())
         print("Num examples", len(data))
         if random_state == -1:
             train_data, test_data = (data, []) if corpus_type == "train" else ([], data)
@@ -31,6 +32,7 @@ def stream_data(db_host: str, db_port: int, input_collection: str, output_collec
         for raw_example in corpus_data:
             doc = nlp.make_doc(raw_example['text'])
             doc.user_data = raw_example['meta']
+            doc.user_data.update({'answer': raw_example['answer'], '_id': raw_example['_id']})
             entities = [(span['start'], span['end'], span['label']) for span in raw_example['spans']]
             example = Example.from_dict(doc, {"entities": entities})
             yield example
@@ -89,20 +91,34 @@ def make_evaluation_files(evaluation_data, ner_model, output_folder):
     print('PRECISION', 100*round(tp/(tp+fp), 4))
     print('RECALL   ', 100*round(tp/(tp+fn), 4))
     print('F1       ', 100*round(tp/(tp + 0.5 * (fp + fn)),4))
-    print(doc_spans)
     return tp, fp, tn, fn
 
-def export_tagged_data_as_html(tagged_data, output_folder):
+def export_tagged_data_as_html(tagged_data, output_folder, is_binary=True):
     output_json = []
     for example in tagged_data:
         ents_x2y = example.get_aligned_spans_x2y(example.reference.ents)
-        output_json += [{
-            "text": example.text,
-            "tp": [[span.start_char, span.end_char, span.label_] for span in ents_x2y],
+        out_item = {
+            "text": "",
+            "tp": [],
             "fp": [],
             "fn": [],
-            "ref": example.predicted.user_data['Ref']
-        }]
+            "ref": example.predicted.user_data['Ref'],
+            "_id": example.predicted.user_data['_id'],
+        }
+        if is_binary:
+            assert len(ents_x2y) == 1
+            span = ents_x2y[0]
+            before, after = get_window_around_match(span.start_char, span.end_char, example.text)
+            span_text = example.text[span.start_char:span.end_char]
+            trimmed_text = f"{before} {span_text} {after}"
+            new_start = len(before) + 1
+            new_end = new_start + len(span_text)
+            tp, fp = ([[new_start, new_end, span.label_]], []) if example.predicted.user_data['answer'] == "accept" else ([], [[new_start, new_end, span.label_]])
+            out_item.update(dict(text=trimmed_text, tp=tp, fp=fp))
+        else:
+            out_item['text'] = example.text
+            out_item['tp'] = [[span.start_char, span.end_char, span.label_] for span in ents_x2y]
+        output_json += [out_item]
     make_evaluation_html(output_json, output_folder, 'doc_export.html')
 
 def wrap_chars(s, chars_to_wrap, get_wrapped_text):
@@ -164,7 +180,7 @@ def make_evaluation_html(data, output_folder, output_filename):
         chars_to_wrap += [(s, e, {"label": l, "true condition": 'fn'}) for (s, e, l) in d['fn']]
         wrapped_text = wrap_chars_with_overlaps(d['text'], chars_to_wrap, get_wrapped_text)
         html += f"""
-        <p class="ref">{i}) {d['ref']}</p>
+        <p class="ref">{i}) {d['ref']} - ID: {d['_id']}</p>
         <p dir="rtl" class="doc">{wrapped_text}</p>
         """
     html += """
@@ -225,11 +241,11 @@ def convert_jsonl_to_csv(filename):
 if __name__ == "__main__":
     nlp = spacy.load('./research/prodigy/output/ref_tagging_cpu/model-last')
     # nlp = spacy.load('./research/prodigy/output/sub_citation/model-best')
-    data = stream_data('localhost', 27017, 'examples2_output', 'gilyon_input', 614, 0.8, 'train', 0)(nlp)
-    print(make_evaluation_files(data, nlp, './research/prodigy/output/evaluation_results'))
+    # data = stream_data('localhost', 27017, 'gold_output_full', 'gilyon_input', 614, 0.8, 'test', 0)(nlp)
+    # print(make_evaluation_files(data, nlp, './research/prodigy/output/evaluation_results'))
 
-    # data = stream_data('localhost', 27017, 'Copy_of_examples2_output', 'gilyon_input', -1, 1.0, 'train', 0)(nlp)
-    # export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results')
+    data = stream_data('localhost', 27017, 'silver_output_binary', 'gilyon_input', -1, 1.0, 'train', 0, unique_by_metadata=False)(nlp)
+    export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results', is_binary=True)
     convert_jsonl_to_json('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
     # convert_jsonl_to_csv('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
     # spacy.training.offsets_to_biluo_tags(doc, entities)
@@ -240,7 +256,7 @@ python -m spacy train ./research/prodigy/configs/ref_tagging.cfg --output ./rese
 to run cpu
 python -m spacy train ./research/prodigy/configs/ref_tagging_cpu.cfg --output ./research/prodigy/output/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0
 Num examples 795
- 60    6600         39.41      2.24   70.42   74.26   66.96    0.70
+ 55    6200         68.81      6.17   61.90   65.66   58.56    0.62
 
 
 to train sub citation
