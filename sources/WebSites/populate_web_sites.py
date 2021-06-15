@@ -163,7 +163,7 @@ sites_data = [
 	{
 			"name": "Hebrew College",
 			"domains": ["hebrewcollege.edu"],
-		  "bad_urls": [r"hebrewcollege\.edu\/blog\/(author\|category\|tag)\/",
+		  "bad_urls": [r"hebrewcollege\.edu\/blog\/(author|category|tag)\/",
 									 r"hebrewcollege\.edu\/blog\/(author|tag)\/"]
 	},
 	{
@@ -187,7 +187,7 @@ sites_data = [
 			"name": "Rabbi Jeff Fox (Rosh ha-Yeshiva, Yeshivat Maharat)",
 			"domains": ["roshyeshivatmaharat.org"],
 			"title_branding": ["Rosh Yeshiva Maharat"],
-			"bad_urls": [r"roshyeshivamaharat.org\/(author\|category\|tag)\/"]
+			"bad_urls": [r"roshyeshivatmaharat.org\/(author|category|tag)\/"]
 	},
 	{
 			"name": "Cleveland Jewish News",
@@ -223,7 +223,7 @@ sites_data = [
 			"name": "Lilith Magazine",
 			"domains": ["lilith.org"],
 		  "bad_urls": [r"lilith\.org\/\?gl=1\&s=",                  # Lilith Magazine search results
-            r"lilith\.org\/(tag\|author\|category)\/"]
+            r"lilith\.org\/(tag|author|category)\/"]
 	},
 	{
 			"name": "Torah.org",

@@ -83,7 +83,7 @@ indx = {
 	"base_text_titles": ["Tiferet Yisrael"],
 	"collective_title": "Footnotes and Annotations"
 }
-post_index(indx, server="https://arukhtanakh.cauldron.sefaria.org")
+post_index(indx, server="https://germantalmud.cauldron.sefaria.org")
 ftnotes_to_insert = parse_ftnotes()
 text, links = parse_text(ftnotes_to_insert)
 text = convertDictToArray(text)
@@ -97,7 +97,7 @@ ftnotes_send_text = {
 	"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
 	"versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH002042478/NLI"
 }
-post_text("Footnotes and Annotations on Tiferet Yisrael, Introduction", ftnotes_send_text, server="https://arukhtanakh.cauldron.sefaria.org")
+post_text("Footnotes and Annotations on Tiferet Yisrael, Introduction", ftnotes_send_text, server="https://germantalmud.cauldron.sefaria.org")
 for i, ch in enumerate(text[1:]):
 	send_text = {
 		"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
@@ -106,9 +106,9 @@ for i, ch in enumerate(text[1:]):
 		"text": ch
 	}
 	ftnotes_send_text["text"] = ftnotes_to_insert[i+1]
-	post_text("Tiferet Yisrael {}".format(i+1), send_text, server="https://arukhtanakh.cauldron.sefaria.org")
+	post_text("Tiferet Yisrael {}".format(i+1), send_text, server="https://germantalmud.cauldron.sefaria.org")
 	time.sleep(2)
-	post_text("Footnotes and Annotations on Tiferet Yisrael {}".format(i+1), ftnotes_send_text, server="https://arukhtanakh.cauldron.sefaria.org")
+	post_text("Footnotes and Annotations on Tiferet Yisrael {}".format(i+1), ftnotes_send_text, server="https://germantalmud.cauldron.sefaria.org")
 	time.sleep(2)
 send_text = {
 	"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
@@ -116,5 +116,5 @@ send_text = {
 	"language": "he",
 	"text": text[0]
 }
-post_text("Tiferet Yisrael, Introduction to Tiferet Yisrael", send_text, server="https://arukhtanakh.cauldron.sefaria.org")
-post_link_in_steps(links, server="https://arukhtanakh.cauldron.sefaria.org")
+post_text("Tiferet Yisrael, Introduction to Tiferet Yisrael", send_text, server="https://germantalmud.cauldron.sefaria.org")
+post_link_in_steps(links, server="https://germantalmud.cauldron.sefaria.org")
