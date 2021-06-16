@@ -24,7 +24,6 @@ if Term().load({"name": "Lechem Mishneh"}) is None:
 			new_c.add_shared_term(rambam_path)
 			new_c.save()
 
-
 indices = library.get_indices_by_collective_title("Lehem Mishneh")
 for i in indices:
 	print(i)

@@ -945,7 +945,7 @@ if __name__ == '__main__':
     # create_tractate_mappings(stuff[foo], True)
     # make_noise()
     for thing in stuff:
-        error_dict[thing.title] = output_method(thing)
+        error_dict[thing.title] = create_tractate_mappings(thing)
         # break
     error_dict['total'] = sum(sum(c) for c in error_dict.values())
     with open('code_output/errors.json', 'w') as fp:
