@@ -83,4 +83,4 @@ class MongoProdigyDBManager:
     datasets = property(get_datasets)
     sessions = property(get_sessions)
 
-db_manager = MongoProdigyDBManager('examples2_binary')
+db_manager = MongoProdigyDBManager('silver_output_binary')
