@@ -2,8 +2,10 @@ import os
 from sources.functions import *
 import time
 from bs4 import BeautifulSoup, NavigableString
+from collections import Counter
 endings = set()
 startings = set()
+verse_length = Counter()
 def check_str(v, pos='ending'):
     if pos == 'ending':
         poss_endings = ['”', '“', '‘', '‘']
@@ -97,7 +99,10 @@ for f in os.listdir("."):
                     text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace("  ", " ")
 
     for ch in text_dict:
+        orig = len(Ref("{} {}".format(title, ch)).all_segment_refs())
         text_dict[ch] = convertDictToArray(text_dict[ch])
+        if orig != len(text_dict[ch]):
+            print("Verses in Ch {} are off: {} vs {}".format(ch, orig, len(text_dict[ch])))
         for v, verse in enumerate(text_dict[ch]):
             text_dict[ch][v] = re.sub("<sup>.{1}</sup>", "", text_dict[ch][v])
             soup = BeautifulSoup(text_dict[ch][v])
@@ -106,12 +111,28 @@ for f in os.listdir("."):
                     i_tag.decompose()
 
             orig = bleach.clean(Ref("{} {}:{}".format(title, ch, v+1)).text('en').text, tags=[], strip=True)
-            new = soup.text
-            if abs(len(orig.split()) - len(new.split())) > 10:
+            new = ""
+            tag = "p" if soup.find("p") is not None else "body"
+            for el in soup.find(tag).contents:
+                if isinstance(el, NavigableString):
+                    new += el + " "
+                else:
+                    new += " "
+            new = new.replace("  ", " ").strip()
+            orig = orig.replace("  ", " ").strip()
+            verse_length[new.count(" ")] += 1
+            if new.count(" ") < 15:
+                diff = 3
+            elif new.count(" ") < 30:
+                diff = 5
+            else:
+                diff = 10
+            if abs(len(orig.split()) - len(new.split())) > diff:
+                print("****")
                 print("{} {}:{}".format(title, ch, v+1))
                 print(orig)
                 print(new)
-                print()
+
     text_dict = convertDictToArray(text_dict)
     send_text = {
         "language": "en",
@@ -125,3 +146,4 @@ for f in os.listdir("."):
 
 print(p_styles)
 print(other_tags)
+print(verse_length.most_common(20))
