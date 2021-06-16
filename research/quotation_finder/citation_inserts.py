@@ -33,15 +33,16 @@ def get_segment(ref, score=22, link_source=None):
 
 
 def get_place_citation(link, score=None):
-    place = link.charLevelData["charLevelDataBook"]['endChar']
-    pasuk_ref = Ref(link.refs[0])  # if link.refs[1] == book_ref else Ref(link.refs[1])
+    # the following 2 assumptions about the placing in the refs list and the charLevelData list are based on the link testing\and changing if needed in add_citations link. we can make here another assertion but that seems redundant
+    pasuk_ref = Ref(link.refs[0])
+    place = link.charLevelData[1]['endChar']
     citation = f"{dummy_char}({pasuk_ref.normal('he')})"  # {dummy_char}"
     if score:
-        if 15 < link.score < 22:
+        if score[0] < link.score < score[1]:
             color = 1  # orange
-        elif 22 <= link.score < 50:
+        elif score[1] <= link.score < score[2]:
             color = 2  # green
-        elif link.score <= 50:
+        elif score[2] <= link.score:
             color = 3  # blue
         else:
             return []
@@ -55,8 +56,10 @@ def add_citations(lls, seg_text_list, book_ref):
 
     for l in lls:
         if Ref(l.refs[1]).book != Ref(book_ref).book:
+            print("needed reverse")
             l.refs.reverse()
-        citation_list.extend(get_place_citation(l, score=True))
+            l.charLevelData.reverse()
+        citation_list.extend(get_place_citation(l, score=[15, 20, 50]))
 
     citation_list.sort()
 
@@ -98,12 +101,10 @@ def order_links_by_segments(links): #, base_book_title):
 
 if __name__ == '__main__':
     new_texts_dict = dict()
-    range_ref = Ref("Selichot_Nusach_Ashkenaz_Lita, Erev_Rosh_Hashana.13")
-    index = 'Selichot Nusach Ashkenaz Lita, Erev Rosh Hashana'
-    # for r in Ref("ילקוט שמעוני על התורה, קרח").all_segment_refs(): #Ref("ילקוט שמעוני על התורה, קרח")
-    links = get_links_from_file(f'/home/shanee/www/Sefaria-Data/research/quotation_finder/{index}.txt')
+    range_ref = Ref('Bechinat_Olam.2')
+    links = get_links_from_file(f'{range_ref.normal()}.txt')
     link_dict = order_links_by_segments(links) #, "Selichot_Nusach_Ashkenaz_Lita")
     for r in range_ref.all_segment_refs():
-        new_texts_dict.update(get_segment(r, score=15, link_source=link_dict))
+        new_texts_dict.update(get_segment(r, score=22, link_source=link_dict))
         # new_texts_dict.update(get_local_seg(r))
     push_text_w_citations(range_ref.text('he').version(), new_texts_dict)

@@ -13,6 +13,7 @@ SLEEP_TIME = 1
 
 sandbox = SEFARIA_SERVER.split(".")[0]
 
+
 def retreive_bold(st):
     return ' '.join([re.sub('<.*?>', '', w) for w in st.split() if '<b>' in w])
 
@@ -75,7 +76,7 @@ def get_dicta_matches(base_refs, mode="tanakh", onlyDH = False, thresh=0, min_th
     :param min_thresh:
     :return: list (as long as the list of base_refs - segs) of matches
     """
-    Match = namedtuple("Match", ["textMatched", "textToMatch", "score", "startIChar", "endIChar", "pasukStartIChar", "pasukEndIChar", "dh"])
+    Match = namedtuple("Match", ["textMatched", "textToMatch", "score", "startIChar", "endIChar", "pasukStartIWord", "pasukEndIWord", "dh"])
     link_options = []
     dh_link_options = []
     for base_ref in base_refs:
@@ -93,6 +94,7 @@ def get_dicta_matches(base_refs, mode="tanakh", onlyDH = False, thresh=0, min_th
             if len(result['matches']) > 1:
                 many_pesukim_he = [match['verseDispHeb'] for match in result['matches']]
                 many_pesukim_refs = [Ref(he_disp) for he_disp in many_pesukim_he]
+                many_pesukim_score = [match['score'] for match in result['matches']]
                 suffex = ''.join([f"&p{i+1}={many_pesukim_refs[i].normal()}&lang2=he" for i in list(range(1, len(many_pesukim_refs)))])
                 f.write(base_ref.normal())
                 f.write(re.sub(" ", "_", f'{sandbox}.cauldron.sefaria.org/{many_pesukim_refs[0].normal()}?lang=he{suffex}'))
@@ -129,24 +131,24 @@ def data_to_link(link_option, type="quotation", generated_by="", auto=True):
     link_json = {"type": type,
      "refs": [pasuk_ref.normal(), book_match.normal()],
      "auto": auto,
-     "charLevelData": {},
+     "charLevelData": [],
     "score": match.score
      }
     if generated_by:
         link_json.update({"generated_by": generated_by})
-    link_json["charLevelData"] = {
-        "charLevelDataBook": {
+    link_json["charLevelData"] = [
+        {
+            "startWord": match.pasukStartIWord,
+            "endWord": match.pasukEndIWord,
+            "versionTitle": link_option[0].text('he').version().versionTitle,
+            "language": "he"},
+        {
             "startChar": match.startIChar,
              "endChar": match.endIChar,
              "versionTitle": link_option[1].text('he').version().versionTitle,
              "language": "he"
-        },
-     "charLevelDataPasuk": {
-         "startWord": match.pasukStartIChar,
-         "endWord": match.pasukEndIChar,
-         "versionTitle": link_option[0].text('he').version().versionTitle,
-         "language": "he"}
         }
+        ]
     return link_json, match
 
 
@@ -227,22 +229,20 @@ def post_links_from_file(file_name, score=22):
     post_link(links_to_post, server="http://localhost:8000")
 
 
-def dicta_links_from_ref(tref, post=False, onlyDH=False):
-    all_links = []
+def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22):
     oref = Ref(tref)
     base_refs = oref.all_segment_refs()
-    link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=22)
+    link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh)
     if not link_options:
         print("no links found")
         return
     links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder', type='quotation') for link_option in link_options])
     write_to_csv(links, linkMatchs, filename=f"dicta_{tref}")
     print(links)
-    all_links.extend(links)
+    write_links_to_json(f'{oref.book}', links)
     if post:
         post_link(links, server="http://localhost:8000")
-    write_links_to_json(f'{oref.book}',links)
-    return all_links
+    return links
 
 
 def link_a_parashah_node_struct_index(index_name, onlyDH=False, post=False):
@@ -271,14 +271,15 @@ def link_a_parashah_node_struct_index(index_name, onlyDH=False, post=False):
     return all_links
 
 if __name__ == '__main__':
-    index_name = 'Siddur Sefard, Kiddush Levanah'# "Noam_Elimelech"
-    f = open(f"intraTanakhLinks.txt_{index_name}", "a+")  # not the right place to open this for the other functions. read doc.
-    # f.write(index_name)
-    # link_a_parashah_node_struct_index(index_name, onlyDH=True, post=True)
+    range_ref = 'Selichot Nusach Ashkenaz Lita, Erev Rosh Hashana.14' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
+    range_name = range_ref
+    f = open(f"intraTanakhLinks_{range_name}.txt", "a+")  # not the right place to open this for the other functions. read doc.
+    f.write(range_name)
+    # link_a_parashah_node_struct_index(range_name, onlyDH=True, post=True)
     # pear = (Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך")) #(Ref('Numbers 13:1-15:41'), Ref('Yalkut Shimoni on Torah 742'))  # :7-750:13 ( Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך"))
     # pear = (Ref('Numbers 16'), Ref("Yalkut_Shimoni_on_Torah.750.15"))
     # links = get_links_ys(pear, post=False)
-    links = dicta_links_from_ref('Selichot_Nusach_Ashkenaz_Lita, Erev_Rosh_Hashana.13', post=False)
+    links = dicta_links_from_ref(f'{range_ref}', post=True, min_thresh=15)
     f.close()
 
 
