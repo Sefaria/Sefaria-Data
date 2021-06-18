@@ -66,10 +66,11 @@ def dicta_parse(response_json, min_thresh=22):
     return parsed_results
 
 
-def get_dicta_matches(base_refs, mode="tanakh", onlyDH = False, thresh=0, min_thresh=22, prioraty_tanakh_chunk=None, wrods_to_wipe=''):
+def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, thresh=0, min_thresh=22, prioraty_tanakh_chunk=None, wrods_to_wipe=''):
     """
     the heart of the quotation finder input Ref and output links
     :param base_refs:
+    :param offline: list of 2 file dicts, 1: mapping of the text keys:trefs, values: he_text (sent to offline dicta) 2: mapping of results from dicta, keys: trefs values: dicta_results
     :param mode:
     :param onlyDH:
     :param thresh:
@@ -80,12 +81,17 @@ def get_dicta_matches(base_refs, mode="tanakh", onlyDH = False, thresh=0, min_th
     link_options = []
     dh_link_options = []
     for base_ref in base_refs:
-        base_text = base_ref.text('he').text
-        # base_text = strip_cantillation(bleach.clean(base_text, tags=[], strip=True), strip_vowels=True)
-        # base_text = re.sub(f"{wrods_to_wipe}", "", base_text)
-        response_json = find_pesukim(base_text, mode, thresh=thresh)
-        # response_json["results"][0]["ijWordPairs"]
-        parsed_results = dicta_parse(response_json, min_thresh=min_thresh)
+        if offline:
+            base_text = offline[0][base_ref]
+            parsed_results = offline[1][base_ref]
+        else:
+            base_text = base_ref.text('he').text
+
+            # base_text = strip_cantillation(bleach.clean(base_text, tags=[], strip=True), strip_vowels=True)
+            # base_text = re.sub(f"{wrods_to_wipe}", "", base_text)
+            response_json = find_pesukim(base_text, mode, thresh=thresh)
+            # response_json["results"][0]["ijWordPairs"]
+            parsed_results = dicta_parse(response_json, min_thresh=min_thresh)
         dh_res = [res for res in parsed_results if res['startIChar'] <= 10]
         for result in parsed_results:
             matched = result['matches'][0]
@@ -210,7 +216,7 @@ def get_links_ys(pear=None, post=False):
 
 
 def write_links_to_json(filename, links):
-    with open(f'{filename}.txt', "w+") as fl:
+    with open(f'{filename}.json', "w+") as fl:
         json.dump(links, fl)
 
 
@@ -270,6 +276,26 @@ def link_a_parashah_node_struct_index(index_name, onlyDH=False, post=False):
             f.write(f"posted Parashah {pear[1]}\n")
     return all_links
 
+
+def create_file_for_offline_run(version: Version, filename: str):
+    vm = get_version_mapping(version)
+    write_links_to_json(filename, vm)
+    return vm
+
+
+def get_version_mapping(version: Version) -> dict:
+    """
+    version: version object of text being modified
+    """
+    def populate_change_map(old_text, en_tref, he_tref, _):
+        nonlocal mapping
+        mapping[en_tref] = old_text
+
+    mapping = {}
+    version.walk_thru_contents(populate_change_map)
+    return mapping
+
+
 if __name__ == '__main__':
     range_ref = 'Selichot Nusach Ashkenaz Lita, Erev Rosh Hashana.14' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
     range_name = range_ref
@@ -281,7 +307,5 @@ if __name__ == '__main__':
     # links = get_links_ys(pear, post=False)
     links = dicta_links_from_ref(f'{range_ref}', post=True, min_thresh=15)
     f.close()
-
-
-    # post_links_from_file("/home/shanee/www/Sefaria-Data/research/quotation_finder/Numbers 13:1-15:41/ys_links.txt", score=10)
+    # post_links_from_file("Numbers 13:1-15:41/ys_links.txt", score=10)
 
