@@ -14,7 +14,7 @@ def get_links_for_citation_insert(ref, score, link_source):
         lls = [Link(l) for l in link_source.get(ref.normal(), [{'score': -1}]) if l['score'] >= score]
         return lls
     else: #link_source == 'DB'
-        return list(LinkSet({"refs": ref.normal(), "type": "quotation", "score": {"$gte": score}}))
+        return list(LinkSet({"refs": ref.normal(), "type": "quotation_auto", "score": {"$gte": score}}))
 
 
 def get_tc(tref, from_file=None):
