@@ -1,8 +1,5 @@
 import django, re, requests, json
 django.setup()
-from sources.functions import *
-from sources.Scripts.pesukim_linking import link2url
-from sefaria.tracker import modify_bulk_text
 from research.quotation_finder.dicta_api import *
 # read book segment links from DB (or while posting?)
 # read book segment textChunk from DB
@@ -17,31 +14,42 @@ def get_links_for_citation_insert(ref, score, link_source):
         lls = [Link(l) for l in link_source.get(ref.normal(), [{'score': -1}]) if l['score'] >= score]
         return lls
     else: #link_source == 'DB'
-        return list(LinkSet({"refs": ref.normal(), "type": "quotation", "score": {"$gte": score}}))
+        return list(LinkSet({"refs": ref.normal(), "type": "quotation_auto", "score": {"$gte": score}}))
+
+
+def get_tc(tref, from_file=None):
+    if from_file:
+       seg_text = from_file[tref]
+    else:
+        tc = Ref(tref).text('he')
+        tc.vtitle = tc.version().versionTitle  # this makes some sense because it is always on a single segment
+        seg_text = tc.text
+    return seg_text
 
 
 def get_segment(ref, score=22, link_source=None):
-    tc = ref.text('he')
-    tc.vtitle = tc.version().versionTitle  # this makes some sense because it is always on a single segment
-    seg_text = tc.text
+
     seg_text_list = list(re.sub('\s+', dummy_char, seg_text))
     lls = get_links_for_citation_insert(ref, score, link_source)
-    text_w_citations = add_citations(lls, seg_text_list, ref.normal())
     if len(lls) > 0:
+        text_w_citations = add_citations(lls, seg_text_list, ref.normal())
         print(f"check {link2url(lls[0], sandbox='quotations')}")
+    else:
+        return {}
     return {ref.normal(): text_w_citations}
 
 
-def get_place_citation(link, score=None):
-    place = link.charLevelData["charLevelDataBook"]['endChar']
-    pasuk_ref = Ref(link.refs[0])  # if link.refs[1] == book_ref else Ref(link.refs[1])
+def get_place_citation(link, color_score=None):
+    # the following 2 assumptions about the placing in the refs list and the charLevelData list are based on the link testing\and changing if needed in add_citations link. we can make here another assertion but that seems redundant
+    pasuk_ref = Ref(link.refs[0])
+    place = link.charLevelData[1]['endChar']
     citation = f"{dummy_char}({pasuk_ref.normal('he')})"  # {dummy_char}"
-    if score:
-        if 15 < link.score < 22:
+    if color_score:
+        if color_score[0] < link.score < color_score[1]:
             color = 1  # orange
-        elif 22 <= link.score < 50:
+        elif color_score[1] <= link.score < color_score[2]:
             color = 2  # green
-        elif link.score <= 50:
+        elif color_score[2] <= link.score:
             color = 3  # blue
         else:
             return []
@@ -55,8 +63,10 @@ def add_citations(lls, seg_text_list, book_ref):
 
     for l in lls:
         if Ref(l.refs[1]).book != Ref(book_ref).book:
+            print("needed reverse")
             l.refs.reverse()
-        citation_list.extend(get_place_citation(l, score=True))
+            l.charLevelData.reverse()
+        citation_list.extend(get_place_citation(l, color_score=[15, 20, 50]))
 
     citation_list.sort()
 
@@ -98,12 +108,10 @@ def order_links_by_segments(links): #, base_book_title):
 
 if __name__ == '__main__':
     new_texts_dict = dict()
-    range_ref = Ref("Selichot_Nusach_Ashkenaz_Lita, Erev_Rosh_Hashana.13")
-    index = 'Selichot Nusach Ashkenaz Lita, Erev Rosh Hashana'
-    # for r in Ref("ילקוט שמעוני על התורה, קרח").all_segment_refs(): #Ref("ילקוט שמעוני על התורה, קרח")
-    links = get_links_from_file(f'/home/shanee/www/Sefaria-Data/research/quotation_finder/{index}.txt')
-    link_dict = order_links_by_segments(links) #, "Selichot_Nusach_Ashkenaz_Lita")
+    range_ref = Ref('Bechinat_Olam.2')
+    links = get_links_from_file(f'{range_ref.normal()}.txt')
+    link_dict = order_links_by_segments(links)  #,"Selichot_Nusach_Ashkenaz_Lita")
     for r in range_ref.all_segment_refs():
-        new_texts_dict.update(get_segment(r, score=15, link_source=link_dict))
+        new_texts_dict.update(get_segment(r, score=22, link_source=link_dict))
         # new_texts_dict.update(get_local_seg(r))
     push_text_w_citations(range_ref.text('he').version(), new_texts_dict)
