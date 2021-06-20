@@ -12,7 +12,7 @@ from urllib.error import HTTPError, URLError
 import json
 import urllib.request, urllib.error, urllib.parse
 from functools import reduce, lru_cache
-
+import itertools
 from typing import List
 
 try:
@@ -1438,3 +1438,15 @@ def get_window_around_match(start_char:int, end_char:int, text:str, window:int=1
     after_window = " ".join(after_window_words)
 
     return before_window, after_window
+
+def is_abbr_of(abbr, unabbr, match=lambda x, y: x.startswith(y), lang='he'):
+    abbr = re.sub('[^א-ת]', '', abbr) if lang == 'he' else re.sub('[^a-z]', '', abbr)
+    unabbr = unabbr.split()
+    indexes = [[index for index, letter in enumerate(abbr) if word[0] == letter] for w, word in enumerate(unabbr)]
+    choices = itertools.product(*indexes)
+    for choi in choices:
+        if choi[0] == 0 and all(i < j for i, j in zip(choi, choi[1:])):
+            choi += (None,)
+            if all(match(unabbr[n], abbr[choi[n]:choi[n+1]]) for n in range(len(unabbr))):
+                return True
+    return False
