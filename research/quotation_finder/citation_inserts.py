@@ -28,7 +28,7 @@ def get_tc(tref, from_file=None):
 
 
 def get_segment(ref, score=22, link_source=None):
-
+    seg_text = get_tc(ref.normal())
     seg_text_list = list(re.sub('\s+', dummy_char, seg_text))
     lls = get_links_for_citation_insert(ref, score, link_source)
     if len(lls) > 0:
@@ -54,6 +54,7 @@ def get_place_citation(link, color_score=None):
         else:
             return []
         citation = f'<span class="ref-link-color-{color}">{citation}</span>'
+        # citation = f'<sup><span class="ref-link-color-{color}">*</span></sup><i class="footnote">{citation}</i>'
     return [(place, citation)]
 
 
@@ -62,12 +63,13 @@ def add_citations(lls, seg_text_list, book_ref):
     cnt = 0
 
     for l in lls:
+        if l.charLevelData[1]['startChar'] <= 10 or (hasattr(l, 'dh') and l.dh):  # check for DH
+            continue
         if Ref(l.refs[1]).book != Ref(book_ref).book:
             print("needed reverse")
             l.refs.reverse()
             l.charLevelData.reverse()
-        citation_list.extend(get_place_citation(l, color_score=[15, 20, 50]))
-
+        citation_list.extend(get_place_citation(l, color_score=[22, 30, 50]))
     citation_list.sort()
 
     for p, c in citation_list:
@@ -108,8 +110,8 @@ def order_links_by_segments(links): #, base_book_title):
 
 if __name__ == '__main__':
     new_texts_dict = dict()
-    range_ref = Ref('Bechinat_Olam.2')
-    links = get_links_from_file(f'{range_ref.normal()}.txt')
+    range_ref = Ref('Toledot_Yitzchak_on_Torah, Numbers.30')
+    links = get_links_from_file('Toledot Yitzchak on Torah, Numbers.json')
     link_dict = order_links_by_segments(links)  #,"Selichot_Nusach_Ashkenaz_Lita")
     for r in range_ref.all_segment_refs():
         new_texts_dict.update(get_segment(r, score=22, link_source=link_dict))

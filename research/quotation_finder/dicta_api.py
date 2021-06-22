@@ -76,6 +76,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
     :param onlyDH:
     :param thresh:
     :param min_thresh:
+    :param prioraty_tanakh_chunk: oRef the their is strong reson to look for the best match there first ex: base_text: Ref('ילקוט שמעוני על התורה, חקת') prioraty_tanakh_chunk: Ref('פרשת חקת')
     :return: list (as long as the list of base_refs - segs) of matches
     """
     Match = namedtuple("Match", ["textMatched", "textToMatch", "score", "startIChar", "endIChar", "pasukStartIWord", "pasukEndIWord", "dh"])
@@ -124,9 +125,12 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             matched_wds_pasuk = retreive_bold(matched['matchedText'])
             # print(f"{matched_wds_base} | {matched_wds_pasuk}")
             score = matched['score']
-            m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"], matched_pasuk_start, matched_pasuk_end, result in dh_res)
+            dh_match = result in dh_res
+            if prioraty_tanakh_chunk:
+                dh_match = prioraty_tanakh_chunk and pasuk_ref in prioraty_tanakh_chunk.all_segment_refs()
+            m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"], matched_pasuk_start, matched_pasuk_end, dh_match)
             link_option = [pasuk_ref, base_ref, m.textMatched, m]
-            if result in dh_res:
+            if dh_match:
                 link_option.append("dh")
                 dh_link_options.append(link_option)
             link_options.append(link_option)
@@ -206,7 +210,6 @@ def get_links_ys(pear=None, post=False):
     link_options = get_dicta_matches(base_refs, onlyDH=False, prioraty_tanakh_chunk=pear[0], min_thresh=0)
     links, linkMatchs = zip(*[data_to_link(link_option, generated_by="Yalkut_shimoni_quotations") for link_option in link_options])
     # links, link_data = link_options_to_links(link_options, min_score=thresh)
-    write_links_to_json(links)
     write_to_csv(links, linkMatchs, filename=f"dicta_{thresh}")
     print(len(links))
 
@@ -242,10 +245,10 @@ def post_links_from_file(file_name, score=22):
     post_link(links_to_post, server="http://localhost:8000")
 
 
-def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22):
+def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, prioraty_tanakh_chunk=None):
     oref = Ref(tref)
     base_refs = oref.all_segment_refs()
-    link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh)
+    link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh, prioraty_tanakh_chunk=prioraty_tanakh_chunk)
     if not link_options:
         print("no links found")
         return
@@ -306,15 +309,16 @@ def get_version_mapping(version: Version) -> dict:
 
 
 if __name__ == '__main__':
-    range_ref = 'ילקוט שמעוני על התורה, חקת' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
+    # range_ref = 'ילקוט שמעוני על התורה, חקת' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
+    range_ref = 'Toledot_Yitzchak_on_Torah, Numbers.30'
     range_name = range_ref
     f = open(f"intraTanakhLinks_{range_name}.txt", "a+")  # not the right place to open this for the other functions. read doc.
     f.write(range_name)
     # links = link_a_parashah_node_struct_index(range_name, onlyDH=False, post=True)
     # pear = (Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך")) #(Ref('Numbers 13:1-15:41'), Ref('Yalkut Shimoni on Torah 742'))  # :7-750:13 ( Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך"))
-    pear = (Ref('פרשת חקת'), Ref('ילקוט שמעוני על התורה, חקת'))
-    links = get_links_ys(pear, post=True)
-    # links = dicta_links_from_ref(f'{range_ref}', post=True, min_thresh=15)
+    # pear = (Ref('פרשת חקת'), Ref('ילקוט שמעוני על התורה, חקת'))
+    # links = get_links_ys(pear, post=True)
+    links = dicta_links_from_ref(f'{range_ref}', post=True, min_thresh=22, prioraty_tanakh_chunk=Ref('Numbers.30'))
     f.close()
     # post_links_from_file("Numbers 13:1-15:41/ys_links.txt", score=10)
 
