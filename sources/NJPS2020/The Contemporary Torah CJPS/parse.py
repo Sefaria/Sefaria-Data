@@ -13,7 +13,7 @@ def check_str(v, pos='ending'):
             if v.endswith(p):
                 return True
     else:
-        poss_starts = [",", ";", ".", ":"]
+        poss_starts = [",", ";", ".", ":", "'", "’"]
         for p in poss_starts:
             if v.startswith(p):
                 return True
@@ -140,7 +140,7 @@ for f in os.listdir("."):
         "versionSource": "https://www.sefaria.org",
         "text": text_dict
     }
-    #post_text(title, send_text, server="https://germantalmud.cauldron.sefaria.org")
+    post_text(title, send_text, server="https://germantalmud.cauldron.sefaria.org")
     time.sleep(10)
 
 

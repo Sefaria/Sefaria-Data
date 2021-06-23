@@ -25,7 +25,7 @@ class XML_to_JaggedArray:
     def __init__(self, title, xml_text, allowedTags, allowedAttributes, post_info=None,
                  dict_of_names={}, print_bool=False, array_of_names=[], deleteTitles=True,
                  change_name=False, assertions=False, image_dir=None, titled=False, remove_chapter=True,
-                 versionInfo=[], use_fn=False):
+                 versionInfo=[], use_fn=False, english=True):
         self.title = title
         self.writer = csv.writer(open("{}.csv".format(title), 'w'))
         self.post_info = post_info
@@ -54,11 +54,12 @@ class XML_to_JaggedArray:
         self.remove_chapter_when_cleaning = remove_chapter
         self.word_count = 0
         self.use_fn = use_fn
+        self.english = english
 
     def set_title(self, title):
         self.title = title
 
-    def set_funcs(self, grab_title_lambda=lambda x: len(x) > 0 and x[0].tag == "title", reorder_test=lambda x: False,
+    def set_funcs(self, grab_title_lambda=lambda x: len(x) > 0 and x[0].tag in ["title", "h1", "h2"], reorder_test=lambda x: False,
                   reorder_modify=lambda x: x, modify_before_parse=lambda x: x, modify_before_post=lambda x: x):
         self.modify_before_parse = modify_before_parse
         self.grab_title_lambda = grab_title_lambda
@@ -201,7 +202,7 @@ class XML_to_JaggedArray:
         comma_chars = ['.']
         remove_chars = ['?'] + re.findall("[\u05D0-\u05EA]+", text)
         space_chars = ['-']
-        while not any_english_in_str(text[-1]):
+        while self.english and not any_english_in_str(text[-1]):
             text = text[0:-1]
         for char in comma_chars:
             if text.replace(char, " ").find("  "):

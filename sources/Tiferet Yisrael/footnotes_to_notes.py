@@ -1,7 +1,7 @@
 import django
 django.setup()
 from sefaria.model import *
-new_name = """פירושים והערות מהרב יהושע הרטמן \ Notes by R Yehoshua Hartman"""
+new_name = """פירושים והערות מהרב יהושע הרטמן \ Notes by Rabbi Yehoshua Hartman"""
 he_term, en_term = new_name.split(" \ ")
 t = Term()
 t.name = en_term
@@ -21,12 +21,13 @@ for i in library.get_indices_by_collective_title("Footnotes and Annotations"):
 	i.set_title(new_en, 'en')
 	i.save()
 
-ls = LinkSet({"refs": {"$regex": "^Notes by R Yehoshua Hartman"}})
+print("Changing inline_reference in links...")
+ls = LinkSet({"refs": {"$regex": "^Notes by Rabbi Yehoshua Hartman"}})
 count = 0
 for l in ls:
 	if getattr(l, "inline_reference", False):
 		count += 1
 		if count % 500 == 0:
 			print(count)
-		l.inline_reference = "Notes by R Yehoshua Hartman"
+		l.inline_reference = "Notes by Rabbi Yehoshua Hartman"
 		l.save()
