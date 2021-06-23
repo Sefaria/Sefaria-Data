@@ -165,6 +165,8 @@ def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True)
         }
         ]
     link_json["dh"] = match.dh
+    if match.dh:
+        link_json["type"] = "dh"
     return link_json, match
 
 
@@ -236,13 +238,13 @@ def get_links_from_file(file_name):
     return links
 
 
-def post_links_from_file(file_name, score=22):
+def post_links_from_file(file_name, score=22, server=SEFARIA_SERVER):
     links_to_post = []
     links = get_links_from_file(file_name)
     for l in links:
         if l["score"] > score:
             links_to_post.append(l)
-    post_link(links_to_post, server="http://localhost:8000")
+    post_link(links_to_post, server=server)
 
 
 def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, prioraty_tanakh_chunk=None):
