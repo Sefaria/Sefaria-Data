@@ -1,29 +1,77 @@
 from sources.functions import *
-for i in library.get_indexes_in_category("Torah", include_dependant=True):
+from collections import Counter
+import re
+category = "Prophets"
+start_or_end_space = Counter()
+double_spaces = Counter()
+space_after_tag = Counter()
+space_before_and_after_tag = Counter()
+examples = {0: [], 1: [], 2: [], 3: []}
+
+def add_to_examples(seg, vtitle, lang, which_one):
+	if len(examples[which_one]) < 20:
+		examples[which_one].append("{} {} {}".format(seg.normal(), vtitle, lang))
+
+for i in library.get_indexes_in_category(category, include_dependant=True):
 	if " on " in i:
+		print(i)
 		i = library.get_index(i)
 		for v in i.versionSet():
 			for seg in i.all_segment_refs():
 				tc = TextChunk(seg, vtitle=v.versionTitle, lang=v.language)
-
+				which_one = 0
 				if tc.text.startswith(" ") or tc.text.endswith(" ") or tc.text.endswith("\n"):
-					print("in {}, stripping start and end".format(seg))
+					start_or_end_space[i.title] += 1
 					tc.text = tc.text.strip()
+					add_to_examples(seg, v.versionTitle, v.language, which_one)
 
-				if "  " in tc.text:
-					print("in {}, replacing double spaces".format(seg))
+				which_one += 1
+				while "  " in tc.text:
+					double_spaces[i.title] += 1
 					tc.text = tc.text.replace("  ", " ")
+					add_to_examples(seg, v.versionTitle, v.language, which_one)
 
-				starting = re.search("^(<[a-zA-Z0-9\"\']{1,}>)? ", tc.text)
-				if starting: # "<b> hello"
-					for pos in starting.regs:
-						print("start of {}".format(seg))
-						print(tc.text[pos[0]:pos[1]+3])
+				which_one += 1
+				starting = re.search("^(<[a-zA-Z0-9\"\']{1,}>) ", tc.text)
+				if starting:  # "<b> hello"
+					space_after_tag[i.title] += 1
+					text_after_tag = tc.text.replace(starting.group(0), "", 1)
+					tag = starting.group(1)
+					tc.text = tag + text_after_tag
+					add_to_examples(seg, v.versionTitle, v.language, which_one)
+
+				which_one += 1
+				middle = re.search(" (<[a-zA-Z0-9\"\']{1,}>) ", tc.text)
+				if middle:  # "hello <b> there"
+					space_before_and_after_tag[i.title] += 1
+					tag = middle.group(1)
+					tc.text = tc.text.replace(" {} ".format(tag), " {}".format(tag))
+					add_to_examples(seg, v.versionTitle, v.language, which_one)
+			tc.save(force_save=True)
 
 
-				middle = re.search(" <[a-zA-Z0-9\"\']{1,}> ", tc.text)
-				if middle: # "hello <b> there"
-					for pos in middle.regs:
-						print("middle of {}".format(seg))
-						print(tc.text[pos[0]:pos[1]])
+which_one = 0
+print("Starting or ending space examples")
+for i in examples[which_one]:
+	print(i)
+print(start_or_end_space.most_common(20))
+
+which_one = 1
+print("Double spaces in middle of text examples")
+for i in examples[which_one]:
+	print(i)
+print(double_spaces.most_common(20))
+
+which_one = 2
+print("Space after tag examples")
+for i in examples[which_one]:
+	print(i)
+print(space_after_tag.most_common(20))
+
+
+which_one = 3
+print("Space before and after tag examples")
+for i in examples[which_one]:
+	print(i)
+print(space_before_and_after_tag.most_common(20))
 

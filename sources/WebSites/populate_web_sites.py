@@ -4,7 +4,7 @@ from sefaria.system.database import db
 
 sites_data = [
 		{
-				"name":"Tablet Magazine",
+				"name": "Tablet Magazine",
 				"domains": ["tabletmag.com"],
 				"bad_urls": [r"tabletmag\.com\/contributors\/"]
 		},
