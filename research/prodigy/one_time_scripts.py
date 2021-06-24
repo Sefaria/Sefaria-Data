@@ -152,8 +152,72 @@ def fix_perek():
                     }]
                 db_mng.output_collection.update_one({"_id": doc['_id']}, {"$set": {"spans": doc['spans']}})
 
+
+def fix_ids(in_file, host='localhost', port=27017, collection='silver_output_binary'):
+    from pymongo import MongoClient
+    from bson import ObjectId
+    client = MongoClient(host, port)
+    db = getattr(client, 'prodigy')
+    with open(in_file, 'r') as fin:
+        for line in fin:
+            line = line.strip()
+            if len(line) == 0: continue
+            splitted = line.split()
+            _id = splitted[0]
+            answer = "reject"
+            if len(splitted) > 1 and splitted[1] == "GOOD":            
+                answer = "accept"
+            doc = getattr(db, collection).find_one({"_id": ObjectId(_id)})
+            if doc is None:
+                print(f"_id {_id} doesnt exists")
+                continue
+            if doc['answer'] == answer:
+                print(f"_id {_id} already has answer {answer}")
+                continue
+            doc['answer'] = answer
+            getattr(db, collection).replace_one({"_id": ObjectId(_id)}, doc)
+
+def merge_gold_full_into_silver_binary():
+    import random
+    gold_db = MongoProdigyDBManager("gold_output_full")
+    silver_db = MongoProdigyDBManager("silver_output_binary")
+    for gold in gold_db.output_collection.find({}):
+        gold['_view_id'] = 'ner'
+        spans = set()
+        for ispan, span in enumerate(gold['spans']):
+            binary_gold = gold.copy()
+            binary_gold['spans'] = [span]
+            if ispan > 0:
+                del binary_gold['tokens']
+            del binary_gold['_id']
+            silver_db.output_collection.insert_one(binary_gold)
+            spans.add((span['token_start'], span['token_end']))
+        new_spans = []
+        while len(new_spans) < len(gold['tokens'])/100:
+            if len(gold['tokens']) < 20: break
+            rand_token_start = random.choice(range(len(gold['tokens'])-6))
+            new_span = (rand_token_start, rand_token_start+random.choice(range(3,6)))
+            if new_span in spans or new_span[1] >= len(gold['tokens']): continue
+            spans.add(new_span)
+            new_spans += [new_span]
+            binary_gold = gold.copy()
+            start_char = next(x for x in gold['tokens'] if x['id'] == new_span[0])
+            end_char = next(x for x in gold['tokens'] if (x['id'] == new_span[1]))
+            binary_gold['spans'] = [{
+                "start" : start_char['start'], 
+                "end" : end_char['end'], 
+                "token_start" : new_span[0], 
+                "token_end" : new_span[1], 
+                "label" : "מקור"
+            }]
+            del binary_gold['tokens']
+            del binary_gold['_id']
+            binary_gold['answer'] = 'reject'
+            silver_db.output_collection.insert_one(binary_gold)            
 if __name__ == "__main__":
     # make_csv_by_filter('examples2_output', 'research/prodigy/output/one_time_output/paren_at_end_list.csv', paren_at_end_filter)
     # modify_data_based_on_csv('/home/nss/Downloads/Dibur Hamatchil Editing - Sheet2.csv', 'examples2_output', 'examples2_output_paren')
     # move_binary_output_to_own_collection()
-    fix_perek()
+    # fix_perek()
+    # fix_ids("research/prodigy/to_fix.txt")
+    merge_gold_full_into_silver_binary()

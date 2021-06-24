@@ -7,13 +7,28 @@ from sefaria.model.tests.ref_catching_test import *
 from sefaria.helper.link import rebuild_links_from_text as rebuild
 import numpy
 # #
+# # Ref("Shabbat 7-8")
+# # Ref("Zohar 3:7-8")
+# oref = Ref("Zohar 1:25a-2:27b").normal()
+# oref = Ref("Zohar 1:3-2:2")
+
+assert m.Ref('שבת טו א - טז ב') == m.Ref("Shabbat 15a-16b")
+assert m.Ref('יבמות סא ע"א-ע"ב') == m.Ref("Yevamot 61a-b")
+
+st = "(סוכה מ\' א\' – ב\')"
+wrapped = library.get_wrapped_refs_string(st, lang="he", citing_only=True)
+library.get_wrapped_refs_string('בכוהן עיצב את לשון המשנה, וכן מפרש הבבלי (יבמות סא ע"א-ע"ב). לפירוש זה יש ', 'he', True)
+
+print(Ref("שבת לג, א–ב").normal())
+
+Ref("Shabbat 24b-25a")
+#check the pytest for ranges!
 print(Ref("סוכה דף יג-יד"))
 print(Ref("Shabbat 7-8"))
 print(Ref("Zohar 3:7-8"))
 r = Ref('עירובין פב-פג')
 print(r)
 Ref("Zohar 1:251")
-print(Ref("שבת לג, א–ב").normal())
 
 print(Ref("Shabbat 7:1-2"))
 print(Ref("Shabbat 2a:1"))
@@ -26,7 +41,7 @@ print(Ref("שבת לג, א–ב").he_normal())
 print(Ref("Yoma 2a-b").normal())
 assert Ref("Yoma 88") == Ref("Yoma 88a")
 assert Ref("Yoma 87-90") == Ref("Yoma 87a-88a")
-assert Ref("Zohar 1:250-251") == Ref("Zohar 1:250a-251a")
+assert Ref("Zohar 1:250-251") == Ref("Zohar 1:250a-251b")
 
 
 Ref("Bava Metzia 20a:1-20b:1")

@@ -93,9 +93,10 @@ def make_evaluation_files(evaluation_data, ner_model, output_folder):
     print('F1       ', 100*round(tp/(tp + 0.5 * (fp + fn)),4))
     return tp, fp, tn, fn
 
-def export_tagged_data_as_html(tagged_data, output_folder, is_binary=True):
+def export_tagged_data_as_html(tagged_data, output_folder, is_binary=True, start=0):
     output_json = []
-    for example in tagged_data:
+    for iexample, example in enumerate(tagged_data):
+        if iexample < start: continue
         ents_x2y = example.get_aligned_spans_x2y(example.reference.ents)
         out_item = {
             "text": "",
@@ -245,7 +246,7 @@ if __name__ == "__main__":
     # print(make_evaluation_files(data, nlp, './research/prodigy/output/evaluation_results'))
 
     data = stream_data('localhost', 27017, 'silver_output_binary', 'gilyon_input', -1, 1.0, 'train', 0, unique_by_metadata=False)(nlp)
-    export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results', is_binary=True)
+    export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results', is_binary=True, start=899) # 1489
     convert_jsonl_to_json('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
     # convert_jsonl_to_csv('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
     # spacy.training.offsets_to_biluo_tags(doc, entities)
@@ -256,7 +257,7 @@ python -m spacy train ./research/prodigy/configs/ref_tagging.cfg --output ./rese
 to run cpu
 python -m spacy train ./research/prodigy/configs/ref_tagging_cpu.cfg --output ./research/prodigy/output/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0
 Num examples 795
- 55    6200         68.81      6.17   61.90   65.66   58.56    0.62
+ 53    6000          3.20      0.32   69.72   71.03   68.47    0.70
 
 
 to train sub citation
@@ -279,4 +280,11 @@ pretrain process
 - run "convert fasttext vectors" above
 - run "pretrain cpu" above
 
+
+train on binary process
+- run one_time_scripts.merge_gold_full_into_silver_binary()
+cd /home/nss/sefaria/data/research/prodigy
+prodigy data-to-spacy output/binary_training --ner ref_tagging --ner-missing --base-model output/ref_tagging_cpu/model-last -F functions.py
+cd ../..
+python -m spacy train ./research/prodigy/output/binary_training/my_config.cfg --output ./research/prodigy/output/ref_tagging_cpu_binary --code ./research/prodigy/functions.py --gpu-id 0 --paths.train ./research/prodigy/output/binary_training/train.spacy --paths.dev ./research/prodigy/output/binary_training/dev.spacy
 """

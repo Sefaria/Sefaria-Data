@@ -1,0 +1,1054 @@
+body, div, dl, dt, dd, h1, h2, h3, h4, h5, h6, p, pre, code, blockquote {
+	margin:0;
+	padding:0;
+	border-width:0;
+}
+body {
+	-epub-hyphens:auto;
+}
+div.Basic-Text-Frame {
+	border-style:solid;
+}
+div.photo {
+	border-style:solid;
+}
+table.Basic-Table {
+	border-collapse:collapse;
+	border-color:#000000;
+	border-style:solid;
+	border-width:1px;
+	margin-bottom:-4px;
+	margin-top:4px;
+}
+td.Basic-Table {
+	border-left-width:1px;
+	border-left-style:solid;
+	border-left-color:#000000;
+	border-top-width:1px;
+	border-top-style:solid;
+	border-top-color:#000000;
+	border-right-width:1px;
+	border-right-style:solid;
+	border-right-color:#000000;
+	border-bottom-width:1px;
+	border-bottom-style:solid;
+	border-bottom-color:#000000;
+	padding-top:4px;
+	padding-bottom:4px;
+	padding-left:4px;
+	padding-right:4px;
+	vertical-align:top;
+}
+p._1-Small-title-page {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:16px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.2;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:center;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p._4-Author-s-Name {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:28px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.2;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:center;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p._7-dedication--3-5-cm-down- {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Italic", sans-serif;
+	font-size:13px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.231;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:center;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p._8-Quotation--prelims-at-top-of-page- {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Italic", sans-serif;
+	font-size:12px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.174;
+	margin-bottom:0;
+	margin-left:85px;
+	margin-right:0;
+	margin-top:13px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p._00-Other-works-by--at-back-of-book- {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:12px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.174;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:13px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:always;
+	text-align:center;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p._01-the-first-book--back-of-book- {
+	color:#000000;
+	font-family:"Arno Koren Italic", sans-serif;
+	font-size:12px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.174;
+	margin-bottom:7px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:14px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:center;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p._03-Toby-Press-publishes {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Italic", sans-serif;
+	font-size:12px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.13;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:13px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:always;
+	text-align:center;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.Chapter-Style {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Italic", sans-serif;
+	font-size:18px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.444;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:always;
+	text-align:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p.Chapter-Title {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:28px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1;
+	margin-bottom:72px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:9px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p.Endnotes {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:10px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.211;
+	margin-bottom:0;
+	margin-left:12px;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:-12px;
+	text-transform:none;
+	widows:3;
+}
+p.Basic-Paragraph {
+	color:#000000;
+	font-family:"WinSoft Pro Medium", sans-serif;
+	font-size:12px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.2;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:right;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p.Running-Heads-Recto--Author- {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Italic", sans-serif;
+	font-size:12px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.13;
+	margin-bottom:7px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:right;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p.TOC-CS {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Italic", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.182;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:4px;
+	orphans:2;
+	page-break-after:avoid;
+	page-break-before:auto;
+	text-align:center;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.body {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:28px;
+	text-transform:none;
+	widows:2;
+}
+p.body-center {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:center;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p.body-first {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:13px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.body-first-no-sp-b4 {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.body-right {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:13px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:right;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.body-sp-b4 {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:13px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:28px;
+	text-transform:none;
+	widows:2;
+}
+li.bullet-first {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	list-style-position:outside;
+	list-style-type:disc;
+	margin-bottom:0;
+	margin-left:26px;
+	margin-right:0;
+	margin-top:14px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+li.bullets {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	list-style-position:outside;
+	list-style-type:disc;
+	margin-bottom:0;
+	margin-left:26px;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.chapter-first {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:13px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.copyright {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.238;
+	margin-bottom:6px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:right;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p.extract {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:28px;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:28px;
+	text-transform:none;
+	widows:2;
+}
+p.extract-first {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:28px;
+	margin-right:0;
+	margin-top:14px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.extract-first-hebrew {
+	color:#000000;
+	font-family:"Koren Siddur Bold", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.34;
+	margin-bottom:0;
+	margin-left:28px;
+	margin-right:0;
+	margin-top:10px;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:right;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.extract-no-indent {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:28px;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.extract-no-indent-hanging {
+	color:#000000;
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:57px;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:-28px;
+	text-transform:none;
+	widows:2;
+}
+p.sub-1 {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren SemiBold", sans-serif;
+	font-size:13px;
+	font-style:normal;
+	font-variant:small-caps;
+	font-weight:normal;
+	line-height:1.08;
+	margin-bottom:0;
+	margin-left:15px;
+	margin-right:0;
+	margin-top:14px;
+	orphans:1;
+	page-break-after:avoid;
+	page-break-before:auto;
+	text-align:left;
+	text-decoration:none;
+	text-indent:-15px;
+	text-transform:none;
+	widows:2;
+}
+p.sub-1-new-page {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren SemiBold", sans-serif;
+	font-size:13px;
+	font-style:normal;
+	font-variant:small-caps;
+	font-weight:normal;
+	line-height:1.08;
+	margin-bottom:0;
+	margin-left:15px;
+	margin-right:0;
+	margin-top:14px;
+	orphans:1;
+	page-break-after:avoid;
+	page-break-before:always;
+	text-align:left;
+	text-decoration:none;
+	text-indent:-15px;
+	text-transform:none;
+	widows:2;
+}
+p.sub-2 {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren SemiBold", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:12px;
+	orphans:2;
+	page-break-after:avoid;
+	page-break-before:auto;
+	text-align:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.sub-2-no-spc-b4 {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren SemiBold", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:2;
+	page-break-after:avoid;
+	page-break-before:auto;
+	text-align:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.sub-3 {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Arno Koren Italic", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:0;
+	margin-left:0;
+	margin-right:0;
+	margin-top:24px;
+	orphans:2;
+	page-break-after:avoid;
+	page-break-before:auto;
+	text-align:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+span._50 {
+	font-style:normal;
+	font-weight:normal;
+}
+span._80-italic {
+	font-style:italic;
+	font-weight:normal;
+}
+span.First-Letter {
+	font-family:"Arno Koren Regular", sans-serif;
+	font-size:85px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.footnote-refe {
+	vertical-align:super;
+}
+span.it-text {
+	color:#000000;
+	font-style:italic;
+	font-weight:normal;
+}
+span.it-text-bold {
+	color:#000000;
+	font-family:"Arno Koren SemiBold Italic", sans-serif;
+	font-style:normal;
+	font-weight:normal;
+}
+span.it-text-no-break {
+	color:#000000;
+	font-style:italic;
+	font-weight:normal;
+}
+span.roman {
+	font-style:normal;
+	font-weight:normal;
+}
+span.sc {
+	color:#000000;
+	font-variant:small-caps;
+	text-transform:none;
+}
+span.sc-ital {
+	color:#000000;
+	font-style:normal;
+	font-variant:small-caps;
+	font-weight:normal;
+	text-transform:none;
+}
+table.TableOverride-1 {
+	border-collapse:collapse;
+}
+td.CellOverride-1 {
+	background-color:#e6e7e8;
+	border-bottom-width:1px;
+	border-left-width:1px;
+	border-right-width:1px;
+	border-top-width:1px;
+	padding-bottom:6px;
+	padding-left:6px;
+	padding-right:6px;
+	padding-top:6px;
+}
+td.CellOverride-2 {
+	background-color:#e6e7e8;
+	border-bottom-width:1px;
+	border-left-width:1px;
+	border-right-width:1px;
+	border-top-width:1px;
+	padding-bottom:11px;
+	padding-left:6px;
+	padding-right:6px;
+	padding-top:6px;
+}
+td.CellOverride-3 {
+	background-color:#e6e7e8;
+	border-bottom-width:1px;
+	border-left-width:1px;
+	border-right-width:1px;
+	border-top-width:1px;
+	padding-bottom:11px;
+	padding-left:6px;
+	padding-right:6px;
+	padding-top:8px;
+}
+p.ParaOverride-1 {
+	margin-top:3px;
+	text-align:right;
+}
+p.ParaOverride-2 {
+	-epub-hyphens:none;
+	margin-top:4px;
+	text-align:center;
+	text-indent:0px;
+}
+p.ParaOverride-3 {
+	-epub-hyphens:none;
+	text-align:center;
+}
+p.ParaOverride-4 {
+	-epub-hyphens:none;
+	text-align:center;
+	text-indent:0px;
+}
+p.ParaOverride-5 {
+	margin-top:0px;
+}
+li.ParaOverride-6 {
+	text-indent:0px;
+}
+p.ParaOverride-7 {
+	page-break-before:always;
+}
+p.ParaOverride-8 {
+	text-align:left;
+}
+p.ParaOverride-9 {
+	margin-top:20px;
+}
+p.ParaOverride-10 {
+	margin-top:8px;
+}
+li.ParaOverride-11 {
+	margin-top:11px;
+	text-indent:0px;
+}
+p.ParaOverride-12 {
+	margin-top:15px;
+	page-break-before:always;
+}
+p.ParaOverride-13 {
+	text-align:center;
+}
+span.CharOverride-1 {
+	font-size:11px;
+}
+span.CharOverride-2 {
+	font-size:13px;
+}
+span.CharOverride-3 {
+	font-family:"Koren Tanakh Bold", sans-serif;
+	font-size:13px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-4 {
+	font-size:10px;
+}
+span.CharOverride-5 {
+	font-size:13px;
+	font-style:normal;
+	font-variant:small-caps;
+	font-weight:bold;
+	text-transform:none;
+}
+span.CharOverride-6 {
+	font-size:58%;
+}
+span.CharOverride-7 {
+	font-family:"Myriad Pro Cond", sans-serif;
+	font-size:9px;
+	font-style:italic;
+	font-weight:normal;
+}
+span.CharOverride-8 {
+	font-family:"Myriad Pro Cond", sans-serif;
+	font-size:9px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-9 {
+	font-family:"Arno Koren Italic", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-weight:normal;
+}
+span._idGenCharOverride-1 {
+	font-size:58%;
+}
+col._idGenTableRowColumn-1 {
+	width:287px;
+}
+tr._idGenTableRowColumn-2 {
+	min-height:265px;
+}
+tr._idGenTableRowColumn-3 {
+	min-height:209px;
+}
+tr._idGenTableRowColumn-4 {
+	min-height:485px;
+}
+tr._idGenTableRowColumn-5 {
+	min-height:486px;
+}
+tr._idGenTableRowColumn-6 {
+	min-height:303px;
+}
+tr._idGenTableRowColumn-7 {
+	min-height:211px;
+}
+tr._idGenTableRowColumn-8 {
+	min-height:473px;
+}
+tr._idGenTableRowColumn-9 {
+	min-height:213px;
+}
+tr._idGenTableRowColumn-10 {
+	min-height:207px;
+}
+#_idContainer001 {
+	display:inline-block;
+	height:47px;
+	width:60px;
+}
+#_idContainer002 {
+	display:inline-block;
+	height:59px;
+	width:43px;
+}
+#_idContainer005 {
+	display:inline-block;
+	height:100px;
+	width:273px;
+}
+#_idContainer010 {
+	-ms-transform:translate(0.000px,241.249px) rotate(0.000deg) skew(0.000deg) scale(1.000,1.000);
+	-ms-transform-origin:0% 0%;
+	-webkit-transform:translate(0.000px,241.249px) rotate(0.000deg) skew(0.000deg) scale(1.000,1.000);
+	-webkit-transform-origin:0% 0%;
+	height:17.02px;
+	left:0px;
+	overflow:hidden;
+	position:absolute;
+	top:0px;
+	transform:translate(0.000px,241.249px) rotate(0.000deg) skew(0.000deg) scale(1.000,1.000);
+	transform:translate(0.000px,241.249px) rotate(0.000deg) skew(0.000deg) scale(1.000,1.000);
+	transform-origin:0% 0%;
+	transform-origin:0% 0%;
+	width:188.00px;
+	z-index:1;
+}
+#_idContainer011 {
+	-ms-transform:translate(0.250px,0.000px) rotate(0.000deg) skew(0.000deg) scale(1.000,1.000);
+	-ms-transform-origin:0% 0%;
+	-webkit-transform:translate(0.250px,0.000px) rotate(0.000deg) skew(0.000deg) scale(1.000,1.000);
+	-webkit-transform-origin:0% 0%;
+	height:233.84px;
+	left:0px;
+	position:absolute;
+	top:0px;
+	transform:translate(0.250px,0.000px) rotate(0.000deg) skew(0.000deg) scale(1.000,1.000);
+	transform:translate(0.250px,0.000px) rotate(0.000deg) skew(0.000deg) scale(1.000,1.000);
+	transform-origin:0% 0%;
+	transform-origin:0% 0%;
+	width:187.50px;
+	z-index:0;
+}
+#_idContainer012 {
+	display:inline-block;
+	height:258px;
+	position:relative;
+	width:188px;
+}
+#_idContainer015 {
+	display:inline-block;
+	height:135px;
+	width:99px;
+}
+img._idGenObjectAttribute-1 {
+	height:100.00%;
+	min-width:100%;
+	width:100.00%;
+}
+div._idGenObjectStyleOverride-1 {
+	border-width:0px;
+}
+div._idGenObjectStyleOverride-2 {
+	border-color:#000000;
+	border-style:solid;
+	border-width:1px;
+}
+div._idGenObjectStyle-Disabled {
+	background-color:transparent;
+	border-width:0px;
+}
+div._idGenObjectLayout-1 {
+	text-align:center;
+}
