@@ -18,7 +18,7 @@ def parse_ftnotes():
 				ftnotes_by_ch[ch+1][ftnote_n] = ftnote
 	return ftnotes_by_ch
 
-def parse_text(ftnotes_to_insert):
+def parse_text(ftnotes_to_insert, title="Tiferet Yisrael"):
 	files = ["Part 1.txt", "Part 2.txt"]
 	ch = 0
 	curr_ftnote = 0
@@ -38,15 +38,15 @@ def parse_text(ftnotes_to_insert):
 					try:
 						#found_ftnote corresponds to ftnotes_to_insert[ch][found_ftnote]
 						verse = len(text[ch]) + 1
-						links.append({"refs": ["Footnotes and Annotations on Tiferet Yisrael {}:{}".format(ch-1, found_ftnote),
-																	 "Tiferet Yisrael {}:{}".format(ch-1, verse)],
-													"inline_reference": {"data-commentator": "Footnotes and Annotations",
+						links.append({"refs": ["Notes by Rabbi Yehoshua Hartman on {} {}:{}".format(title, ch-1, found_ftnote),
+																	 "{} {}:{}".format(title, ch-1, verse)],
+													"inline_reference": {"data-commentator": "Notes by Rabbi Yehoshua Hartman",
 																							 "data-label": found_ftnote},
 													"generated_by": "ftnotes_tiferet", "auto": True, "type": "Commentary"})
-						if ch == 0:
-							links[-1]["refs"] = ["Footnotes and Annotations on Tiferet Yisrael, Introduction {}".format(found_ftnote),
-																	 "Tiferet Yisrael, Introduction to Tiferet Yisrael {}".format(verse)]
-						curr_ftnote_str = "<i data-commentator='Footnotes and Annotations' data-label='{}'></i>".format(found_ftnote)
+						if ch == 1:
+							links[-1]["refs"] = ["Notes by Rabbi Yehoshua Hartman on {}, Introduction {}".format(title, found_ftnote),
+																	 "{}, Introduction to {} {}".format(title, title, verse)]
+						curr_ftnote_str = "<i data-commentator='Notes by Rabbi Yehoshua Hartman' data-label='{}'></i>".format(found_ftnote)
 						running_txt += txt.strip() + curr_ftnote_str + " "
 						skip = False
 					except:
@@ -57,6 +57,7 @@ def parse_text(ftnotes_to_insert):
 				running_txt += txt_wout_ftnotes[-1]
 				running_txt = running_txt.replace(" ,", ",")
 				if not skip:
+					running_txt = running_txt.replace("</i> .", "</i>.")
 					text[ch].append(running_txt)
 
 
@@ -65,8 +66,8 @@ def parse_text(ftnotes_to_insert):
 
 
 footnotes = SchemaNode()
-footnotes.add_primary_titles("Footnotes and Annotations on Tiferet Yisrael", "הערות ומקורות על תפארת ישראל")
-footnotes.key = "Footnotes and Annotations on Tiferet Yisrael"
+footnotes.add_primary_titles("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael", "הערות ומקורות על תפארת ישראל")
+footnotes.key = "Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael"
 intro = create_intro()
 footnotes.append(intro)
 default = JaggedArrayNode()
@@ -81,9 +82,9 @@ indx = {
 	"categories": ["Jewish Thought", "Acharonim", "Maharal"],
 	"dependence": "Commentary",
 	"base_text_titles": ["Tiferet Yisrael"],
-	"collective_title": "Footnotes and Annotations"
+	"collective_title": "Notes by Rabbi Yehoshua Hartman"
 }
-post_index(indx, server="https://germantalmud.cauldron.sefaria.org")
+post_index(indx, server="https://ste2.cauldron.sefaria.org")
 ftnotes_to_insert = parse_ftnotes()
 text, links = parse_text(ftnotes_to_insert)
 text = convertDictToArray(text)
@@ -97,7 +98,7 @@ ftnotes_send_text = {
 	"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
 	"versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH002042478/NLI"
 }
-post_text("Footnotes and Annotations on Tiferet Yisrael, Introduction", ftnotes_send_text, server="https://germantalmud.cauldron.sefaria.org")
+post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael, Introduction", ftnotes_send_text, server="https://ste2.cauldron.sefaria.org")
 for i, ch in enumerate(text[1:]):
 	send_text = {
 		"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
@@ -106,9 +107,9 @@ for i, ch in enumerate(text[1:]):
 		"text": ch
 	}
 	ftnotes_send_text["text"] = ftnotes_to_insert[i+1]
-	post_text("Tiferet Yisrael {}".format(i+1), send_text, server="https://germantalmud.cauldron.sefaria.org")
+	post_text("Tiferet Yisrael {}".format(i+1), send_text, server="https://ste2.cauldron.sefaria.org")
 	time.sleep(2)
-	post_text("Footnotes and Annotations on Tiferet Yisrael {}".format(i+1), ftnotes_send_text, server="https://germantalmud.cauldron.sefaria.org")
+	#post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael {}".format(i+1), ftnotes_send_text, server="https://ste2.cauldron.sefaria.org")
 	time.sleep(2)
 send_text = {
 	"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
@@ -116,5 +117,5 @@ send_text = {
 	"language": "he",
 	"text": text[0]
 }
-post_text("Tiferet Yisrael, Introduction to Tiferet Yisrael", send_text, server="https://germantalmud.cauldron.sefaria.org")
-post_link_in_steps(links, server="https://germantalmud.cauldron.sefaria.org")
+post_text("Tiferet Yisrael, Introduction to Tiferet Yisrael", send_text, server="https://ste2.cauldron.sefaria.org")
+#post_link_in_steps(links, server="https://ste2.cauldron.sefaria.org")

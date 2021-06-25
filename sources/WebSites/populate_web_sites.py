@@ -1,12 +1,13 @@
 import django
 django.setup()
-from sefaria.model import *
-from sefaria.model.webpage import *
-from sefaria.model.website import *
 from sefaria.system.database import db
-from sefaria.system.cache import *
 
 sites_data = [
+		{
+				"name": "Tablet Magazine",
+				"domains": ["tabletmag.com"],
+				"bad_urls": [r"tabletmag\.com\/contributors\/"]
+		},
 		{
 			"name": "Google",
 			"is_whitelisted": False,
@@ -286,13 +287,12 @@ sites_data = [
 		  "bad_urls": [r"truah\.org\/\?s=",
             r"truah\.org\/(holiday|page|resource-types)\/"]
 	},
-	# Keeping off for now while we try to resolve empty titles from dynamic pages.
-	# {
-	#     "name": "929",
-	#     "domains": ["929.org.il"],
-	#     "title_branding": ["929 – תנך ביחד", "Tanakh - Age Old Text, New Perspectives"]
-	#     "initial_title_branding": True
-	# },
+	{
+	    "name": "929",
+	    "domains": ["929.org.il"],
+	    "title_branding": ["929 – תנך ביחד", "Tanakh - Age Old Text, New Perspectives"],
+	    "initial_title_branding": True
+	},
 	{
 			"name": "נאמני תורה ועבודה",
 			"domains": ["toravoda.org.il"],
@@ -503,23 +503,20 @@ sites_data = [
             r"hatanakh\.com\/es\/\?biblia="]
   }
 ]
-data = {'url': 'http://rabbijohnnysolomon.com', 'title': 'Linker Test Page', 'description': 'A page to test ref catching by the Sefaria linker', 'refs': ["Haamek Davar on Genesis, Kidmat Ha'Emek 1", 'Shulchan Aruch, Orach Chaim 7:1', 'Shulchan Aruch Orach Chaim 7:1', 'Kaf HaChaim, Orach Chaim 47:34', 'Shulchan Aruch O.C. 47:12', 'Tosafot on Berachot 11a', 'Tosefta Sanhedrin 2:2', 'Bereishit Rabbah 55:7', 'Mishnah Shabbat 2:3-5', 'תוספות על ברכות ב:', 'רש״י על בראשית א ה א', 'Tikkunei Zohar 3b', 'רש”י על בראשית א ה א', 'רש"י על בראשית א ה א', 'רש”י על ברכות ב:', 'Orach Chaim 7:1', 'Orach Chaim 47:34', 'Orach Chaim 47:1', 'בראשית רבה ג׳ א', 'בראשית רבה ג׳ ב׳', 'בראשית רבה ג׳ א׳', 'בראשית רבה ג א', 'בראשית רבה ג ב׳', 'בראשית רבה ג א׳', 'שו”ע יו”ד קיג:ד', 'Yishayahu 64:9-10', 'Bereishit 40:23', 'Bereishit 22:4', 'שו״ע יו״ד קיג:ד', 'Sanhedrin 11', 'Sanhedrin 2:2', 'שו"ע יו"ד קיג:ד', 'מלכים א\', י"א, ד', 'Proverbs 11:12', 'Proverbs 11:12-15', 'Proverbs 11-12', 'Proverbs 12-13', 'Proverbs 3:3', 'Berachot 11a', 'Berakhot 2', 'Berakhot 2a-b', 'Berakhot 2a-2b', 'Genesis 1-3', 'Genesis 1:15-2:12', 'Genesis 40:23', 'Genesis 1:1', 'Genesis 2:1', 'Genesis 2:3', 'Ketubot 12b', 'Ketubot 11:12', 'Shabbat 5b-7a', 'Shabbat 2:3-5', 'Isaiah 2:3', 'כתובות לא', 'כתובות לח:', 'כתובות יח', 'כתובות י״א', 'כתובות ריח', 'Daniel 5:1', 'בראשית א ה', 'בראשית י״א ב׳', 'בראשית א לא - ב ו', 'בראשית א לא – ב ו', 'ישעיהו נה, י"ב', 'ישעיהו, נה, י"ב', 'שבועות ל, ע"א', 'Sotah 14a', 'Sotah 9:15', 'יהושע, ה, י”ב', 'גיטין יג א', 'גיטין יג ב', 'גיטין יג', 'מגילה י״ד א׳', 'מגילה י"א ע"ב', 'מגילה י"א עמוד ב\'', 'במדבר ג ד', 'במדבר, כ"ז, טו - כג', 'אסת”ר א א', 'ברכות ב:', 'אסת״ר ב ד', 'חולין י״ב א', 'ויקרא א א', 'Zohar 1:2b', 'Zohar Volume 1 2b', 'Zohar Volume 1:2b', 'Zohar Volume 1 Daf 2b', 'Zohar Volume 1 Page 2b', 'דברים, ח, ב’', 'דברים, ח, ב’ – ה’', 'דברים לא לה', 'Ezra 1:3', 'O.C. 47:12', 'עזרא שם', 'יו"ד קיג:ד', 'Amos 2:3', 'או"ח סי’ קיג סעי’ טז', 'יו”ד קיג:ד', 'משלי י ד', 'יו״ד קיג:ד', 'שמות י׳ י״ב', 'שמות, כ"ד, יג - יד', 'שמות, כ"ד, יג-יד', 'שמות לב א', 'Job 4:5', 'Job 5:6', 'שבת מב.', 'שבת מב:', 'שבת מב', 'שבת מה']}
-#WebPage.add_or_update_from_linker(data)
-get_webpages_for_ref("Genesis 32:8")
-#
-#
-#
-# collection = db.websites
-# db.drop_collection(collection)
-# keys = set()
-# for site_data in sites_data:
-# 	if "is_whitelisted" not in site_data:
-# 		site_data["is_whitelisted"] = True
-# 	collection.insert_one(site_data)
-# 	for k in site_data:
-# 		keys.add(k)
-# collection.create_index("date")
-# print(keys)
+
+
+
+
+collection = db.websites
+db.drop_collection(collection)
+keys = set()
+for site_data in sites_data:
+	if "is_whitelisted" not in site_data:
+		site_data["is_whitelisted"] = True
+	collection.insert_one(site_data)
+	for k in site_data:
+		keys.add(k)
+collection.create_index("date")
 
 
 

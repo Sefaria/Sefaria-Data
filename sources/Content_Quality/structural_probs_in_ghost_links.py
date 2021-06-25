@@ -4,34 +4,35 @@ links_from_text_no_ref_in_string = []
 commentary_links_base_prob = []
 commentary_links_fine = []
 other_links = []
-with open("broken_links copy", 'r') as f:
+with open("Broken_Links/broken_links copy", 'r') as f:
     for line in f:
         _type = line.split("\t")[1]
 
         refs = eval(line.split("]")[0]+"]")
-        if "add_commentary_links" in _type and "auto" in _type:
-            comm_ref, base_ref = (refs[0], refs[1]) if " on " in refs[0] else (refs[1], refs[0])
-            if len(Ref(base_ref).text('he').text) == 0:
-                commentary_links_base_prob.append(refs)
+        try:
+            if "add_commentary_links" in _type and "auto" in _type:
+                comm_ref, base_ref = (refs[0], refs[1]) if " on " in refs[0] else (refs[1], refs[0])
+                if len(Ref(base_ref).text('he').text) == 0:
+                    commentary_links_base_prob.append(refs)
+                else:
+                    commentary_links_fine.append(refs)
             else:
-                commentary_links_fine.append(refs)
-        elif "auto" in _type and "add_links_from_text" in _type:
-            empty_ref, other_ref = (refs[0], refs[1]) if len(Ref(refs[0]).text('he').text) == 0 else (refs[1], refs[0])
-            i = Ref(other_ref).index
-            found_refs = []
-            for v in i.versionSet():
-                tc = TextChunk(Ref(other_ref), vtitle=v.versionTitle, lang=v.language.lower()).text
-                if isinstance(tc, list):
-                    tc = " ".join(tc)
-                poss_found_refs = [r.normal() for r in library.get_refs_in_string(tc, v.language.lower())]
-                if len(poss_found_refs) > 0:
-                    found_refs += poss_found_refs
-            if len(found_refs) > 0 and empty_ref in found_refs:
-                links_from_text_get_refs_from_string.append(refs)
-            else:
-                links_from_text_no_ref_in_string.append(refs)
-        else:
-            other_links.append(refs)
+                empty_ref, other_ref = (refs[0], refs[1]) if len(Ref(refs[0]).text('he').text) == 0 else (refs[1], refs[0])
+                i = Ref(other_ref).index
+                found_refs = []
+                for v in i.versionSet():
+                    tc = TextChunk(Ref(other_ref), vtitle=v.versionTitle, lang=v.language.lower()).text
+                    if isinstance(tc, list):
+                        tc = " ".join(tc)
+                    poss_found_refs = [r.normal() for r in library.get_refs_in_string(tc, v.language.lower())]
+                    if len(poss_found_refs) > 0:
+                        found_refs += poss_found_refs
+                if len(found_refs) > 0 and empty_ref in found_refs:
+                    links_from_text_get_refs_from_string.append(refs)
+                else:
+                    links_from_text_no_ref_in_string.append(refs)
+        except Exception as e:
+            print("{} found with {}".format(e, refs))
         # empty_ref = ""
         # if len(Ref(refs[0]).text('he').text) == 0:
         #     empty_ref = refs[0]
