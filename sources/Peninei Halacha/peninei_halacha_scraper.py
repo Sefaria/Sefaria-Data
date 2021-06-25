@@ -52,7 +52,7 @@ titles_to_print = [old_titles, new_titles, heb_titles]
 titles_to_print_names = ["Titles with not-allowed characters", "Automatically fixed titles", "Hebrew titles"]
 num_chapters = {"Shabbat": 30, "Likkutim I": 11, "Likkutim II": 17, "Festivals": 13, "The Nation and the Land": 10,
                 "Berakhot": 18, "High Holidays": 10, "Shmitta and Yovel": 11, "Kashrut I": 19, "Kashrut II": 17,"Kashrut": 37, "Women's Prayer": 24,
-                "Prayer": 26, "Family": 10, "Sukkot": 8, "Pesach": 16, "Zemanim": 17, "Simchat Habayit V'Birchato": 10}
+                "Prayer": 26, "Family": 10, "Sukkot": 8, "Pesach": 16, "Zemanim": 17, "Simchat Habayit V'Birchato": 10, "Taharat HaMishpach": 10}
 books = [("Shabbat", "שבת", 1),  # 0 (eng_name, heb_name, url_number)
          ("Prayer", "תפילה", 2),  # 1
          ("Women's Prayer", "תפילת נשים", 3),  # 2
@@ -69,13 +69,14 @@ books = [("Shabbat", "שבת", 1),  # 0 (eng_name, heb_name, url_number)
          ("High Holidays", "ימים נוראים", 15),  # 13
          ("Shmitta and Yovel", "שביעית ויובל", 16),  # 14
          ("Kashrut I", "כשרות א – הצומח והחי", 17),  # 15
-         ("Kashrut II", "כשרות ב – המזון והמטבח", 18),  # 16
+         ("Kashrut II", "כשרות ב – המזון והמטבח", 17),  # 16
          ("Kashrut", "כשרות", 17),  # 17
+         ("Taharat HaMishpach", "טהרת המשפחה", 18)  # 18
          ]
 another_lang = ['es', 'ru', 'fr']
 
 # SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS (AND BE SURE TO SET PARAM "only_chapters_translated" ACCORDINGLY)
-titles_were_translated = True
+titles_were_translated = False
 # SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS, AND COPY/PASTE LISTS INTO PH_CHAPTER_SECTION_TITLE_CHANGES GOOGLE SHEET SO SHMUEL CAN MAKE CHANGES (THEN REDOWNLOAD TSV)
 print_titles_to_be_changed = True
 
@@ -1217,12 +1218,18 @@ def retroactive_replace_for_linking(paragraph, ref_title=None):
     # tc.save(force_save=True)
     return changed_list
 
-
+def get_titles_for_trsanslation(ind_name):
+    ind = library.get_index(ind_name)
+    nodes = ind.alt_structs['Topic']['nodes']
+    for nods in nodes[1::]:
+        print(nods['titles'][1]['text'])
+        for n in nods['nodes']:
+            print(n['titles'][1]['text'])
 
 if __name__ == "__main__":
     add_term("Peninei Halakhah", "פניני הלכה")
     add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], "פניני הלכה")
-    he_book_list = [17]  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+    he_book_list = [18]  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
     both_book_list = []  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
 
