@@ -166,7 +166,7 @@ def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True)
         ]
     link_json["dh"] = match.dh
     if match.dh:
-        link_json["type"] = "dh"
+        link_json["type"] = "dibur_hamatchil"
     return link_json, match
 
 
@@ -312,7 +312,7 @@ def get_version_mapping(version: Version) -> dict:
 
 if __name__ == '__main__':
     # range_ref = 'ילקוט שמעוני על התורה, חקת' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
-    range_ref = 'Toledot_Yitzchak_on_Torah, Numbers.30'
+    range_ref = 'ילקוט שמעוני על התורה, בלק'
     range_name = range_ref
     f = open(f"intraTanakhLinks_{range_name}.txt", "a+")  # not the right place to open this for the other functions. read doc.
     f.write(range_name)
@@ -320,7 +320,7 @@ if __name__ == '__main__':
     # pear = (Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך")) #(Ref('Numbers 13:1-15:41'), Ref('Yalkut Shimoni on Torah 742'))  # :7-750:13 ( Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך"))
     # pear = (Ref('פרשת חקת'), Ref('ילקוט שמעוני על התורה, חקת'))
     # links = get_links_ys(pear, post=True)
-    links = dicta_links_from_ref(f'{range_ref}', post=True, min_thresh=22, prioraty_tanakh_chunk=Ref('Numbers.30'))
+    links = dicta_links_from_ref(f'{range_ref}', post=True, min_thresh=22, prioraty_tanakh_chunk=Ref('פרשת בלק'))
     f.close()
     # post_links_from_file("Numbers 13:1-15:41/ys_links.txt", score=10)
 
