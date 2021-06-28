@@ -70,9 +70,9 @@ send_text = {
 	"versionTitle": "Netivot Olam, Netiv Hatshuva, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 1997",
 	"text": text
 }
-post_text("Netivot Olam, Netiv Hatshuva", send_text, server="https://ste2.cauldron.sefaria.org")
+post_text("Netivot Olam, Netiv Hatshuva", send_text, server="https://resetwebsites.cauldron.sefaria.org")
 
 send_text["text"] = ftnotes_to_insert
-post_text("Notes by Rabbi Yehoshua Hartman on Netivot Olam, Netiv Hatshuva", send_text, server="https://ste2.cauldron.sefaria.org")
+post_text("Notes by Rabbi Yehoshua Hartman on Netivot Olam, Netiv Hatshuva", send_text, server="https://resetwebsites.cauldron.sefaria.org")
 
-post_link_in_steps(links, server="https://ste2.cauldron.sefaria.org")
+post_link_in_steps(links, server="https://resetwebsites.cauldron.sefaria.org")

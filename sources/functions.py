@@ -28,6 +28,8 @@ import base64
 # import enchant
 import Levenshtein
 from functools import wraps
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 # from word2number import w2n
 
 gematria = {}
@@ -79,6 +81,11 @@ from lxml.html import fromstring
 headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
+
+def selenium_get_url(chrome_driver, url, func=lambda x: x):
+    chrome_driver.get(url)
+    pageSource = chrome_driver.page_source
+    return func(pageSource)
 
 def create_intro():
     intro = JaggedArrayNode()

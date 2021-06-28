@@ -4,16 +4,7 @@ from sefaria.model import *
 
 
 import os
-indices = """Bereshit Rabbah
-Shemot Rabbah
-Vayikra Rabbah
-Bamidbar Rabbah
-Devarim Rabbah
-Shir HaShirim Rabbah
-Ruth Rabbah
-Esther Rabbah
-Kohelet Rabbah
-Eichah Rabbah""".splitlines()
+indices = library.get_indices_by_collective_title("Lechem Mishneh")
 version = "all"
 SEFARIA_SERVER = "https://www.sefaria.org"
 results = []

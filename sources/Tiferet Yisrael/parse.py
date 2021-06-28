@@ -84,7 +84,7 @@ indx = {
 	"base_text_titles": ["Tiferet Yisrael"],
 	"collective_title": "Notes by Rabbi Yehoshua Hartman"
 }
-post_index(indx, server="https://ste2.cauldron.sefaria.org")
+post_index(indx, server="https://resetwebsites.cauldron.sefaria.org")
 ftnotes_to_insert = parse_ftnotes()
 text, links = parse_text(ftnotes_to_insert)
 text = convertDictToArray(text)
@@ -98,7 +98,7 @@ ftnotes_send_text = {
 	"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
 	"versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH002042478/NLI"
 }
-post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael, Introduction", ftnotes_send_text, server="https://ste2.cauldron.sefaria.org")
+post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael, Introduction", ftnotes_send_text, server="https://resetwebsites.cauldron.sefaria.org")
 for i, ch in enumerate(text[1:]):
 	send_text = {
 		"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
@@ -107,9 +107,9 @@ for i, ch in enumerate(text[1:]):
 		"text": ch
 	}
 	ftnotes_send_text["text"] = ftnotes_to_insert[i+1]
-	post_text("Tiferet Yisrael {}".format(i+1), send_text, server="https://ste2.cauldron.sefaria.org")
+	post_text("Tiferet Yisrael {}".format(i+1), send_text, server="https://resetwebsites.cauldron.sefaria.org")
 	time.sleep(2)
-	#post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael {}".format(i+1), ftnotes_send_text, server="https://ste2.cauldron.sefaria.org")
+	post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael {}".format(i+1), ftnotes_send_text, server="https://resetwebsites.cauldron.sefaria.org")
 	time.sleep(2)
 send_text = {
 	"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
@@ -117,5 +117,5 @@ send_text = {
 	"language": "he",
 	"text": text[0]
 }
-post_text("Tiferet Yisrael, Introduction to Tiferet Yisrael", send_text, server="https://ste2.cauldron.sefaria.org")
-#post_link_in_steps(links, server="https://ste2.cauldron.sefaria.org")
+post_text("Tiferet Yisrael, Introduction to Tiferet Yisrael", send_text, server="https://resetwebsites.cauldron.sefaria.org")
+post_link_in_steps(links, server="https://resetwebsites.cauldron.sefaria.org")
