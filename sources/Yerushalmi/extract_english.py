@@ -39,7 +39,7 @@ def get_chapter(tag: bs4.Tag):
             return parent['num']
     return None
 
-
+# Is this the translation of a Mishnah? (This logic doesn't work for Shabbat and Eruvin. We're not sure what logic does.)
 def is_mishna(tag: bs4.Tag):
     return 'mishna' in {n.name for n in tag.parents}
 
@@ -91,7 +91,8 @@ for xml_file in xml_files:
                 iref = 'N/A'
             talmud_output.append({
                 'Ref': iref,
-                'English': ' '.join(eg.text.split()) if isinstance(eg, bs4.Tag) else eg,
+                # todo: instead of " ".join, write a method that takes a tag and returns a more desireable result
+		'English': ' '.join(eg.text.split()) if isinstance(eg, bs4.Tag) else eg,
                 'Hebrew': hg['data'] if isinstance(hg, dict) else hg,
                 'Mehon-Mamre': mm['data'] if isinstance(mm, dict) else mm,
             })

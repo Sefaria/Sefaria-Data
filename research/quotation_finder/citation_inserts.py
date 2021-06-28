@@ -63,7 +63,8 @@ def add_citations(lls, seg_text_list, book_ref):
     cnt = 0
 
     for l in lls:
-        if l.charLevelData[1]['startChar'] <= 10 or (hasattr(l, 'dh') and l.dh):  # check for DH
+        # if l.charLevelData[1]['startChar'] <= 10 or (hasattr(l, 'dh') and l.dh):  # check for DH
+        if l.type == 'dibur_hamatchil':
             continue
         if Ref(l.refs[1]).book != Ref(book_ref).book:
             print("needed reverse")
