@@ -136,11 +136,19 @@ sites_data = [
 			"normalization_rules": ["remove sort param"],
 		  "bad_urls": [r"judaism\.codidact\.com\/.+\/edit",
             r"judaism\.codidact\.com\/.+\/history",
-            r"judaism\.codidact\.com\/.+\/suggested-edit\/",
+						r"judaism\.codidact\.com\/",
+						r"judaism\.codidact\.com\/#",
+						r"judaism\.codidact\.com\/mod\/*",
+						r"judaism\.codidact\.com\/users\/*",
+  					r"judaism\.codidact\.com\/users\/",
+						r"judaism\.codidact\.com\/?page=\d+",
+					  r"judaism\.codidact\.com\/categories\/d+",
+						r"judaism\.codidact\.com\/.+\/suggested-edit\/",
             r"judaism\.codidact\.com\/.+\/posts\/new\/",
             r"judaism\.codidact\.com\/questions\/d+",  # these pages redirect to /posts
             r"judaism\.codidact\.com\/users\/"]
 	},
+
 	{
 			"name": "The Jewish Theological Seminary",
 			"domains": ["jtsa.edu"],
@@ -318,9 +326,9 @@ sites_data = [
 			"name": "Rabbi Johnny Solomon",
 			"domains": ["rabbijohnnysolomon.com"],
 		  "bad_urls": [r"rabbijohnnysolomon.com$",
-            r"rabbijohnnysolomon.com/shiurim/$",
-            r"rabbijohnnysolomon.com/shiurim/parasha/$",
-            r"rabbijohnnysolomon.com/shiurim/halacha/$"]
+            r"rabbijohnnysolomon.com\/shiurim\/$",
+            r"rabbijohnnysolomon.com\/shiurim\/parasha\/$",
+            r"rabbijohnnysolomon.com\/shiurim\/halacha\/$"]
 	},
 	{
 			"name": "Moment Magazine",
