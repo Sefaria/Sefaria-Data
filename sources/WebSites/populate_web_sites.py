@@ -274,7 +274,13 @@ sites_data = [
 		"bad_urls": [r"test\.hadran\.org\.il",
 								 r"hadran\.org\.il\/he\/?$",
 								 r"hadran\.org\.il\/he\/(masechet|מסכת)\/",
-								 r"hadran\.org\.il\/daf-yomi\/$"]
+								 r"hadran\.org\.il\/daf-yomi\/$"],
+
+	},
+	{
+		"name": "סיון רהב-מאיר",
+		"domains": ["sivanrahavmeir.com"],
+		"bad_urls": [r"sivanrahavmeir\.com\/?$"]
 	},
 	{
 			"name": "Julian Ungar-Sargon",
