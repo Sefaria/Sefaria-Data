@@ -28,6 +28,7 @@ for mesechet, index in [q for q in zip(yutil.mesechtot, yutil.jtindxes)][15:]:
 for err in errors:
     print(err)
 '''
+
 def make_version_obj(index_title, chapter):
     return {
         "language": "he",

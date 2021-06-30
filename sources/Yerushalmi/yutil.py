@@ -3,6 +3,7 @@
 import os
 import bs4
 import re
+import html
 import pymongo
 import requests
 import openpyxl
@@ -24,9 +25,11 @@ m_collection = "mm_paras"
 
 comp_collection = "comparison"
 
+
 def connect():
     client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)
     return client["yerushalmi_work"]
+
 
 class MishnahAlignment(object):
     working_dir = "./comparison"
@@ -41,11 +44,11 @@ class MishnahAlignment(object):
         self._m2g_map = None
 
         self.g_records = self._get_records_from_db(g_collection)
-        self.g_ja = self._get_ja_from_records(self.g_records)
+        self.g_ja = AnnotatedJTA([r["content"] for r in self.g_records])
         self.g_text = self.g_ja.flatten_to_string()
 
         self.m_records = self._get_records_from_db(m_collection)
-        self.m_ja = self._get_ja_from_records(self.m_records)
+        self.m_ja = AnnotatedJTA([html.escape(r["content"]) for r in self.m_records])
         self.m_text = self.m_ja.flatten_to_string()
         self.m_according_to_g = []
         self._mark_mm_pages(initial_latest_page)
@@ -58,10 +61,6 @@ class MishnahAlignment(object):
                                          "halacha_num": self.halacha
                                          }).sort("num", pymongo.ASCENDING)
         return [r for r in records]
-
-    def _get_ja_from_records(self, records):
-        content = [r["content"] for r in records]
-        return AnnotatedJTA(content)
 
     def _mark_mm_pages(self, latest_page = None):
         latest_page = latest_page or self.m_records[0]["daf_num"]
