@@ -2,16 +2,18 @@ import django
 django.setup()
 from sefaria.system.database import db
 
+
 sites_data = [
 		{
 				"name": "Tablet Magazine",
 				"domains": ["tabletmag.com"],
-				"bad_urls": [r"tabletmag\.com\/contributors\/"]
+				"bad_urls": [r"tabletmag\.com\/contributors\/"],
+			"normalization_rules": ["remove www"]
 		},
 		{
 			"name": "Google",
 			"is_whitelisted": False,
-			"domains": ["googleusercontent.com", "googleusercontent.com"],
+			"domains": ["googleusercontent.com"],
 			"bad_urls": [r"webcache\.googleusercontent\.com", r"translate\.googleusercontent\.com"]
 		},
 		{
@@ -34,13 +36,15 @@ sites_data = [
     {
 			"name":           "My Jewish Learning",
 			"domains":        ["myjewishlearning.com"],
-			"normalization_rules": ["use https"],
+			"normalization_rules": ["use https", "remove www"],
 			"bad_urls": [r"myjewishlearning\.com\/\?post_type=evergreen"]
 	},
 	{
 			"name":           "Virtual Beit Midrash",
-			"domains":        ["etzion.org.il", "vbm-torah.org"],
+			"domains":        ["etzion.org.il", "vbm-torah.org", "torah.etzion.org.il"],
 			"title_branding": ["vbm haretzion"],
+		  "normalization_rules": ["remove www"]
+
 	},
 	{
 			"name":           "Rabbi Sacks",
@@ -58,6 +62,8 @@ sites_data = [
 	{
 			"name":           "Torah In Motion",
 			"domains":        ["torahinmotion.org"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name":           "The Open Siddur Project",
@@ -66,7 +72,9 @@ sites_data = [
 	{
 			"name":           "בית הלל",
 			"domains":        ["beithillel.org.il"],
-			"title_branding": ["בית הלל - הנהגה תורנית קשובה"]
+			"title_branding": ["בית הלל - הנהגה תורנית קשובה"],
+		  "normalization_rules": ["remove www"]
+
 	},
 	{
 			"name":                   "ParshaNut",
@@ -78,10 +86,14 @@ sites_data = [
 	{
 			"name":            "Real Clear Daf",
 			"domains":         ["realcleardaf.com"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name":           "NACH NOOK",
 			"domains":        ["nachnook.com"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name":           "Congregation Beth Jacob, Redwood City",
@@ -95,14 +107,20 @@ sites_data = [
 	{
 			"name":    "Rabbi Sharon Sobel",
 			"domains": ["rabbisharonsobel.com"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name":    "The Kosher Backpacker",
-			"domains": ["thekosherbackpacker.com"]
+			"domains": ["thekosherbackpacker.com"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "WebYeshiva",
-			"domains": ["webyeshiva.org"]
+			"domains": ["webyeshiva.org"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "Tradition Online",
@@ -112,7 +130,9 @@ sites_data = [
 	},
 	{
 			"name": "Partners in Torah",
-			"domains": ["partnersintorah.org"]
+			"domains": ["partnersintorah.org"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "The Lehrhaus",
@@ -121,7 +141,9 @@ sites_data = [
 	{
 			"name": "סִינַי",
 			"domains": ["sinai.org.il"],
-			"title_branding": ["הדף היומי ב15 דקות - שיעורי דף יומי קצרים בגמרא"]
+			"title_branding": ["הדף היומי ב15 דקות - שיעורי דף יומי קצרים בגמרא"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": 'אתר לבנ"ה - קרן תל"י',
@@ -152,7 +174,7 @@ sites_data = [
 	{
 			"name": "The Jewish Theological Seminary",
 			"domains": ["jtsa.edu"],
-			"normalization_rules": ["remove url params"],
+			"normalization_rules": ["remove url params", "remove www"],
 		"bad_urls": [r"www\.jtsa.edu\/search\/index\.php"]
 	},
 	{
@@ -163,11 +185,15 @@ sites_data = [
 	{
 			"name": "Jewish Exponent",
 			"domains": ["jewishexponent.com"],
-		  "bad_urls": [r"jewishexponent\.com\/page\/\d"]
+		  "bad_urls": [r"jewishexponent\.com\/page\/\d"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "The 5 Towns Jewish Times",
-			"domains": ["5tjt.com"]
+			"domains": ["5tjt.com"],
+  		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "Hebrew College",
@@ -181,7 +207,7 @@ sites_data = [
 	},
 	{
 			"name": "Pardes Institute of Jewish Studies",
-			"domains": ["pardes.org"],
+			"domains": ["pardes.org", "elmad.pardes.org"],
 			"title_branding": ["Elmad Online Learning Torah Podcasts, Online Jewish Learning"]
 	},
 	{
@@ -190,7 +216,9 @@ sites_data = [
 			"title_branding": ["Torah Library of Yeshivat Chovevei Torah", "Rosh Yeshiva Responds"],
 		  "bad_urls": [r"psak\.yctorah\.org\/?$",
             r"psak\.yctorah\.org\/(category|about|source)\/",  # archives
-            r"psak\.yctorah\.org\/sitemap_index\.xml$", r"library\.yctorah\.org\/series\/"]
+            r"psak\.yctorah\.org\/sitemap_index\.xml$", r"library\.yctorah\.org\/series\/"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "Rabbi Jeff Fox (Rosh ha-Yeshiva, Yeshivat Maharat)",
@@ -203,7 +231,9 @@ sites_data = [
 			"domains": ["clevelandjewishnews.com"],
 			"title_branding": ["clevelandjewishnews.com"],
 		  "bad_urls": [r"clevelandjewishnews\.com$",
-            r"clevelandjewishnews\.com\/news\/"]
+            r"clevelandjewishnews\.com\/news\/"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "Rabbi Noah Farkas",
@@ -214,25 +244,31 @@ sites_data = [
 			"name": "Reconstructing Judaism",
 			"domains": ["reconstructingjudaism.org"],
 		"bad_urls": [r"reconstructingjudaism\.org\/taxonomy\/",
-            r"reconstructingjudaism\.org\/search\/"]
+            r"reconstructingjudaism\.org\/search\/"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "The Institute for Jewish Ideas and Ideals",
 			"domains": ["jewishideas.org"],
 			"title_branding": ["jewishideas.org"],
 		  "bad_urls": [r"jewishideas\.org\/search\/",
-            r"jewishideas\.org\/articles\/"]
+            r"jewishideas\.org\/articles\/"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "The Jewish Virtual Library",
 			"domains": ["jewishvirtuallibrary.org"],
-			"normalization_rules": ["use https", "remove url params"],
+			"normalization_rules": ["use https", "remove url params", "remove www"],
 	},
 	{
 			"name": "Lilith Magazine",
 			"domains": ["lilith.org"],
 		  "bad_urls": [r"lilith\.org\/\?gl=1\&s=",                  # Lilith Magazine search results
-            r"lilith\.org\/(tag|author|category)\/"]
+            r"lilith\.org\/(tag|author|category)\/"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "Torah.org",
@@ -260,13 +296,14 @@ sites_data = [
 	},
 	{
 			"name": "YUTorah Online",
-			"domains": ["yutorah.org"],
+			"domains": ["yutorah.org", "yutorah.com", "yutorah.net"],
 			"initial_title_branding": True,
 		"bad_urls": [r"yutorah\.org\/search\/",
             r"yutorah\.org\/searchResults\.cfm",
             r"yutorah\.org\/\d+\/?$",  # year pages
             r"yutorah\.org\/users\/",
-            r"yutorah\.org\/daf\.cfm\/?$"]
+            r"yutorah\.org\/daf\.cfm\/?$"],
+		"normalization_rules": ["remove www"]
 	},
 	{
 			"name": "Hadran",
@@ -275,20 +312,26 @@ sites_data = [
 								 r"hadran\.org\.il\/he\/?$",
 								 r"hadran\.org\.il\/he\/(masechet|מסכת)\/",
 								 r"hadran\.org\.il\/daf-yomi\/$"],
+		"exclude_from_tracking": ".nav-links, .hard_sub_header"
 
 	},
 	{
 		"name": "סיון רהב-מאיר",
 		"domains": ["sivanrahavmeir.com"],
-		"bad_urls": [r"sivanrahavmeir\.com\/?$"]
+		"bad_urls": [r"sivanrahavmeir\.com\/?$"],
+		"normalization_rules": ["remove www"]
 	},
 	{
 			"name": "Julian Ungar-Sargon",
 			"domains": ["jyungar.com"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "Aish HaTorah",
-			"domains": ["aish.com"],
+			"domains": ["aish.com", "aish.co.il", "aishlatino.com", "aish.fr"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "Jewschool",
@@ -305,7 +348,9 @@ sites_data = [
 	    "name": "929",
 	    "domains": ["929.org.il"],
 	    "title_branding": ["929 – תנך ביחד", "Tanakh - Age Old Text, New Perspectives"],
-	    "initial_title_branding": True
+	    "initial_title_branding": True,
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "נאמני תורה ועבודה",
@@ -341,13 +386,11 @@ sites_data = [
 			"domains": ["momentmag.com"],
 	},
 	{
-			"name": "Jewish Action",
-			"domains": ["jewishaction.com"],
-	},
-	{
 			"name": "Orthodox Union (OU Torah)",
-			"domains": ["ou.org"],
+			"domains": ["ou.org", "outorah.org", "oukosher.org"],
 			"title_branding": ["Jewish Holidays", "OU Holidays", "OU", "OU Torah", "OU Life"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "Judaism 101 (JewFAQ)",
@@ -366,6 +409,7 @@ sites_data = [
 	{
 			"name": "The Wexner Foundation",
 			"domains": ["wexnerfoundation.org"],
+		"normalization_rules": ["remove www"]
 	},
 	{
 			"name": "Jewish Drinking",
@@ -379,6 +423,8 @@ sites_data = [
 	{
 			"name": "TorahWeb.org",
 			"domains": ["torahweb.org"],
+   		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "AskHalacha",
@@ -394,12 +440,16 @@ sites_data = [
             r"yeshiva\.co\/404\/404.asp",
             r"yeshiva\.co\/(ask|midrash)\/?$",
             r"yeshiva\.co\/(calendar|tags|dedication|errorpage)\/?",  # it seems anything under calendar is not an article
-            r"yeshiva\.co\/midrash\/(category|rabbi)\/?"]
+            r"yeshiva\.co\/midrash\/(category|rabbi)\/?"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "מחלקי המים",
 			"domains": ["mayim.org.il"],
-		"bad_urls": [r"mayim\.org\.il\/?$"]
+		"bad_urls": [r"mayim\.org\.il\/?$"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "The Kabbalah of Time",
@@ -407,7 +457,9 @@ sites_data = [
 			"initial_title_branding": True,
 		"bad_urls": [            r"kabbalahoftime\.com\/?$",
             r"kabbalahoftime\.com\/\d{4}\/?$",  # page that aggregates all articles for the year
-            r"kabbalahoftime\.com\/\d{4}\/\d{2}\/?$"]  # page that aggregates all articles for the month]
+            r"kabbalahoftime\.com\/\d{4}\/\d{2}\/?$"],  # page that aggregates all articles for the month]
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "Jewish Contemplatives",
@@ -455,7 +507,9 @@ sites_data = [
 	{
 			"name": "S and P Sephardi Community",
 			"domains": ["sephardi.org.uk"],
-		"bad_urls": [r"sephardi\.co\.uk\/(category|community|tag|test)\/"]
+		"bad_urls": [r"sephardi\.co\.uk\/(category|community|tag|test)\/"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "זיכרון בספר",
@@ -487,7 +541,9 @@ sites_data = [
 			"name": "Justice in the City",
 			"domains": ["justice-in-the-city.com"],
 		"bad_urls": [r"justice-in-the-city\.com\/?$",
-            r"justice-in-the-city\.com\/(category|page)\/"]
+            r"justice-in-the-city\.com\/(category|page)\/"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": "American Jewish University",
@@ -496,7 +552,9 @@ sites_data = [
             r"aju\.edu\/miller-intro-judaism-program\/learning-portal\/glossary\/",
             r"aju\.edu\/ziegler-school-rabbinic-studies\/our-torah\/back-issues\/\d+$"
             r"aju\.edu\/ziegler-school-rabbinic-studies\/torah-resource-center\/"
-            r"aju\.edu\/ziegler-school-rabbinic-studies\/blogs\/?$"]
+            r"aju\.edu\/ziegler-school-rabbinic-studies\/blogs\/?$"],
+		"normalization_rules": ["remove www"]
+
 	},
 	{
 			"name": 'התנ"ך',
@@ -524,7 +582,12 @@ sites_data = [
 collection = db.websites
 db.drop_collection(collection)
 keys = set()
+domains = []
+names = []
 for site_data in sites_data:
+	assert site_data["name"] not in names
+	names.append(site_data["name"])
+	domains += site_data["domains"]
 	if "is_whitelisted" not in site_data:
 		site_data["is_whitelisted"] = True
 	collection.insert_one(site_data)
@@ -532,5 +595,11 @@ for site_data in sites_data:
 		keys.add(k)
 collection.create_index("date")
 
+
+if len(set(domains)) != len(domains):  # make sure no duplicate domains
+	domains = sorted(domains)
+	set_domains = sorted(list(set(domains)))
+	for x, y in zip(domains, set_domains):
+		print("{} vs {}".format(x, y))
 
 
