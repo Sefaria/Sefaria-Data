@@ -6,6 +6,11 @@ import unicodecsv as csv
 from sources.functions import *
 from sources.Scripts.pesukim_linking import *
 import numpy as np
+import pymongo
+from sefaria.settings import *
+
+client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)  # (MONGO_ASPAKLARIA_URL)
+db_qf = client.quotations
 
 min_thresh=22
 find_url = "https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/markpsukim"
@@ -67,6 +72,35 @@ def dicta_parse(response_json, min_thresh=22):
     return parsed_results
 
 
+def many_pesukim_match(result, base_ref, matched, prioraty_tanakh_chunk=None):
+    many_pesukim_he = [match['verseDispHeb'] for match in result['matches']]
+    many_pesukim_refs = [Ref(he_disp) for he_disp in many_pesukim_he]
+    many_pesukim_score = [match['score'] for match in result['matches']]
+    mean = np.mean(many_pesukim_score)
+    var = np.var(many_pesukim_score)
+    if mean > 20 and var < 5:
+        suffex = ''.join(
+            [f"&p{i + 1}={many_pesukim_refs[i].normal()}&lang2=he" for i in list(range(1, len(many_pesukim_refs)))])
+        url = re.sub(" ", "_", f'{sandbox}.cauldron.sefaria.org/{many_pesukim_refs[0].normal()}?lang=he{suffex}\n')
+        intra_tanakh_dict = {
+            "refs": [r.normal() for r in many_pesukim_refs],
+            "wordLevelData": [],
+            "mean": mean,
+            "var": var,
+            "base_ref": base_ref.normal(),
+            "url": url
+        }
+        json.dump(intra_tanakh_dict, f)
+        print(url)
+        print(f"more than one pasuk option: {many_pesukim_he}")
+    if prioraty_tanakh_chunk:
+        best_match_option_ref = list(set(prioraty_tanakh_chunk.all_segment_refs()) & set(many_pesukim_refs))
+        best_match = [match for match in result['matches'] if Ref(match['verseDispHeb']) in best_match_option_ref]
+        matched = best_match[0] if best_match else matched
+        print(f"{Ref(matched['verseDispHeb']).normal()} was chosen")
+    return matched
+
+
 def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, thresh=0, min_thresh=22, prioraty_tanakh_chunk=None, wrods_to_wipe=''):
     """
     the heart of the quotation finder input Ref and output links
@@ -83,6 +117,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
     link_options = []
     dh_link_options = []
     for base_ref in base_refs:
+        trivial_ref = None
         if offline:
             base_text = offline[0][base_ref]
             parsed_results = offline[1][base_ref]
@@ -101,22 +136,23 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             # matched_pasuks = [match['verseDispHeb'] for match in result['matches']]
             # matched_pasuk = matched_pasuks[0]
             if len(result['matches']) > 1:
-                many_pesukim_he = [match['verseDispHeb'] for match in result['matches']]
-                many_pesukim_refs = [Ref(he_disp) for he_disp in many_pesukim_he]
-                many_pesukim_score = [match['score'] for match in result['matches']]
-                mean = np.mean(many_pesukim_score)
-                var = np.var(many_pesukim_score)
-                if mean > 20 and var < 5:
-                    suffex = ''.join([f"&p{i+1}={many_pesukim_refs[i].normal()}&lang2=he" for i in list(range(1, len(many_pesukim_refs)))])
-                    f.write(base_ref.normal())
-                    f.write(re.sub(" ", "_", f'{sandbox}.cauldron.sefaria.org/{many_pesukim_refs[0].normal()}?lang=he{suffex}'))
-                    print(re.sub(" ", "_", f'{sandbox}.cauldron.sefaria.org/{many_pesukim_refs[0].normal()}?lang=he{suffex}\n'))
-                    print(f"more than one pasuk option: {many_pesukim_he}")
-                if prioraty_tanakh_chunk:
-                    best_match_option_ref = list(set(prioraty_tanakh_chunk.all_segment_refs()) & set(many_pesukim_refs))
-                    best_match = [match for match in result['matches'] if Ref(match['verseDispHeb']) in best_match_option_ref]
-                    matched = best_match[0] if best_match else matched
-                    print(f"{Ref(matched['verseDispHeb']).normal()} was chosen")
+                matched = many_pesukim_match(result, base_ref, matched, prioraty_tanakh_chunk=None)
+                # many_pesukim_he = [match['verseDispHeb'] for match in result['matches']]
+                # many_pesukim_refs = [Ref(he_disp) for he_disp in many_pesukim_he]
+                # many_pesukim_score = [match['score'] for match in result['matches']]
+                # mean = np.mean(many_pesukim_score)
+                # var = np.var(many_pesukim_score)
+                # if mean > 20 and var < 5:
+                #     suffex = ''.join([f"&p{i+1}={many_pesukim_refs[i].normal()}&lang2=he" for i in list(range(1, len(many_pesukim_refs)))])
+                #     f.write(base_ref.normal())
+                #     f.write(re.sub(" ", "_", f'{sandbox}.cauldron.sefaria.org/{many_pesukim_refs[0].normal()}?lang=he{suffex}\n'))
+                #     print(re.sub(" ", "_", f'{sandbox}.cauldron.sefaria.org/{many_pesukim_refs[0].normal()}?lang=he{suffex}\n'))
+                #     print(f"more than one pasuk option: {many_pesukim_he}")
+                # if prioraty_tanakh_chunk:
+                #     best_match_option_ref = list(set(prioraty_tanakh_chunk.all_segment_refs()) & set(many_pesukim_refs))
+                #     best_match = [match for match in result['matches'] if Ref(match['verseDispHeb']) in best_match_option_ref]
+                #     matched = best_match[0] if best_match else matched
+                #     print(f"{Ref(matched['verseDispHeb']).normal()} was chosen")
             pasuk_ref = Ref(matched['verseDispHeb'])
             matched_pasuk_start = matched['verseiWords'][0]
             matched_pasuk_end = matched['verseiWords'][-1]
@@ -127,12 +163,14 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             score = matched['score']
             dh_match = result in dh_res
             if prioraty_tanakh_chunk:
-                dh_match = prioraty_tanakh_chunk and pasuk_ref in prioraty_tanakh_chunk.all_segment_refs()
+                dh_match = dh_match and pasuk_ref in prioraty_tanakh_chunk.all_segment_refs()
             m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"], matched_pasuk_start, matched_pasuk_end, dh_match)
             link_option = [pasuk_ref, base_ref, m.textMatched, m]
             if dh_match:
+                trivial_ref = pasuk_ref.normal()
                 link_option.append("dh")
                 dh_link_options.append(link_option)
+            link_option.append(trivial_ref)
             link_options.append(link_option)
     if onlyDH:
         return dh_link_options
@@ -167,6 +205,8 @@ def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True)
     link_json["dh"] = match.dh
     if match.dh:
         link_json["type"] = "dibur_hamatchil"
+    if link_option[-1]:
+        link_json["trivial_ref"] = link_option[-1]
     return link_json, match
 
 
@@ -257,9 +297,11 @@ def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, prioraty
     links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder', type='quotation_auto') for link_option in link_options])
     write_to_csv(links, linkMatchs, filename=f"dicta_{tref}")
     print(links)
-    write_links_to_json(f'{oref.book}', links)
+    write_links_to_json(f'{tref}', links)
     if post:
-        post_link(links, server="http://localhost:8000")
+        post_link(links)
+    mongo_post(links)
+#, server="http://localhost:8000")
     return links
 
 
@@ -309,18 +351,28 @@ def get_version_mapping(version: Version) -> dict:
     version.walk_thru_contents(populate_change_map)
     return mapping
 
+def mongo_post(links):
+    db_qf.quotations.insert_many(links)
 
 if __name__ == '__main__':
     # range_ref = 'ילקוט שמעוני על התורה, חקת' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
-    range_ref = 'ילקוט שמעוני על התורה, בלק'
+    range_ref = 'Chatam Sofer on Torah, Pinchas'
     range_name = range_ref
     f = open(f"intraTanakhLinks_{range_name}.txt", "a+")  # not the right place to open this for the other functions. read doc.
     f.write(range_name)
     # links = link_a_parashah_node_struct_index(range_name, onlyDH=False, post=True)
     # pear = (Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך")) #(Ref('Numbers 13:1-15:41'), Ref('Yalkut Shimoni on Torah 742'))  # :7-750:13 ( Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך"))
+
+    ys = get_zip_ys()
+    ys_pairs = [(item[1], item[0]) for b in ys for item in b]
+    ys_pairs_dict = dict([(r.normal(), item[1]) for item in ys_pairs if item[0] for r in item[0].all_segment_refs()])
+    mapping = get_version_mapping(Version().load({'title': 'Yalkut Shimoni on Torah', 'versionTitle': 'Yalkut Shimoni on Torah'}))
+    for seg in list(mapping.keys())[111:113]:
+        links = dicta_links_from_ref(seg, post=True, min_thresh=22, prioraty_tanakh_chunk=ys_pairs_dict.get(seg, None))
+    #
     # pear = (Ref('פרשת חקת'), Ref('ילקוט שמעוני על התורה, חקת'))
     # links = get_links_ys(pear, post=True)
-    links = dicta_links_from_ref(f'{range_ref}', post=True, min_thresh=22, prioraty_tanakh_chunk=Ref('פרשת בלק'))
+    # links = dicta_links_from_ref(f'{range_ref}', post=True, min_thresh=22, prioraty_tanakh_chunk=Ref('פרשת פנחס'))
     f.close()
     # post_links_from_file("Numbers 13:1-15:41/ys_links.txt", score=10)
 
