@@ -10,7 +10,7 @@ import openpyxl
 import functools
 from sefaria.model import *
 from sefaria.settings import *
-from sefaria.utils.hebrew import heb_string_to_int, int_to_heb
+from sefaria.utils.hebrew import decode_hebrew_numeral, encode_small_hebrew_numeral
 from sefaria.datatype.jagged_array import JaggedTextArray
 
 
@@ -359,15 +359,15 @@ def load_venice_data():
                 # Generate dict from item i with list d
                 # Get's mesechet from outer loop
                 section_type_letter = d[4][0]       # מ or ה
-                section_num = heb_string_to_int(d[4][1:].replace('"', ''))
+                section_num = decode_hebrew_numeral(d[4][1:].replace('"', ''))
                 return {
                     "mesechet": mesechet,
                     "perek": d[1],
-                    "perek_num": heb_string_to_int(d[1]),
+                    "perek_num": decode_hebrew_numeral(d[1]),
                     "daf": d[2],
-                    "daf_num": heb_string_to_int(d[2]),
+                    "daf_num": decode_hebrew_numeral(d[2]),
                     "tur": d[3],
-                    "tur_num": heb_string_to_int(d[3]),
+                    "tur_num": decode_hebrew_numeral(d[3]),
                     "content": d[10].strip(),
                     "eng_type":  "Mishna" if section_type_letter == "מ" else "Halacha",
                     "section_num": section_num
@@ -384,6 +384,7 @@ def load_venice_data():
             run_num = 0
             for page in pages:
                 section_list = section_pattern.split(page["content"])
+                section_label_begins_page = False
                 if section_list[0]:
                     # First one will use all metadata from the page object, later ones will replace mishnah / halacha
                     run_num += 1
@@ -393,12 +394,21 @@ def load_venice_data():
                     if first_section["eng_type"] == "Halacha":              # For portability of comparison code
                         first_section["halacha_num"] = first_section["section_num"]
                     db[v_collection].insert_one(first_section)
+                else:
+                    section_label_begins_page = True
 
-                for l in chunks(section_list[1:], 3):
+                for i,l in enumerate(chunks(section_list[1:], 3)):
                     run_num += 1
+                    if i > 0 or not section_label_begins_page:
+                        # The general case - not at the beginning of the page
+                        if l[0] == "מ" and l[1].replace('"', '') == "א":
+                            # a /מ"א/ indicates that the perek has turned.
+                            # Change page data so all subsequent matches get new data
+                            page["perek_num"] += 1
+                            page["perek"] = encode_small_hebrew_numeral(page["perek_num"])
                     section_d = page.copy()
                     section_d["eng_type"] = "Mishna" if l[0] == "מ" else "Halacha"
-                    section_d["section_num"] = heb_string_to_int(l[1].replace('"',''))
+                    section_d["section_num"] = decode_hebrew_numeral(l[1].replace('"',''))
                     if section_d["eng_type"] == "Halacha":                  # For portability of comparison code
                         section_d["halacha_num"] = section_d["section_num"]
                     section_d["content"] = l[2].strip()
@@ -428,12 +438,12 @@ def load_machon_mamre_data():
                 d["eng_type"] = "Mishna" if d["type"] == "משנה" else "Talmud"
                 d["mesechet"] = mesechet
                 d["content"] = heading.next_sibling.strip()
-                d["perek_num"] = heb_string_to_int(d["perek"])
-                d["daf_num"] = str(heb_string_to_int(d["daf"])) + ("a" if d["amud"] == 'א' else "b")
+                d["perek_num"] = decode_hebrew_numeral(d["perek"])
+                d["daf_num"] = str(decode_hebrew_numeral(d["daf"])) + ("a" if d["amud"] == 'א' else "b")
                 d["num"] = i + 1
                 try:
-                    d["halacha_num"] = heb_string_to_int(d["halacha"])
+                    d["halacha_num"] = decode_hebrew_numeral(d["halacha"])
                 except KeyError:  # 'halacha': '(ב) ג'
-                    d["halacha_num"] = heb_string_to_int(d["halacha"][-1])
+                    d["halacha_num"] = decode_hebrew_numeral(d["halacha"][-1])
 
                 db[m_collection].insert_one(d)
