@@ -13,12 +13,12 @@ client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)  # (MONGO_ASPAKLARIA_URL)
 db_qf = client.quotations
 
 min_thresh=22
-find_url = "https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/markpsukim"
+find_url = "https://talmudfinder-1-1x.loadbalancer.dicta.org.il/TalmudFinder/api/markpsukim" # PasukFinder
 # parse_url = f"https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/parsetogroups?smin={min_thresh}&smax=10000"
 SLEEP_TIME = 1
 
 sandbox = SEFARIA_SERVER.split(".")[0]
-
+vtitle = Version().load({'title': 'Genesis', 'versionTitle': 'Miqra according to the Masorah'}).versionTitle
 
 def retreive_bold(st):
     return ' '.join([re.sub('<.*?>', '', w) for w in st.split() if '<b>' in w])
@@ -54,7 +54,7 @@ def find_pesukim(base_text, mode="tanakh", thresh=0):
 
 
 def dicta_parse(response_json, min_thresh=22):
-    parse_url = f"https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/parsetogroups?smin={min_thresh}&smax=10000"
+    parse_url = f"https://talmudfinder-1-1x.loadbalancer.dicta.org.il/TalmudFinder/api/parsetogroups?smin={min_thresh}&smax=10000"  # PasukFinder
     result = response_json['results']
     downloadId = response_json["downloadId"]
     allText = response_json["allText"]
@@ -154,8 +154,9 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
                 #     matched = best_match[0] if best_match else matched
                 #     print(f"{Ref(matched['verseDispHeb']).normal()} was chosen")
             pasuk_ref = Ref(matched['verseDispHeb'])
-            matched_pasuk_start = matched['verseiWords'][0]
-            matched_pasuk_end = matched['verseiWords'][-1]
+            # matched_pasuk_start = matched['verseiWords'][0]
+            # matched_pasuk_end = matched['verseiWords'][-1]
+            matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel((matched['verseiWords'][0], matched['verseiWords'][-1]), pasuk_ref)
             # print(re.sub(" ", "_", f'www.sefaria.org/{base_ref.normal()}?lang=he&p2={pasuk_ref.normal()}'))
             matched_wds_base = retreive_bold(result['text'])
             matched_wds_pasuk = retreive_bold(matched['matchedText'])
@@ -185,7 +186,8 @@ def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True)
      "refs": [pasuk_ref.normal(), book_match.normal()],
      "auto": auto,
      "charLevelData": [],
-    "score": match.score
+    "score": match.score,
+     "inline_citation": True
      }
     if generated_by:
         link_json.update({"generated_by": generated_by})
@@ -208,6 +210,30 @@ def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True)
     if link_option[-1]:
         link_json["trivial_ref"] = link_option[-1]
     return link_json, match
+
+
+def wordLevel2charLevel(wordLevelData, pasuk_ref):
+    """
+
+    :param wordLevelData: [startWord, endWord]
+    :param pasuk_ref:
+    :return:
+    """
+    tc = TextChunk(pasuk_ref, lang='he', vtitle=vtitle)
+    pasuk_words = re.split('[\s־]', re.sub('<.*?>', '', tc.text))
+    word_char_tuples = []
+    end = None
+    for w in pasuk_words:
+        if w == '|':
+            end+=2
+            continue
+        start = end+1 if end else 0
+        end = start + len(w)
+        w_chars = (start, end)
+        word_char_tuples.append(w_chars[:])
+    startChar = word_char_tuples[wordLevelData[0]][0]
+    endChar = word_char_tuples[wordLevelData[1]][1]
+    return startChar, endChar
 
 
 def write_to_csv(links, linkMatchs,  filename='quotation_links'):
@@ -356,7 +382,7 @@ def mongo_post(links):
 
 if __name__ == '__main__':
     # range_ref = 'ילקוט שמעוני על התורה, חקת' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
-    range_ref = 'Chatam Sofer on Torah, Pinchas'
+    range_ref = 'Yalkut Shimoni on Torah' #'Chatam Sofer on Torah, Pinchas'
     range_name = range_ref
     f = open(f"intraTanakhLinks_{range_name}.txt", "a+")  # not the right place to open this for the other functions. read doc.
     f.write(range_name)
@@ -367,7 +393,7 @@ if __name__ == '__main__':
     ys_pairs = [(item[1], item[0]) for b in ys for item in b]
     ys_pairs_dict = dict([(r.normal(), item[1]) for item in ys_pairs if item[0] for r in item[0].all_segment_refs()])
     mapping = get_version_mapping(Version().load({'title': 'Yalkut Shimoni on Torah', 'versionTitle': 'Yalkut Shimoni on Torah'}))
-    for seg in list(mapping.keys())[111:113]:
+    for seg in list(mapping.keys())[4286:4287]:#[895:1925]:
         links = dicta_links_from_ref(seg, post=True, min_thresh=22, prioraty_tanakh_chunk=ys_pairs_dict.get(seg, None))
     #
     # pear = (Ref('פרשת חקת'), Ref('ילקוט שמעוני על התורה, חקת'))
