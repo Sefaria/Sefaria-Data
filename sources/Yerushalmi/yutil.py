@@ -10,7 +10,7 @@ import openpyxl
 import functools
 from sefaria.model import *
 from sefaria.settings import *
-from sefaria.utils.hebrew import heb_string_to_int
+from sefaria.utils.hebrew import heb_string_to_int, int_to_heb
 from sefaria.datatype.jagged_array import JaggedTextArray
 
 
@@ -20,11 +20,14 @@ jtindxes = ["JTmock " + x for x in mesechtot]
 g_version = "Guggenheimer"
 g_collection = "g_segs"
 
-m_version = "Mehon-Mamre"
 m_collection = "mm_paras"
+
+v_version = "Venice"
+v_collection = "v_columns"
 
 comp_collection = "comparison"
 
+from sefaria.settings import *
 
 def connect():
     client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)
@@ -32,27 +35,38 @@ def connect():
 
 
 class MishnahAlignment(object):
-    working_dir = "./comparison"
 
-    def __init__(self, mesechet, perek, halacha, initial_latest_page=None):
+    def __init__(self, valign_obj, mesechet, perek, halacha):
         self.mesechet = mesechet
         self.perek = int(perek)
         self.halacha = int(halacha)
+        self.valign_obj = valign_obj
+        self.working_dir = valign_obj.working_dir  # "./comparison"
 
-        self._raw_comparison_data = None        # mfirst
-        self._g2m_map = None
-        self._m2g_map = None
+        self.a = self._process_version(valign_obj.v_a)  # name, records, ja, text
+        self.b = self._process_version(valign_obj.v_b)
 
-        self.g_records = self._get_records_from_db(g_collection)
-        self.g_ja = AnnotatedJTA([r["content"] for r in self.g_records])
-        self.g_text = self.g_ja.flatten_to_string()
+        self._raw_comparison_data = None        # mfirst   #v1first
+        self._b2a_map = None
+        self._a2b_map = None
+        self.a_according_to_b = []
 
-        self.m_records = self._get_records_from_db(m_collection)
-        self.m_ja = AnnotatedJTA([html.escape(r["content"]) for r in self.m_records])
-        self.m_text = self.m_ja.flatten_to_string()
-        self.m_according_to_g = []
-        self._mark_mm_pages(initial_latest_page)
+        self._mark_a()
 
+    def _process_version(self, v):
+        records = self._get_records_from_db(v.collection)
+        if v.needs_escaping:
+            raw_content = [html.escape(r["content"]) for r in records]
+        else:
+            raw_content = [r["content"] for r in records]
+        ja = AnnotatedJTA(raw_content)
+
+        return {
+            "name": v.name,
+            "records": records,
+            "ja": ja,
+            "text": ja.flatten_to_string()
+        }
 
     def _get_records_from_db(self, collection):
         db = connect()
@@ -62,33 +76,33 @@ class MishnahAlignment(object):
                                          }).sort("num", pymongo.ASCENDING)
         return [r for r in records]
 
-    def _mark_mm_pages(self, latest_page = None):
-        latest_page = latest_page or self.m_records[0]["daf_num"]
-        for i, r in enumerate(self.m_records):
+    def get_latest_a_mark(self):
+        return self.a["records"][-1]["daf_num"]
+
+    def _mark_a(self):
+        latest_page = self.valign_obj.latest_a_mark
+        for i, r in enumerate(self.a["records"]):
             if r["daf_num"] == latest_page:
                 continue
             latest_page = r["daf_num"]
-            self.m_ja.add_marker_before(i, latest_page)
+            self.a["ja"].add_marker_before(i, latest_page)
 
     def xlsx_file(self):
-        return f"{self.working_dir}/{self.mesechet}.{self.perek}.{self.halacha}-comp.xlsx"
+        return f"{self.working_dir}/{self.mesechet}.{self.perek}.{self.halacha}-comp-{self.a['name']}-{self.b['name']}.xlsx"
 
     def run_compare(self):
         part = f"{self.mesechet}.{self.perek}.{self.halacha}"
         print(f"Comparing {part}")
-        m_file = f"{self.working_dir}/{part}-m.txt"
-        g_file = f"{self.working_dir}/{part}-g.txt"
+        a_file = f"{self.working_dir}/{part}-{self.a['name']}.txt"
+        b_file = f"{self.working_dir}/{part}-{self.b['name']}.txt"
 
-        with open(m_file, 'w') as f:
-            f.write(self.m_text)
+        with open(a_file, 'w') as f:
+            f.write(self.a["text"])
 
-        with open(g_file, 'w') as f:
-            f.write(self.g_text)
+        with open(b_file, 'w') as f:
+            f.write(self.b["text"])
 
-        self.dicta_compare(m_file, g_file, self.xlsx_file())
-
-    #f1:
-    # result_file: f"/./comparison/{file_id}.xlsx"
+        self.dicta_compare(a_file, b_file, self.xlsx_file())
 
     def dicta_compare(self, fn1, fn2, result_fn):
 
@@ -133,11 +147,11 @@ class MishnahAlignment(object):
         filename = self.xlsx_file()
         workbook = openpyxl.load_workbook(filename)
         sheet = workbook.active
-        mfirst = "-m" in sheet["A1"].value
-        self._raw_comparison_data = [[c.value for c in r] if mfirst else [c.value for c in r[::-1]] for r in sheet.iter_rows(min_row=2, max_col=2)]
+        afirst = self.a['name'] in sheet["A1"].value        # Presumes that one name isn't a subset of other
+        self._raw_comparison_data = [[c.value for c in r] if afirst else [c.value for c in r[::-1]] for r in sheet.iter_rows(min_row=2, max_col=2)]
 
-        self._g2m_map = {0: 0}
-        self._m2g_map = {0: 0}
+        self._b2a_map = {0: 0}
+        self._a2b_map = {0: 0}
         g_word_count = m_word_count = 0
         for row in self._raw_comparison_data:
             mword = row[0]
@@ -148,27 +162,27 @@ class MishnahAlignment(object):
             glength = 0 if gword is None else len(re.split(r"[\s\u05be]+", gword))        # Same logic as used to split words in JA
             g_word_count += glength
 
-            self._g2m_map[g_word_count] = m_word_count
-            self._m2g_map[m_word_count] = g_word_count
+            self._b2a_map[g_word_count] = m_word_count
+            self._a2b_map[m_word_count] = g_word_count
 
-    def m2g(self, m):
-        return self._m2g_map[m]
+    def a2b(self, m):
+        return self._a2b_map[m]
 
-    def g2m(self, g):
-        return self._g2m_map[g]
+    def b2a(self, g):
+        return self._b2a_map[g]
 
-    def get_m_according_to_g(self):
-        m_text_array = re.split(r"[\s\u05be]+", self.m_text)
+    def get_a_according_to_b(self):
+        a_text_array = re.split(r"[\s\u05be]+", self.a["text"])
         try:
-            m_ends = [self.g2m(l) for l in self.g_ja.accumulated_lengths] + [None]
+            a_ends = [self.b2a(l) for l in self.b["ja"].accumulated_lengths] + [None]
         except KeyError as e:
             print(f"{self.mesechet}.{self.perek}.{self.halacha}")
             print(e)
             raise
 
-        m_begins = [0] + m_ends[:-1]
-        self.m_according_to_g = [" ".join(m_text_array[s:f]) for s, f in zip(m_begins, m_ends)]  # This won't work for Guggenheimer, where there's makaf
-        return self.m_according_to_g
+        a_begins = [0] + a_ends[:-1]
+        self.a_according_to_b = [" ".join(a_text_array[s:f]) for s, f in zip(a_begins, a_ends)]  # This won't work for Guggenheimer, where there's makaf
+        return self.a_according_to_b
 
     def save_comparison_data(self):
         d = {
@@ -176,12 +190,91 @@ class MishnahAlignment(object):
             "halacha_num": self.halacha,
             "mesechet": self.mesechet,
             "raw_comparison": self._raw_comparison_data,
-            "m2g": self._m2g_map,
-            "g2m": self._g2m_map,
-            "m_according_to_g": self.m_according_to_g,
+            "a": self.a["name"],
+            "b": self.b["name"],
+            "a2b": self._a2b_map,
+            "b2a": self._b2a_map,
+            "a_according_to_b": self.a_according_to_b,
         }
         db = connect()
         db[comp_collection].insert_one(d)
+
+
+class JVersion(object):
+    def __init__(self, name, collection, needs_escaping=False):
+        self.name = name
+        self.collection = collection
+        self.needs_escaping = needs_escaping
+
+gugg = JVersion("Gugg", "g_segs", needs_escaping=False)
+mm = JVersion("Machon", "mm_paras", needs_escaping=True)
+venice = JVersion("Venice", "v_columns", needs_escaping=False)
+
+
+class VersionAlignment(object):
+    def __init__(self, working_dir, v_a, v_b):
+        self.working_dir = working_dir
+        self.v_a = v_a
+        self.v_b = v_b
+        self.errors = []
+        self.latest_a_mark = None
+
+    def make_version_obj(self, index_title, new_version_title, new_version_source, content):
+        Version({
+            "language": "he",
+            "title": index_title,
+            "versionSource": new_version_source,
+            "versionTitle": new_version_title,
+            "chapter": content
+        }).save()
+
+    def generate_comparisons(self):
+        for mesechet, index in [q for q in zip(mesechtot, jtindxes)]:
+            base_ref = Ref(index)  # text is depth 3.
+
+            for perek in base_ref.all_subrefs():
+                perek_num = int(perek.normal_section(0))
+
+                for halacha in perek.all_subrefs():
+                    halacha_num = int(halacha.normal_section(1))
+
+                    try:
+                        ma = MishnahAlignment(self, mesechet, perek_num, halacha_num)
+                        ma.run_compare()
+                    except IndexError:
+                        self.errors += [f"*** Failed to align {mesechet} {perek_num}:{halacha_num}"]
+                    except Exception as e:
+                        self.errors += [f"*** {str(e)} *** {mesechet} {perek_num}:{halacha_num}"]
+
+    def create_new_versions(self, new_version_title, new_version_source):
+        for mesechet, index in [q for q in zip(mesechtot, jtindxes)]:
+            base_ref = Ref(index)  # text is depth 3.
+            self.latest_a_mark = None
+            version_content = []
+
+            for perek in base_ref.all_subrefs():
+                perek_num = int(perek.normal_section(0))
+                perek_content = []
+
+                for halacha in perek.all_subrefs():
+                    halacha_num = int(halacha.normal_section(1))
+
+                    try:
+                        ma = MishnahAlignment(self, mesechet, perek_num, halacha_num)
+                        self.latest_a_mark = ma.get_latest_a_mark()
+                        ma.import_xlsx()
+                        perek_content += [ma.get_a_according_to_b()]
+                    except FileNotFoundError:
+                        perek_content += [[]]
+                        self.errors += [f"Missing {halacha.normal()}"]
+                    except (KeyError, IndexError):
+                        perek_content += [[]]
+                        self.errors += [f"Mis-alignment of {halacha.normal()}"]
+
+                version_content += [perek_content]
+
+            print(f"Creating {mesechet}")
+            self.make_version_obj(index, new_version_title, new_version_source, version_content)
 
 
 class AnnotatedJTA(JaggedTextArray):
@@ -233,6 +326,87 @@ def load_guggenheimer_data():
                 db[g_collection].insert_one(d)
 
 
+def load_venice_data():
+    db = connect()
+    db[v_collection].delete_many({})
+
+    html_dir = 'Venice'
+    input_files = [f for f in os.listdir(html_dir) if f.endswith('txt')]
+
+    '''  Double header_pattern
+    תלמוד ירושלמי (ונציה) מסכת בבא מציעא פרק א דף ז טור ד /מ"ב
+
+    תלמוד ירושלמי (ונציה) מסכת בבא מציעא פרק א דף ז טור ד /מ"ב
+    '''
+    # ('יומא', 'ד', 'מא', 'ג', 'ה"א')  Results of split
+
+
+    header_pattern = "תלמוד ירושלמי \(ונציה\) מסכת" + " (.+) " + "פרק" + " (.+) " + "דף" + " (.+) " + "טור" + " (.+) " + "/" + "(.+)" + r"[\n\s]+"
+    page_pattern = re.compile(header_pattern + header_pattern)
+
+    # Section
+    # /ה"ג/  Three spaces preceed, one follows
+    #  /מי"א/ /מ"ז/  Two spaces precede mishnah, one follows
+    section_pattern = re.compile("/" + "([מה])" + '([\u05d0-\u05ea"]+)' + "/")
+
+    for file in input_files:
+        with open(os.path.join(html_dir, file)) as fp:
+            mesechet = Ref(file.replace(".txt", "")).normal().replace("Mishnah ", "")
+            print(mesechet)
+
+            def key_pages(d):
+                # d: mesechet, perek, daf, tur, segment, mesechet, perek, daf, tur, segment, content
+                # Generate dict from item i with list d
+                # Get's mesechet from outer loop
+                section_type_letter = d[4][0]       # מ or ה
+                section_num = heb_string_to_int(d[4][1:].replace('"', ''))
+                return {
+                    "mesechet": mesechet,
+                    "perek": d[1],
+                    "perek_num": heb_string_to_int(d[1]),
+                    "daf": d[2],
+                    "daf_num": heb_string_to_int(d[2]),
+                    "tur": d[3],
+                    "tur_num": heb_string_to_int(d[3]),
+                    "content": d[10].strip(),
+                    "eng_type":  "Mishna" if section_type_letter == "מ" else "Halacha",
+                    "section_num": section_num
+                }
+
+            def chunks(lst, n):
+                """Yield successive n-sized chunks from lst."""
+                for i in range(0, len(lst), n):
+                    yield lst[i:i + n]
+
+            content = fp.read()
+            result = page_pattern.split(content)[1:]     # Trim off initial blank value
+            pages = map(key_pages, chunks(result, 11))
+            run_num = 0
+            for page in pages:
+                section_list = section_pattern.split(page["content"])
+                if section_list[0]:
+                    # First one will use all metadata from the page object, later ones will replace mishnah / halacha
+                    run_num += 1
+                    first_section = page.copy()
+                    first_section["content"] = section_list[0].strip()
+                    first_section["num"] = run_num
+                    if first_section["eng_type"] == "Halacha":              # For portability of comparison code
+                        first_section["halacha_num"] = first_section["section_num"]
+                    db[v_collection].insert_one(first_section)
+
+                for l in chunks(section_list[1:], 3):
+                    run_num += 1
+                    section_d = page.copy()
+                    section_d["eng_type"] = "Mishna" if l[0] == "מ" else "Halacha"
+                    section_d["section_num"] = heb_string_to_int(l[1].replace('"',''))
+                    if section_d["eng_type"] == "Halacha":                  # For portability of comparison code
+                        section_d["halacha_num"] = section_d["section_num"]
+                    section_d["content"] = l[2].strip()
+                    section_d["num"] = run_num
+                    db[v_collection].insert_one(section_d)
+
+
+
 def load_machon_mamre_data():
     db = connect()
     db[m_collection].delete_many({})
@@ -244,7 +418,6 @@ def load_machon_mamre_data():
     for file in input_files:
         with open(os.path.join(html_dir, file)) as fp:
             # Load raw data
-            paras = []
             mesechet = Ref(file.replace(".html", "")).normal().replace("Mishnah ","")
             soup = bs4.BeautifulSoup(fp, 'lxml')
             headings = soup.select("div p b")

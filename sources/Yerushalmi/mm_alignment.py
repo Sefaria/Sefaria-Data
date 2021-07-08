@@ -29,6 +29,7 @@ for err in errors:
     print(err)
 '''
 
+"""
 def make_version_obj(index_title, chapter):
     return {
         "language": "he",
@@ -52,7 +53,7 @@ for mesechet, index in [q for q in zip(yutil.mesechtot, yutil.jtindxes)]:
             try:
                 ma = yutil.MishnahAlignment(mesechet, perek_num, halacha_num)
                 ma.import_xlsx()
-                perek_content += [ma.get_m_according_to_g()]
+                perek_content += [ma.get_a_according_to_b()]
             except FileNotFoundError:
                 perek_content += [[]]
                 print(f"Missing {halacha.normal()}")
@@ -65,7 +66,7 @@ for mesechet, index in [q for q in zip(yutil.mesechtot, yutil.jtindxes)]:
     print(f"Creating {mesechet}")
     Version(make_version_obj(index, version_content)).save()
 
-
+"""
 
 # For each Mesechet / Perek / Halacha
 # Get segment / word count for each side
