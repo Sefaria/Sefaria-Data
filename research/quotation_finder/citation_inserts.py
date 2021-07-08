@@ -56,27 +56,45 @@ def get_segment(ref, score=22, link_source=None):
         return {}
     return {ref.normal(): text_w_citations}
 
-def ciation_inline_placing(link, base_ref):
-
+def get_place(link, seg_text_list):
+    place = link.charLevelData[1]['endChar']
+    search_here = ''.join(seg_text_list[place:min(place+10, len(seg_text_list))]).replace(dummy_char, ' ')
+    match_gomer = re.match(""".*וגו('|")?""", search_here)
+    if match_gomer:
+        move = len(match_gomer.group())
+        place = place + move
     return place
 
-def get_place_citation(link, color_score=None):
+
+def test_word_char_level(link, citation):
+    pasuk_chars = list(re.sub('\s+', dummy_char, Ref(link.refs[0]).text('he').text))
+    start =link.charLevelData[0]['startWord']
+    end = link.charLevelData[0]['endWord']
+    words_list = pasuk_chars[start: end]
+    words = ''.join(words_list)
+    words = words.replace(dummy_char, ' ')
+    citation = f'{citation}<sup>{words}</sup>'
+    return citation
+
+
+def get_citation(link, color_score=None):
     # the following 2 assumptions about the placing in the refs list and the charLevelData list are based on the link testing\and changing if needed in add_citations link. we can make here another assertion but that seems redundant
     pasuk_ref = Ref(link.refs[0])
-    place = link.charLevelData[1]['endChar']
+    # place = link.charLevelData[1]['endChar']
     citation = f"{dummy_char}({pasuk_ref.normal('he')})"  # {dummy_char}"
-    if color_score:
-        if color_score[0] < link.score < color_score[1]:
-            color = 1  # orange
-        elif color_score[1] <= link.score < color_score[2]:
-            color = 2  # green
-        elif color_score[2] <= link.score:
-            color = 3  # blue
-        else:
-            return []
-        citation = f'<span class="ref-link-color-{color}">{citation}</span>'
-        # citation = f'<sup><span class="ref-link-color-{color}">*</span></sup><i class="footnote">{citation}</i>'
-    return [(place, citation)]
+    # if color_score:
+    #     if color_score[0] < link.score < color_score[1]:
+    #         color = 1  # orange
+    #     elif color_score[1] <= link.score < color_score[2]:
+    #         color = 2  # green
+    #     elif color_score[2] <= link.score:
+    #         color = 3  # blue
+    #     else:
+    #         return []
+    #     citation = f'<span class="ref-link-color-{color}">{citation}</span>'
+    #     # citation = f'<sup><span class="ref-link-color-{color}">*</span></sup><i class="footnote">{citation}</i>'
+    # citation = test_word_char_level(link, citation)
+    return citation
 
 
 def to_be_embedded(ls, lls, seg_text_list, book_ref):
@@ -150,7 +168,10 @@ def add_citations(lls, seg_text_list, book_ref):
             l.charLevelData.reverse()
         # todo: before placing the citation in, check what the text looks like, are there other citations or shamas inline already? is this a dh? or is there a diffrenet reason we don't want to add this l link?
           # or do we want to add it but in a different place?
-        seg_citation_list = get_place_citation(l, color_score=[22, 30, 50])
+        # seg_citation_list = get_place_citation(l, color_score=[22, 30, 50])
+        place = get_place(l, seg_text_list)
+        citation = get_citation(l, color_score=[22,30,50])
+        seg_citation_list = [(place, citation)]
         citation_list.extend(seg_citation_list)
     citation_list.sort()
     for p, c in citation_list:
@@ -191,7 +212,7 @@ def order_links_by_segments(links): #, base_book_title):
 
 if __name__ == '__main__':
     new_texts_dict = dict()
-    range_ref = Ref('Yalkut_Shimoni_on_Torah.62.20-82.10')
+    range_ref = Ref('Yalkut Shimoni on Torah 907:5')  # 'Yalkut_Shimoni_on_Torah.783.3'
     # links = get_links_from_file('Ramban_on_Numbers.31.23.json')
     # link_dict = order_links_by_segments(links)  #,"Selichot_Nusach_Ashkenaz_Lita")
     for r in range_ref.all_segment_refs():
