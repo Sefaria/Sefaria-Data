@@ -553,9 +553,10 @@ def delete_irrelevant_disambiguator_links(dryrun=True):
     irrelevant_links = []
     ls = LinkSet({"generated_by": "link_disambiguator", "auto": True})
     for link in tqdm(ls, total=ls.count()):
-        source_tref, quoted_tref = link.refs if Ref(link.refs[1]).primary_category in {'Talmud', 'Tanakh'} else reversed(link.refs)
+        source_tref, quoted_tref = link.refs if Ref(link.refs[1]).primary_category == 'Talmud' else reversed(link.refs)
         source_oref = Ref(source_tref)
         quoted_oref= Ref(quoted_tref)
+        if quoted_oref.primary_category != 'Talmud': continue
         source_tc = _tc_cache.get(source_tref, make_tc(source_tref, source_oref))
         if len(source_tc.text) == 0 or isinstance(source_tc.text, list):
             snippets = None
