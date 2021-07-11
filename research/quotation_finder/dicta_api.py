@@ -119,8 +119,8 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
     for base_ref in base_refs:
         trivial_ref = None
         if offline:
-            base_text = offline[0][base_ref]
-            parsed_results = offline[1][base_ref]
+            base_text = offline[0][base_ref.normal()]
+            parsed_results = offline[1][base_ref.normal()]
         else:
             base_text = base_ref.text('he').text
 
@@ -131,6 +131,9 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             parsed_results = dicta_parse(response_json, min_thresh=min_thresh)
         dh_res = [res for res in parsed_results if res['startIChar'] <= 10]
         for result in parsed_results:
+            result['matches'] = [m for m in result['matches'] if m['mode'] == 'Tanakh']
+            if not result['matches']:
+                continue
             result['matches'].sort(key=lambda x: x['score'])
             matched = result['matches'][-1]
             # matched_pasuks = [match['verseDispHeb'] for match in result['matches']]
@@ -157,6 +160,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             # matched_pasuk_start = matched['verseiWords'][0]
             # matched_pasuk_end = matched['verseiWords'][-1]
             matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel((matched['verseiWords'][0], matched['verseiWords'][-1]), pasuk_ref)
+
             # print(re.sub(" ", "_", f'www.sefaria.org/{base_ref.normal()}?lang=he&p2={pasuk_ref.normal()}'))
             matched_wds_base = retreive_bold(result['text'])
             matched_wds_pasuk = retreive_bold(matched['matchedText'])
@@ -225,15 +229,23 @@ def wordLevel2charLevel(wordLevelData, pasuk_ref):
     end = None
     for w in pasuk_words:
         if w == '|':
-            end+=2
+            end += 1
             continue
         start = end+1 if end else 0
         end = start + len(w)
         w_chars = (start, end)
         word_char_tuples.append(w_chars[:])
     startChar = word_char_tuples[wordLevelData[0]][0]
-    endChar = word_char_tuples[wordLevelData[1]][1]
+    try:
+        endChar = word_char_tuples[wordLevelData[1]][1]
+    except IndexError:
+        endChar = word_char_tuples[-1][1]
+        print(f"IndexError, pasuk: {pasuk_ref.normal()}")
     return startChar, endChar
+
+
+def validate_wordLevel2charLevel():
+    assert True
 
 
 def write_to_csv(links, linkMatchs,  filename='quotation_links'):
@@ -313,10 +325,10 @@ def post_links_from_file(file_name, score=22, server=SEFARIA_SERVER):
     post_link(links_to_post, server=server)
 
 
-def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, prioraty_tanakh_chunk=None):
+def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, prioraty_tanakh_chunk=None, offline=None):
     oref = Ref(tref)
     base_refs = oref.all_segment_refs()
-    link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh, prioraty_tanakh_chunk=prioraty_tanakh_chunk)
+    link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh, prioraty_tanakh_chunk=prioraty_tanakh_chunk, offline=offline)
     if not link_options:
         print("no links found")
         return
@@ -382,23 +394,25 @@ def mongo_post(links):
 
 if __name__ == '__main__':
     # range_ref = 'ילקוט שמעוני על התורה, חקת' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
-    range_ref = 'Yalkut Shimoni on Torah' #'Chatam Sofer on Torah, Pinchas'
+    range_ref = 'Tzror HaMor on Torah, Genesis'#'Yalkut Shimoni on Torah' #'Chatam Sofer on Torah, Pinchas'
     range_name = range_ref
     f = open(f"intraTanakhLinks_{range_name}.txt", "a+")  # not the right place to open this for the other functions. read doc.
     f.write(range_name)
     # links = link_a_parashah_node_struct_index(range_name, onlyDH=False, post=True)
     # pear = (Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך")) #(Ref('Numbers 13:1-15:41'), Ref('Yalkut Shimoni on Torah 742'))  # :7-750:13 ( Ref('פרשת שלח'), Ref("ילקוט שמעוני על התורה, שלח לך"))
 
-    ys = get_zip_ys()
-    ys_pairs = [(item[1], item[0]) for b in ys for item in b]
-    ys_pairs_dict = dict([(r.normal(), item[1]) for item in ys_pairs if item[0] for r in item[0].all_segment_refs()])
-    mapping = get_version_mapping(Version().load({'title': 'Yalkut Shimoni on Torah', 'versionTitle': 'Yalkut Shimoni on Torah'}))
-    for seg in list(mapping.keys())[4286:4287]:#[895:1925]:
-        links = dicta_links_from_ref(seg, post=True, min_thresh=22, prioraty_tanakh_chunk=ys_pairs_dict.get(seg, None))
+    # ys = get_zip_ys()
+    # ys_pairs = [(item[1], item[0]) for b in ys for item in b]
+    # ys_pairs_dict = dict([(r.normal(), item[1]) for item in ys_pairs if item[0] for r in item[0].all_segment_refs()])
+    # mapping = get_version_mapping(Version().load({'title': 'Yalkut Shimoni on Torah', 'versionTitle': 'Yalkut Shimoni on Torah'}))
+    # for seg in list(mapping.keys())[4286:4287]:  # [895:1925]:
+    #     links = dicta_links_from_ref(seg, post=True, min_thresh=22, prioraty_tanakh_chunk=ys_pairs_dict.get(seg, None))
     #
     # pear = (Ref('פרשת חקת'), Ref('ילקוט שמעוני על התורה, חקת'))
     # links = get_links_ys(pear, post=True)
-    # links = dicta_links_from_ref(f'{range_ref}', post=True, min_thresh=22, prioraty_tanakh_chunk=Ref('פרשת פנחס'))
+    text_mapping = get_links_from_file("Tzror_HaMor_on_Torah.json")
+    dicta_results_mapping = get_links_from_file("dicta_answers/Tzror_HaMor_on_Torah.json")
+    links = dicta_links_from_ref(f'{range_ref}', post=False, min_thresh=22, prioraty_tanakh_chunk=Ref('בראשית'), offline=[text_mapping, dicta_results_mapping])
     f.close()
     # post_links_from_file("Numbers 13:1-15:41/ys_links.txt", score=10)
 
