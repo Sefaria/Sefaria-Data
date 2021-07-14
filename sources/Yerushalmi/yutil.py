@@ -311,14 +311,14 @@ class TaggedTextBlock(object):
             "content": p,
             "type": next(typer)
         } for p in self.tag_pattern.split(self._raw_content)]
-        parts = [p for p in parts if p["content"]]  # Remove blanks in between/before/after tags
+        parts = [p for p in parts if p["content"]]  # Remove nulls in between/before/after tags
         running_length = 0
         for p in parts:
             if p["type"] == "text":
                 p["start"] = running_length
 
-                white_start = re.search("^\s+", p["content"])
-                white_end = re.search("\s+$", p["content"])
+                white_start = re.search(r"^\s+", p["content"])
+                white_end = re.search(r"\s+$", p["content"]) if not re.match(r"^\s+$", p["content"]) else None
                 p["white_start"] = white_start.group() if white_start else ""
                 p["white_end"] = white_end.group() if white_end else ""
                 p["content"] = p["content"].strip()
@@ -333,15 +333,15 @@ class TaggedTextBlock(object):
         return parts
 
 
-    def insert_tag_after_word(self, after_word_num, tag, attrs):
+    def insert_tag_after_word(self, insert_position, tag, attrs):
         """
 
-        :param after_word_num: 0 means at the beginning
+        :param insert_position: After which word number to insert tag.  0 means at the beginning.  1 means after first word.
         :param tag:
         :param attrs:
         :return:
         """
-        attr_string = " ".join([f"{a} = '{b}'" for a, b in attrs.items()])
+        attr_string = " ".join([f"{a}='{b}'" for a, b in attrs.items()])
         open_tag = {
             "content": f"<{tag} {attr_string}>",
             "type": "tag"
@@ -352,37 +352,38 @@ class TaggedTextBlock(object):
         }
 
         # Find the right part
-        part_indx = [i for i, p in enumerate(self._parts) if p["start"] < after_word_num < p["end"]][0]
+        part_indx = [i for i, p in enumerate(self._parts) if p["type"] == "text" and p["start"] < insert_position < p["end"]][0]
         initial_part = self._parts[part_indx]
 
-        split_pos = after_word_num - initial_part["start"]
-        first_content = initial_part["content"][:split_pos]
-        second_content = initial_part["content"][split_pos:]
+        split_pos = insert_position - initial_part["start"]
+        first_content_word_array = initial_part["word_array"][:split_pos]
+        second_content_word_array = initial_part["word_array"][split_pos:]
 
         # cut the part into two
         first_part = {
             "type": "text",
-            "word_array": first_content,
-            "content": " ".join(first_content),
+            "word_array": first_content_word_array,
+            "content": " ".join(first_content_word_array),
             "start": initial_part["start"],
             "word_count": split_pos,
-            "end": initial_part["start"] + split_pos,
+            "end": insert_position,
             "white_start": initial_part["white_start"],
             "white_end": " "
         }
         second_part = {
             "type": "text",
-            "word_array": second_content,
-            "content": " ".join(second_content),
-            "start": initial_part["start"] + split_pos,
-            "word_count": len(second_content),
+            "word_array": second_content_word_array,
+            "content": " ".join(second_content_word_array),
+            "start": insert_position,
+            "word_count": len(second_content_word_array),
             "end": initial_part["end"],
             "white_start": "",
             "white_end": initial_part["white_end"]
         }
 
         # insert tags in between
-        self._parts = self._parts[:part_indx - 1] + [first_part, open_tag, close_tag, second_part] + self._parts[part_indx:]
+        self._parts = [] if part_indx == 0 else self._parts[:part_indx]
+        self._parts +=[first_part, open_tag, close_tag, second_part] + self._parts[part_indx+1:]
         return self
 
     def as_text(self):
