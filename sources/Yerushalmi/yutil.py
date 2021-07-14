@@ -8,6 +8,7 @@ import pymongo
 import requests
 import openpyxl
 import functools
+from itertools import cycle
 from sefaria.model import *
 from sefaria.settings import *
 from sefaria.utils.hebrew import decode_hebrew_numeral, encode_small_hebrew_numeral
@@ -27,19 +28,30 @@ v_collection = "v_columns"
 
 comp_collection = "comparison"
 
-from sefaria.settings import *
 
 def connect():
     client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)
     return client["yerushalmi_work"]
 
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+word_split_re = re.compile(r"\s+")
+def word_count(s):
+    return len(word_split_re.split(s.strip()))
+
+
 class MishnahAlignment(object):
 
-    def __init__(self, valign_obj, mesechet, perek, halacha):
+    def __init__(self, valign_obj, mesechet, perek, halacha, skip_mishnah=False):
         self.mesechet = mesechet
         self.perek = int(perek)
         self.halacha = int(halacha)
+        self.skip_mishnah = skip_mishnah    # Only align talmud/halacha sections
         self.valign_obj = valign_obj
         self.working_dir = valign_obj.working_dir  # "./comparison"
 
@@ -70,10 +82,15 @@ class MishnahAlignment(object):
 
     def _get_records_from_db(self, collection):
         db = connect()
-        records = db[collection].find({"mesechet": self.mesechet,
-                                         "perek_num": self.perek,
-                                         "halacha_num": self.halacha
-                                         }).sort("num", pymongo.ASCENDING)
+        query = {"mesechet": self.mesechet,
+                 "perek_num": self.perek,
+                 "halacha_num": self.halacha
+                 }
+
+        if self.skip_mishnah:
+            query["eng_type"] = "Talmud"
+
+        records = db[collection].find(query).sort("num", pymongo.ASCENDING)
         return [r for r in records]
 
     def get_latest_a_mark(self):
@@ -155,11 +172,11 @@ class MishnahAlignment(object):
         g_word_count = m_word_count = 0
         for row in self._raw_comparison_data:
             mword = row[0]
-            mlength = 0 if mword is None else len(re.split(r"[\s\u05be]+", mword))        # Same logic as used to split words in JA
+            mlength = 0 if mword is None else len(word_split_re.split(mword))        # Same logic as used to split words in JA
             m_word_count += mlength
 
             gword = row[1]
-            glength = 0 if gword is None else len(re.split(r"[\s\u05be]+", gword))        # Same logic as used to split words in JA
+            glength = 0 if gword is None else len(word_split_re.split(mword))        # Same logic as used to split words in JA
             g_word_count += glength
 
             self._b2a_map[g_word_count] = m_word_count
@@ -172,7 +189,7 @@ class MishnahAlignment(object):
         return self._b2a_map[g]
 
     def get_a_according_to_b(self):
-        a_text_array = re.split(r"[\s\u05be]+", self.a["text"])
+        a_text_array = word_split_re.split(self.a["text"])
         try:
             a_ends = [self.b2a(l) for l in self.b["ja"].accumulated_lengths] + [None]
         except KeyError as e:
@@ -212,12 +229,13 @@ venice = JVersion("Venice", "v_columns", needs_escaping=False)
 
 
 class VersionAlignment(object):
-    def __init__(self, working_dir, v_a, v_b):
+    def __init__(self, working_dir, v_a, v_b, skip_mishnah=False):
         self.working_dir = working_dir
         self.v_a = v_a
         self.v_b = v_b
         self.errors = []
         self.latest_a_mark = None
+        self.skip_mishnah = skip_mishnah
 
     def make_version_obj(self, index_title, new_version_title, new_version_source, content):
         Version({
@@ -239,7 +257,7 @@ class VersionAlignment(object):
                     halacha_num = int(halacha.normal_section(1))
 
                     try:
-                        ma = MishnahAlignment(self, mesechet, perek_num, halacha_num)
+                        ma = MishnahAlignment(self, mesechet, perek_num, halacha_num, self.skip_mishnah)
                         ma.run_compare()
                     except IndexError:
                         self.errors += [f"*** Failed to align {mesechet} {perek_num}:{halacha_num}"]
@@ -277,6 +295,107 @@ class VersionAlignment(object):
             self.make_version_obj(index, new_version_title, new_version_source, version_content)
 
 
+class TaggedTextBlock(object):
+    """
+    רִבִּי יוּדָן בְּעָא. כְּמָאן דְּאָמַר. הוּא אֵינוֹ חַייָב עַל הַחֲלִיצָה אֲבָל חַייָב הוּא עַל הַצָּרָה. חֲלִיצָה פְּטוֹר. בִּיאָה פְּטוֹר. כְּמַה דְתֵימַר. חָלַץ לָהּ נֶאֶסְרָה לָאַחִין. וְדִכְװָתָהּ בָּא עָלֶיהָ נֶאֶסְרָה לָאַחִין. תַּנֵּי רִבִּי חִייָה. מֵת הָרִאשׁוֹן יְיַבֵּם הַשֵּׁינִי. מֵת הַשֵּׁינִי יְיַבֵּם הַשְּׁלִישִׁי. אָמַר רִבִּי יוֹסֵי מַה אַתְּ סָבַר. הִיא חֲלִיצָה הִיא <i data-overlay="Venice Pages" data-value="2d"></i>בִּיאָה. כֵּיוָן שֶׁחָלַץ לָהּ נֶעֶקְרָה הִימֶּינָּה זִיקַת הַמֵּת לְמַפְרֵיעָה. לְמַפְרֵיעָה חָל עָלֶיהָ אִיסּוּרוֹ שֶׁלְּמֵת אֵצֶל הָאַחִין. אֲבָל אִם בָּא עָלֶיהָ אִשְׁתּוֹ הִיא. וְתַנֵּי רִבִּי חִייָה. מֵת הָרִאשׁוֹן יְיַבֵּם הַשֵּׁינִי. מֵת הַשֵּׁינִי יְיַבֵּם הַשְּׁלִישִׁי.
+    """
+    tag_pattern = re.compile(r"(<[^<]+>)")
+
+    def __init__(self, content):
+        self._raw_content = content
+        self._parts = self._decompose()
+
+    def _decompose(self):
+        typer = cycle(["text", "tag"])
+        parts = [{
+            "content": p,
+            "type": next(typer)
+        } for p in self.tag_pattern.split(self._raw_content)]
+        parts = [p for p in parts if p["content"]]  # Remove nulls in between/before/after tags
+        running_length = 0
+        for p in parts:
+            if p["type"] == "text":
+                p["start"] = running_length
+
+                white_start = re.search(r"^\s+", p["content"])
+                white_end = re.search(r"\s+$", p["content"]) if not re.match(r"^\s+$", p["content"]) else None
+                p["white_start"] = white_start.group() if white_start else ""
+                p["white_end"] = white_end.group() if white_end else ""
+                p["content"] = p["content"].strip()
+                words = word_split_re.split(p["content"])
+                word_len = len(words)
+                running_length += word_len
+
+                p["word_array"] = words
+                p["word_count"] = word_len
+                p["end"] = running_length
+
+        return parts
+
+
+    def insert_tag_after_word(self, insert_position, tag, attrs):
+        """
+
+        :param insert_position: After which word number to insert tag.  0 means at the beginning.  1 means after first word.
+        :param tag:
+        :param attrs:
+        :return:
+        """
+        attr_string = " ".join([f"{a}='{b}'" for a, b in attrs.items()])
+        open_tag = {
+            "content": f"<{tag} {attr_string}>",
+            "type": "tag"
+        }
+        close_tag = {
+            "content": f"</{tag}>",
+            "type": "tag"
+        }
+
+        # Find the right part
+        part_indx = [i for i, p in enumerate(self._parts) if p["type"] == "text" and p["start"] < insert_position < p["end"]][0]
+        initial_part = self._parts[part_indx]
+
+        split_pos = insert_position - initial_part["start"]
+        first_content_word_array = initial_part["word_array"][:split_pos]
+        second_content_word_array = initial_part["word_array"][split_pos:]
+
+        # cut the part into two
+        first_part = {
+            "type": "text",
+            "word_array": first_content_word_array,
+            "content": " ".join(first_content_word_array),
+            "start": initial_part["start"],
+            "word_count": split_pos,
+            "end": insert_position,
+            "white_start": initial_part["white_start"],
+            "white_end": " "
+        }
+        second_part = {
+            "type": "text",
+            "word_array": second_content_word_array,
+            "content": " ".join(second_content_word_array),
+            "start": insert_position,
+            "word_count": len(second_content_word_array),
+            "end": initial_part["end"],
+            "white_start": "",
+            "white_end": initial_part["white_end"]
+        }
+
+        # insert tags in between
+        self._parts = [] if part_indx == 0 else self._parts[:part_indx]
+        self._parts +=[first_part, open_tag, close_tag, second_part] + self._parts[part_indx+1:]
+        return self
+
+    def as_text(self):
+        s = ""
+        for p in self._parts:
+            if p["type"] == "tag":
+                s += p["content"]
+            elif p["type"] == "text":
+                s += p["white_start"] + p["content"] + p["white_end"]
+        return s
+
+
 class AnnotatedJTA(JaggedTextArray):
     """
     For our purposes, we're assuming depth 1.
@@ -284,7 +403,7 @@ class AnnotatedJTA(JaggedTextArray):
     def __init__(self, ja=None):
         super(AnnotatedJTA, self).__init__(ja)
         self._store = [TextChunk._strip_itags(_) for _ in self._store]
-        self._lengths = [self._wcnt(seg) for seg in self._store]
+        self._lengths = [word_count(seg) for seg in self._store]
         self.accumulated_lengths = functools.reduce(lambda a,u: a + [u + a[-1]], self._lengths, [0])[1:]    # Add lengths up to get accumulated length.  Slice at end removes initial 0.
         self._markers = [None] * (len(self._store))  # markers for before each segment
 
@@ -369,14 +488,9 @@ def load_venice_data():
                     "tur": d[3],
                     "tur_num": decode_hebrew_numeral(d[3]),
                     "content": d[10].strip(),
-                    "eng_type":  "Mishna" if section_type_letter == "מ" else "Halacha",
+                    "eng_type":  "Mishna" if section_type_letter == "מ" else "Talmud",
                     "section_num": section_num
                 }
-
-            def chunks(lst, n):
-                """Yield successive n-sized chunks from lst."""
-                for i in range(0, len(lst), n):
-                    yield lst[i:i + n]
 
             content = fp.read()
             result = page_pattern.split(content)[1:]     # Trim off initial blank value
@@ -391,7 +505,7 @@ def load_venice_data():
                     first_section = page.copy()
                     first_section["content"] = section_list[0].strip()
                     first_section["num"] = run_num
-                    if first_section["eng_type"] == "Halacha":              # For portability of comparison code
+                    if first_section["eng_type"] == "Talmud":              # For portability of comparison code
                         first_section["halacha_num"] = first_section["section_num"]
                     db[v_collection].insert_one(first_section)
                 else:
@@ -407,14 +521,13 @@ def load_venice_data():
                             page["perek_num"] += 1
                             page["perek"] = encode_small_hebrew_numeral(page["perek_num"])
                     section_d = page.copy()
-                    section_d["eng_type"] = "Mishna" if l[0] == "מ" else "Halacha"
+                    section_d["eng_type"] = "Mishna" if l[0] == "מ" else "Talmud"
                     section_d["section_num"] = decode_hebrew_numeral(l[1].replace('"',''))
-                    if section_d["eng_type"] == "Halacha":                  # For portability of comparison code
+                    if section_d["eng_type"] == "Talmud":                  # For portability of comparison code
                         section_d["halacha_num"] = section_d["section_num"]
                     section_d["content"] = l[2].strip()
                     section_d["num"] = run_num
                     db[v_collection].insert_one(section_d)
-
 
 
 def load_machon_mamre_data():
