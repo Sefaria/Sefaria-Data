@@ -1,11 +1,11 @@
-import django, unicodecsv
+import django, csv
 django.setup()
 
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
 
-with open("scripts/unambiguous_links.json", "rb") as fin:
-    cin = unicodecsv.DictReader(fin)
+with open("data/unambiguous_links.csv", "r") as fin:
+    cin = csv.DictReader(fin)
     count = 0
     for row in cin:
         if count % 1000 == 0:

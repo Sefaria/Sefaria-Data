@@ -378,7 +378,7 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
         # use split_spanning_ref in case where talmud ref is amudless. It's essentially a ranged ref across two amudim
         if len({found_section_normal, found_normal} & {temp_ref.normal() for temp_ref in ref.split_spanning_ref()}) > 0 or ref.normal() == found_normal or ref.normal() == found_section_normal:
             if return_matches:
-                snippets += [match]
+                snippets += [(match, linkified)]
             else:
                 start_snip_naive = match.start(1) - snip_size if match.start(1) >= snip_size else 0
                 start_snip_space = linkified.rfind(" ", 0, start_snip_naive)
@@ -495,8 +495,8 @@ def count_words_map(index):
 
 def post_unambiguous_links(post=False):
     links = []
-    with open(ROOT + "/unambiguous_links.json", "rb") as fin:
-        cin = unicodecsv.DictReader(fin)
+    with open(ROOT + "/unambiguous_links.csv", "r") as fin:
+        cin = csv.DictReader(fin)
         for row in cin:
             link = {"generated_by": "link_disambiguator", "auto": True,
                      "type": "", "refs": [row["Quoting Ref"], row["Quoted Ref"]]}
@@ -510,7 +510,7 @@ def post_unambiguous_links(post=False):
             print(post_link(links[i:i + batch_size]))
             i += batch_size
     else:
-        for link_obj in links:
+        for link_obj in tqdm(links):
             try:
                 Link(link_obj).save()
             except DuplicateRecordError:
@@ -518,11 +518,10 @@ def post_unambiguous_links(post=False):
 
 
 def calc_stats():
-    print('yo')
     books = defaultdict(int)
     cats = defaultdict(int)
-    with open("research/link_disambiguator/unambiguous_links.json", "rb") as fin:
-        cin = unicodecsv.DictReader(fin)
+    with open("research/link_disambiguator/unambiguous_links.json", "r") as fin:
+        cin = csv.DictReader(fin)
         for row in cin:
             try:
                 quoting = Ref(row["Quoting Ref"])
@@ -531,7 +530,7 @@ def calc_stats():
                 cats[quoting.primary_category] += 1
             except InputError:
                 print(row["Quoting Ref"])
-    with codecs.open("research/link_disambiguator/unambiguous_books.json", "wb") as fout:
+    with open("research/link_disambiguator/unambiguous_books.json", "w") as fout:
         books = [list(x) for x in sorted(list(books.items()), key=lambda x: x[1], reverse=True)]
         json.dump({"books": books, "cats": cats}, fout, ensure_ascii=False, indent=2)
 
@@ -576,7 +575,7 @@ def delete_irrelevant_disambiguator_links(dryrun=True):
 
 
 def run():
-    delete_irrelevant_disambiguator_links()  # run before disambiguate_all() to clear out irrelevant links first
+    # delete_irrelevant_disambiguator_links(False)  # run before disambiguate_all() to clear out irrelevant links first
     # ld = Link_Disambiguator()
     # ld.get_ambiguous_segments()
     # disambiguate_all()

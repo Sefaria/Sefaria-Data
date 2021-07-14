@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-import re, json, codecs, unicodecsv, heapq, random, regex, math, cProfile, pstats, time
+import re, json, codecs, csv, heapq, random, regex, math, cProfile, pstats, time
 from collections import defaultdict
 from pymongo.errors import AutoReconnect
+from tqdm import tqdm
 import django
 django.setup()
 from sefaria.model import *
@@ -11,12 +12,8 @@ import sefaria.tracker as tracker
 from sefaria import settings
 from sefaria.system.database import db
 
-"""
-WARNING!!!!!!!!!!!!!
-THERE'S AN ISSUE IN THIS SCRIPT THAT IT CAN POTENTIALLY REPLACE THE WRONG TEXT
-E.G.
-ואל אלהיה ורות א׳:ט״ז׳:ט״זמרה (רות א) עמך עמי וא-ל
-"""
+ROOT = "data"
+# ROOT = "research/link_disambiguator"
 
 def get_tc(tref, just_ref=False, tries=0):
     try:
@@ -37,6 +34,9 @@ def get_tc(tref, just_ref=False, tries=0):
             raise AutoReconnect("Tried so hard but got so many autoreconnects...")
 
 
+"""
+Copied and pasted from main.py to make this file independently runnable. not a great idea...
+"""
 def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=100, use_indicator_words=False, return_matches=False):
     """
     based off of library.get_wrapped_refs_string
@@ -67,18 +67,20 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     title_nodes = {t: found_node for t in found.index.all_titles("he")}
     all_reg = library.get_multi_title_regex_string(set(found.index.all_titles("he")), "he")
     reg = regex.compile(all_reg, regex.VERBOSE)
+    if len(source_tc.text) == 0 or not isinstance(source_tc.text, str):
+        print(source_tc._oref)
     source_text = re.sub(r"<[^>]+>", "", strip_cantillation(source_tc.text, strip_vowels=True))
-
     linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
 
     snippets = []
     found_normal = found.normal()
     found_section_normal = re.match(r"^[^:]+", found_normal).group()
     for match in re.finditer("(<a [^>]+>)([^<]+)(</a>)", linkified):
-        ref = get_tc(match.group(2), True)
-        if ref.normal() == found_section_normal or ref.normal() == found_normal:
+        ref = Ref(match.group(2))
+        # use split_spanning_ref in case where talmud ref is amudless. It's essentially a ranged ref across two amudim
+        if len({found_section_normal, found_normal} & {temp_ref.normal() for temp_ref in ref.split_spanning_ref()}) > 0 or ref.normal() == found_normal or ref.normal() == found_section_normal:
             if return_matches:
-                snippets += [match]
+                snippets += [(match, linkified)]
             else:
                 start_snip_naive = match.start(1) - snip_size if match.start(1) >= snip_size else 0
                 start_snip_space = linkified.rfind(" ", 0, start_snip_naive)
@@ -131,7 +133,68 @@ def modify_text(user, oref, versionTitle, language, text, versionSource, tries=0
         pass
 
 
-def modify_tanakh_links_one(main_ref, section_map, error_file_csv, user):
+def wrap_chars_with_overlaps(s, chars_to_wrap, get_wrapped_text):
+    chars_to_wrap.sort(key=lambda x: (x[0],x[0]-x[1]))
+    for i, (start, end, metadata) in enumerate(chars_to_wrap):
+        wrapped_text, start_added, end_added = get_wrapped_text(s[start:end], metadata)
+        s = s[:start] + wrapped_text + s[end:]
+        for j, (start2, end2, metadata2) in enumerate(chars_to_wrap[i+1:]):
+            if start2 > end:
+                start2 += end_added
+            start2 += start_added
+            if end2 > end:
+                end2 += end_added
+            end2 += start_added
+            chars_to_wrap[i+j+1] = (start2, end2, metadata2)
+    return s
+
+
+def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list=None):
+    """
+    Example.
+        text = "a###b##c" find_text_to_remove = lambda x: [(m, '') for m in re.finditer(r'#+', x)]
+        will return {1: 3, 2: 5}
+        meaning by the 2nd index, 5 chars have been removed
+        then if you have a range (0,3) in the normalized string "abc" you will know that maps to (0, 8) in the original string
+    """
+    if removal_list is None:
+        removal_list = find_text_to_remove(text)
+    total_removed = 0
+    removal_map = {}
+    for removal, subst in removal_list:
+        try:
+            start, end = removal
+        except TypeError:
+            # must be match object
+            start, end = removal.start(), removal.end()
+        normalized_text_index = (start - total_removed)
+        total_removed += (end - start - len(subst))
+        removal_map[normalized_text_index] = total_removed
+    return removal_map
+
+def convert_normalized_indices_to_unnormalized_indices(normalized_indices, removal_map):
+    from bisect import bisect_right
+    removal_keys = sorted(removal_map.keys())
+    unnormalized_indices = []
+    for start, end in normalized_indices:
+        unnorm_start_index = bisect_right(removal_keys, start) - 1
+        unnorm_end_index = bisect_right(removal_keys, end-1) - 1
+
+        unnorm_start = start if unnorm_start_index < 0 else start + removal_map[removal_keys[unnorm_start_index]]
+        unnorm_end = end if unnorm_end_index < 0 else end + removal_map[removal_keys[unnorm_end_index]]
+        unnormalized_indices += [(unnorm_start, unnorm_end)]
+    return unnormalized_indices
+
+_version_cache = {}
+def get_full_version(v):
+    global _version_cache
+    key = (v.title, v.versionTitle, v.language)
+    if key not in _version_cache:
+        full_v = Version().load({"title": v.title, "versionTitle": v.versionTitle, "language": v.language})
+        _version_cache[key] = full_v
+    return _version_cache[key]
+
+def modify_tanakh_links_one(main_ref, section_map, error_file_csv):
     try:
         main_tc, main_oref, main_version = get_tc(main_ref)
         if main_tc.is_merged:
@@ -140,53 +203,54 @@ def modify_tanakh_links_one(main_ref, section_map, error_file_csv, user):
         # to make it _savable
         main_tc._saveable = True
         new_main_text = main_tc.text
+        def find_text_to_remove(s):
+            for m in re.finditer(r"(<[^>]+>|[\u0591-\u05bd\u05bf-\u05c5\u05c7])", s):
+                yield m, ''
+        removal_map = get_mapping_after_normalization(main_tc.text, find_text_to_remove)
         edited = False
         for section_tref, segment_ref_dict in list(section_map.items()):
             section_oref = get_tc(section_tref, True)
             quoted_list_temp = sorted(list(segment_ref_dict.items()), key=lambda x: x[0])
             segment_ref_list = [segment_ref_dict.get(i, None) for i in range(quoted_list_temp[-1][0]+1)]
-            # for r in segment_ref_list:
-            #     if r is None:
-            #         continue
-            #     l = Link().load({"generated_by": "link_disambiguator", "refs": [main_ref, r.normal()]})
-            #     if l and l.generated_by != "add_links_from_text":
-            #         l.generated_by = "add_links_from_text"
-            #         l.save()
             match_list = get_snippet_by_seg_ref(main_tc, section_oref, must_find_snippet=True, snip_size=65, return_matches=True)
             if match_list:
                 if len(match_list) == len(segment_ref_list):
-                    last_find = 0
-                    for m, r in zip(match_list, segment_ref_list):
+                    chars_to_wrap = []
+                    for (m, linkified_text), r in zip(match_list, segment_ref_list):
                         if r is None:
                             # None is how I represent a bad match
                             continue
-
-                        original = m.group(2)
-                        curr_find = new_main_text.find(original, last_find)
-                        if curr_find == -1:
-                            raise InputError("RefNotFound")
-                        replacement = r.he_normal()
-                        new_main_text = "{}{}{}".format(new_main_text[:curr_find], replacement, new_main_text[curr_find + len(original):])
-                        edited = True
-                        last_find = curr_find + len(replacement)
-
-
+                        cumulative_a_tag_offset = (m.start(2)-len(re.sub(r"<[^>]+>", "", linkified_text[:m.start(2)])))
+                        unnorm_inds = convert_normalized_indices_to_unnormalized_indices([(m.start(2)-cumulative_a_tag_offset, m.end(2)-cumulative_a_tag_offset)], removal_map)[0]
+                        chars_to_wrap += [(unnorm_inds[0],unnorm_inds[1], r.he_normal())]
+                        main_tc_snippet = main_tc.text[chars_to_wrap[-1][0]:chars_to_wrap[-1][1]]
+                        assert  strip_cantillation(main_tc_snippet, strip_vowels=True) == m.group(2), f"\n\n\n-----\nmain tc snippet:\n'{main_tc_snippet}'\nmatch group 2:\n'{m.group(2)}'\nRef: {main_tc._oref.normal()}"
+                    def get_wrapped_text(text, replacement):
+                        return replacement, (len(replacement) - len(text)), 0
+                    new_main_text = wrap_chars_with_overlaps(new_main_text, chars_to_wrap, get_wrapped_text)
+                    edited = new_main_text != main_tc.text
                 else:
                     raise InputError("DiffLen")
         if edited:
-            modify_text(user, main_oref, main_version.versionTitle, main_version.language, new_main_text, main_version.versionSource)
+            v = main_version
+            return {
+                "version": get_full_version(v),
+                "tref": main_ref,
+                "text": new_main_text
+            }
     except InputError as e:
         message = e.args[0]
         error_file_csv.writerow({"Quoting Ref": main_ref, "Error": message})
 
 
-def modify_tanakh_links_all(start=0):
-    error_file = open("link_disambiguatore_errors.csv", "wb")
-    error_file_csv = unicodecsv.DictWriter(error_file, ["Quoting Ref", "Error"])
+def modify_tanakh_links_all(start=0, end=None):
+    error_file = open(ROOT + "/link_disambiguatore_errors.csv", "w")
+    error_file_csv = csv.DictWriter(error_file, ["Quoting Ref", "Error"])
     total = 0
-    user = db.apikeys.find_one({"key": "bi9SNdfZr9IBIHtDeKhF0bG7RPYVvVeIgDCBD8gpjjA"})["uid"]
-    with open("unambiguous_links.json", "rb") as fin:
-        cin = unicodecsv.DictReader(fin)
+    user = 5842
+    all_modify_bulk_text_input = {}  # key = (title, vtitle, lang). value = {"version", "user", "text_map"}
+    with open(ROOT + "/unambiguous_links.csv", "r") as fin:
+        cin = csv.DictReader(fin)
         mapping = defaultdict(lambda: defaultdict(dict))
         for row in cin:
             total += 1
@@ -200,12 +264,27 @@ def modify_tanakh_links_all(start=0):
             curr_dict[int(row["Quote Num"])] = quoted_ref
         print("Total {}".format(total))
 
-        for i, (k, v) in enumerate(mapping.items()):
-            if i % 100 == 0:
-                print("{}/{}".format(i, len(mapping)))
+        for i, (k, v) in enumerate(tqdm(mapping.items(), total=len(mapping))):
             if i < start:
                 continue
-            modify_tanakh_links_one(k, v, error_file_csv, user)
+            if end is not None and i > end:
+                continue
+            single_edit = modify_tanakh_links_one(k, v, error_file_csv)
+            if single_edit is None: continue
+            vers = single_edit['version']
+            key = (vers.title, vers.versionTitle, vers.language)
+            if key not in all_modify_bulk_text_input:
+                all_modify_bulk_text_input[key] = {
+                    "version": vers,
+                    "user": user,
+                    "text_map": {
+                        single_edit["tref"]: single_edit["text"]
+                    }
+                }
+            else:
+                all_modify_bulk_text_input[key]["text_map"][single_edit["tref"]] = single_edit["text"]
+    for func_input in tqdm(all_modify_bulk_text_input.values(), total=len(all_modify_bulk_text_input)):
+        tracker.modify_bulk_text(skip_links=True, count_after=False, **func_input)
     error_file.close()
 
 modify_tanakh_links_all(start=0)
