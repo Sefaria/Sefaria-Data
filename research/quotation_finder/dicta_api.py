@@ -8,6 +8,10 @@ from sources.Scripts.pesukim_linking import *
 import numpy as np
 import pymongo
 from sefaria.settings import *
+import logging
+
+# logging.basicConfig(filename='wordLevelData.log', encoding='utf-8', level=logging.DEBUG)
+log = open('/home/shanee/www/Sefaria-Data/research/quotation_finder/wordLevelData.log', "a+")
 
 client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)  # (MONGO_ASPAKLARIA_URL)
 db_qf = client.quotations
@@ -18,7 +22,7 @@ find_url = "https://talmudfinder-1-1x.loadbalancer.dicta.org.il/TalmudFinder/api
 SLEEP_TIME = 1
 
 sandbox = SEFARIA_SERVER.split(".")[0]
-vtitle = Version().load({'title': 'Genesis', 'versionTitle': 'Miqra according to the Masorah'}).versionTitle
+vtitle = "Tanach with Ta'amei Hamikra"  #'Miqra according to the Masorah' #
 
 def retreive_bold(st):
     return ' '.join([re.sub('<.*?>', '', w) for w in st.split() if '<b>' in w])
@@ -105,7 +109,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
     """
     the heart of the quotation finder input Ref and output links
     :param base_refs:
-    :param offline: list of 2 file dicts, 1: mapping of the text keys:trefs, values: he_text (sent to offline dicta) 2: mapping of results from dicta, keys: trefs values: dicta_results
+    :param offline: list of 2 files each containing a dictionary, 1: mapping of the text keys:trefs, values: he_text (sent to offline dicta) 2: mapping of results from dicta, keys: trefs values: dicta_results
     :param mode:
     :param onlyDH:
     :param thresh:
@@ -129,10 +133,10 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             response_json = find_pesukim(base_text, mode, thresh=thresh)
             # response_json["results"][0]["ijWordPairs"]
             parsed_results = dicta_parse(response_json, min_thresh=min_thresh)
-        dh_res = [res for res in parsed_results if res['startIChar'] <= 10]
+        dh_res = [res for res in parsed_results if res['startIChar'] <= 10]  # todo: put this in it's own function
         for result in parsed_results:
-            result['matches'] = [m for m in result['matches'] if m['mode'] == 'Tanakh']
-            if not result['matches']:
+            result['matches'] = [m for m in result['matches'] if m['mode'] == 'Tanakh']  # use the same parameter name "Tanakh"
+            if len(result['matches']) == 0:
                 continue
             result['matches'].sort(key=lambda x: x['score'])
             matched = result['matches'][-1]
@@ -157,9 +161,13 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
                 #     matched = best_match[0] if best_match else matched
                 #     print(f"{Ref(matched['verseDispHeb']).normal()} was chosen")
             pasuk_ref = Ref(matched['verseDispHeb'])
-            # matched_pasuk_start = matched['verseiWords'][0]
-            # matched_pasuk_end = matched['verseiWords'][-1]
-            matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel((matched['verseiWords'][0], matched['verseiWords'][-1]), pasuk_ref)
+            if not pasuk_ref.text('he').text:
+                if pasuk_ref.normal() == 'Numbers 25:19':
+                    pasuk_ref = Ref('Numbers 26:1')
+                else:
+                    print(f'{pasuk_ref} has no text in it')
+                    continue
+            matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel(matched['verseiWords'], pasuk_ref, matched['matchedText'])
 
             # print(re.sub(" ", "_", f'www.sefaria.org/{base_ref.normal()}?lang=he&p2={pasuk_ref.normal()}'))
             matched_wds_base = retreive_bold(result['text'])
@@ -216,35 +224,48 @@ def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True)
     return link_json, match
 
 
-def wordLevel2charLevel(wordLevelData, pasuk_ref):
+def wordLevel2charLevel(wordLevel, pasuk_ref, matched_text):
     """
 
     :param wordLevelData: [startWord, endWord]
     :param pasuk_ref:
     :return:
     """
+    wordLevel.sort()
+    wordLevelData = [wordLevel[0], wordLevel[-1]]
     tc = TextChunk(pasuk_ref, lang='he', vtitle=vtitle)
-    pasuk_words = re.split('[\s־]', re.sub('<.*?>', '', tc.text))
+    pasuk_words = re.split('[\s־]', tc.text)  # re.sub('<.*?>', '', tc.text))
     word_char_tuples = []
     end = None
     for w in pasuk_words:
-        if w == '|':
-            end += 1
-            continue
         start = end+1 if end else 0
         end = start + len(w)
+        if w == '׀' or '[' in w: #
+            continue
         w_chars = (start, end)
         word_char_tuples.append(w_chars[:])
     startChar = word_char_tuples[wordLevelData[0]][0]
     try:
         endChar = word_char_tuples[wordLevelData[1]][1]
+        validate_wordLevel2charLevel(tc, (startChar, endChar), matched_text)
     except IndexError:
         endChar = word_char_tuples[-1][1]
-        print(f"IndexError, pasuk: {pasuk_ref.normal()}")
+        # logging.debug(f"IndexError, pasuk: {pasuk_ref.normal()}")
+        log.write(f"IndexError, pasuk: {pasuk_ref.normal()}\n")
     return startChar, endChar
 
 
-def validate_wordLevel2charLevel():
+def validate_wordLevel2charLevel(tc, charData, dictas_text):
+    ours = tc.text[charData[0]:charData[1]]
+    theirs = ' '.join(re.findall('<.*?>(.*?)<.*?>', dictas_text))
+    ours_words = re.split('[־ ]', strip_cantillation(re.sub("׃", "", ours), strip_vowels=True))
+    ours_words = [w for w in ours_words if w]
+    theirs_words = re.split('[־ ]', strip_cantillation(re.sub("׃", "", theirs), strip_vowels=True))
+    diff = [ours_words[0], ours_words[-1]] == [theirs_words[0], theirs_words[-1]]
+    if not diff:
+        # logging.debug(f'charLevelData is not returning the same words as dicta. ours: {ours}, dicta: {theirs}')
+        log.write(f'{tc._oref} charLevelData is not returning the same words as dicta. ours: {ours}, dicta: {theirs}\n')
+        print(f'www.sefaria.org/{tc._oref}: {[ours_words[0], ours_words[-1],theirs_words[0], theirs_words[-1]]}')
     assert True
 
 
@@ -338,7 +359,7 @@ def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, prioraty
     write_links_to_json(f'{tref}', links)
     if post:
         post_link(links)
-    mongo_post(links)
+    mongo_post(links)  # todo: post wordLevelData to local as well. (since it is not perfect Data anyway :) )
 #, server="http://localhost:8000")
     return links
 
@@ -389,12 +410,14 @@ def get_version_mapping(version: Version) -> dict:
     version.walk_thru_contents(populate_change_map)
     return mapping
 
+
 def mongo_post(links):
     db_qf.quotations.insert_many(links)
 
+
 if __name__ == '__main__':
     # range_ref = 'ילקוט שמעוני על התורה, חקת' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
-    range_ref = 'Tzror HaMor on Torah, Genesis'#'Yalkut Shimoni on Torah' #'Chatam Sofer on Torah, Pinchas'
+    range_ref = 'Tzror HaMor on Torah, Deuteronomy'#'Yalkut Shimoni on Torah' #'Chatam Sofer on Torah, Pinchas'
     range_name = range_ref
     f = open(f"intraTanakhLinks_{range_name}.txt", "a+")  # not the right place to open this for the other functions. read doc.
     f.write(range_name)
@@ -412,7 +435,8 @@ if __name__ == '__main__':
     # links = get_links_ys(pear, post=True)
     text_mapping = get_links_from_file("Tzror_HaMor_on_Torah.json")
     dicta_results_mapping = get_links_from_file("dicta_answers/Tzror_HaMor_on_Torah.json")
-    links = dicta_links_from_ref(f'{range_ref}', post=False, min_thresh=22, prioraty_tanakh_chunk=Ref('בראשית'), offline=[text_mapping, dicta_results_mapping])
+    links = dicta_links_from_ref(f'{range_ref}', post=False, min_thresh=22, prioraty_tanakh_chunk=Ref('Deuteronomy'), offline=[text_mapping, dicta_results_mapping])
     f.close()
+    log.close()
     # post_links_from_file("Numbers 13:1-15:41/ys_links.txt", score=10)
 
