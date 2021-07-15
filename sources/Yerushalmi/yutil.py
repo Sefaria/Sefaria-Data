@@ -46,17 +46,21 @@ def word_count(s):
 
 
 class MishnahAlignment(object):
-
-    def __init__(self, valign_obj, mesechet, perek, halacha, skip_mishnah=False):
+    """
+    b provides the segmentation
+    tools to rewrite a, according to segmentation of b
+    tools to insert markers into b, according to marks in a
+    """
+    def __init__(self, mesechet, perek, halacha, v_a, v_b, working_dir, starting_a_mark=None, skip_mishnah=False):
         self.mesechet = mesechet
         self.perek = int(perek)
         self.halacha = int(halacha)
         self.skip_mishnah = skip_mishnah    # Only align talmud/halacha sections
-        self.valign_obj = valign_obj
-        self.working_dir = valign_obj.working_dir  # "./comparison"
+        self.working_dir = working_dir  # "./comparison"
+        self.starting_a_mark = starting_a_mark
 
-        self.a = self._process_version(valign_obj.v_a)  # name, records, ja, text
-        self.b = self._process_version(valign_obj.v_b)
+        self.a = self._process_version(v_a)  # name, records, ja, text
+        self.b = self._process_version(v_b)
 
         self._raw_comparison_data = None        # mfirst   #v1first
         self._b2a_map = None
@@ -97,7 +101,7 @@ class MishnahAlignment(object):
         return self.a["records"][-1]["daf_num"]
 
     def _mark_a(self):
-        latest_page = self.valign_obj.latest_a_mark
+        latest_page = self.starting_a_mark
         for i, r in enumerate(self.a["records"]):
             if r["daf_num"] == latest_page:
                 continue
@@ -169,18 +173,18 @@ class MishnahAlignment(object):
 
         self._b2a_map = {0: 0}
         self._a2b_map = {0: 0}
-        g_word_count = m_word_count = 0
+        b_word_count = a_word_count = 0
         for row in self._raw_comparison_data:
-            mword = row[0]
-            mlength = 0 if mword is None else len(word_split_re.split(mword))        # Same logic as used to split words in JA
-            m_word_count += mlength
+            aword = row[0]
+            alength = 0 if aword is None else len(word_split_re.split(aword))
+            a_word_count += alength
 
-            gword = row[1]
-            glength = 0 if gword is None else len(word_split_re.split(mword))        # Same logic as used to split words in JA
-            g_word_count += glength
+            bword = row[1]
+            blength = 0 if bword is None else len(word_split_re.split(bword))
+            b_word_count += blength
 
-            self._b2a_map[g_word_count] = m_word_count
-            self._a2b_map[m_word_count] = g_word_count
+            self._b2a_map[b_word_count] = a_word_count
+            self._a2b_map[a_word_count] = b_word_count
 
     def a2b(self, m):
         return self._a2b_map[m]
@@ -200,6 +204,24 @@ class MishnahAlignment(object):
         a_begins = [0] + a_ends[:-1]
         self.a_according_to_b = [" ".join(a_text_array[s:f]) for s, f in zip(a_begins, a_ends)]  # This won't work for Guggenheimer, where there's makaf
         return self.a_according_to_b
+
+    def get_b_with_a_marks(self, overlay):
+        # Return all b's in range, mutated to include a marks
+        marker_apos_dict = self.a["ja"].get_marker_word_positions()
+        marker_bpos_dict = {self.a2b(a_pos): marker for a_pos, marker in marker_apos_dict.items()}
+        marker_positions = marker_bpos_dict.keys()
+
+        new_b = []
+        for section, start, end in self.b["ja"].get_sections_and_ranges():
+            # For section in b
+            ttb = TaggedTextBlock(section)
+            for mp in marker_positions:
+                # if there's are a marks in the range, mutate b
+                if start <= mp < end:
+                    ttb.insert_tag_after_word(mp - start, "i", {"data-overlay": overlay, "data-value": marker_bpos_dict[mp]})
+            new_b += [ttb.as_text()]
+
+        return new_b
 
     def save_comparison_data(self):
         d = {
@@ -229,7 +251,7 @@ venice = JVersion("Venice", "v_columns", needs_escaping=False)
 
 
 class VersionAlignment(object):
-    def __init__(self, working_dir, v_a, v_b, skip_mishnah=False):
+    def __init__(self, v_a, v_b, working_dir, skip_mishnah=False):
         self.working_dir = working_dir
         self.v_a = v_a
         self.v_b = v_b
@@ -257,7 +279,7 @@ class VersionAlignment(object):
                     halacha_num = int(halacha.normal_section(1))
 
                     try:
-                        ma = MishnahAlignment(self, mesechet, perek_num, halacha_num, self.skip_mishnah)
+                        ma = MishnahAlignment(mesechet, perek_num, halacha_num, self.v_a, self.v_b, self.working_dir, self.latest_a_mark, self.skip_mishnah)
                         ma.run_compare()
                     except IndexError:
                         self.errors += [f"*** Failed to align {mesechet} {perek_num}:{halacha_num}"]
@@ -337,11 +359,12 @@ class TaggedTextBlock(object):
         """
 
         :param insert_position: After which word number to insert tag.  0 means at the beginning.  1 means after first word.
+                There's no facility to insert at end, currently.
         :param tag:
         :param attrs:
         :return:
         """
-        attr_string = " ".join([f"{a}='{b}'" for a, b in attrs.items()])
+        attr_string = " ".join([f'{a}="{b}"' for a, b in attrs.items()])
         open_tag = {
             "content": f"<{tag} {attr_string}>",
             "type": "tag"
@@ -352,7 +375,7 @@ class TaggedTextBlock(object):
         }
 
         # Find the right part
-        part_indx = [i for i, p in enumerate(self._parts) if p["type"] == "text" and p["start"] < insert_position < p["end"]][0]
+        part_indx = [i for i, p in enumerate(self._parts) if p["type"] == "text" and p["start"] <= insert_position < p["end"]][0]
         initial_part = self._parts[part_indx]
 
         split_pos = insert_position - initial_part["start"]
@@ -382,8 +405,10 @@ class TaggedTextBlock(object):
         }
 
         # insert tags in between
-        self._parts = [] if part_indx == 0 else self._parts[:part_indx]
-        self._parts +=[first_part, open_tag, close_tag, second_part] + self._parts[part_indx+1:]
+
+        newparts = [] if part_indx == 0 else self._parts[:part_indx]
+        newparts += [first_part, open_tag, close_tag, second_part] + self._parts[part_indx+1:]
+        self._parts = newparts
         return self
 
     def as_text(self):
@@ -402,11 +427,11 @@ class AnnotatedJTA(JaggedTextArray):
     """
     def __init__(self, ja=None):
         super(AnnotatedJTA, self).__init__(ja)
+        self._raw_store = self._store[:]
         self._store = [TextChunk._strip_itags(_) for _ in self._store]
         self._lengths = [word_count(seg) for seg in self._store]
-        self.accumulated_lengths = functools.reduce(lambda a,u: a + [u + a[-1]], self._lengths, [0])[1:]    # Add lengths up to get accumulated length.  Slice at end removes initial 0.
+        self.accumulated_lengths = functools.reduce(lambda a, u: a + [u + a[-1]], self._lengths, [0])[1:]    # Add lengths up to get accumulated length.  Slice at end removes initial 0.
         self._markers = [None] * (len(self._store))  # markers for before each segment
-
 
     def add_marker_before(self, before, marker):
         """
@@ -417,6 +442,17 @@ class AnnotatedJTA(JaggedTextArray):
         """
         self._markers[before] = marker
 
+    def get_marker_word_positions(self):
+        """
+        :return: dict {word position: marker}
+        """
+        return {self.accumulated_lengths[i]: m for i, m in enumerate(self._markers) if m}
+
+    def get_sections_and_ranges(self):
+        next_start = 0
+        for i, section in enumerate(self._raw_store):
+            yield section, next_start, self.accumulated_lengths[i]
+            next_start = self.accumulated_lengths[i]
 
 def load_guggenheimer_data():
     db = connect()
@@ -467,7 +503,12 @@ def load_venice_data():
     # /ה"ג/  Three spaces preceed, one follows
     #  /מי"א/ /מ"ז/  Two spaces precede mishnah, one follows
     section_pattern = re.compile("/" + "([מה])" + '([\u05d0-\u05ea"]+)' + "/")
-
+    tur_map = {
+        "א": "a",
+        "ב": "b",
+        "ג": "c",
+        "ד": "d"
+    }
     for file in input_files:
         with open(os.path.join(html_dir, file)) as fp:
             mesechet = Ref(file.replace(".txt", "")).normal().replace("Mishnah ", "")
@@ -484,9 +525,9 @@ def load_venice_data():
                     "perek": d[1],
                     "perek_num": decode_hebrew_numeral(d[1]),
                     "daf": d[2],
-                    "daf_num": decode_hebrew_numeral(d[2]),
                     "tur": d[3],
                     "tur_num": decode_hebrew_numeral(d[3]),
+                    "daf_num": str(decode_hebrew_numeral(d[2])) + tur_map[d[3]],
                     "content": d[10].strip(),
                     "eng_type":  "Mishna" if section_type_letter == "מ" else "Talmud",
                     "section_num": section_num
