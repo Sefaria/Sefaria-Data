@@ -7,9 +7,13 @@ import yutil
 
 
 ###
-# yutil.load_machon_mamre_data()
-# yutil.load_guggenheimer_data()
-errors = []
+#yutil.load_machon_mamre_data()
+yutil.load_guggenheimer_data()
+
+va = yutil.VersionAlignment(yutil.mm, yutil.gugg, "./comparison", skip_mishnah=False)
+va.generate_comparisons()
+print(va.errors)
+
 '''
 for mesechet, index in [q for q in zip(yutil.mesechtot, yutil.jtindxes)][15:]:
     base_ref = Ref(index)  # text is depth 3.

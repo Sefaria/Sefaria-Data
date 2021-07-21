@@ -7,10 +7,14 @@ import pytest
 
 class TestOverlay(object):
     def test_two_tags(self):
-        ma = yutil.MishnahAlignment("Eruvin", 1, 1, yutil.venice, yutil.gugg, "./v_comp", )
+        ma = yutil.MishnahAlignment("Eruvin", 1, 1, yutil.venice, yutil.gugg, "./v_comp", skip_mishnah=True)
         ma.import_xlsx()
         r = ma.get_b_with_a_marks("bob")
-        pass
+        assert r[0].startswith('<i data-overlay="bob" data-value="18b"></i>')
+        marker_18c = "עוֹשֶׂה חָרִיץ עַל" + " " + '<i data-overlay="bob" data-value="18c"></i>' + "פֶּתַח הַמָּבוֹי עָמוֹק עֲשָׂרָה"
+        assert marker_18c in r[4]
+        marker_18d = "רִבִּי יִרְמְיָה אָמַר." + " " + '<i data-overlay="bob" data-value="18d"></i>' + "רִבִּי זֵירָא"
+        assert marker_18d in r[14]
 
 class TestTaggedTextBlock(object):
     no_tag = '  וְתַנֵּי רִבִּי חִייָה. מֵת הָרִאשׁוֹן יְיַבֵּם הַשֵּׁינִי.  '

@@ -10,15 +10,16 @@ import openpyxl
 import functools
 from itertools import cycle
 from sefaria.model import *
+from sefaria.model.schema import AddressType
 from sefaria.settings import *
 from sefaria.utils.hebrew import decode_hebrew_numeral, encode_small_hebrew_numeral
 from sefaria.datatype.jagged_array import JaggedTextArray
+from sefaria.system.exceptions import BookNameError
 
 
 mesechtot = ["Avodah Zarah", "Bava Batra", "Bava Kamma", "Bava Metzia", "Beitzah", "Berakhot", "Bikkurim", "Chagigah", "Challah", "Demai", "Eruvin", "Gittin", "Horayot", "Ketubot", "Kiddushin", "Kilayim", "Maaser Sheni", "Maasrot", "Makkot", "Megillah", "Moed Katan", "Nazir", "Nedarim", "Niddah", "Orlah", "Peah", "Pesachim", "Rosh Hashanah", "Sanhedrin", "Shabbat", "Shekalim", "Sheviit", "Shevuot", "Sotah", "Sukkah", "Taanit", "Terumot", "Yevamot", "Yoma"]
 jtindxes = ["JTmock " + x for x in mesechtot]
 
-g_version = "Guggenheimer"
 g_collection = "g_segs"
 
 m_collection = "mm_paras"
@@ -78,11 +79,25 @@ class MishnahAlignment(object):
         ja = AnnotatedJTA(raw_content)
 
         return {
+            "v": v,
             "name": v.name,
             "records": records,
             "ja": ja,
             "text": ja.flatten_to_string()
         }
+
+    def _get_mishnah_content(self, v):
+        db = connect()
+        query = {"mesechet": self.mesechet,
+                 "perek_num": self.perek,
+                 "halacha_num": self.halacha,
+                 "eng_type": "Mishna"
+                 }
+        records = db[v.collection].find(query)
+        if records.count() > 1:
+            print(f"Found more than one Mishnah for {self.mesechet} {self.perek} {self.halacha}")
+        r = records[0]
+        return html.escape(r["content"]) if v.needs_escaping else r["content"]
 
     def _get_records_from_db(self, collection):
         db = connect()
@@ -202,8 +217,10 @@ class MishnahAlignment(object):
             raise
 
         a_begins = [0] + a_ends[:-1]
-        self.a_according_to_b = [" ".join(a_text_array[s:f]) for s, f in zip(a_begins, a_ends)]  # This won't work for Guggenheimer, where there's makaf
+        self.a_according_to_b = [""] if self.skip_mishnah else []
+        self.a_according_to_b += [" ".join(a_text_array[s:f]) for s, f in zip(a_begins, a_ends)]  # This won't work for Guggenheimer, where there's makaf
         return self.a_according_to_b
+
 
     def get_b_with_a_marks(self, overlay):
         # Return all b's in range, mutated to include a marks
@@ -211,7 +228,7 @@ class MishnahAlignment(object):
         marker_bpos_dict = {self.a2b(a_pos): marker for a_pos, marker in marker_apos_dict.items()}
         marker_positions = marker_bpos_dict.keys()
 
-        new_b = []
+        new_b = [self._get_mishnah_content(self.b["v"])] if self.skip_mishnah else []
         for section, start, end in self.b["ja"].get_sections_and_ranges():
             # For section in b
             ttb = TaggedTextBlock(section)
@@ -240,14 +257,15 @@ class MishnahAlignment(object):
 
 
 class JVersion(object):
-    def __init__(self, name, collection, needs_escaping=False):
+    def __init__(self, name, collection, overlay=None, needs_escaping=False):
         self.name = name
         self.collection = collection
+        self.overlay = overlay
         self.needs_escaping = needs_escaping
 
 gugg = JVersion("Gugg", "g_segs", needs_escaping=False)
-mm = JVersion("Machon", "mm_paras", needs_escaping=True)
-venice = JVersion("Venice", "v_columns", needs_escaping=False)
+mm = JVersion("Machon", "mm_paras", "Vilna Pages", needs_escaping=True)
+venice = JVersion("Venice", "v_columns", "Venice Columns", needs_escaping=False)
 
 
 class VersionAlignment(object):
@@ -286,7 +304,53 @@ class VersionAlignment(object):
                     except Exception as e:
                         self.errors += [f"*** {str(e)} *** {mesechet} {perek_num}:{halacha_num}"]
 
+    def annotate_base(self):
+        """
+        Add annotations in b reflecting the structure of a
+        :return:
+        """
+        for mesechet, index in [q for q in zip(mesechtot, jtindxes)]:
+            base_ref = Ref(index)  # text is depth 3.
+            version_content = []
+
+            for perek in base_ref.all_subrefs():
+                perek_num = int(perek.normal_section(0))
+                perek_content = []
+
+                for halacha in perek.all_subrefs():
+                    halacha_num = int(halacha.normal_section(1))
+
+                    try:
+                        ma = MishnahAlignment(mesechet, perek_num, halacha_num, self.v_a, self.v_b, self.working_dir,
+                                                     starting_a_mark=self.latest_a_mark, skip_mishnah=self.skip_mishnah)
+                        ma.import_xlsx()
+                        perek_content += [ma.get_b_with_a_marks(self.v_a.overlay)]
+
+                        self.latest_a_mark = ma.get_latest_a_mark()
+
+                    except FileNotFoundError:
+                        perek_content += [[]]
+                        self.errors += [f"Missing {halacha.normal()}"]
+                    except (KeyError, IndexError):
+                        perek_content += [[]]
+                        self.errors += [f"Mis-alignment of {halacha.normal()}"]
+
+                version_content += [perek_content]
+
+            print(f"Creating {mesechet}")
+            self.make_version_obj(index, f"With {self.v_a.overlay}", "foo", version_content)
+
+
+#Guggenheimer
+
     def create_new_versions(self, new_version_title, new_version_source):
+        """
+        Create a version of `a` according to the structure of `b`
+        :param new_version_title:
+        :param new_version_source:
+        :return:
+        """
+
         for mesechet, index in [q for q in zip(mesechtot, jtindxes)]:
             base_ref = Ref(index)  # text is depth 3.
             self.latest_a_mark = None
@@ -300,7 +364,7 @@ class VersionAlignment(object):
                     halacha_num = int(halacha.normal_section(1))
 
                     try:
-                        ma = MishnahAlignment(self, mesechet, perek_num, halacha_num)
+                        ma = MishnahAlignment(mesechet, perek_num, halacha_num, self.v_a, self.v_b, self.working_dir, starting_a_mark=self.latest_a_mark, skip_mishnah=self.skip_mishnah)
                         self.latest_a_mark = ma.get_latest_a_mark()
                         ma.import_xlsx()
                         perek_content += [ma.get_a_according_to_b()]
@@ -315,6 +379,143 @@ class VersionAlignment(object):
 
             print(f"Creating {mesechet}")
             self.make_version_obj(index, new_version_title, new_version_source, version_content)
+
+
+class OverlayBuilder(object):
+    def __init__(self, versionTitle, overlayName, alt_struct_name, addressType, sectionName):
+        self.versionTitle = versionTitle
+        self.overlayName = overlayName
+        self.addressType = addressType
+        self.sectionName = sectionName
+        self.alt_struct_name = alt_struct_name
+
+    def setAllAltStructs(self):
+        for mesechet, index in [q for q in zip(mesechtot, jtindxes)]:
+            try:
+                bavli_index = library.get_index(mesechet)
+            except BookNameError:
+                bavli_index = None
+            yerushalmi_index_ref = Ref(index)
+            alt_struct = self.getAltStructForMesechet(bavli_index, yerushalmi_index_ref)
+
+            ind = library.get_index(index)
+            assert isinstance(ind, Index)
+            ind.set_alt_structure(self.alt_struct_name, alt_struct)
+            ind.save()
+
+    def getAltStructForMesechet(self, bavli_index, yerushalmi_index_ref):
+        yerushalmi_chapters = yerushalmi_index_ref.all_subrefs()
+
+        if bavli_index and bavli_index.get_alt_structure("Chapters"):
+            bavli_chapters = bavli_index.get_alt_structure("Chapters").children
+        else:
+            bavli_chapters = [None] * len(yerushalmi_chapters)
+
+        latest_addr = None
+
+        alt_struct = TitledTreeNode()
+
+        chapter = 0
+        for bc, yc in zip(bavli_chapters, yerushalmi_chapters):
+            chapter += 1
+            amn = ArrayMapNode()
+            amn.add_primary_titles(
+                bc.get_primary_title("en") if bc is not None else "Chapter " + str(chapter),
+                bc.get_primary_title("he") if bc is not None else "פרק " + encode_small_hebrew_numeral(chapter))
+            amn.depth = 1
+            amn.addressTypes = [self.addressType]
+            amn.sectionNames = [self.sectionName]
+
+            try:
+                addr_ranges = self.getAddressRangesForPerek(yc, latest_addr)
+            except IndexError:  # no marks, skip this one
+                continue
+
+            amn.startingAddress = addr_ranges[0]["addr"]
+            amn.refs = [r["start"].to(r["end"]).normal() for r in addr_ranges]
+            amn.wholeRef = addr_ranges[0]["start"].to(addr_ranges[-1]["end"]).normal()
+
+            alt_struct.append(amn)
+            latest_addr = addr_ranges[-1]["addr"]
+
+        return alt_struct
+
+    def areAllAddressInOrder(self):
+        for index in jtindxes:
+            yerushalmi_index = Ref(index)
+            self.areAddressesInOrder(yerushalmi_index)
+
+    def areAddressesInOrder(self, yerushalmi_index_ref):
+        yerushalmi_chapters = yerushalmi_index_ref.all_subrefs()
+        atClass = AddressType.to_class_by_address_type(self.addressType)
+        assert isinstance(atClass, AddressType)
+
+        latest_perek_addr = None
+
+        for yc in yerushalmi_chapters:
+            try:
+                addr_ranges = self.getAddressRangesForPerek(yc, latest_perek_addr)
+            except IndexError:
+                print(f"{yc.normal()} has no marks.")
+                continue
+            if len(addr_ranges) < 2:
+                print(f"{yc.normal()} has only {len(addr_ranges)} marks.")
+            latest_marker_addr = None
+            for i, a in enumerate(addr_ranges):
+                if latest_marker_addr is not None:
+                    first_num = atClass.toNumber("en", latest_marker_addr)
+                    second_num = atClass.toNumber("en", a["addr"])
+                    first_locale = addr_ranges[i-1]['start'].normal()
+                    second_locale = a['start'].normal()
+
+                    if first_num >= second_num:
+                        print(
+f"""
+Page marks out of order:
+- {latest_marker_addr} is at {first_locale}
+- {a["addr"]} is at {second_locale}""")
+
+                    elif first_num + 1 !=  second_num:
+                        print(
+f"""
+Missing page marks: 
+- Between {latest_marker_addr} and {a['addr']}.
+- Between {first_locale} and {second_locale}""")
+
+                latest_marker_addr = a["addr"]
+            latest_perek_addr = addr_ranges[-1]["addr"]
+
+
+    def getAddressRangesForPerek(self, perek, starting_addr=None):
+        """
+
+        :param perek:
+        :param starting_addr:
+        :return:   List of {"addr": a, "start": s, "end": e}
+        """
+        reg = re.compile(rf'<i data-overlay="{self.overlayName}" data-value="([0-9a-z]+)">')
+        marker_addrs = []
+        marker_orefs = []
+        for halacha in perek.all_subrefs():
+            for segment in halacha.all_subrefs():
+                for pg_match in reg.finditer(TextChunk(segment, "he", self.versionTitle).text):
+                    marker_addrs += [pg_match.group(1)]
+                    marker_orefs += [segment]
+
+        detailed_perek_oref = perek.as_ranged_segment_ref()
+        perek_start_oref = detailed_perek_oref.starting_ref()
+        perek_end_oref = detailed_perek_oref.ending_ref()
+
+        if perek_start_oref == marker_orefs[0] or starting_addr == None:
+            marker_addrs = marker_addrs
+            range_starts = marker_orefs
+            range_ends = marker_orefs[1:] + [perek_end_oref]
+        else:
+            marker_addrs = [starting_addr] + marker_addrs
+            range_starts = [perek_start_oref] + marker_orefs
+            range_ends = marker_orefs + [perek_end_oref]
+
+        return [{"addr": a, "start": s, "end": e} for a,s,e in zip(marker_addrs, range_starts, range_ends)]
 
 
 class TaggedTextBlock(object):
@@ -379,20 +580,22 @@ class TaggedTextBlock(object):
         initial_part = self._parts[part_indx]
 
         split_pos = insert_position - initial_part["start"]
-        first_content_word_array = initial_part["word_array"][:split_pos]
-        second_content_word_array = initial_part["word_array"][split_pos:]
 
         # cut the part into two
-        first_part = {
-            "type": "text",
-            "word_array": first_content_word_array,
-            "content": " ".join(first_content_word_array),
-            "start": initial_part["start"],
-            "word_count": split_pos,
-            "end": insert_position,
-            "white_start": initial_part["white_start"],
-            "white_end": " "
-        }
+        if split_pos > 0:
+            first_content_word_array = initial_part["word_array"][:split_pos]
+            first_part = {
+                "type": "text",
+                "word_array": first_content_word_array,
+                "content": " ".join(first_content_word_array),
+                "start": initial_part["start"],
+                "word_count": split_pos,
+                "end": insert_position,
+                "white_start": initial_part["white_start"],
+                "white_end": " "
+            }
+
+        second_content_word_array = initial_part["word_array"][split_pos:]
         second_part = {
             "type": "text",
             "word_array": second_content_word_array,
@@ -407,7 +610,9 @@ class TaggedTextBlock(object):
         # insert tags in between
 
         newparts = [] if part_indx == 0 else self._parts[:part_indx]
-        newparts += [first_part, open_tag, close_tag, second_part] + self._parts[part_indx+1:]
+        if split_pos > 0:
+            newparts += [first_part]
+        newparts += [open_tag, close_tag, second_part] + self._parts[part_indx+1:]
         self._parts = newparts
         return self
 
@@ -446,7 +651,8 @@ class AnnotatedJTA(JaggedTextArray):
         """
         :return: dict {word position: marker}
         """
-        return {self.accumulated_lengths[i]: m for i, m in enumerate(self._markers) if m}
+        starts = [0] + self.accumulated_lengths[:-1]
+        return {starts[i]: m for i, m in enumerate(self._markers) if m}
 
     def get_sections_and_ranges(self):
         next_start = 0
@@ -454,7 +660,8 @@ class AnnotatedJTA(JaggedTextArray):
             yield section, next_start, self.accumulated_lengths[i]
             next_start = self.accumulated_lengths[i]
 
-def load_guggenheimer_data():
+
+def load_guggenheimer_data(g_version="Guggenheimer"):
     db = connect()
     db[g_collection].delete_many({})
 
