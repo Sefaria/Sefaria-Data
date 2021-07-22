@@ -187,7 +187,24 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
                 link_option.append("dh")
                 dh_link_options.append(link_option)
             link_option.append(trivial_ref)
-            validate_wordLevel2charLevel(link_option[1].text('he'), [m[3],m[4]], m[0])
+            tc = link_option[1].text('he')
+            html_regex = re.compile("<[^>]*?>")
+            find_text_to_remove = lambda x: [(m, '') for m in re.finditer(html_regex, x)]
+            normalization_mapping = get_mapping_after_normalization(tc.text, find_text_to_remove=find_text_to_remove)
+            lv_score = validate_wordLevel2charLevel(tc, [m[3], m[4]], m[0], pasuk=False, wl_min_score=200)
+            if lv_score < 200:
+                startChar = re.search(m[0].split()[0], re.sub(html_regex, '', tc.text)).regs[0][0]
+                endChar = [e for e in re.finditer(m[0].split()[-1], re.sub(html_regex, '', tc.text))][-1].regs[0][1]
+                if normalization_mapping:
+                    normolized = convert_normalized_indices_to_unnormalized_indices([(startChar, endChar)], normalization_mapping)[0]
+                    take_2 = validate_wordLevel2charLevel(tc, normolized, m[0], html_regex=html_regex, pasuk=False, wl_min_score=200)
+                else:
+                    take_2 = validate_wordLevel2charLevel(tc, [startChar, endChar], m[0], pasuk=False, wl_min_score=200)
+                if take_2 == 200:
+                    link_option[3] = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"],
+                          matched_pasuk_start, matched_pasuk_end, dh_match)
+                else:
+                    log.write(f'{tc._oref} take_2 lv score is: {lv_score}\n')
             link_options.append(link_option)
     if onlyDH:
         return dh_link_options
@@ -268,7 +285,7 @@ def wordLevel2charLevel(wordLevel, pasuk_ref, matched_text):
     # return startChar, endChar
 
 
-def validate_wordLevel2charLevel(tc, charData, dictas_text, html_regex='', wl_min_score = 160):
+def validate_wordLevel2charLevel(tc, charData, dictas_text, html_regex='', pasuk=True, wl_min_score=160):
     """
 
     :param tc:
@@ -279,18 +296,17 @@ def validate_wordLevel2charLevel(tc, charData, dictas_text, html_regex='', wl_mi
     :return: this function writes not accurate char level data to a log file wordLevelData.log
     """
     ours = tc.text[charData[0]:charData[1]]
-    theirs = ' '.join(re.findall('<.*?>(.*?)<.*?>', dictas_text))
-    ours_words = re.split('\s+|־', strip_cantillation(re.sub(html_regex, '', ours), strip_vowels=True))
+    theirs = ' '.join(re.findall('<.*?>(.*?)<.*?>', dictas_text)) if pasuk else dictas_text.translate(str.maketrans('', '', string.punctuation))
+    ours_words = re.split('\s+|־', strip_cantillation(re.sub(html_regex, '', ours), strip_vowels=True).translate(str.maketrans('', '', string.punctuation)))
     ours_words = [w for w in ours_words if w]
     theirs_words = re.split('\s+|־', strip_cantillation(theirs, strip_vowels=True))
     diff = [ours_words[0], ours_words[-1]] == [theirs_words[0], theirs_words[-1]]
     wl_score = wl.calculate(ours_words[0],theirs_words[0], normalize=True) + wl.calculate(ours_words[-1], theirs_words[-1], normalize=True)
-    if wl_score<wl_min_score:
+    if wl_score<wl_min_score and pasuk:
         # logging.debug(f'charLevelData is not returning the same words as dicta. ours: {ours}, dicta: {theirs}')
         log.write(f'{tc._oref} charLevelData is not returning the same words as dicta. ours: {ours}, dicta: {theirs} : wl={wl_score}\n')
         print(f'www.sefaria.org/{tc._oref}: {[ours_words[0], ours_words[-1],theirs_words[0], theirs_words[-1]]}')
-    assert True
-
+    return wl_score
 
 def write_to_csv(links, linkMatchs,  filename='quotation_links'):
     list_dict = []
@@ -470,4 +486,4 @@ if __name__ == '__main__':
     # # f.close()
     # log.close()
     # # post_links_from_file("Numbers 13:1-15:41/ys_links.txt", score=10)
-    run_offline("Kinnot for Tisha B'Av (Ashkenaz)", 'Liturgy', min_thresh=20, post=False, mongopost=False) #Machzor Rosh Hashanah Sefard', 'Siddur Ashkenaz'
+    run_offline("Bamidbar Rabbah", 'Midrash', min_thresh=20, post=False, mongopost=True) #Machzor Rosh Hashanah Sefard', 'Siddur Ashkenaz'
