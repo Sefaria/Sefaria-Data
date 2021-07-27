@@ -30,7 +30,7 @@ import Levenshtein
 from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-# from word2number import w2n
+from bs4 import BeautifulSoup, Tag, NavigableString
 
 gematria = {}
 gematria['א'] = 1

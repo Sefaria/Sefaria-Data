@@ -20,8 +20,6 @@ with open("Maskil LeDavid, Genesis - FINAL - Maskil LeDavid, Genesis - FINAL.csv
 			ref, comm, found_ref, relevant_text = line
 			rashi_ref = ref.replace("Maskil LeDavid, ", "Rashi on ")
 			genesis_ref = ":".join(ref.replace("Maskil LeDavid, ", "").split(":")[:-1])
-			print(rashi_ref)
-			print(genesis_ref)
 			if genesis_ref not in maskil_refs:
 				maskil_refs[genesis_ref] = []
 			maskil_refs[genesis_ref].append((ref, comm))
@@ -42,8 +40,10 @@ for genesis_ref in maskil_refs:
 		finds = []
 		for rashi_dh_tuple in rashi_dhs:
 			rashi_ref, rashi_dh, rashi_dh_plus = rashi_dh_tuple
+			rashi_dh = rashi_dh.replace(".", "")
 			if maskil_comm.startswith(rashi_dh) or maskil_comm.startswith(rashi_dh.split()[0] + " "):
 				finds.append((rashi_dh_tuple, maskil_ref, maskil_comm))
+
 		if len(finds) == 1:
 			exact_match += 1
 			rashi_found_ref = finds[0][0][0].normal()
@@ -61,15 +61,31 @@ for genesis_ref in maskil_refs:
 					max_score = score
 					rashi_found_ref = rashi_ref.normal()
 		else:
-			not_found.append(genesis_ref)
 			rashi_found_ref = ""
+			if len(rashi_dhs) == 1:
+				rashi_ref, rashi_dh, rashi_dh_plus = rashi_dhs[0]
+				rashi_found_ref = rashi_ref.normal()
+			else:
+				for rashi_dh_tuple in rashi_dhs:
+					rashi_ref, rashi_dh, rashi_dh_plus = rashi_dh_tuple
+					rashi_dh = rashi_dh.replace(".", "")
+					maskil = " ".join(maskil_comm.split("וכו׳")[0].split()[:6])
+					score = weighted.calculate(rashi_dh_plus, maskil)
+					if score > 80:
+						print(score)
+						rashi_found_ref = rashi_ref.normal()
+			if rashi_found_ref == "":
+				not_found.append(genesis_ref)
 
 		if len(rashi_found_ref) > 0:
 			new_csv.append([maskil_ref, maskil_comm, rashi_found_ref,
 											TextChunk(Ref(rashi_found_ref), lang='he', vtitle='Rashi Chumash, Metsudah Publications, 2009').text])
 		else:
-			new_csv.append([maskil_ref, maskil_comm, "" ""])
+			new_csv.append([maskil_ref, maskil_comm, "", ""])
 
-print(exact_match)
-print(more_than_2)
-print(not_found)
+print(len(not_found))
+with open("new csv.csv", 'w') as f:
+	writer = csv.writer(f)
+	for row in new_csv:
+		writer.writerow(row)
+

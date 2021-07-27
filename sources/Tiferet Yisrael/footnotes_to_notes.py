@@ -20,6 +20,8 @@ for i in library.get_indices_by_collective_title("Footnotes and Annotations"):
 	i.set_title(new_he, 'he')
 	i.set_title(new_en, 'en')
 	i.save()
+	vs = i.versionState()
+	vs.refresh()
 
 print("Changing inline_reference in links...")
 ls = LinkSet({"refs": {"$regex": "^Notes by Rabbi Yehoshua Hartman"}})

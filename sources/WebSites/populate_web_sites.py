@@ -6,15 +6,15 @@ from sefaria.system.database import db
 sites_data = [
 		{
 				"name": "Tablet Magazine",
-				"domains": ["tabletmag.com"],
-				"bad_urls": [r"tabletmag\.com\/contributors\/"],
+				"domains": ["tabletmag.com", "tabletmag.com.s3-website-us-east-1.amazonaws.com"],
+				"bad_urls": [r"tabletmag\.com\/contributors\/", r"tabletmag\.com\.s3-website-us-east-1\.amazonaws.com\/contributors\/"],
 			"normalization_rules": ["remove www"]
 		},
 		{
 			"name": "Google",
 			"is_whitelisted": False,
 			"domains": ["googleusercontent.com"],
-			"bad_urls": [r"webcache\.googleusercontent\.com", r"translate\.googleusercontent\.com"]
+			"bad_urls": [r"webcache\.googleusercontent\.com", r"translate\.googleusercontent\.com", r"translate\.goog"]
 		},
 		{
 			"name": "Dailympails",
@@ -41,7 +41,7 @@ sites_data = [
 	},
 	{
 			"name":           "Virtual Beit Midrash",
-			"domains":        ["etzion.org.il", "vbm-torah.org", "torah.etzion.org.il"],
+			"domains":        ["etzion.org.il", "vbm-torah.org", "torah.etzion.org.il", "haretzion.linnovate.co.il"],
 			"title_branding": ["vbm haretzion"],
 		  "normalization_rules": ["remove www"]
 
@@ -480,7 +480,7 @@ sites_data = [
 	},
 	{
 			"name": "Jewish Encyclopedia",
-			"domains": ["jewishencyclopedia.com"],
+			"domains": ["jewishencyclopedia.com", "jewishencyclopedia.herokuapp.com"],
 			"title_branding": ["JewishEncyclopedia.com"],
 			"normalization_rules": ["remove url params", "use https", "remove www"],
 		"bad_urls": [r"jewishencyclopedia\.com\/(directory|contribs|search)"]

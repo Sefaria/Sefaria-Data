@@ -8,8 +8,9 @@ indices = library.get_indices_by_collective_title("Lechem Mishneh")
 version = "all"
 SEFARIA_SERVER = "https://www.sefaria.org"
 results = []
+indices = ["Reshit Chokhmah", "Ohr LaShamayim"]
 for m in indices:
      print(m)
-     cmd = "./run scripts/move_draft_text.py '{}' -d '{}'".format(m, SEFARIA_SERVER)
+     cmd = "./run scripts/move_draft_text.py '{}' --noindex -v 'all' -l '2' -d '{}'".format(m, SEFARIA_SERVER)
      results.append(os.popen(cmd).read())
 
