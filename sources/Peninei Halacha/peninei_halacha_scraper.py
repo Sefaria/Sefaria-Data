@@ -52,7 +52,7 @@ titles_to_print = [old_titles, new_titles, heb_titles]
 titles_to_print_names = ["Titles with not-allowed characters", "Automatically fixed titles", "Hebrew titles"]
 num_chapters = {"Shabbat": 30, "Likkutim I": 11, "Likkutim II": 17, "Festivals": 13, "The Nation and the Land": 10,
                 "Berakhot": 18, "High Holidays": 10, "Shmitta and Yovel": 11, "Kashrut I": 19, "Kashrut II": 17,"Kashrut": 37, "Women's Prayer": 24,
-                "Prayer": 26, "Family": 10, "Sukkot": 8, "Pesach": 16, "Zemanim": 17, "Simchat Habayit V'Birchato": 10, "Taharat HaMishpach": 10}
+                "Prayer": 26, "Family": 10, "Sukkot": 8, "Pesach": 16, "Zemanim": 17, "Simchat Habayit V'Birchato": 10, "Family Purity": 10}
 books = [("Shabbat", "שבת", 1),  # 0 (eng_name, heb_name, url_number)
          ("Prayer", "תפילה", 2),  # 1
          ("Women's Prayer", "תפילת נשים", 3),  # 2
@@ -71,12 +71,12 @@ books = [("Shabbat", "שבת", 1),  # 0 (eng_name, heb_name, url_number)
          ("Kashrut I", "כשרות א – הצומח והחי", 17),  # 15
          ("Kashrut II", "כשרות ב – המזון והמטבח", 17),  # 16
          ("Kashrut", "כשרות", 17),  # 17
-         ("Taharat HaMishpach", "טהרת המשפחה", 18)  # 18
+         ("Family Purity", "טהרת המשפחה", 18)  # 18
          ]
 another_lang = ['es', 'ru', 'fr']
 
 # SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS (AND BE SURE TO SET PARAM "only_chapters_translated" ACCORDINGLY)
-titles_were_translated = False
+titles_were_translated = True
 # SET THIS TO TRUE ONCE RABBI FISCHER SENDS LIST OF TITLE TRANSLATIONS, AND COPY/PASTE LISTS INTO PH_CHAPTER_SECTION_TITLE_CHANGES GOOGLE SHEET SO SHMUEL CAN MAKE CHANGES (THEN REDOWNLOAD TSV)
 print_titles_to_be_changed = True
 
@@ -440,7 +440,8 @@ def get_soup(book_name, url_number, lang="he", another_lang=None):
                 first = False
 
             for num, p in enumerate(paragraphs):
-                # paragraphs[num] = replace_for_linker(p)
+                paragraphs[num] = change_quotation_marks(p)
+                paragraphs[num] = replace_for_linker(paragraphs[num])[0]
                 paragraphs[num] = last_text_clean(paragraphs[num])
 
             if curr_chapter:
@@ -480,41 +481,35 @@ def replace_for_linker(paragraph):
     # שולחן ערוך
     sa_match = re.search(sa_re, paragraph)
     if sa_match:
-        sa_change = sa_match.group().replace("\u05e9\u05d5\"\u05e2",
-                                 "\u05e9\u05d5\"\u05e2 \u05d0\u05d5\"\u05d7")
+        sa_change = sa_match.group().replace('שו"ע', 'שו"ע יו"ד')#("\u05e9\u05d5\"\u05e2","\u05e9\u05d5\"\u05e2 \u05d0\u05d5\"\u05d7")
         new_p = paragraph.replace(sa_match.group(), sa_change)
         sa_t = (sa_match.group(), sa_change)
         changed.append(sa_t)
     # משנה ברורה
     mb_match = re.search(mb_re, new_p)
     if mb_match:
-        new_p = new_p.replace(mb_match.group(), mb_match.group().replace("\u05de\"\u05d1",
-                                                                     "\u05de\u05e9\u05e0\u05d4 \u05d1\u05e8\u05d5\u05e8\u05d4"))
+        new_p = new_p.replace(mb_match.group(), mb_match.group().replace('מ"ב', 'משנה ברורה')) #("\u05de\"\u05d1","\u05de\u05e9\u05e0\u05d4 \u05d1\u05e8\u05d5\u05e8\u05d4")
     # רמב"ם
     rm_match = re.search(rm_re, new_p)
     if rm_match:
-        rm_change = rm_match.group().replace("\u05e8\u05de\u05d1\"\u05dd ",
-                                                                             "\u05e8\u05de\u05d1\"\u05dd, \u05d4\u05dc\u05db\u05d5\u05ea ")
+        rm_change = rm_match.group().replace('רמב"ם ', 'רמב"ם, הלכות ')#("\u05e8\u05de\u05d1\"\u05dd ", "\u05e8\u05de\u05d1\"\u05dd, \u05d4\u05dc\u05db\u05d5\u05ea ")
         new_p = new_p.replace(rm_match.group(), rm_change)
         rm_t = (rm_match.group(), rm_change)
         changed.append(rm_t)
     ah_match = re.search(ah_re, new_p)
     if ah_match:
-        new_p = new_p.replace(ah_match.group(), ah_match.group().replace("\u05e2\u05e8\u05d5\u05d4\"\u05e9 ",
-                                                                     "\u05e2\u05e8\u05d5\u05d4\"\u05e9, \u05d0\u05d5\u05e8\u05d7 \u05d7\u05d9\u05d9\u05dd "))
+        new_p = new_p.replace(ah_match.group(), ah_match.group().replace('ערוה"ש ', 'ערוה"ש, אורח חיים '))#("\u05e2\u05e8\u05d5\u05d4\"\u05e9 ","\u05e2\u05e8\u05d5\u05d4\"\u05e9, \u05d0\u05d5\u05e8\u05d7 \u05d7\u05d9\u05d9\u05dd "))
     rn_match = re.search(rn_re, new_p)
     if rn_match:
-        new_p = new_p.replace(rn_match.group(), rn_match.group().replace("\u05e8\u05de\u05d1\"\u05df ",
-                                                                         "\u05e8\u05de\u05d1\"\u05df \u05e2\u05dc "))
+        new_p = new_p.replace(rn_match.group(), rn_match.group().replace('רמב"ן ', 'רמב"ן על '))#("\u05e8\u05de\u05d1\"\u05df ","\u05e8\u05de\u05d1\"\u05df \u05e2\u05dc "))
     ra_match = re.search(ra_re, new_p)
     if ra_match:
-        new_p = new_p.replace(ra_match.group(), ra_match.group().replace("\u05e8\u05de\"\u05d0 ",
-                                                                         "\u05e8\u05de\"\u05d0, \u05d0\u05d5\"\u05d7 "))
+        new_p = new_p.replace(ra_match.group(), ra_match.group().replace('רמ"א ', 'רמ"א, או"ח '))#("\u05e8\u05de\"\u05d0 ","\u05e8\u05de\"\u05d0, \u05d0\u05d5\"\u05d7 "))
     ma_match = re.search(ma_re, new_p)
     if ma_match:
-        new_p = new_p.replace(ma_match.group(), ma_match.group().replace("\u05de\"\u05d0 ",
-                                                                    "\u05de\u05d2\u05df \u05d0\u05d1\u05e8\u05d4\u05dd "))
+        new_p = new_p.replace(ma_match.group(), ma_match.group().replace('מ"א ', 'מגן אברהם '))#("\u05de\"\u05d0 ","\u05de\u05d2\u05df \u05d0\u05d1\u05e8\u05d4\u05dd "))
     return new_p, changed
+
 
 def last_text_clean(paragraph):
     new_p = paragraph
@@ -522,6 +517,13 @@ def last_text_clean(paragraph):
     new_p = new_p.replace('~', '')
     # strip the 'alt' symbol from footnotes
     new_p = new_p.replace('↩', '')
+    return new_p
+
+def change_quotation_marks(paragraph):
+    new_p = paragraph
+    new_p = new_p.replace("‘", "'")
+    new_p = new_p.replace("’", "'")
+    new_p = new_p.replace("”", '"')
     return new_p
 
 # parses supplement chapter for index ha'am veha'aretz
@@ -1079,7 +1081,7 @@ def post_index_to_server(en, he, ordered_chapter_titles, section_titles, title_t
         "title": comm_en,
         "collective_title": "Peninei Halakhah",
         "schema": root.serialize(),
-        "categories": ["Halakhah", "Peninei Halakhah"],
+        "categories": ["Halakhah", "Modern", "Peninei Halakhah"],
         "alt_structs": {"Topic": {"nodes": altstruct_nodes}}
     }
 
@@ -1227,8 +1229,6 @@ def get_titles_for_trsanslation(ind_name):
             print(n['titles'][1]['text'])
 
 if __name__ == "__main__":
-    add_term("Peninei Halakhah", "פניני הלכה")
-    add_category("Peninei Halakhah",["Halakhah", "Peninei Halakhah"], "פניני הלכה")
     he_book_list = [18]  # [5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
     both_book_list = []  # [0, 1, 2, 3, 4, 10]
     langs = ["he", "both"]
