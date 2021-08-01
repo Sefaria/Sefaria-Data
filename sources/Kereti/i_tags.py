@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from difflib import context_diff
 from data_utilities.dibur_hamatchil_matcher import *
 import bleach
+import csv
 
 class WordObj:
     def __init__(self, word, info=[], before=False):
@@ -108,6 +109,7 @@ def create_new_pieces(title, results, section, data_order_running_count):
     word_dict = {}
     words = re.sub("<i data.*?></i>", u"", section.text('he').text.replace("<br>", "<br> "))
     words = words.split()
+    probs = 0
     for m in results:
         data_order += 1
         if m[0] != -1:
@@ -116,23 +118,28 @@ def create_new_pieces(title, results, section, data_order_running_count):
             tag["data-order"] = data_order + data_order_running_count
             pos = m[0]
             if pos in word_dict:
-                word_dict[pos] += [tag]
+                print("Found duplicate in {}".format(section))
+                orig = word_dict[pos][1]
+                if m[1] > orig:
+                    word_dict[pos] = (tag, m[1])
             else:
-                word_dict[pos] = tag
+                word_dict[pos] = (tag, m[1])
         else:
             print("Didnt find match in {}".format(section))
+            probs += 1
+
 
     word_objs = []
     for n, word in enumerate(words):
         if n in word_dict.keys():
-            word_obj = WordObj(word, [word_dict[n]], before=True)
+            word_obj = WordObj(word, [word_dict[n][0]], before=True)
         else:
             word_obj = WordObj(word, before=True)
         word_objs.append(word_obj)
     return word_objs
 
 def get_kereti_tags(title, all_dhs):
-    sections = Ref("Shulchan Arukh, Yoreh Deah").all_subrefs()
+    sections = Ref("Shulchan Arukh, Orach Chayim").all_subrefs()
     i_tags_kereti = {}
     for sec in sections:
         data_order = 0
@@ -147,6 +154,11 @@ def get_kereti_tags(title, all_dhs):
                 while u"  " in base_words:
                     base_words = base_words.replace(u"  ", u" ")
                 results = match_text(base_words.split(), all_dhs[seg.sections[0]][seg.sections[1]])
+                if (-1, -1) in results["matches"]:
+                    results = match_text(base_words.split(), all_dhs[seg.sections[0]][seg.sections[1]], prev_matched_results=results["matches"], char_threshold=0.3, word_threshold=0.3)
+                    if (-1, -1) in results["matches"]:
+                        results = match_text(base_words.split(), all_dhs[seg.sections[0]][seg.sections[1]], prev_matched_results=results["matches"], char_threshold=0.4, word_threshold=0.4)
+
                 i_tags_kereti[sec.sections[0]-1][seg.sections[1]-1] = create_new_pieces(title, results["matches"], seg, data_order)
                 data_order += len(results["matches"])
     return i_tags_kereti
@@ -154,7 +166,7 @@ def get_kereti_tags(title, all_dhs):
 
 def create_new_tags(new_vtitle, old_vtitle, kereti_word_objs, change_nothing=False):
     SA_word_objs = {}
-    tc = TextChunk(Ref("Shulchan Arukh, Yoreh Deah"), lang='he',
+    tc = TextChunk(Ref("Shulchan Arukh, Orach Chayim"), lang='he',
                    vtitle=old_vtitle)
     for i, section in enumerate(tc.text):
         SA_word_objs[i] = {}
@@ -163,7 +175,7 @@ def create_new_tags(new_vtitle, old_vtitle, kereti_word_objs, change_nothing=Fal
 
     # now take out all tags in file and then create data structure of all & and two words after
     # dh_matcher can take all these two word strings and TextChunk(Ref("Shulchan Arukh, Yoreh Deah")
-    tc = TextChunk(Ref("Shulchan Arukh, Yoreh Deah"), lang='he')
+    tc = TextChunk(Ref("Shulchan Arukh, Orach Chayim"), lang='he')
     base_text = tc.text
     if not change_nothing:
         for i in range(len(SA_word_objs)):
@@ -183,13 +195,15 @@ def create_new_tags(new_vtitle, old_vtitle, kereti_word_objs, change_nothing=Fal
 
                 base_text[i][j] = u" ".join(new_base_text)
 
-    text_version = {
-        "text": base_text,
-        "versionTitle": new_vtitle,
-        "language": "he",
-        "versionSource": "http://www.sefaria.org",
-    }
-    post_text("Shulchan Arukh, Yoreh De'ah", text_version)
+    # text_version = {
+    #     "text": base_text,
+    #     "versionTitle": new_vtitle,
+    #     "language": "he",
+    #     "versionSource": "http://www.sefaria.org",
+    # }
+    # post_text("Shulchan Arukh, Yoreh De'ah", text_version)
+
+
 
 if __name__ == "__main__":
     title = "Kereti"

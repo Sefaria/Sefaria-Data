@@ -46,7 +46,7 @@ def creat_lexiconentry(data):
 
 def read_source():
     source_path = 'sources/rashei_tevot.csv'
-    f = open(source_path, 'rb')
+    f = open("../lexicon/"+source_path, 'rb')
     csv = unicodecsv.DictReader(f)
     for i,row in enumerate(csv):
         if i % 100 == 0:

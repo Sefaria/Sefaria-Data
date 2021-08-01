@@ -1,6 +1,11 @@
 import django
 django.setup()
 from sefaria.model import *
+from sefaria.model.user_profile import *
+public_user_data(26632)
+
+
+
 
 indices = ["Halacha and Aggadah", "Derech Chaim"]
 new_titles = ["Halakhah and Aggadah", "Derekh Chayim"]

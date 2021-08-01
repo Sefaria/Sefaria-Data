@@ -7,4 +7,4 @@ if __name__ == "__main__":
 
     all_dhs = get_kereti_tags(title, tiferet)
     #create_new_tags("", default, all_dhs, change_nothing=True)
-    create_new_tags("CHIDDUSHEI", default, all_dhs, change_nothing=False)
+    create_new_tags(all_dhs, change_nothing=False)

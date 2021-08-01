@@ -68,6 +68,7 @@ sites_data = [
 	{
 			"name":           "The Open Siddur Project",
 			"domains":        ["opensiddur.org"],
+		"exclude_from_tracking": ".header"
 	},
 	{
 			"name":           "בית הלל",
