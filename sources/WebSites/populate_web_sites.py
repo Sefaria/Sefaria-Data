@@ -204,7 +204,8 @@ sites_data = [
 	},
 	{
 			"name": "מכון הדר",
-			"domains": ["mechonhadar.org.il"]
+			"domains": ["mechonhadar.org.il"],
+			"bad_urls": [r"mechonhadar\.org\.il\/envatoq"]
 	},
 	{
 			"name": "Pardes Institute of Jewish Studies",
