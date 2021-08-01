@@ -438,11 +438,13 @@ sites_data = [
 			"domains": ["yeshiva.co"],
 			"title_branding": ["Ask the rabbi | Q&A | yeshiva.co", "Beit Midrash | Torah Lessons | yeshiva.co", "yeshiva.co"],
 		  "bad_urls": [r"yeshiva\.co\/?$",
+									 r"yeshiva\.co\/not-found$",
             r"yeshiva\.co\/404\/404.asp",
             r"yeshiva\.co\/(ask|midrash)\/?$",
             r"yeshiva\.co\/(calendar|tags|dedication|errorpage)\/?",  # it seems anything under calendar is not an article
             r"yeshiva\.co\/midrash\/(category|rabbi)\/?"],
-		"normalization_rules": ["remove www"]
+		"normalization_rules": ["remove www"],
+		"exclude_from_tracking": ".error-container, .print-hide"
 
 	},
 	{

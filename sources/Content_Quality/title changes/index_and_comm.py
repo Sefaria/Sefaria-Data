@@ -1,9 +1,6 @@
 import django
 django.setup()
 from sefaria.model import *
-from sefaria.model.user_profile import *
-public_user_data(26632)
-
 
 
 
