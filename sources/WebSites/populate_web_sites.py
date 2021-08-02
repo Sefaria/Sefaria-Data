@@ -205,7 +205,9 @@ sites_data = [
 	{
 			"name": "מכון הדר",
 			"domains": ["mechonhadar.org.il"],
-			"bad_urls": [r"mechonhadar\.org\.il\/envatoq"]
+			"bad_urls": [r"mechonhadar\.org\.il\/envatoq"],
+				"exclude_from_tracking": ".elementor-34"
+
 	},
 	{
 			"name": "Pardes Institute of Jewish Studies",
@@ -285,11 +287,13 @@ sites_data = [
 	{
 			"name": "Times of Israel Blogs",
 			"domains": ["blogs.timesofisrael.com"],
-			"title_branding": ["The Blogs"]
+			"title_branding": ["The Blogs"],
+		"exclude_from_tracking": ".ob-widget-section"
 	},
 	{
 			"name": "The Jewish Standard",
 			"domains": ["jewishstandard.timesofisrael.com"],
+		  "exclude_from_tracking": ".ob-widget-section"
 	},
 	{
 			"name": "Rav Kook Torah",
