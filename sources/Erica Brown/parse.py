@@ -7,11 +7,12 @@ html_set = set()
 file = "LeadershipintheWilderness 07 draft 07 balanced.html"
 with open(file, 'r') as f:
 	soup = BeautifulSoup(f)
-	footnotes_text = soup.find_all(class_="Endnotes")
+	footnotes_text = soup.find_all(class_="Footnote-Text")
 	footnotes_sup = soup.find_all(class_="footnote-refe _idGenCharOverride-1")
 	zipped = zip(footnotes_sup, footnotes_text)
 	for i, zipped_tuple in enumerate(zipped):
 		sup, text = zipped_tuple
+		sup.string = sup.text.strip()
 		assert text.text.startswith(sup.text+".\t")
 		i_tag = '<sup>{}</sup><i class="footnote">{}</i>'.format(sup.text, text.text.replace(sup.text+".\t", ""))
 		sup.string = i_tag
@@ -32,7 +33,7 @@ with open(file, 'r') as f:
 		text_dict[title] = []
 		found_notes = False
 		while p and p.get("class", "") != ["Chapter-Style"]:
-			if isinstance(p, Tag) and p.get("class", "") != ["Endnotes"]:
+			if isinstance(p, Tag) and p.get("class", "") != ["Footnote-Text"]:
 				if p.text.strip() == "Notes":
 					found_notes = True
 				if not found_notes:
