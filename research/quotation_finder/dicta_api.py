@@ -10,7 +10,7 @@ import pymongo
 from sefaria.settings import *
 import logging
 from data_utilities.util import * #get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
-
+import datetime
 # logging.basicConfig(filename='wordLevelData.log', encoding='utf-8', level=logging.DEBUG)
 path = os.getcwd()
 log = open(f'{path}/wordLevelData.log', "w+")
@@ -23,6 +23,7 @@ min_thresh=22
 find_url = "https://talmudfinder-1-1x.loadbalancer.dicta.org.il/TalmudFinder/api/markpsukim" # PasukFinder
 # parse_url = f"https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/parsetogroups?smin={min_thresh}&smax=10000"
 SLEEP_TIME = 1
+run_type = f'date: {datetime.date} type: chasidut night run'
 
 sandbox = SEFARIA_SERVER.split(".")[0] if SEFARIA_SERVER != "http://localhost:8000" else ''
 vtitle = 'Miqra according to the Masorah'  # "Tanach with Ta'amei Hamikra"  #
@@ -86,26 +87,28 @@ def many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=None):
     mean = np.mean(many_pesukim_score)
     var = np.var(many_pesukim_score)
     if mean > 20 and var < 5:
+        wordLeveldata = [match['verseiWords'] for match in result['matches']]
         suffex = ''.join(
             [f"&p{i + 1}={many_pesukim_refs[i].normal()}&lang2=he" for i in list(range(1, len(many_pesukim_refs)))])
         url = re.sub(" ", "_", f'{sandbox}.cauldron.sefaria.org/{many_pesukim_refs[0].normal()}?lang=he{suffex}\n')
         intra_tanakh_dict = {
             "refs": [r.normal() for r in many_pesukim_refs],
-            "wordLevelData": [],
+            "wordLevelData": wordLeveldata,
             "mean": mean,
             "var": var,
             "base_ref": base_ref.normal(),
-            "url": url
+            "url": url,
+            "score": many_pesukim_score
         }
         # json.dump(intra_tanakh_dict, f)
         db_qf.intraTanakh.insert_one(intra_tanakh_dict)
         print(url)
-        print(f"more than one pasuk option: {many_pesukim_he}")
+        # print(f"more than one pasuk option for {base_ref.normal()}: {many_pesukim_he}")
     if priority_tanakh_chunk:
         best_match_option_ref = list(set(priority_tanakh_chunk.all_segment_refs()) & set(many_pesukim_refs))
         best_match = [match for match in result['matches'] if Ref(match['verseDispHeb']) in best_match_option_ref]
         matched = best_match[0] if best_match else matched
-        print(f"{Ref(matched['verseDispHeb']).normal()} was chosen")
+        # print(f"{Ref(matched['verseDispHeb']).normal()} was chosen")
     return matched
 
 
@@ -139,7 +142,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             parsed_results = dicta_parse(response_json, min_thresh=min_thresh)
         dh_res = [res for res in parsed_results if res['startIChar'] <= 10]  # todo: put this in it's own function
         for result in parsed_results:
-            result['matches'] = [m for m in result['matches'] if m['mode'] == 'Tanakh']  # use the same parameter name "Tanakh"
+            result['matches'] = [m for m in result['matches'] if m['mode'] == 'Tanakh' and m['score']>=min_thresh]  # use the same parameter name "Tanakh"
             if len(result['matches']) == 0:
                 continue
             result['matches'].sort(key=lambda x: x['score'])
@@ -147,7 +150,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             # matched_pasuks = [match['verseDispHeb'] for match in result['matches']]
             # matched_pasuk = matched_pasuks[0]
             if len(result['matches']) > 1:
-                matched = many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=None)
+                matched = many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=priority_tanakh_chunk)
                 # many_pesukim_he = [match['verseDispHeb'] for match in result['matches']]
                 # many_pesukim_refs = [Ref(he_disp) for he_disp in many_pesukim_he]
                 # many_pesukim_score = [match['score'] for match in result['matches']]
@@ -229,7 +232,8 @@ def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True)
      "auto": auto,
      "charLevelData": [],
     "score": match.score,
-     "inline_citation": True
+     "inline_citation": True,
+     "qf_run_type": run_type
      }
     if generated_by:
         link_json.update({"generated_by": generated_by})
@@ -310,12 +314,13 @@ def validate_wordLevel2charLevel(tc, charData, dictas_text, html_regex='', pasuk
     ours_words = re.split('\s+|־', strip_cantillation(re.sub(html_regex, '', ours), strip_vowels=True).translate(str.maketrans('', '', string.punctuation)))
     ours_words = [w for w in ours_words if w]
     theirs_words = re.split('\s+|־', strip_cantillation(theirs, strip_vowels=True))
-    diff = [ours_words[0], ours_words[-1]] == [theirs_words[0], theirs_words[-1]]
-    wl_score = wl.calculate(ours_words[0],theirs_words[0], normalize=True) + wl.calculate(ours_words[-1], theirs_words[-1], normalize=True)
+    if not ours_words or not theirs_words:
+        return 0
+    wl_score = wl.calculate(ours_words[0], theirs_words[0], normalize=True) + wl.calculate(ours_words[-1], theirs_words[-1], normalize=True)
     if wl_score<wl_min_score and pasuk:
         # logging.debug(f'charLevelData is not returning the same words as dicta. ours: {ours}, dicta: {theirs}')
         log.write(f'{tc._oref} charLevelData is not returning the same words as dicta. ours: {ours}, dicta: {theirs} : wl={wl_score}\n')
-        print(f'www.sefaria.org/{tc._oref}: {[ours_words[0], ours_words[-1],theirs_words[0], theirs_words[-1]]}')
+        # print(f'www.sefaria.org/{tc._oref}: {[ours_words[0], ours_words[-1],theirs_words[0], theirs_words[-1]]}')
     return wl_score
 
 def write_to_csv(links, linkMatchs,  filename='quotation_links'):
@@ -331,7 +336,7 @@ def write_to_csv(links, linkMatchs,  filename='quotation_links'):
                 "dh": linkMatch.dh}
         list_dict.append(row)
 
-    with open(u'{}.csv'.format(filename), 'a') as csv_file:
+    with open(f'{path}/csvs/{filename}.csv', 'a') as csv_file:
         writer = csv.DictWriter(csv_file, ['url', 'pasuk', base_text_name, 'words pasuk', 'words base', 'score', "dh"])  # fieldnames = obj_list[0].keys())
         writer.writeheader()
         writer.writerows(list_dict)
@@ -400,7 +405,7 @@ def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority
     base_refs = oref.all_segment_refs()
     link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh, priority_tanakh_chunk=priority_tanakh_chunk, offline=offline)
     if not link_options:
-        print("no links found")
+        # print("no links found")
         return
     links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder', type='quotation_auto') for link_option in link_options])
     write_to_csv(links, linkMatchs, filename=f"dicta_{tref}")
@@ -409,7 +414,7 @@ def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority
     if post:
         post_link(links)
     if mongopost:
-       mongo_post(links)  # todo: post wordLevelData to local as well. (since it is not perfect Data anyway :) )
+       mongo_post([l.copy() for l in links])  # todo: post wordLevelData to local as well. (since it is not perfect Data anyway :) )
 #, server="http://localhost:8000")
     return links
 
@@ -465,7 +470,7 @@ def mongo_post(links):
     db_qf.quotations.insert_many(links)
 
 
-def run_offline(title, cat, min_thresh=22, post=False, mongopost = True, priority_tanakh_chunk_type=None):
+def run_offline(title, cat, min_thresh=22, post=False, mongopost = True, priority_tanakh_chunk_type=None, priority_fallback=None, max_word_number=30):
     """
 
     :param title:
@@ -479,34 +484,44 @@ def run_offline(title, cat, min_thresh=22, post=False, mongopost = True, priorit
     text_mapping = get_from_file(f"offline/text_mappings/{cat}/{title}.json")
     dicta_results_mapping = get_from_file(f"dicta_answers/{cat}/{title}.json")
     priority = trivial_priority(title, text_mapping, priority_tanakh_chunk_type)
+    all_links = []
     for r in text_mapping.keys():
-        links = dicta_links_from_ref(f'{r}', post=post, min_thresh=min_thresh, offline=[text_mapping, dicta_results_mapping], mongopost=mongopost, priority_tanakh_chunk=priority.get(r,  None))
-    log.close()
+        if max_word_number and Ref(r).word_count() > max_word_number:
+            continue
+        links = dicta_links_from_ref(f'{r}', post=post, min_thresh=min_thresh, offline=[text_mapping, dicta_results_mapping], mongopost=mongopost, priority_tanakh_chunk=priority.get(r,  priority_fallback))
+        if links:
+            all_links.extend(links)
+    if post:
+        post_link(all_links)
 
 
-def trivial_priority(title, text_mapping, type="perek"):
+
+def trivial_priority(title, text_mapping, priority_type="perek"):
     """
     This function returns a dictionary that maps tref in base text to a matching oref in Tanakh that suppsedaly has priority over other pesukim results for this base ref.
     :param title: book title
     :param text_mapping: Dictionary keys are refs of the book and values are the text
-    :param type: 'perek': gets the trivial structure based on perek pasuk (often tanakh commentaries)
+    :param priority_type: 'perek': gets the trivial structure based on perek pasuk (often tanakh commentaries)
                 'parasha': gets the trivial structure if there is a parasha structure (often Midrash and Chasidut books)
                 str: if this string can be read as a Ref like 'psalms' then the priority will be that book (a good idea for Liturgy books)
     :return: Dictionary. keys: trefs in the base book. values: oref from Tanakh
     """
+    if isinstance(priority_type, dict):
+        assert set(priority_type.keys()).intersection(set(text_mapping.keys()))
+        return priority_type
     priority = dict()
-    if type == 'perek':
+    if priority_type == 'perek':
         for k in text_mapping.keys():
             #todo: look at the depth of the parshan to know if it is a perek level structur dictionary or a pasuk level
             orefs_list = library.get_refs_in_string(re.sub(f'{title}', '', k))
             if orefs_list:
                 priority[k] = orefs_list[0]
-    elif type == 'parasha':
+    elif priority_type == 'parasha':
         peared = get_zip_parashot_refs(title)
         priority = dict([(r.normal(), item[1]) for item in peared if item[0] for r in item[0].all_segment_refs()])
     else:
         try:
-            r = Ref(type)
+            r = Ref(priority_type)
             priority = dict((k,r) for k in text_mapping.keys())
         except AttributeError:
             return {}
@@ -514,7 +529,7 @@ def trivial_priority(title, text_mapping, type="perek"):
 
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     # # range_ref = 'ילקוט שמעוני על התורה, חקת' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
     # range_ref = 'Tzror HaMor on Torah, Deuteronomy'#'Yalkut Shimoni on Torah' #'Chatam Sofer on Torah, Pinchas'
     # range_name = range_ref
@@ -538,4 +553,46 @@ if __name__ == '__main__':
     # # f.close()
     # log.close()
     # # post_links_from_file("Numbers 13:1-15:41/ys_links.txt", score=10)
-    run_offline("Ralbag on Torah", 'tanakh_comm', min_thresh=20, post=False, mongopost=True, priority_tanakh_chunk_type="perek") #Machzor Rosh Hashanah Sefard', 'Siddur Ashkenaz'
+    # liturgy_list = [f.split(".json")[0] for f in os.listdir(f'{os.getcwd()}/dicta_answers/Liturgy')][1::]
+    # liturgy_ls = os.listdir("offline/text_mappings/Liturgy")
+    # liturgy_ls = ['Hallel.json',
+    # 'Shir HaKavod.json',
+    # 'Yizkor.json',
+    # 'Selichot Nusach Lita Linear.json',
+    # 'Azharot of Solomon ibn Gabirol.json',
+    # 'Selichot Nusach Polin.json',
+    # "Seder Tisha B'Av (Edot HaMizrach).json",
+    # 'Shabbat Siddur Sefard Linear.json',
+    # 'Selichot Edot HaMizrach.json',
+    # 'Yedid Nefesh.json',
+    # 'Siddur Sefard.json',
+    # 'Machzor Yom Kippur Sefard.json',
+    # 'Pesach Haggadah Edot Hamizrah.json',
+    # 'Siddur Edot HaMizrach.json',
+    # "Seder Ma'amadot.json",
+    # 'Keter Malkhut.json',
+    # 'Lekha Dodi.json',
+    # 'current_ref_stats.csv',
+    # 'Weekday Siddur Sefard Linear.json',
+    # "Kinnot for Tisha B'Av (Ashkenaz).json"]
+    # # for title in liturgy_ls:
+    # #     try:
+    # #         if title in ['Selichot Nusach Ashkenaz Lita', 'Selichot Nusach Lita Linear', 'Selichot Nusach Polin', 'Selichot Edot HaMizrach']:
+    # #             continue
+    # #     except FileNotFoundError:
+    # #         continue
+    # #     n_title = re.split("\.", title)[0]
+    # #     run_offline(n_title, 'Liturgy', min_thresh=25, post=False, mongopost=True, priority_tanakh_chunk_type='psalms', max_word_number=50) #Machzor Rosh Hashanah Sefard', 'Siddur Ashkenaz' #{'status': 'ok. Link: Selichot Nusach Ashkenaz Lita, Yom Kippur Eve 3:15 | Psalms 86:5 Saved'}
+    # # for title in ['Enei Moshe on Ruth']:#['Devarim Tovim on Ecclesiastes', 'Massat Moshe on Esther', 'Shoshanat HaAmakim on Song of Songs', 'Rav Peninim on Proverbs']:
+    # #     run_offline(title, 'tanakh_comm', min_thresh=25, post=False, mongopost=True, priority_tanakh_chunk_type='perek', max_word_number=None)
+    # # log.close()
+    # ls_chasidut = [re.split("\.", t)[0] for t in os.listdir('dicta_answers/Chasidut')]
+    # for title in ls_chasidut:#['Devarim Tovim on Ecclesiastes', 'Massat Moshe on Esther', 'Shoshanat HaAmakim on Song of Songs', 'Rav Peninim on Proverbs']:
+    #     print(f'in book: {title}')
+    #     try:
+    #         if title in ['Shivchei HaBesht', 'Arvei Nachal', 'Beit Yaakov on Torah', 'Chiddushei HaRim on Torah', 'Ohr Zarua LaTzadik', "Me'or Einayim", 'Toldot Yaakov Yosef', 'Divrei Chalomot']:
+    #             continue
+    #         run_offline(title, 'Chasidut', min_thresh=25, post=False, mongopost=True, priority_tanakh_chunk_type='perek', max_word_number=None)
+    #     except:
+    #         print(f"book {title} failed!")
+    # log.close()
