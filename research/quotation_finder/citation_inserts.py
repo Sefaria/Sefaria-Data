@@ -47,7 +47,8 @@ class QuotationLink(link.Link):
         "inline_reference",  # dict with keys "data-commentator" and "data-order" to match an inline reference (itag)
         "charLevelData",     # list of length 2. Containing 2 dicts coresponding to the refs list, each dict consists of the following keys: ["startChar","endChar","versionTitle","language"]. *if one of the refs is a Pasuk the startChar and endChar keys are startWord and endWord. This attribute was created for the quotation finder
         "score",             # int. represents how "good"/accurate the link is. introduced for quotations finder
-        "inline_citation"    # bool acts as a flag for wrapped refs logic to run on the segments where this citation is inline.
+        "inline_citation",    # bool acts as a flag for wrapped refs logic to run on the segments where this citation is inline.
+        "trivial_ref"
     ]  # link.Link.optional_attrs.extend(new_optional_attrs)
 
     def __init__(self, link_d, from_file=''):
@@ -62,8 +63,8 @@ class QuotationLink(link.Link):
         self.tc = TextChunk(Ref(self.refs[1]), 'he')
         self.seg_text = get_seg_text(self.refs[1], from_file=from_file)
         self.seg_text_list = list(re.sub('\s+', dummy_char, self.seg_text))
-        if hasattr(link, 'trivial'):
-            self.trivial = link.trivial
+        if hasattr(link, 'trivial_ref'):
+            self.trivial_ref = link.trivial_ref
         self.dh = link.dh if hasattr(link, 'dh') else False
 
 
@@ -386,6 +387,19 @@ def modify_text_localy(title, version, new_texts_dict, new_version=None, server=
     return
 
 
+def get_links_to_post_not_to_embed(base_ref, score=25):
+    query = {"refs": base_ref.normal(), "score": {"$gte": score}}
+    cursor = db_qf.quotations.find(query)
+    links = [QuotationLink(l) for l in list(cursor)]
+    final_links = []
+    for l in links:
+        if l.type == 'dibur_hamatchil':
+            final_links.append(l.to_post())
+        if l.tanakh_tref == l.trivial_ref:
+            final_links.append(l.to_post())
+    return final_links
+
+
 if __name__ == '__main__':
     title = "Tzror HaMor on Torah"
     ref_title = f"Tzror_HaMor_on_Torah, Genesis.17.15.1"
@@ -407,6 +421,8 @@ if __name__ == '__main__':
         text_dict, links = get_segment(r, score=min_score, link_source='quotation_DB', prefix_char_range=30, from_file=base_file_dict)
         new_texts_dict.update(text_dict) #, prefix_char_range=30   from_file=get_from_file("Tzror_HaMor_on_Torah.json"), prefix_char_range=30))
         all_links.extend([l.to_post() for l in links])
+        only_sidebar_links = get_links_to_post_not_to_embed(r, score=min_score)
+        all_links.extend(only_sidebar_links)
         cnt+=1
         print(f"next {cnt}")
         # new_texts_dict.update(get_local_seg(r))
