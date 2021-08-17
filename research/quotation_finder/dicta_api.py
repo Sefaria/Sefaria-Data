@@ -527,9 +527,20 @@ def trivial_priority(title, text_mapping, priority_type="perek"):
             return {}
     return priority
 
+def offline_text_mapping_cat(cat):
+    os.chdir(f'offline/text_mappings/{re.sub(" ", "_",cat)}')
+    for ind_name in library.get_indexes_in_category(cat):
+        ind = library.get_index(ind_name)
+        vs = [v for v in ind.all_segment_refs()[1].versionset('he')]
 
+        if vs:
+            try:
+                create_file_for_offline_run(vs[0], ind_name)
+            except KeyError:
+                pass
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
+
     # # range_ref = 'ילקוט שמעוני על התורה, חקת' #'Tzror_HaMor_on_Torah, Numbers.15-17.'# "Noam_Elimelech"
     # range_ref = 'Tzror HaMor on Torah, Deuteronomy'#'Yalkut Shimoni on Torah' #'Chatam Sofer on Torah, Pinchas'
     # range_name = range_ref
@@ -596,3 +607,4 @@ def trivial_priority(title, text_mapping, priority_type="perek"):
     #     except:
     #         print(f"book {title} failed!")
     # log.close()
+    pass
