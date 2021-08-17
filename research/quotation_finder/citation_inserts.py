@@ -387,21 +387,27 @@ def modify_text_localy(title, version, new_texts_dict, new_version=None, server=
     return
 
 
-def get_links_to_post_not_to_embed(base_ref, score=25):
-    query = {"refs": base_ref.normal(), "score": {"$gte": score}}
-    cursor = db_qf.quotations.find(query)
-    links = [QuotationLink(l) for l in list(cursor)]
+def sidebar_not_embed(links):
     final_links = []
     for l in links:
         if l.type == 'dibur_hamatchil':
             final_links.append(l.to_post())
-        if l.tanakh_tref == l.trivial_ref:
+        if hasattr(l, 'trivial_ref') and l.tanakh_tref == l.trivial_ref:
             final_links.append(l.to_post())
+    return final_links
+
+
+def get_links_to_post_not_to_embed(base_ref, score=25, from_file=''):
+    query = {"refs": base_ref.normal(), "score": {"$gte": score}}
+    cursor = db_qf.quotations.find(query)
+    links = [QuotationLink(l, from_file=from_file) for l in list(cursor)]
+    final_links = sidebar_not_embed(links)
     return final_links
 
 
 if __name__ == '__main__':
     title = "Tzror HaMor on Torah"
+    vtitle = 'Tzeror Hamor, Warsaw, 1879'
     ref_title = f"Tzror_HaMor_on_Torah, Genesis.17.15.1"
     cat = "tanakh_comm"
     new_texts_dict = dict()
@@ -410,7 +416,7 @@ if __name__ == '__main__':
     path = os.getcwd()
     base_file = f'{path}/offline/text_mappings/{cat}/{title}.json'
     base_file_dict = get_from_file(base_file)
-    v = Version().load({'title': 'Tzror HaMor on Torah', 'versionTitle': 'Tzeror Hamor, Warsaw, 1879'})#Ref(library.get_index(title).get_first_ref_in_base_text(title)).text('he').version()
+    v = Version().load({'title': title, 'versionTitle': vtitle})#Ref(library.get_index(title).get_first_ref_in_base_text(title)).text('he').version()
     # links = get_links_from_file('Ramban_on_Numbers.31.23.json')
     # link_dict = order_links_by_segments(links)  #,"Selichot_Nusach_Ashkenaz_Lita")
     min_score = 25
@@ -421,15 +427,15 @@ if __name__ == '__main__':
         text_dict, links = get_segment(r, score=min_score, link_source='quotation_DB', prefix_char_range=30, from_file=base_file_dict)
         new_texts_dict.update(text_dict) #, prefix_char_range=30   from_file=get_from_file("Tzror_HaMor_on_Torah.json"), prefix_char_range=30))
         all_links.extend([l.to_post() for l in links])
-        only_sidebar_links = get_links_to_post_not_to_embed(r, score=min_score)
-        all_links.extend(only_sidebar_links)
+        # only_sidebar_links = get_links_to_post_not_to_embed(r, score=min_score)
+        # all_links.extend(only_sidebar_links)
         cnt+=1
         print(f"next {cnt}")
         # new_texts_dict.update(get_local_seg(r))
     # push_text_w_citations(v.versionTitle, v.versionSource, new_texts_dict)
     # push_text_w_citations('test squareclose prefix 25', v.versionSource, new_texts_dict)
     # modify_bulk_text(UID, Version().load({'title': "Kinnot for Tisha B'Av (Ashkenaz), Kinot for Tisha B'Av Night", 'versionTitle': 'test30'}), new_texts_dict)
-    vtitle = v.title #f'test_minscore_{min_score}'
+    vtitle = v.title  # f'test_minscore_{min_score}'
     # new_version_title = f'test_minscore_{min_score}'
     # new_version = {
     #         'versionTitle': new_version_title,
