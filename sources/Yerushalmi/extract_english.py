@@ -1,5 +1,6 @@
 # encoding=utf-8
-
+import django
+django.setup()
 import os
 import bs4
 import csv
@@ -9,6 +10,7 @@ from data_utilities.util import traverse_ja
 from sources.Yerushalmi.sefaria_objects import *
 from sources.Yerushalmi.text_mapping import create_helper_html
 from data_utilities.ParseUtil import ParsedDocument, Description, ParseState
+import yutil
 
 
 """
@@ -52,6 +54,27 @@ def is_ja_mishna(segment):
     return not is_ja_mishna(segment)
 
 
+def get_footnote_map(soup):
+    fn_map = {}
+    for fn in soup.find_all("fn"):
+        id = fn["id"]
+        label = fn.label.text
+        txt = " ".join([s for s in fn.p.stripped_strings])
+        fn_map[id] = {"label": label, "txt": txt}
+    return fn_map
+
+
+def get_text_pairs(soup):
+    pairs = []
+    source_paras = soup.find_all(lambda tag: tag.name == 'source_para' and 'variant_text_block' not in {n.name for n in tag.parents})
+    for source_para in source_paras:
+        trans_para = soup.find("trans_para", pararef=source_para["id"])
+        pairs += [(
+            " ".join([s for s in source_para.stripped_strings]),
+            " ".join([s for s in trans_para.stripped_strings])
+        )]
+    return pairs
+
 with open('guggenheimer_titles.json') as fp:
     titles_to_file_mapping = json.load(fp)
 book_mapping = {
@@ -64,10 +87,15 @@ xml_files = [x for x in os.listdir(xml_dir) if x.endswith('xml')]
 for xml_file in xml_files:
     with open(os.path.join(xml_dir, xml_file)) as fp:
         soup = bs4.BeautifulSoup(fp, 'xml')
-    books = soup.find_all('book')
-    for book in books:
+    for book in soup.find_all('book'):
         title = book_mapping[book['id']]
-        print(title)
+        for chapter in book.find_all('chapter'):
+            chap_num = int(chapter["num"])
+            print(f'{title} {chap_num}')
+            fn_map = get_footnote_map(chapter)
+            text_pairs = get_text_pairs(chapter)
+            pass
+
         trans_para = book.find_all('trans_para')
 
         talmud_only, mishna_only = [], []
