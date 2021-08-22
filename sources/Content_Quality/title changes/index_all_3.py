@@ -75,6 +75,10 @@ for i, cat in enumerate(orig):
 			new_c.path = c.path
 			new_c.add_shared_term(t.name)
 			new_c.lastPath = new_c.path[-1] = new[i]
+			new_c.enDesc = getattr(c, "enDesc", "")
+			new_c.heDesc = getattr(c, "heDesc", "")
+			new_c.enShortDesc = getattr(c, "enShortDesc", "")
+			new_c.heShortDesc = getattr(c, "heShortDesc", "")
 			new_c.save(override_dependencies=True)
 		else:
 			continue
@@ -118,7 +122,9 @@ for i, cat in enumerate(orig):
 for i, cat in enumerate(orig):
 	Term().load({"name": orig[i]}).delete()
 	t = Term().load({"name": new[i]})
-	he_title = " ".join(t.get_primary_title('he').split()[:-1])
+	temp_title = t.get_primary_title('he')
+	he_title = " ".join(temp_title.split()[:-1])
 	t.add_title(he_title, 'he', True, True)
+	t.remove_title(temp_title, 'he')
 	t.save()
 	library.rebuild(include_toc=True)

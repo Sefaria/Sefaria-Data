@@ -117,7 +117,7 @@ index = {
 	"heDesc": curr.heDesc,
 	"heShortDesc": curr.heShortDesc
 }
-post_index(index, server="http://localhost:8000")
+#post_index(index, server="http://localhost:8000")
 
 
 MB = {}
@@ -173,10 +173,10 @@ for sec in sorted(base.keys()):
 		BH[sec][seg] = curr_BH
 	if MB_tags != len(our_MB.all_segment_refs()):
 		print("Siman {}".format(sec))
-		print("http://mishnaberura.eu5.org/ has {} tags, but our text has {} comments\n".format(MB_tags, len(our_MB.all_segment_refs())))
+		print("Mishnah Berurah: EU5 has {} tags, but our text has {} comments\n".format(MB_tags, len(our_MB.all_segment_refs())))
 	if BH_tags != len(our_BH.all_segment_refs()):
 		print("Siman {}".format(sec))
-		print("http://mishnaberura.eu5.org/ has {} tags, but our text has {} comments\n".format(BH_tags, len(our_BH.all_segment_refs())))
+		print("Beur Halacha: EU5 has {} tags, but our text has {} comments\n".format(BH_tags, len(our_BH.all_segment_refs())))
 
 #MB_dhs = get_kereti_tags("Mishnah Berurah", MB)
 # BH_dhs = get_kereti_tags("Be'ur Halakhah", BH)

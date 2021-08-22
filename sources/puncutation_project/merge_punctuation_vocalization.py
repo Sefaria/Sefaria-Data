@@ -11,6 +11,7 @@ VOC_VTITLE = "William Davidson Edition - Vocalized Aramaic"
 MERGED_VTITLE = "William Davidson Edition - Vocalized Punctuated Aramaic"
 
 
+
 def get_punctuation_regex():
     punc_list = ['?!', '?', '!', ':', '.', ',']
     return re.compile(rf'(")?({"|".join(re.escape(p) for p in punc_list)})$')

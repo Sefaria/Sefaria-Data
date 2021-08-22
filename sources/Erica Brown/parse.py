@@ -63,7 +63,7 @@ with open(file, 'r') as f:
 						p_text = re.sub('<span class="it-text-bold">(.*?)</span>', '<b>\g<1></b>', p_text)
 						if "class" in p.attrs and "sub-" in p["class"][0]:
 							p_text = "<b>"+p_text+"</b>"
-						p_text = p_text.replace("&lt;", "<").replace("&gt;", ">")
+						p_text = p_text.replace("&lt;", "<").replace("&gt;", ">").replace('<li class="bullet-first">', "• ").replace('<li class="bullets">', '<br/>• ')
 						p_text = bleach.clean(p_text, strip=True, tags=["b", "i", "sup"], attributes=["class"])
 						text_dict[title].append(p_text)
 			p = p.next_sibling if len(p_arr) <= 1 else orig_p.next_sibling
