@@ -12,7 +12,8 @@ def add_to_examples(seg, vtitle, lang, which_one):
 	if len(examples[which_one]) < 20:
 		examples[which_one].append("{} {} {}".format(seg.normal(), vtitle, lang))
 
-for i in library.get_indexes_in_category(category, include_dependant=True):
+#for i in library.get_indexes_in_category(category, include_dependant=True):
+for i in ["Radak on Isaiah", "Ibn Ezra on Isaiah"]:
 	if " on " in i:
 		print(i)
 		i = library.get_index(i)
@@ -47,7 +48,7 @@ for i in library.get_indexes_in_category(category, include_dependant=True):
 					tag = middle.group(1)
 					tc.text = tc.text.replace(" {} ".format(tag), " {}".format(tag))
 					add_to_examples(seg, v.versionTitle, v.language, which_one)
-			tc.save(force_save=True)
+				tc.save(force_save=True)
 
 
 which_one = 0

@@ -1,7 +1,7 @@
 import django
 django.setup()
 from sefaria.system.database import db
-
+from sefaria.model.webpage import *
 
 sites_data = [
 		{
@@ -588,26 +588,28 @@ sites_data = [
 
 
 collection = db.websites
-db.drop_collection(collection)
-keys = set()
-domains = []
-names = []
 for site_data in sites_data:
-	assert site_data["name"] not in names
-	names.append(site_data["name"])
-	domains += site_data["domains"]
-	if "is_whitelisted" not in site_data:
-		site_data["is_whitelisted"] = True
-	collection.insert_one(site_data)
-	for k in site_data:
-		keys.add(k)
-collection.create_index("date")
-
-
-if len(set(domains)) != len(domains):  # make sure no duplicate domains
-	domains = sorted(domains)
-	set_domains = sorted(list(set(domains)))
-	for x, y in zip(domains, set_domains):
-		print("{} vs {}".format(x, y))
+	print(WebSite(site_data["name"]).contents()
+# db.drop_collection(collection)
+# keys = set()
+# domains = []
+# names = []
+# for site_data in sites_data:
+# 	assert site_data["name"] not in names
+# 	names.append(site_data["name"])
+# 	domains += site_data["domains"]
+# 	if "is_whitelisted" not in site_data:
+# 		site_data["is_whitelisted"] = True
+# 	collection.insert_one(site_data)
+# 	for k in site_data:
+# 		keys.add(k)
+# collection.create_index("date")
+#
+#
+# if len(set(domains)) != len(domains):  # make sure no duplicate domains
+# 	domains = sorted(domains)
+# 	set_domains = sorted(list(set(domains)))
+# 	for x, y in zip(domains, set_domains):
+# 		print("{} vs {}".format(x, y))
 
 

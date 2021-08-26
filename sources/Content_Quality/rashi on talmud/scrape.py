@@ -70,7 +70,7 @@ for f, data in json_files.items():
 		continue
 	f = f.replace("daf_mapping_", "").replace(".json", "").replace("בבלי מסכת ", "")
 	f = library.get_index(f).title
-	rashis_by_daf(data, f)
+	#rashis_by_daf(data, f)
 
 for f in os.listdir("."):
 	if f.startswith("rashis_by_daf"):

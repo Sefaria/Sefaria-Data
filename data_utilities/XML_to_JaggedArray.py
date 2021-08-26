@@ -116,60 +116,6 @@ class XML_to_JaggedArray:
 
 
 
-
-    def process_footnote_for_MT(self, comment_text, chapter, ftnote_text, ftnote_key):
-        '''
-        check if it has quotes,
-        if it does, return modified text without footnote in it and a bool value saying no_footnote
-        if no_footnote isn't true,
-        proceed as usual
-        '''
-        actual_footnote = True
-        orig_ftnote_text = ftnote_text
-        ftnote_text = self.cleanText(ftnote_text)
-        if ftnote_text.find('</sup>"') > 0:
-            actual_footnote = False
-            #remove footnote from dictionary
-            self.footnotes[chapter].pop(ftnote_key)
-
-            #remove footnote from text
-            ftnote_xref_in_comment = re.compile(".*?(<xref rid=\"{}\">.*?</xref>)".format(ftnote_key)).match(comment_text)
-            assert ftnote_xref_in_comment
-            comment_text = comment_text.replace(ftnote_xref_in_comment.group(1), "")
-
-            #format footnote text right by removing <sup> and
-            #checking for comment on footnote that will become a footnote in turn
-            # and save it in footnotes_within_footnotes
-
-            raavad = re.compile('<sup>.*?</sup>(\".*?\"\.?)').match(ftnote_text)
-            if not raavad:  #if not a normal raavad match, it should be the one exception that is still raavad
-                            #namely, having only one quotation mark
-                assert len(ftnote_text.split('"')) == 2
-                #print "ONLY ONE QUOTATION MARK:"
-                #print ftnote_text
-                pos_start = ftnote_text.find('"')
-                if chapter not in self.footnotes_within_footnotes:
-                    self.footnotes_within_footnotes[chapter] = []
-                self.footnotes_within_footnotes[chapter].append(ftnote_text[pos_start:])
-                return comment_text, actual_footnote
-            else:
-                raavad = raavad.group(1)
-                comm_raavad_pos = ftnote_text.find(raavad) + len(raavad)
-                comm_raavad = ftnote_text[comm_raavad_pos:]
-                if len(comm_raavad) > 0:
-                    #if '"' in comm_raavad and len(comm_raavad.split('"')) % 2 == 0:
-                    #    print "EXTRA QUOTATION MARK:"
-                    #    print comm_raavad
-                    raavad = "{}<sup>*</sup><i class='footnote'>{}</i>".format(raavad, comm_raavad)
-
-                if chapter not in self.footnotes_within_footnotes:
-                    self.footnotes_within_footnotes[chapter] = []
-                self.footnotes_within_footnotes[chapter].append(raavad)
-
-        return comment_text, actual_footnote
-
-
-
     def move_title_to_first_segment(self, element):
         title = self.grab_title(element, delete=False, test_lambda=self.grab_title_lambda, change_name=False)
         if element[0].tag == "title":
