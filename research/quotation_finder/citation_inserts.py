@@ -15,7 +15,6 @@ db_qf = client.quotations
 # paste in the pasukRef in normal hebrew.
 
 dummy_char = "█"
-only_prefixed = True
 
 
 class QuotationLink(link.Link):
@@ -66,7 +65,6 @@ class QuotationLink(link.Link):
         if hasattr(link, 'trivial_ref'):
             self.trivial_ref = link.trivial_ref
         self.dh = link.dh if hasattr(link, 'dh') else False
-
 
     def load(self, query, proj=None):
         obj = getattr(db_qf, self.collection).find_one(query, proj)
@@ -140,7 +138,7 @@ def get_seg_text(tref, from_file=None):
     return seg_text
 
 
-def get_segment(ref, score=22, link_source=None, from_file=None, prefix_char_range=30):
+def get_segment(ref, score=22, link_source=None, from_file=None, prefix_char_range=30,only_prefixed=True):
     """
 
     :param ref: oref
@@ -161,7 +159,7 @@ def get_segment(ref, score=22, link_source=None, from_file=None, prefix_char_ran
     lls = get_links_for_citation_insert(ref, score, link_source, from_file=from_file)
 
     if lls:
-        text_w_citations, final_links = add_citations(lls, seg_text_list, ref.normal(), prefix_char_range=prefix_char_range)
+        text_w_citations, final_links = add_citations(lls, seg_text_list, ref.normal(), prefix_char_range=prefix_char_range, only_prefixed=only_prefixed)
         # print(f"check {link2url(lls[0], sandbox='quotations')}")
     else:
         return {}, []
@@ -171,7 +169,7 @@ def get_segment(ref, score=22, link_source=None, from_file=None, prefix_char_ran
 def get_place(link, seg_text_list):
     place = link.charLevelData[1]['endChar']
     search_here = ''.join(seg_text_list[place:min(place+10, len(seg_text_list))]).replace(dummy_char, ' ')
-    match_gomer = re.match(""".*?(וגו|וכו)('|"|מר)?.*?""", search_here)
+    match_gomer = re.match(""".*?((וגו|וכו)('|"|מר)?|וכ') .*?""", search_here)
     if match_gomer:
         move = len(match_gomer.group())
         place = place + move
@@ -181,10 +179,11 @@ def get_place(link, seg_text_list):
 def sheneemar(link, seg_text_list, prefix_char_range=10):
     place = link.charLevelData[1]['startChar']
     search_here = ''.join(seg_text_list[max(place-prefix_char_range, 0):place+1]).replace(dummy_char, ' ')
-    match_sheneemar = re.match(""".*?(וזהו|ש?נ?אמר|(ד|ו)?כתיב|ו?כתוב|ו?הדר).*?""", search_here)
+    match_sheneemar = re.match(""".*?(וזהו|ש?נ?אמר|[דו]?כת[יו]ב|ו?הדר|שנא').*?""", search_here)
     if match_sheneemar:
         return True
     return False
+
 
 def test_word_char_level(link, citation):
     pasuk_chars = list(re.sub('\s+', dummy_char, Ref(link.refs[0]).text('he').text))
@@ -295,7 +294,7 @@ def delete_square_close_citations(citation_list, seg_dis = 150, verse_dis = 4):
     return new_citation_list
 
 
-def add_citations(lls, seg_text_list, book_ref, prefix_char_range=30):
+def add_citations(lls, seg_text_list, book_ref, prefix_char_range=30, only_prefixed=True):
     """
 
     :param lls: list of the links to be added in inline citations. (according to links that were created by quotation_finder)
@@ -313,7 +312,7 @@ def add_citations(lls, seg_text_list, book_ref, prefix_char_range=30):
         if l.type == 'dibur_hamatchil':
             # post_link(l.contents())
             final_links.append(l)
-            db_qf.quotations.update_one({"charLevelData": f"{l.charLevelData}", "refs": f"{l.refs}"},
+            db_qf.quotations.update_one({"charLevelData": l.charLevelData, "refs": l.refs},
                                     {"$set": {"post": True}})
             continue
         if Ref(l.refs[1]).book != Ref(book_ref).book:
@@ -327,7 +326,7 @@ def add_citations(lls, seg_text_list, book_ref, prefix_char_range=30):
         citation = get_citation(l, color_score=[22,30,50])
         prefixed = sheneemar(l, seg_text_list, prefix_char_range=prefix_char_range) if only_prefixed else None
         if prefixed:
-            db_qf.quotations.update_one({"charLevelData": f"{l.charLevelData}", "refs": f"{l.refs}"},
+            db_qf.quotations.update_one({"charLevelData": l.charLevelData, "refs": l.refs},
                                     {"$set": {"prefixed": True}})
         if only_prefixed and not (prefixed or vego) and not hasattr(l, "prefixed"):
             continue
@@ -424,7 +423,7 @@ if __name__ == '__main__':
     for r in range_ref.all_segment_refs(): #base_file_dict.keys():
         # r = Ref(ref)
         # cProfile.run('''get_segment(r, score=min_score, link_source='quotation_DB', prefix_char_range=30)''')
-        text_dict, links = get_segment(r, score=min_score, link_source='quotation_DB', prefix_char_range=30, from_file=base_file_dict)
+        text_dict, links = get_segment(r, score=min_score, link_source='quotation_DB', prefix_char_range=30, from_file=base_file_dict, only_prefixed=True)
         new_texts_dict.update(text_dict) #, prefix_char_range=30   from_file=get_from_file("Tzror_HaMor_on_Torah.json"), prefix_char_range=30))
         all_links.extend([l.to_post() for l in links])
         # only_sidebar_links = get_links_to_post_not_to_embed(r, score=min_score)
@@ -447,7 +446,7 @@ if __name__ == '__main__':
         post_link(all_links, server="http://localhost:8000")
     except ConnectionError:
         pass
-    modify_text_localy(range_ref.index.title, v, new_texts_dict, server="http://localhost:8000")
+    # modify_text_localy(range_ref.index.title, v, new_texts_dict, server="http://localhost:8000")
 
     # push_text_w_citations(v.versionTitle, v.versionSource, new_texts_dict)
     # post_text()
