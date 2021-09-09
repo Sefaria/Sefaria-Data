@@ -585,11 +585,11 @@ sites_data = [
 ]
 
 
-
-
-collection = db.websites
-for site_data in sites_data:
-	print(WebSite(site_data["name"]).contents()
+#
+#
+# collection = db.websites
+# for site_data in sites_data:
+# 	print(WebSite(site_data["name"]).contents()
 # db.drop_collection(collection)
 # keys = set()
 # domains = []
