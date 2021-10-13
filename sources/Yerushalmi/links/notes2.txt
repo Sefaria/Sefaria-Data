@@ -1,0 +1,16 @@
+לאפשר טווח עד 3 סגמנטים
+לבדוק חריגות
+
+def find_halakha(loc, mas):
+    halakha = re.findall('^[^ ]* ([א-ל]{1,2}(?:, | ,)[א-כ]{1,2})', loc)
+    if halakha:
+        halakha = re.sub('[^א-ת ]', '', halakha[0])
+        try:
+            halakha = Ref(f'{yer} {mas} {halakha}')
+            return halakha #.top_section_ref() why i did it?
+        except InputError:
+            print('input error', loc)
+            return Ref(f'{yer} {mas}')
+    else:
+        return Ref(f'{yer} {mas}')
+
