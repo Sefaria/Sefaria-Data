@@ -96,28 +96,17 @@ for f in os.listdir("Mishnah Berurah"):
 		with open("Mishnah Berurah/"+f, 'r') as open_f:
 			base.update(json.load(open_f))
 
-curr = library.get_index("Responsa Rav Pealim")
-children = curr.nodes.children
-root = SchemaNode()
-root.add_primary_titles("Responsa Rav Pealim", 'שו"ת רב פעלים')
-root.key = "Responsa Rav Pealim"
-for c in children:
-	root.append(c)
-root.validate()
+with open("MB.csv", 'w') as f:
+	writer = csv.writer(f)
+	for ch in sorted([int(x) for x in MB_comm.keys()]):
+		for pasuk in MB_comm[str(ch)]:
+			writer.writerow(["Mishnah Berurah {}:{}".format(ch, pasuk), MB_comm[str(ch)][pasuk]])
 
-index = {
-	"title": root.key,
-	"categories": curr.categories,
-	"schema": root.serialize(),
-	"enDesc": curr.enDesc,
-	"enShortDesc": curr.enShortDesc,
-	"compPlace": curr.compPlace,
-	"compDate": curr.compDate,
-	"authors": curr.authors,
-	"heDesc": curr.heDesc,
-	"heShortDesc": curr.heShortDesc
-}
-#post_index(index, server="http://localhost:8000")
+with open("SA.csv", 'w') as f:
+	writer = csv.writer(f)
+	for ch in sorted([int(x) for x in base.keys()]):
+		for pasuk in base[str(ch)]:
+			writer.writerow(["Shulchan Arukh, Orach Chayim {}:{}".format(ch, pasuk), base[str(ch)][pasuk]])
 
 
 MB = {}

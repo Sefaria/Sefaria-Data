@@ -7,29 +7,46 @@ import os
 import time
 
 def rambam_pages(driver):
-	stopped_at_book = "Mishneh Torah, The Sanhedrin and the Penalties within their Jurisdiction"
-	stopped_at_perek = 24
-	stopped_at_pasuk = 2
-	start = False
+	stopped_at_book = 'Mishneh Torah, Things Forbidden on the Altar'
+	stopped_at_perek = 1
+	stopped_at_pasuk = 1
+	start = True
 	cats = ["Sefer Madda", "Sefer Ahavah", "Sefer Zemanim", "Sefer Nashim", "Sefer Kedushah", "Sefer Haflaah", "Sefer Zeraim", "Sefer Avodah", "Sefer Korbanot", "Sefer Taharah", "Sefer Nezikim", "Sefer Kinyan", "Sefer Mishpatim", "Sefer Shoftim"]
-	total_books = -1
+	total_books = 3
 	for c, cat in enumerate(cats):
 		for b, book in enumerate(library.get_indexes_in_category(cat)):
-			if c > 6 and library.get_index(book) in books:
+			books_keys = ["Mishneh Torah, " + b for b in books.keys()]
+			if book in books_keys:
+				print(book)
 				perek_pasuk = []
 				for seg in library.get_index(book).all_segment_refs():
 					perek_pasuk.append(seg.sections)
 				for perek, pasuk in perek_pasuk:
-					url = "https://www.hebrewbooks.org/rambam.aspx?sefer={}&hilchos={}&perek={}&halocha={}".format(c+1, total_books+1, perek, pasuk)
+					url = "https://www.hebrewbooks.org/rambam.aspx?sefer={}&hilchos={}&perek={}&halocha={}".format(c+1, books[book.replace("Mishneh Torah, ", "")], perek, pasuk)
 					if stopped_at_book == book and stopped_at_pasuk == pasuk and stopped_at_perek == perek:
 						start = True
 						print("STARTING...")
 					if start:
-						driver.get(url)
-						pageSource = driver.page_source
-						fileToWrite = open("hebrew books/{} {},{}.html".format(book, perek, pasuk), "w")
-						fileToWrite.write(pageSource)
-						fileToWrite.close()
+						retrieved = True
+						try:
+							driver.get(url)
+						except Exception as e:
+							print(e)
+							try:
+								driver.get(url)
+							except Exception as e:
+								print("Double fault!")
+								retrieved = False
+						if retrieved:
+							pageSource = driver.page_source
+							print("retrieved")
+							if len(pageSource) > 16000:
+								print("writing")
+								fileToWrite = open("hebrew books/{} {},{}.html".format(book, perek, pasuk), "w")
+								fileToWrite.write(pageSource)
+								fileToWrite.close()
+							else:
+								print("Can't find {}".format(url))
 			total_books += 1
 	driver.quit()
 
@@ -37,7 +54,7 @@ def lechem_pages(driver):
 	deleted = 0
 	lechem_pages_dict = {}
 	for f in os.listdir("hebrew books/"):
-		if f.endswith("html"):
+		if f.endswith("html") and "Things Forbidden on the Altar" in f:
 			book = " ".join(f.split()[:-1])
 			perek_pasuk = f.split()[-1].replace(".html", "")
 			perek_pasuk = perek_pasuk.replace(',', ":")
@@ -86,31 +103,42 @@ books = [Index().load({'title': 'Mishneh Torah, Sacrificial Procedure'}),
  Index().load({'title': 'Mishneh Torah, Mourning'}),
  Index().load({'title': 'Mishneh Torah, Kings and Wars'})]
 
-
+books = {"Things Forbidden on the Altar": 44}
 chrome_options = Options()
 chrome_options.add_argument("--headless")
-driver = webdriver.Chrome("/Users/stevenkaplan/Downloads/chromedriver", chrome_options=chrome_options)
+driver = webdriver.Chrome("/Users/stevenkaplan/Downloads/chromedriver94", chrome_options=chrome_options)
 
-# rambam_pages(driver)
+#rambam_pages(driver)
 
-#lechem_URL_dict = lechem_pages(driver)
-#json.dump(lechem_URL_dict, open("lechem_pages_sanhedrin_onward.json", 'w'))
+before_sanhedrin = lechem_pages(driver)
 # before_sanhedrin = json.load(open("lechem mishneh/lechem_pages_up_to_sanhedrin.json", 'r'))
 # after_sanhedrin = json.load(open("lechem mishneh/lechem_pages_sanhedrin_onward.json", 'r'))
 # before_sanhedrin.update(after_sanhedrin)
-# for book in before_sanhedrin:
-# 	for perek in before_sanhedrin[book]:
-# 		for pasuk in before_sanhedrin[book][perek]:
-# 			print(pasuk)
-# 			url = before_sanhedrin[book][perek][pasuk]
-# 			source = selenium_get_url(driver, url)
-# 			with open("lechem mishneh html/{} {} {}.html".format(book, perek, pasuk), 'w') as f:
-# 				f.write(source)
+start_book = "Mishneh Torah, Things Forbidden on the Altar"
+start_ch = 1
+start = True
+for book in before_sanhedrin:
+	if book != start_book and not start:
+		continue
+	for perek in sorted(before_sanhedrin[book].keys()):
+		if perek == start_ch:
+			start = True
+		if start:
+			for pasuk in before_sanhedrin[book][perek]:
+				print(pasuk)
+				url = before_sanhedrin[book][perek][pasuk]
+				source = selenium_get_url("/Users/stevenkaplan/Downloads/chromedriver94", url)
+				with open("lechem mishneh html/{} {} {}.html".format(book, perek, pasuk), 'w') as f:
+					f.write(source)
 text_dict = {}
 for f in os.listdir("lechem mishneh html"):
+	if not f.endswith("html"):
+		continue
 	perek = int(f.split()[-2])
 	pasuk = int(f.split()[-1].replace('.html', ''))
 	book = " ".join(f.split()[:-2])
+	if book.replace("Mishneh Torah, ", "") not in books.keys():
+		continue
 	if book not in text_dict:
 		text_dict[book] = {}
 	if perek not in text_dict[book]:
@@ -118,6 +146,7 @@ for f in os.listdir("lechem mishneh html"):
 	text_dict[book][perek][pasuk] = []
 	orig = f
 	with open("lechem mishneh html/"+f, 'r') as f:
+		print(f)
 		soup = BeautifulSoup(f)
 		el = soup.find(class_="peirush")
 		for i, line in enumerate(el.contents):
@@ -152,8 +181,8 @@ for book in text_dict:
 		"categories": ["Halakhah", "Mishneh Torah", "Commentary", "Lechem Mishneh", subcat],
 		"collective_title": "Lechem Mishneh"
 	}
-	add_category(subcat, indx["categories"], server="https://resetwebsites.cauldron.sefaria.org")
-	post_index(indx, server="https://resetwebsites.cauldron.sefaria.org")
+	add_category(subcat, indx["categories"], server="https://germantalmud.cauldron.sefaria.org")
+	post_index(indx, server="https://germantalmud.cauldron.sefaria.org")
 	for perek in text_dict[book]:
 		text_dict[book][perek] = convertDictToArray(text_dict[book][perek])
 	text_dict[book] = convertDictToArray(text_dict[book])
@@ -163,5 +192,5 @@ for book in text_dict:
 		"versionTitle": "Friedberg Edition",
 		"versionSource": "https://fjms.genizah.org/"
 	}
-	post_text("Lechem Mishneh on {}".format(book), send_text, server="https://resetwebsites.cauldron.sefaria.org")
+	post_text("Lechem Mishneh on {}".format(book), send_text, server="https://germantalmud.cauldron.sefaria.org")
 	time.sleep(5)
