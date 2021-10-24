@@ -6,10 +6,13 @@ chrome_options = Options()
 chrome_options.add_argument("--headless")
 driver = webdriver.Chrome("/Users/stevenkaplan/Downloads/chromedriver94", chrome_options=chrome_options)
 
-for cat in ["Tanakh", "Prophets", "Writings"]:
-    for b, book in enumerate(sorted([library.get_index(i) for i in library.get_indexes_in_category(cat)], key=lambda x: int(x.order[0]))):
+total = 5
+for cat in ["Prophets", "Writings"]:
+    curr_books = sorted([library.get_index(i) for i in library.get_indexes_in_category(cat)], key=lambda x: int(x.order[0]))
+    for b, book in enumerate(curr_books):
         for p, perek in enumerate(book.all_section_refs()):
-            url = f"https://www.levangile.com/Bible-CAH-{b+1}-{p+1}-1-complet-Contexte-oui.htm"
+            url = f"https://www.levangile.com/Bible-CAH-{b+1+total}-{p+1}-1-complet-Contexte-oui.htm"
+            print(url)
             driver.get(url)
             retrieved = True
             try:
@@ -31,3 +34,4 @@ for cat in ["Tanakh", "Prophets", "Writings"]:
                     fileToWrite.close()
                 else:
                     print("Can't find {} {}".format(book, perek))
+    total += len(curr_books)
