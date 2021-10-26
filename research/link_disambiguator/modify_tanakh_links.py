@@ -37,7 +37,7 @@ def get_tc(tref, just_ref=False, tries=0):
 """
 Copied and pasted from main.py to make this file independently runnable. not a great idea...
 """
-def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=100, use_indicator_words=False, return_matches=False):
+def get_snippet_by_seg_ref(source_text, source_ref, found, must_find_snippet=False, snip_size=100, use_indicator_words=False, return_matches=False):
     """
     based off of library.get_wrapped_refs_string
     :param source:
@@ -67,10 +67,10 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     title_nodes = {t: found_node for t in found.index.all_titles("he")}
     all_reg = library.get_multi_title_regex_string(set(found.index.all_titles("he")), "he")
     reg = regex.compile(all_reg, regex.VERBOSE)
-    if len(source_tc.text) == 0 or not isinstance(source_tc.text, str):
-        print(source_tc._oref)
-    source_text = re.sub(r"<[^>]+>", "", strip_cantillation(source_tc.text, strip_vowels=True))
-    linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
+    if len(source_text) == 0 or not isinstance(source_text, str):
+        print(source_ref)
+    source_text_norm = re.sub(r"<[^>]+>", "", strip_cantillation(source_text, strip_vowels=True))
+    linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text_norm, "he")
 
     snippets = []
     found_normal = found.normal()
@@ -113,7 +113,7 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     if len(snippets) == 0:
         if must_find_snippet:
             return None
-        return [source_text]
+        return [source_text_norm]
 
     return snippets
 
@@ -173,13 +173,12 @@ def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list
     return removal_map
 
 def convert_normalized_indices_to_unnormalized_indices(normalized_indices, removal_map):
-    from bisect import bisect_right
+    from bisect import bisect_right, bisect_left
     removal_keys = sorted(removal_map.keys())
     unnormalized_indices = []
     for start, end in normalized_indices:
-        unnorm_start_index = bisect_right(removal_keys, start) - 1
-        unnorm_end_index = bisect_right(removal_keys, end-1) - 1
-
+        unnorm_start_index = bisect_left(removal_keys, start) - 1
+        unnorm_end_index = bisect_left(removal_keys, end - 1) - 1
         unnorm_start = start if unnorm_start_index < 0 else start + removal_map[removal_keys[unnorm_start_index]]
         unnorm_end = end if unnorm_end_index < 0 else end + removal_map[removal_keys[unnorm_end_index]]
         unnormalized_indices += [(unnorm_start, unnorm_end)]
@@ -206,13 +205,12 @@ def modify_tanakh_links_one(main_ref, section_map, error_file_csv):
         def find_text_to_remove(s):
             for m in re.finditer(r"(<[^>]+>|[\u0591-\u05bd\u05bf-\u05c5\u05c7])", s):
                 yield m, ''
-        removal_map = get_mapping_after_normalization(main_tc.text, find_text_to_remove)
-        edited = False
         for section_tref, segment_ref_dict in list(section_map.items()):
+            removal_map = get_mapping_after_normalization(new_main_text, find_text_to_remove)
             section_oref = get_tc(section_tref, True)
             quoted_list_temp = sorted(list(segment_ref_dict.items()), key=lambda x: x[0])
             segment_ref_list = [segment_ref_dict.get(i, None) for i in range(quoted_list_temp[-1][0]+1)]
-            match_list = get_snippet_by_seg_ref(main_tc, section_oref, must_find_snippet=True, snip_size=65, return_matches=True)
+            match_list = get_snippet_by_seg_ref(new_main_text, main_ref, section_oref, must_find_snippet=True, snip_size=65, return_matches=True)
             if match_list:
                 if len(match_list) == len(segment_ref_list):
                     chars_to_wrap = []
@@ -223,15 +221,14 @@ def modify_tanakh_links_one(main_ref, section_map, error_file_csv):
                         cumulative_a_tag_offset = (m.start(2)-len(re.sub(r"<[^>]+>", "", linkified_text[:m.start(2)])))
                         unnorm_inds = convert_normalized_indices_to_unnormalized_indices([(m.start(2)-cumulative_a_tag_offset, m.end(2)-cumulative_a_tag_offset)], removal_map)[0]
                         chars_to_wrap += [(unnorm_inds[0],unnorm_inds[1], r.he_normal())]
-                        main_tc_snippet = main_tc.text[chars_to_wrap[-1][0]:chars_to_wrap[-1][1]]
+                        main_tc_snippet = new_main_text[chars_to_wrap[-1][0]:chars_to_wrap[-1][1]]
                         assert  strip_cantillation(main_tc_snippet, strip_vowels=True) == m.group(2), f"\n\n\n-----\nmain tc snippet:\n'{main_tc_snippet}'\nmatch group 2:\n'{m.group(2)}'\nRef: {main_tc._oref.normal()}"
                     def get_wrapped_text(text, replacement):
                         return replacement, (len(replacement) - len(text)), 0
                     new_main_text = wrap_chars_with_overlaps(new_main_text, chars_to_wrap, get_wrapped_text)
-                    edited = new_main_text != main_tc.text
                 else:
                     raise InputError("DiffLen")
-        if edited:
+        if new_main_text != main_tc.text:
             v = main_version
             return {
                 "version": get_full_version(v),
@@ -243,7 +240,7 @@ def modify_tanakh_links_one(main_ref, section_map, error_file_csv):
         error_file_csv.writerow({"Quoting Ref": main_ref, "Error": message})
 
 
-def modify_tanakh_links_all(start=0, end=None):
+def modify_tanakh_links_all(start=0, end=None, min_num_citation=0):
     error_file = open(ROOT + "/link_disambiguatore_errors.csv", "w")
     error_file_csv = csv.DictWriter(error_file, ["Quoting Ref", "Error"])
     total = 0
@@ -269,6 +266,8 @@ def modify_tanakh_links_all(start=0, end=None):
                 continue
             if end is not None and i > end:
                 continue
+            if len(v) < min_num_citation:
+                continue
             single_edit = modify_tanakh_links_one(k, v, error_file_csv)
             if single_edit is None: continue
             vers = single_edit['version']
@@ -287,5 +286,74 @@ def modify_tanakh_links_all(start=0, end=None):
         tracker.modify_bulk_text(skip_links=True, count_after=False, **func_input)
     error_file.close()
 
-modify_tanakh_links_all(start=0)
+###
+# Deletion damage control
+###
+def get_bad_refs():
+    with open(ROOT + "/unambiguous_links.csv", "r") as fin:
+        cin = csv.DictReader(fin)
+        mapping = defaultdict(lambda: defaultdict(dict))
+        for row in cin:
+            quoted_ref = get_tc(row["Quoted Ref"], True)
+            if quoted_ref.primary_category != "Tanakh":
+                continue
+            section_ref = quoted_ref.section_ref().normal()
+            curr_dict = mapping[row["Quoting Ref"]][section_ref]
+            if curr_dict.get(int(row["Quote Num"]), None) is not None and curr_dict.get(int(row["Quote Num"]), None) != quoted_ref:
+                print("{} - {}==={} - {}".format(row["Quoting Ref"], row["Quoted Ref"], curr_dict.get(int(row["Quote Num"]), None),row["Quote Num"]))
+            curr_dict[int(row["Quote Num"])] = quoted_ref
+    out_mapping = {}
+    for k, v in mapping.items():
+        if len(v) >= 2:
+            out_mapping[k] = v
+    return out_mapping
+
+def verify_refs_werent_edited():
+    hist_refs = {h.ref for h in HistorySet()}
+    mapping = get_bad_refs()
+    print(len(mapping))
+    for k in mapping.keys():
+        if k in hist_refs:
+            print(k)
+
+def dump_backed_up_text():
+    from sefaria.settings import MONGO_HOST, MONGO_PORT
+    from pymongo import MongoClient
+    mapping = get_bad_refs()
+    client = MongoClient(MONGO_HOST, MONGO_PORT)
+    db_backup = client.sefaria_test
+    rows = []
+    for main_ref in tqdm(mapping.keys(), total=len(mapping)):
+        main_tc, main_oref, main_version = get_tc(main_ref)
+        backup_version_raw = db_backup.texts.find_one({"title": main_version.title, "versionTitle": main_version.versionTitle, "language": main_version.language})
+        backup_version = Version(backup_version_raw)
+        backup_text = backup_version.sub_content_with_ref(main_oref)
+        rows += [{
+            "Ref": main_ref,
+            "Title": main_version.title,
+            "Version Title": main_version.versionTitle,
+            "Language": main_version.language,
+            "Text": backup_text
+        }]
+    with open(ROOT + '/backup_text.csv', 'w') as fout:
+        c = csv.DictWriter(fout, ['Ref', 'Title', 'Version Title', 'Language', 'Text'])
+        c.writeheader()
+        c.writerows(rows)
+
+def restore_text_from_backup():
+    with open(ROOT + '/backup_text.csv', 'r') as fin:
+        c = list(csv.DictReader(fin))
+        for row in tqdm(c):
+            main_tc, main_oref, main_version = get_tc(row['Ref'])
+            main_tc.text = row['Text']
+            main_tc.save()
+###
+# End deletion damage control
+###
+
+if __name__ == "__main__":
+    modify_tanakh_links_all(start=0, min_num_citation=2)
+    # verify_refs_werent_edited()
+    # dump_backed_up_text()
+    # restore_text_from_backup()
 # Rashi on Sanhedrin 61b:23:2 defaultdict(<type 'dict'>, {u'Leviticus 5': {0: Ref('Leviticus 5:18')}})

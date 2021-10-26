@@ -575,7 +575,7 @@ def delete_irrelevant_disambiguator_links(dryrun=True):
 
 
 def run():
-    # delete_irrelevant_disambiguator_links(False)  # run before disambiguate_all() to clear out irrelevant links first
+    delete_irrelevant_disambiguator_links(False)  # run before disambiguate_all() to clear out irrelevant links first
     # ld = Link_Disambiguator()
     # ld.get_ambiguous_segments()
     # disambiguate_all()
