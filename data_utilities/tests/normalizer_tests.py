@@ -41,6 +41,9 @@ def test_br_tag_html_composer():
     (start2, end2), repl2 = text_to_remove[2]
     assert repl2 == ' '
     assert text[start2:end2] == '<br>'
+    (start4, end4), repl4 = text_to_remove[4]
+    assert repl2 == ' '
+    assert text[start4:end4] == '</b> '
 
 def test_normalizer_composer():
     text = """(<i>hello</i> other stuff) [sup] <b>(this is) a test</b>"""
@@ -52,3 +55,12 @@ def test_normalizer_composer():
     (start0, end0), repl0 = text_to_remove[0]
     assert text[start0:end0] == "(<i>hello</i> other stuff)"
     assert repl0 == ''
+
+
+"""
+Definitely a later norm that larger or the same trumps an earlier one
+But what about later norm that's smaller
+e.g.
+<br> => <br/>
+<br/> => </>
+"""

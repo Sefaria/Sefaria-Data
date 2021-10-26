@@ -1242,7 +1242,7 @@ def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle
 
 
 if __name__ == "__main__":
-    ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
+    ner_file_prefix = "/Users/nss/Downloads/ner"
     corpus_manager = CorpusManager(
         "ner_tagger_input_yerushalmi.json",
         f"{ner_file_prefix}/ner_output_yerushalmi.json",

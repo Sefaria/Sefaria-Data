@@ -1,5 +1,6 @@
 import re
 from typing import Dict, List
+from functools import reduce
 from bs4 import BeautifulSoup, Tag
 from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
 """
@@ -149,24 +150,39 @@ class NormalizerComposer(AbstractNormalizer):
             for mapping in reversed(mappings):
                 text_to_remove_inds = convert_normalized_indices_to_unnormalized_indices(text_to_remove_inds, mapping)
             temp_text_to_remove = list(zip(text_to_remove_inds, text_to_remove_repls))
-            all_text_to_remove += temp_text_to_remove
+            all_text_to_remove += [temp_text_to_remove]
             mappings += [get_mapping_after_normalization(snorm, step.find_text_to_remove)]
             snorm = step.normalize(snorm)
-        # remove subsets
-        final_text_to_remove = []
-        for i, (removal_inds, repl) in enumerate(all_text_to_remove):
-            is_subset = False
-            full_removal_inds = set(range(removal_inds[0], removal_inds[1]))
-            for j, (removal_inds2, repl2) in enumerate(all_text_to_remove):
-                if i == j: continue
-                full_removal_inds2 = set(range(removal_inds2[0], removal_inds2[1]))
-                if full_removal_inds < full_removal_inds2:
-                    is_subset = True
-                    break
-            if is_subset: continue
-            final_text_to_remove += [(removal_inds, repl)]
+        # merge any overlapping ranges
+        # later edits should override earlier ones
+        final_text_to_remove = reduce(lambda a, b: self.merge_removal_inds(a, b), all_text_to_remove)
         final_text_to_remove.sort(key=lambda x: x[0])
         return final_text_to_remove
+
+    def merge_removal_inds(self, curr_removal_inds, new_removal_inds):
+        merged_inds = curr_removal_inds[:]
+        for new_inds, new_repl in new_removal_inds:
+            new_inds_set = set(range(new_inds[0], new_inds[1]))
+            inds_are_final = True
+            for i, (curr_inds, curr_repl) in enumerate(curr_removal_inds):
+                curr_inds_set = set(range(curr_inds[0], curr_inds[1]))
+                if curr_inds_set.issubset(new_inds_set):
+                    # if earlier inds are a subset of later inds, later inds override
+                    merged_inds.remove((curr_inds, curr_repl))
+                elif len(curr_inds_set & new_inds_set) > 0:
+                    # if later inds overlap and earlier inds are not a subset, merge
+                    if new_inds_set.issubset(curr_inds_set):
+                        merged_repl = curr_repl[:new_inds[0] - curr_inds[0]] + new_repl + curr_repl[new_inds[1] -
+                                                                                                curr_inds[1]:]
+                        merged_inds[i] = (curr_inds, merged_repl)
+                        inds_are_final = False
+                        break
+                    else:
+                        # overlap that's not a subset. more complicated merge that I don't want to deal with now
+                        pass
+            if inds_are_final:
+                merged_inds += [(new_inds, new_repl)]
+        return merged_inds
 
 class TableReplaceNormalizer(AbstractNormalizer):
 

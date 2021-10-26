@@ -1,11 +1,11 @@
 {
     "namedEntities": [
         {
-            "namedEntityFile": "/home/nss/sefaria/datasets/ner/sefaria/yerushalmi_basic_en_titles.json"
+            "namedEntityFile": "/Users/nss/Downloads/yerushalmi_basic_en_titles.json"
         }
     ],
     "normalizers": {
-        "en": ["br-tag", "unidecode", "html"],
+        "en": ["html"],
         "he": ["unidecode", "cantillation", "maqaf"]
     },
     "rules": [],
