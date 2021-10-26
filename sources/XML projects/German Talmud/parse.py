@@ -45,21 +45,21 @@ if __name__ == "__main__":
     post_info["versionTitle"] = "German Talmud"
     post_info["versionSource"] = "https://www.sefaria.org"
 
-    for file in os.listdir("./"):
-        if file.endswith("xml") and "Chullin" in file:
-            with open("./" + file) as f:
-                contents = f.read()
-            print(file)
-            title = file.replace(".xml", "")
-            parser = XML_to_JaggedArray(title, contents, allowed_tags, allowed_attributes, post_info, change_name=True,
-                                        image_dir="./images",
-                                        titled=True, print_bool=True, use_fn=True)
-            parser.set_funcs(reorder_modify=reorder_modify, reorder_test=tester)
-            parser.run()
+    # for file in os.listdir("./"):
+    #     if file.endswith("xml") and "Chullin" in file:
+    #         with open("./" + file) as f:
+    #             contents = f.read()
+    #         print(file)
+    #         title = file.replace(".xml", "")
+    #         parser = XML_to_JaggedArray(title, contents, allowed_tags, allowed_attributes, post_info, change_name=True,
+    #                                     image_dir="./images",
+    #                                     titled=True, print_bool=True, use_fn=True)
+    #         parser.set_funcs(reorder_modify=reorder_modify, reorder_test=tester)
+    #         parser.run()
 
     print("MISHNAH....")
     for file in os.listdir("./mishnah"):
-        if file.endswith("xml"):
+        if file.endswith("xml") and (file.startswith("shekalim")):
             with open("./mishnah/" + file) as f:
                 contents = f.read()
             print(file)
@@ -69,15 +69,15 @@ if __name__ == "__main__":
                                         titled=True, print_bool=True, use_fn=True)
             parser.set_funcs(reorder_modify=reorder_modify, reorder_test=tester)
             parser.run()
-    dirs = ["Sanhedrin", "Horayot", "Bava Metzia"]
-    for dir in dirs:
-        for file in os.listdir("./{}".format(dir)):
-            if file.endswith("xml"):
-                with open("./{}/".format(dir)+file) as f:
-                    contents = f.read()
-                print(file)
-                title = file.replace(".xml", "")
-                parser = XML_to_JaggedArray(title, contents, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
-                                            titled=True, print_bool=True, use_fn=True)
-                parser.set_funcs(reorder_modify=reorder_modify, reorder_test=tester)
-                parser.run()
+    # dirs = ["Sanhedrin", "Horayot", "Bava Metzia"]
+    # for dir in dirs:
+    #     for file in os.listdir("./{}".format(dir)):
+    #         if file.endswith("xml"):
+    #             with open("./{}/".format(dir)+file) as f:
+    #                 contents = f.read()
+    #             print(file)
+    #             title = file.replace(".xml", "")
+    #             parser = XML_to_JaggedArray(title, contents, allowed_tags, allowed_attributes, post_info, change_name=True, image_dir="./images",
+    #                                         titled=True, print_bool=True, use_fn=True)
+    #             parser.set_funcs(reorder_modify=reorder_modify, reorder_test=tester)
+    #             parser.run()
