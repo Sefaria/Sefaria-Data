@@ -1236,7 +1236,7 @@ def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list
         except TypeError:
             # must be match object
             start, end = removal.start(), removal.end()
-        normalized_text_index = start if reverse else (end - total_removed)
+        normalized_text_index = start if reverse else (start + min(len(subst), end-start) - total_removed)
         total_removed += (end - start - len(subst))
         removal_map[normalized_text_index] = total_removed
     return removal_map

@@ -160,7 +160,7 @@ class NormalizerComposer(AbstractNormalizer):
             for j, (removal_inds2, repl2) in enumerate(all_text_to_remove):
                 if i == j: continue
                 full_removal_inds2 = set(range(removal_inds2[0], removal_inds2[1]))
-                if full_removal_inds.issubset(full_removal_inds2):
+                if full_removal_inds < full_removal_inds2:
                     is_subset = True
                     break
             if is_subset: continue
