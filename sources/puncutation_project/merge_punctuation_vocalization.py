@@ -3,6 +3,7 @@
 import re
 import sys
 import django
+import argparse
 django.setup()
 from sefaria.model import *
 
@@ -50,13 +51,16 @@ def merge_segment(punctuated: str, vocalized: str) -> str:
 
 
 if __name__ == '__main__':
-    try:
-        book_title = sys.argv[1]
-    except IndexError:
-        print("Please add name of Tractate")
-        sys.exit(0)
-    base_ref = Ref(book_title)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-t', '--tractate', type=str, help='tractate on which to add punctuation')
+    parser.add_argument('--punctloc', type=str, default=None, help='file location where to find punctuation output. if not specified, defaults to `PUNCT_VTITLE`')
+    parser.add_argument('-c', '--csv', type=str, default=None, help='output punctuated talmud as csv rather than a new version')
+    args = parser.parse_args()
+    base_ref = Ref(args.book_title)
+    csv_dir = args.csv
+    export_as_csv = csv_dir is not None
     segments = base_ref.all_segment_refs()
+    rows = []
     for segment in segments:
         punc, voc = segment.text('he', PUNC_VTITLE).text, segment.text('he', VOC_VTITLE).text
         try:
@@ -64,6 +68,17 @@ if __name__ == '__main__':
         except AssertionError:
             print(f'mismatched length at {segment.normal()}')
             merged = voc
-        merged_tc = segment.text('he', MERGED_VTITLE)
-        merged_tc.text = merged
-        merged_tc.save()
+        if export_as_csv:
+            rows += [{
+                "Ref": segment.normal(),
+                "Text": merged
+            }]
+        else:
+            merged_tc = segment.text('he', MERGED_VTITLE)
+            merged_tc.text = merged
+            merged_tc.save()
+    if export_as_csv:
+        with open(csv_dir, 'w') as fout:
+            c = csv.DictWriter(fout, ['Ref', 'Text'])
+            c.writeheader()
+            c.writerows(rows)

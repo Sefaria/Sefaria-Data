@@ -22,7 +22,7 @@ vtitle_alt = "William Davidson Edition - Vocalized Punctuated Aramaic"
 GERSHAYIM = '\u05F4'
 DASH = '\u2014'
 punctuation = f'\s.,:!?—"{GERSHAYIM}'
-bad_puncts = {':.': '.'}
+bad_puncts = {':.': '.', '?,': '?', '!.': '!', '!,': '!'}
 
 def split_by_type(s, type):
     char_group = punctuation
@@ -31,7 +31,13 @@ def split_by_type(s, type):
     return list(filter(lambda x: len(x) > 0, re.split(fr'[{char_group}]+', s)))
 
 def get_talmud_punct_possibilities(s):
-    return split_by_type(s, 'punct')
+    s = s.replace('"', GERSHAYIM)
+    return {
+        "Punct Possibilities": split_by_type(s, 'punct'),
+        "Pre-quote?": GERSHAYIM in s,
+        "Post-quote?": GERSHAYIM in s,
+        "Dash?": DASH in s,
+    }
 
 def extract_punct_map(s):
     s = s.replace('"', GERSHAYIM)
@@ -55,22 +61,34 @@ def extract_steinsaltz_possibilities(base_text, stein_text, word_punct_pairs):
     stein_text = re.sub(r'</b>(\s*)<b>', r'\g<1>', stein_text)
     maps = build_maps(base_text, stein_text)
     talmud_word_index = 0
-    for ts_map in maps:
+    for ts_map in maps.suite:
         if not ts_map.actually_has_talmud() and (isinstance(ts_map.talmud_steinsaltz, SteinsaltzIntro) or isinstance(ts_map.talmud_steinsaltz, ConnectedTalmud)):
             continue
         talmud_words = split_by_type(ts_map.reg_talmud, 'words')
-        talmud_possibilities = get_talmud_punct_possibilities(ts_map.talmud_steinsaltz.talmud)
+        talmud_poss_dict = get_talmud_punct_possibilities(ts_map.talmud_steinsaltz.talmud)
         
-        # all punct in talmud portion of stein can theoretically be on any word in talmud (since we don't have a word-to-word mapping) except last word
-        for i, (tw1, (tw2, punct)) in enumerate(zip(talmud_words[:-1], word_punct_pairs[talmud_word_index:talmud_word_index+len(talmud_words)-1])):
-            assert tw1 == strip_cantillation(tw2, strip_vowels=True)
-            word_punct_pairs[talmud_word_index+i] += [talmud_possibilities]
+        # all punct in talmud portion of stein can theoretically be on any word in talmud (since we don't have a word-to-word mapping)
+        for i, (tw1, pair_dict) in enumerate(zip(talmud_words, word_punct_pairs[talmud_word_index:talmud_word_index+len(talmud_words)])):
+            tw2 = pair_dict['Word']
+            assert tw1 == strip_cantillation(tw2, strip_vowels=True), f"{tw1}--{tw2}"
+            word_punct_pairs[talmud_word_index+i]['Punct Possibilities'] += talmud_poss_dict['Punct Possibilities']
+            word_punct_pairs[talmud_word_index+i]['Pre-quote?'] |= talmud_poss_dict['Pre-quote?']
+            word_punct_pairs[talmud_word_index+i]['Post-quote?'] |= talmud_poss_dict['Post-quote?']
+            word_punct_pairs[talmud_word_index+i]['Dash?'] |= talmud_poss_dict['Dash?']
+
 
         # last word can have punctuation on it + any combo of punctuation in stein
+        stein_poss_dict = get_talmud_punct_possibilities(ts_map.talmud_steinsaltz.steinsaltz)
+        word_punct_pairs[talmud_word_index + len(talmud_words) - 1]['Punct Possibilities'] += talmud_poss_dict['Punct Possibilities']
+        word_punct_pairs[talmud_word_index + len(talmud_words) - 1]['Pre-quote?'] |= talmud_poss_dict['Pre-quote?']
+        word_punct_pairs[talmud_word_index + len(talmud_words) - 1]['Post-quote?'] |= talmud_poss_dict['Post-quote?']
+        word_punct_pairs[talmud_word_index + len(talmud_words) - 1]['Dash?'] |= talmud_poss_dict['Dash?']
         talmud_word_index += len(talmud_words)
+    return word_punct_pairs
+
 def create_dataset():
     fout = open(f"{DATA}/dataset.csv", "w")
-    c = csv.DictWriter(fout, ['Ref', 'Word', 'Punctuation', 'Pre-quote', 'Post-quote', 'Dash'])
+    c = csv.DictWriter(fout, ['Ref', 'Word', 'Punctuation', 'Pre-quote', 'Post-quote', 'Dash', 'Cutoff'])
     c.writeheader()
     unique_puncts = defaultdict(int)
     def action(s, en_tref, he_tref, v):
@@ -81,11 +99,21 @@ def create_dataset():
             print("Len of words and puncts mismatch:", en_tref)
             return
         pre_quote_next = False
+        oref = Ref(en_tref)
+        next_oref = oref.next_segment_ref()
+        en_text = oref.text('en').text
+        is_last_on_amud = next_oref is not None and next_oref.sections[0] != oref.sections[0]
+        is_cutoff = is_last_on_amud and re.search(r'[.!?]$', re.sub(r'<[^>]+>', '', en_text.strip())) is None
+        if is_cutoff:
+            en_tref = next_oref.normal()
         for w, p in zip(words, puncts):
             pre_quote = pre_quote_next
             post_quote = re.search(fr'^\S*{GERSHAYIM}', p) is not None
             pre_quote_next = re.search(fr'{GERSHAYIM}$', p) is not None
             dash = DASH in p
+            if len(w) == 0:
+                assert p == GERSHAYIM
+                continue
             p = p.replace(GERSHAYIM, '').replace(DASH, '').strip()
             if p in bad_puncts:
                 p = bad_puncts[p]
@@ -97,6 +125,7 @@ def create_dataset():
                 "Pre-quote": pre_quote,
                 "Post-quote": post_quote,
                 "Dash": dash,
+                "Cutoff": is_cutoff,
             })
 
     for title in tqdm(titles):
@@ -119,24 +148,32 @@ def add_steinsaltz_possibilities():
     with open(f"{DATA}/dataset.csv", "r") as fin:
         c = csv.DictReader(fin)
         for row in c:
-            ref_mapping[row['Ref']] += [[row['Word'], row['Punctuation']]]
+            ref_mapping[row['Ref']] += [{'Word': row['Word'], 'Punctuation': row['Punctuation'], 'Pre-quote': row['Pre-quote'], 'Post-quote': row['Post-quote'], 'Dash': row['Dash'], 'Cutoff': row['Cutoff'], 'Punct Possibilities': [], 'Pre-quote?': False, 'Post-quote?': False, 'Dash?': False}]
 
     fout = open(f"{DATA}/dataset_with_stein.csv", "w")
-    c = csv.DictWriter(fout, ['Ref', 'Word', 'Punctuation', 'Possibilities'])
+    c = csv.DictWriter(fout, ['Ref', 'Word', 'Punctuation', 'Pre-quote', 'Post-quote', 'Dash', 'Cutoff', 'Punct Possibilities', 'Pre-quote?', 'Post-quote?', 'Dash?'])
     c.writeheader()
     def action(stein_text, en_tref, he_tref, v):
         nonlocal ref_mapping
-        base_ref = en_tref.replace('Steinsaltz on ', '')
-        base_text = Ref(base_ref).text(lang='he', vtitle=vtitle_wo_vowels).text
-        word_punct_pairs = ref_mapping[base_ref]
-        possibilities = extract_steinsaltz_possibilities(base_text, stein_text, word_punct_pairs)
-        for poss, (w, punct) in zip(possibilities, word_punct_pairs):
-            c.writerow({
-                "Ref": base_ref,
-                "Word": w,
-                "Punctuation": punct,
-                "Possibilities": poss
-            })
+        base_tref = en_tref.replace('Steinsaltz on ', '')
+        base_oref = Ref(base_tref)
+        word_punct_pairs = ref_mapping[base_tref]
+        base_text = base_oref.text(lang='he', vtitle=vtitle_wo_vowels).text
+        if any(x['Cutoff'] == 'True' for x in word_punct_pairs):
+            prev_base_text = base_oref.prev_segment_ref().text(lang='he', vtitle=vtitle_wo_vowels).text
+            base_text = prev_base_text + " " + base_text
+            prev_stein_text = Ref(en_tref).text('he').text
+            stein_text = prev_stein_text + " " + stein_text
+        try:
+            possibilities = extract_steinsaltz_possibilities(base_text, stein_text, word_punct_pairs)
+        except AssertionError:
+            print(base_tref)
+            raise AssertionError
+        for poss in possibilities:
+            temp_row = {'Ref': base_tref}
+            temp_row.update(poss)
+            temp_row['Punct Possibilities'] = '|'.join(temp_row['Punct Possibilities'])
+            c.writerow(temp_row)
 
     for title in titles:
         version = VersionSet({"title": f"Steinsaltz on {title}", "language": "he"}).array()[0]
@@ -145,5 +182,5 @@ def add_steinsaltz_possibilities():
     fout.close()
 
 if __name__ == "__main__":
-    create_dataset()
-    # add_steinsaltz_possibilities()
+    # create_dataset()
+    add_steinsaltz_possibilities()
