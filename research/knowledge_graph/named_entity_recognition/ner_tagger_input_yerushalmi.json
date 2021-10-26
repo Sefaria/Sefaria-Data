@@ -1,0 +1,24 @@
+{
+    "namedEntities": [
+        {
+            "namedEntityFile": "/home/nss/sefaria/datasets/ner/sefaria/yerushalmi_basic_en_titles.json"
+        }
+    ],
+    "normalizers": {
+        "en": ["br-tag", "unidecode", "html"],
+        "he": ["unidecode", "cantillation", "maqaf"]
+    },
+    "rules": [],
+    "corpus": [
+        {
+            "title": "JTmock Taanit",
+            "type": "index",
+            "versions": [
+                {
+                    "language": "en",
+                    "versionTitle": "Guggenheimer Translation 2.1"
+                }
+            ]
+        }
+    ]
+}

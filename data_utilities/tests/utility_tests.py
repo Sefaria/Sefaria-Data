@@ -1,5 +1,6 @@
 # encoding=utf-8
-
+import django
+django.setup()
 import re
 import os
 import codecs
@@ -7,8 +8,7 @@ import pytest
 from io import StringIO
 from data_utilities import util
 
-import django
-django.setup()
+
 from sefaria.model import *
 
 
@@ -205,6 +205,17 @@ class TestNormalizationMapping:
         find_text_to_remove = lambda x: [(m, ' ') for m in re.finditer(r'#+', x)]
         rm = util.get_mapping_after_normalization(text, find_text_to_remove)
         assert rm == {1: 2, 3: 3}
+
+    def test_with_larger_substitution(self):
+        text = "a###b##c"
+        blah = "a----b----c"
+        find_text_to_remove = lambda x: [(m, '----') for m in re.finditer(r'#+', x)]
+        rm = util.get_mapping_after_normalization(text, find_text_to_remove)
+        assert rm == {1: -1, 6: -3}
+
+        norm_inds = (5, 11)
+        unnorm_s, unnorm_e = util.convert_normalized_indices_to_unnormalized_indices([norm_inds], rm)[0]
+        assert text[unnorm_s:unnorm_e] == "b##c"
 
     def test_real_case(self):
         norm_mention = "Rabbi Yehuda"

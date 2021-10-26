@@ -1218,7 +1218,7 @@ def change_array(ja, callback):
 
     return new_array
 
-def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list=None):
+def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list=None, reverse=False):
     """
     Example.
         text = "a###b##c" find_text_to_remove = lambda x: [(m, '') for m in re.finditer(r'#+', x)]
@@ -1236,21 +1236,24 @@ def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list
         except TypeError:
             # must be match object
             start, end = removal.start(), removal.end()
-        normalized_text_index = (start - total_removed)
+        normalized_text_index = start if reverse else (end - total_removed)
         total_removed += (end - start - len(subst))
         removal_map[normalized_text_index] = total_removed
     return removal_map
 
-def convert_normalized_indices_to_unnormalized_indices(normalized_indices, removal_map):
-
+def convert_normalized_indices_to_unnormalized_indices(normalized_indices, removal_map, reverse=False):
+    """
+    normalized_indices is a list of tuples where each tuple is (x, y) x being start index, y is end index + 1
+    """
     removal_keys = sorted(removal_map.keys())
     unnormalized_indices = []
+    sign = -1 if reverse else 1
     for start, end in normalized_indices:
         unnorm_start_index = bisect_right(removal_keys, start) - 1
         unnorm_end_index = bisect_right(removal_keys, end-1) - 1
 
-        unnorm_start = start if unnorm_start_index < 0 else start + removal_map[removal_keys[unnorm_start_index]]
-        unnorm_end = end if unnorm_end_index < 0 else end + removal_map[removal_keys[unnorm_end_index]]
+        unnorm_start = start if unnorm_start_index < 0 else start + (sign * removal_map[removal_keys[unnorm_start_index]])
+        unnorm_end = end if unnorm_end_index < 0 else end + (sign * removal_map[removal_keys[unnorm_end_index]])
         unnormalized_indices += [(unnorm_start, unnorm_end)]
     return unnormalized_indices
 

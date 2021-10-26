@@ -1,0 +1,54 @@
+import django
+django.setup()
+from data_utilities.normalization import *
+
+def test_itag_normalizer():
+    text = "Yo <sup>3</sup><i class=\"footnote\"> <i> Am </i>. 4:4</i>."
+    itn = ITagNormalizer('')
+    norm_text = itn.normalize(text)
+    assert norm_text == "Yo ."
+    text_to_remove = itn.find_text_to_remove(text)
+    assert len(text_to_remove) == 2
+    (s1, e1), r1 = text_to_remove[0]
+    assert (s1, e1) == (3, 15)
+    (s2, e2), r2 = text_to_remove[1]
+    assert (s2, e2) == (15, len(text)-1)
+
+def test_replace_normalizer():
+    text = "Hello, what is up? You is nice"
+    rn = ReplaceNormalizer(' is ', ' are ')
+    norm_text = rn.normalize(text)
+    assert norm_text == text.replace(' is ', ' are ')
+    text_to_remove = rn.find_text_to_remove(text)
+    assert len(text_to_remove) == 2
+    (s1, e1), r1 = text_to_remove[0]
+    assert (s1, e1) == (11, 15)
+    (s2, e2), r2 = text_to_remove[1]
+    assert (s2, e2) == (22, 26)
+
+def test_br_tag_html_composer():
+    """
+    These two normalizers composed seem to cause issues
+    """
+    text = """<i>hello</i><br><b>as well as</b> yo"""
+    normalized = """ hello   as well as yo"""
+    nsc = NormalizerComposer(['br-tag', 'html'])
+    assert nsc.normalize(text) == normalized
+    text_to_remove = nsc.find_text_to_remove(text)
+    assert len(text_to_remove) == 5
+    (start1, end1), repl1 = text_to_remove[1]
+    assert text[start1:end1] == '</i>'
+    (start2, end2), repl2 = text_to_remove[2]
+    assert repl2 == ' '
+    assert text[start2:end2] == '<br>'
+
+def test_normalizer_composer():
+    text = """(<i>hello</i> other stuff) [sup] <b>(this is) a test</b>"""
+    normalized = """ sup  a test """
+    nsc = NormalizerComposer(['html', "parens-plus-contents", 'brackets'])
+    assert nsc.normalize(text) == normalized
+    text_to_remove = nsc.find_text_to_remove(text)
+    assert len(text_to_remove) == 6
+    (start0, end0), repl0 = text_to_remove[0]
+    assert text[start0:end0] == "(<i>hello</i> other stuff)"
+    assert repl0 == ''
