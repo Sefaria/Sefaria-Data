@@ -56,6 +56,21 @@ def test_normalizer_composer():
     assert text[start0:end0] == "(<i>hello</i> other stuff)"
     assert repl0 == ''
 
+def test_html_normalizer_for_empty_prefix():
+    text = """It is written<sup>24</sup><i class="footnote"><i>1K</i>. 17:1.</i> <i>Elijah the Tisbite</i>"""
+    normalizer = NormalizerComposer(['html'])
+    ne = "Elijah the Tisbite"
+    norm_text = "It is written 24   1K . 17:1.  Elijah the Tisbite "
+    assert normalizer.normalize(text) == norm_text
+    ne_start = norm_text.index(ne)
+    ne_norm_prefix_inds = (ne_start, ne_start)
+    assert norm_text[ne_norm_prefix_inds[0]:ne_norm_prefix_inds[0]+len(ne)] == ne
+    mapping = get_mapping_after_normalization(text, normalizer.find_text_to_remove)
+    ne_inds = convert_normalized_indices_to_unnormalized_indices([ne_norm_prefix_inds], mapping)[0]
+    # actual test
+    assert ne_inds[0] == ne_inds[1]
+    assert text[ne_inds[0]:ne_inds[0]+len(ne)] == ne
+
 
 """
 Definitely a later norm that larger or the same trumps an earlier one

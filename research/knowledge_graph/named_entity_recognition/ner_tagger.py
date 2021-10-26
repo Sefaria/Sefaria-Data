@@ -245,7 +245,8 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
                 for title in ne.get_titles(lang=lang, with_disambiguation=False):
                     title_regs += [re.escape(expansion) for expansion in NormalizerTools.get_rabbi_expansions(title)]
             title_regs.sort(key=lambda x: len(x), reverse=True)
-            self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\s|{self.word_breakers})[\"{GERSHAYIM}]?(?P<prefix>{lang_params.get('prefixRegex', None) or ''}))(?P<ne>{'|'.join(title_regs)})(?=[\"{GERSHAYIM}]?(\s|{self.word_breakers}|$))")
+            prefix_reg = lang_params.get('prefixRegex', None)
+            self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\s|{self.word_breakers})[\"{GERSHAYIM}]?(?P<prefix>{prefix_reg or ''}))(?P<ne>{'|'.join(title_regs)})(?=[\"{GERSHAYIM}]?(\s|{self.word_breakers}|$))")
             # self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\b){lang_params.get('prefixRegex', None) or ''})({'|'.join(title_regs)})(?:\b|$)")
     
     @staticmethod
@@ -1242,7 +1243,7 @@ def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle
 
 
 if __name__ == "__main__":
-    ner_file_prefix = "/Users/nss/Downloads/ner"
+    ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
         "ner_tagger_input_yerushalmi.json",
         f"{ner_file_prefix}/ner_output_yerushalmi.json",
