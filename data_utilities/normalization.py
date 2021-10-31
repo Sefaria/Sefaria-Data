@@ -17,12 +17,19 @@ UNIDECODE_TABLE = {
     "ḳ": "k",
     "Ḳ": "K",
     "ŏ": "o",
-    "ṭ": "t",
     "ż": "z",
     "Ż": "Z",
+    "Ṣ": "S",
+    "ṣ": "s",
+    "Ṭ": "T",
+    "ṭ": "t",
+    "ï": "i",
+    "ī": "i",
+    "ë": "e",
     "’": "'",
     '\u05f3': "'",
     "\u05f4": '"',
+    "\u0323": "",  # chirik-like dot
     "”": '"',
     "“": '"'
 }
@@ -37,6 +44,23 @@ class AbstractNormalizer:
 
     def find_text_to_remove(self, s:str, **kwargs) -> list:
         return []
+
+    @staticmethod
+    def remove_subsets(text_to_remove):
+        """
+        Assumes there are no overlapping or equal length ranges
+        Removes strict subsets from list
+        """
+        def remove_subsets_reducer(curr_text_to_remove: list, next: tuple) -> list:
+            (next_start, next_end), _ = next
+            for (start, end), _ in curr_text_to_remove:
+                if next_start > start and next_end < end:
+                    # next is a subset. dont append
+                    return curr_text_to_remove
+            return curr_text_to_remove + [next]
+
+        text_to_remove.sort(key=lambda x: x[0][1] - x[0][0], reverse=True)
+        return reduce(remove_subsets_reducer, text_to_remove, [])
 
 class ITagNormalizer(AbstractNormalizer):
 
@@ -73,23 +97,28 @@ class ITagNormalizer(AbstractNormalizer):
         return all_itags, soup
 
     def normalize(self, s: str, **kwargs) -> str:
-        all_itags, soup = ITagNormalizer._get_all_itags(s)
-        for itag in all_itags:
-            itag.decompose()
-        return soup.root.encode_contents().decode()  # remove divs added
+        text_to_remove = self.find_text_to_remove(s, **kwargs)
+        schars = list(s)
+        # make sure to iterate backwards b/c you're changing indices
+        for (start, end), repl in reversed(text_to_remove):
+            schars[start:end] = repl
+        return ''.join(schars)
 
     def find_text_to_remove(self, s:str, **kwargs) -> list:
         all_itags, _ = ITagNormalizer._get_all_itags(s)
-        prev_end = 0
+        next_start = 0
         text_to_remove = []
         for itag in all_itags:
             itag_text = itag.decode()
-            start = s.find(itag_text, prev_end)
+            start = s.find(itag_text, next_start)
             end = start+len(itag_text)
             if start == -1:
-                raise Exception(f"Couldn't find itag with text '{itag_text}' in\n{s}\nprev_end = {prev_end}")
+                raise Exception(f"Couldn't find itag with text '{itag_text}' in\n{s}\nnext_start = {next_start}")
             text_to_remove += [((start, end), self.repl)]
-            prev_end = end
+            next_start = start + 1
+
+        text_to_remove = self.remove_subsets(text_to_remove)
+        text_to_remove.sort(key=lambda x: x[0][0])
         return text_to_remove
 
 class ReplaceNormalizer(AbstractNormalizer):
@@ -159,14 +188,29 @@ class NormalizerComposer(AbstractNormalizer):
         final_text_to_remove.sort(key=lambda x: x[0])
         return final_text_to_remove
 
-    def merge_removal_inds(self, curr_removal_inds, new_removal_inds):
+    @staticmethod
+    def issubset(a: set, b: set, a_inds: tuple, b_inds: tuple) -> bool:
+        """
+        is a subset of b?
+        based on set.is_subset. however, if a is an empty set,
+        relies on a_inds to make sure the start/end inds (which are the same)
+        appear in b
+        """
+        if len(a) == 0:
+            return a_inds[0] in b
+        return a.issubset(b)
+
+    @staticmethod
+    def merge_removal_inds(curr_removal_inds, new_removal_inds):
+        if isinstance(new_removal_inds, tuple):
+            new_removal_inds = [new_removal_inds]
         merged_inds = curr_removal_inds[:]
         for new_inds, new_repl in new_removal_inds:
             new_inds_set = set(range(new_inds[0], new_inds[1]))
             inds_are_final = True
             for i, (curr_inds, curr_repl) in enumerate(curr_removal_inds):
                 curr_inds_set = set(range(curr_inds[0], curr_inds[1]))
-                if curr_inds_set.issubset(new_inds_set):
+                if NormalizerComposer.issubset(curr_inds_set, new_inds_set, curr_inds, new_inds):
                     # if earlier inds are a subset of later inds, later inds override
                     merged_inds.remove((curr_inds, curr_repl))
                 elif len(curr_inds_set & new_inds_set) > 0:
@@ -202,12 +246,13 @@ class NormalizerFactory:
     key_normalizer_map = {
         "html": RegexNormalizer(r"\s*<[^>]+>\s*", " "),
         "cantillation": RegexNormalizer("[\u0591-\u05bd\u05bf-\u05c5\u05c7]+", ""),
-        "parens-plus-contents": RegexNormalizer(r"\([^)]+\)", ""),
+        "parens-plus-contents": RegexNormalizer(r"\([^)]+\)", " "),
         "brackets": RegexNormalizer(r"[\[\]]", ""),
         "unidecode": TableReplaceNormalizer(UNIDECODE_TABLE),
         "maqaf": ReplaceNormalizer('־', ' '),
-        "itag": ITagNormalizer(''),
+        "itag": ITagNormalizer(' '),
         "br-tag": ReplaceNormalizer('<br>', '<br/>'),
+        "double-space": RegexNormalizer(r"\s+", " "),
     }
 
     @classmethod

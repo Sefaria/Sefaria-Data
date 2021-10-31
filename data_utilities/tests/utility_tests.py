@@ -236,6 +236,15 @@ class TestNormalizationMapping:
         unnorm_s, unnorm_e = util.convert_normalized_indices_to_unnormalized_indices([(norm_inds[0], norm_inds[0])], rm)[0]
         assert text[unnorm_s:unnorm_e] == ""
 
+    def test_reverse(self):
+        text = "a###b##c"
+        find_text_to_remove = lambda x: [(m, ' ') for m in re.finditer(r'#+', x)]
+        norm_text = "a b c"
+        rm = util.get_mapping_after_normalization(text, find_text_to_remove, reverse=True)
+        assert rm == {1: 2, 5: 3}
+        norm_s, norm_e = util.convert_normalized_indices_to_unnormalized_indices([(4, 8)], rm, reverse=True)[0]
+        assert norm_text[norm_s:norm_e] == "b c"
+
     def test_word_to_char(self):
         test_string = 'some words go here\n\nhello world'
         words = ['go', 'here', 'hello']

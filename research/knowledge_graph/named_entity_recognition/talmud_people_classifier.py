@@ -1,14 +1,19 @@
 from collections import defaultdict
+from functools import partial
 import csv, json, django, random, math, re
 from pymongo import MongoClient
 import srsly
 django.setup()
 from sefaria.model import *
 from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
-from research.knowledge_graph.named_entity_recognition.ner_tagger import TextNormalizer
+from data_utilities.normalization import NormalizerByLang, NormalizerComposer
 from research.prodigy.functions import wrap_chars_with_overlaps
 
 DATA = "/home/nss/sefaria/datasets/ner/sefaria/ner_output_talmud.json"
+NORMALIZER = NormalizerByLang({
+    "en": NormalizerComposer(['unidecode', 'html']),
+    "he": NormalizerComposer(['unidecode', 'cantillation', 'maqaf']),
+})
 
 class TalmudTrainingGenerator:
 
@@ -38,7 +43,7 @@ class TalmudTrainingGenerator:
         random_topic = self.topic_map.get(random_slug)
         if random_topic is None: return
         random_title = random.choice(random_topic.get_titles(self.language, False))
-        return TextNormalizer.normalize_text(self.language, random_title)
+        return NORMALIZER.normalize(random_title, lang=self.language)
 
     def get_wrapped_text(self, mention, metadata):
         return metadata['new_title'], (len(metadata['new_title']) - len(mention)), 0
@@ -60,13 +65,13 @@ class TalmudTrainingGenerator:
     def walker_action(self, s, en_tref, he_tref, version):
         examples = self.raw_training_examples_by_ref[en_tref]
         mention_indices = [(x['start'], x['end']) for x in examples]
-        snorm = TextNormalizer.normalize_text(self.language, s)
-        norm_map = get_mapping_after_normalization(s, TextNormalizer.get_find_text_to_remove(self.language), reverse=True)
+        snorm = NORMALIZER.normalize(s, lang=self.language)
+        norm_map = get_mapping_after_normalization(s, partial(NORMALIZER.find_text_to_remove, lang=self.language), reverse=True)
         mention_indices = convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map, reverse=True)
         chars_to_wrap = []
         for example, (start, end) in zip(examples, mention_indices):
             # just to make sure...
-            assert TextNormalizer.normalize_text(self.language, example['mention']) == snorm[start:end]
+            assert NORMALIZER.normalize(example['mention'], lang=self.language) == snorm[start:end]
             new_title = self.get_random_title(example['id_matches'])
             if new_title is None: continue
             chars_to_wrap += [(start, end, {"new_title": new_title})]
@@ -153,10 +158,10 @@ def guess_most_likely_transliteration():
 def make_en_named_entities_file():
     b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ', ' son of ', ' the son of ', ' Ben ', ' Bar ']
     unique_en = set()
-    with open('/home/nss/sefaria/datasets/ner/sefaria/yerushalmi_title_possibilities2.csv', 'r') as fin:
+    with open('/home/nss/sefaria/datasets/ner/sefaria/temp/Yerushalmi People Title Matching - yerushalmi_title_possibilities.csv', 'r') as fin:
         cin = csv.DictReader(fin)
         for row in cin:
-            en = TextNormalizer.normalize_text('en', row['En'])
+            en = NORMALIZER.normalize(row['En'], lang='en')
             for brepl in b_replacements:
                 en = en.replace(brepl, ' b. ')
             # remove contents of parens and actual square brackets
@@ -166,7 +171,7 @@ def make_en_named_entities_file():
             unique_en.add(en)
     out = [{
         "tag": "PERSON",
-        "id": "N/A",
+        "id": en,
         "gen": None,
         "type": None,
         "idIsSlug": False,
@@ -175,15 +180,80 @@ def make_en_named_entities_file():
             "lang": "en"
         }]
     } for en in unique_en]
-    with open('/home/nss/sefaria/datasets/ner/sefaria/yerushalmi_basic_en_titles.json', 'w') as fout:
-        json.dump(out, fout)
+    with open('/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_basic_en_titles.json', 'w') as fout:
+        json.dump(out, fout, ensure_ascii=False, indent=2)
+
+class FindMissingNames:
+    word_breakers = r"|".join(re.escape(breaker) for breaker in ['.', ',', "'", '?', '!', '(', ')', '[', ']', '{', '}', ':', ';', '§', '<', '>', "'s", "׃", "׀", "־", "…"])
+    noncapitals_to_remove = {'and'}
+    b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ', ' son of ', ' the son of ', ' Ben ', ' Bar ']
+
+    def __init__(self, book_title):
+        self.possible_title_continuations = []
+        self.normalizer = NormalizerComposer(["br-tag", "itag", "unidecode", "html", "parens-plus-contents", "brackets"])
+        self.mentions_by_ref = defaultdict(list)
+        with open('/home/nss/sefaria/datasets/ner/sefaria/ner_output_yerushalmi.json', 'r') as fin:
+            raw_mentions = json.load(fin)
+            for m in raw_mentions:
+                self.mentions_by_ref[m['ref']] += [m]
+            print(f"{len(raw_mentions)} MENTIONS")
+            titles = {self.normalizer.normalize(m['mention']) for m in raw_mentions}
+        noncapital_dict = defaultdict(list)
+        for title in titles:
+            non_capital_matches = re.finditer(r'(?:^|\s)([a-z\s]+)(?=$|[A-Z])', title)
+            for match in non_capital_matches:
+                noncapital_dict[match.group(1).strip()] += [title]
+        noncapitals = list(filter(lambda x: x.strip() not in self.noncapitals_to_remove, noncapital_dict.keys()))
+        self.noncapital_reg = fr'(?:^|\s|{self.word_breakers})(?:{"|".join(re.escape(x.strip()) for x in self.b_replacements)})(?=$|\s|{self.word_breakers})'
+        self.find_missing_name_continuations_book(book_title)
+        self.save_titles()
+
+    def action(self, s, en_tref, he_tref, v):
+        from data_utilities.util import get_window_around_match
+        mentions = self.mentions_by_ref.get(en_tref, [])
+        snorm = self.normalizer.normalize(s)
+        rm = get_mapping_after_normalization(s, self.normalizer.find_text_to_remove, reverse=True)
+        norm_indices = convert_normalized_indices_to_unnormalized_indices([(m['start'], m['end']) for m in mentions], rm, reverse=True)
+        for (start, end), m in zip(norm_indices, mentions):
+            assert snorm[start:end] == self.normalizer.normalize(m['mention'])
+            before, after = get_window_around_match(start, end, snorm)
+            start_match = re.search(self.noncapital_reg + r'$', before.strip())
+            end_match = re.search(r'^' + self.noncapital_reg, after.strip())
+            before_words = before.split()
+            after_words = after.split()
+            before_cap = before_words[-1] if re.search(r'^[A-Z]', before_words[-1] if len(before_words) > 0 else '') else None
+            if before_cap is not None and re.search(fr'(?:{self.word_breakers})$', before_cap) or before_cap in {'Since', 'But', 'And', 'Once', 'When', 'Does', 'For', 'If'}:
+                before_cap = None
+            after_cap = after_words[0] if re.search(r'^[A-Z]', after_words[0] if len(after_words) > 0 else '') else None
+            if not (start_match or end_match or before_cap or after_cap): continue
+            start_text = start_match.group() if start_match is not None else ''
+            end_text = end_match.group() if end_match is not None else ''
+            self.possible_title_continuations += [{
+                'mention': m["mention"],
+                'ref': m['ref'],
+                'before': before,
+                'after': after,
+                'start_match': start_text,
+                "end_match": end_text,
+            }]
+
+    def find_missing_name_continuations_book(self, title):
+        version = Version().load({"title": title, "versionTitle": "Guggenheimer Translation 2.1", "language": "en"})
+        version.walk_thru_contents(self.action)
+
+    def save_titles(self):
+        with open('/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_title_possibilities_derived.csv', 'w') as fout:
+            cout = csv.DictWriter(fout, ['ref', 'before', 'mention', 'after', 'start_match', 'end_match'])
+            cout.writeheader()
+            cout.writerows(self.possible_title_continuations)
 
 if __name__ == "__main__":
     # ttg = TalmudTrainingGenerator(DATA, 'William Davidson Edition - Aramaic', 'he', 'Bavli')
     # ttg.generate_spacy_training()
     # ttg.save_training_to_db('talmud_ner_he')
     # guess_most_likely_transliteration()
-    make_en_named_entities_file()
+    # make_en_named_entities_file()
+    FindMissingNames('JTmock Terumot')
 
 """
 python -m spacy pretrain ./research/prodigy/configs/talmud_ner.cfg ./research/prodigy/output/pretrain_talmud_ner --code ./research/prodigy/functions.py --gpu-id 0

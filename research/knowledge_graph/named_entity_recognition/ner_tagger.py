@@ -106,6 +106,7 @@ class NormalizerTools:
 
     @classmethod
     def get_rabbi_expansions(cls, rabbi):
+        from itertools import product
         expansions = [rabbi]
         for starter in cls.starting_replacements:
             if rabbi.startswith(starter):
@@ -113,9 +114,12 @@ class NormalizerTools:
         if rabbi.startswith('Rabbi '):
             expansions += [rabbi.replace('Rabbi ', 'R. ')]
         for expansion in expansions:
-            if cls.b_token in expansion:
-                for b_replacement in cls.b_replacements:
-                    expansions += [expansion.replace(cls.b_token, b_replacement)]
+            if cls.b_token not in expansion: continue
+            # need to replace b_token with every combo of b_replacements
+            # first element of cartesian_input is b_replacements
+            cartesian_input = reduce(lambda a, b: a + [cls.b_replacements] + [[b]], expansion.split(cls.b_token), [])[1:]
+            temp_expansions = [''.join(title) for title in product(*cartesian_input)]
+            expansions += temp_expansions
         expansions = [strip_cantillation(expansion, True) for expansion in expansions]
         return expansions
 
@@ -838,6 +842,7 @@ class CorpusManager:
                 vtitle, lang = version_lang.split('|||')
                 segment_text = oref.text(lang, vtitle=vtitle).text
                 linked_text = self.add_html_links(temp_mentions, segment_text)
+                linked_text = TextChunk._strip_itags(linked_text)
                 html += f"""
                     <p class="{lang}">{linked_text}</p>
                 """
@@ -1256,13 +1261,13 @@ if __name__ == "__main__":
 
     # corpus_manager.load_mentions()
     corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi'})
-    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he")
-    corpus_manager.filter_cross_validation_by_topics(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_filtered.csv", [{
-            "id": "biblical-figures",
-            "idIsSlug": True,
-            "getLeaves": True
-        }
-    ])
+    # corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he")
+    # corpus_manager.filter_cross_validation_by_topics(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_filtered.csv", [{
+    #         "id": "biblical-figures",
+    #         "idIsSlug": True,
+    #         "getLeaves": True
+    #     }
+    # ])
     # compare_two_versions_ner_tagger_output('ner_output_talmud.json', 'ner_output_talmud_word_breakers.json', ner_file_prefix)
     # compare_two_versions_ner_tagger_output('ner_output_mishnah.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
 

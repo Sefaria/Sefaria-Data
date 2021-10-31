@@ -4,9 +4,9 @@ from data_utilities.normalization import *
 
 def test_itag_normalizer():
     text = "Yo <sup>3</sup><i class=\"footnote\"> <i> Am </i>. 4:4</i>."
-    itn = ITagNormalizer('')
+    itn = ITagNormalizer(' ')
     norm_text = itn.normalize(text)
-    assert norm_text == "Yo ."
+    assert norm_text == "Yo   ."
     text_to_remove = itn.find_text_to_remove(text)
     assert len(text_to_remove) == 2
     (s1, e1), r1 = text_to_remove[0]
@@ -71,7 +71,17 @@ def test_html_normalizer_for_empty_prefix():
     assert ne_inds[0] == ne_inds[1]
     assert text[ne_inds[0]:ne_inds[0]+len(ne)] == ne
 
-
+def test_nested_itag():
+    text = """<sup>outer</sup><i class="footnote">bull<sup>nested</sup><i class="footnote">The</i>.</i>"""
+    normalizer = ITagNormalizer(' ')
+    norm_text = normalizer.normalize(text)
+    assert norm_text == "  "
+    text_to_remove = normalizer.find_text_to_remove(text)
+    assert len(text_to_remove) == 2
+    (s, e), r = text_to_remove[0]
+    assert text[s:e] == "<sup>outer</sup>"
+    (s, e), r = text_to_remove[1]
+    assert text[s:e] == """<i class="footnote">bull<sup>nested</sup><i class="footnote">The</i>.</i>"""
 """
 Definitely a later norm that larger or the same trumps an earlier one
 But what about later norm that's smaller

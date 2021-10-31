@@ -1,17 +1,17 @@
 {
     "namedEntities": [
         {
-            "namedEntityFile": "/home/nss/sefaria/datasets/ner/sefaria/yerushalmi_basic_en_titles.json"
+            "namedEntityFile": "/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_basic_en_titles.json"
         }
     ],
     "normalizers": {
-        "en": ["br-tag", "itag", "unidecode", "html"],
+        "en": ["br-tag", "itag", "unidecode", "html", "parens-plus-contents", "brackets", "double-space"],
         "he": ["unidecode", "cantillation", "maqaf"]
     },
     "rules": [],
     "corpus": [
         {
-            "title": "JTmock Taanit",
+            "title": "JTmock Terumot",
             "type": "index",
             "versions": [
                 {

@@ -1220,6 +1220,13 @@ def change_array(ja, callback):
 
 def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list=None, reverse=False):
     """
+    text - unnormalized text
+    find_text_to_remove - function which takes text as param and return list of tuples. each tuple is of form ((start, end), replacement) where start and end are indices in unnormalized string and replacement is the string that will replace text at these indices
+    removal_list - instead of passing `find_text_to_remove`, you can pass an already calculated list of tuples. should be in same format as return value of find_text_to_remove
+    reverse - bool. If True, then will return mapping from unnormalized string to normalized string
+
+    returns - dictionary where keys are indices in normalized string and values are how many characters were removed (or added if negative number) by that point from unnormalized string. If reverse=True, indices are in unnormalized string
+
     Example.
         text = "a###b##c" find_text_to_remove = lambda x: [(m, '') for m in re.finditer(r'#+', x)]
         will return {1: 3, 2: 5}
@@ -1243,14 +1250,16 @@ def get_mapping_after_normalization(text, find_text_to_remove=None, removal_list
 
 def convert_normalized_indices_to_unnormalized_indices(normalized_indices, removal_map, reverse=False):
     """
-    normalized_indices is a list of tuples where each tuple is (x, y) x being start index, y is end index + 1
+    normalized_indices - list of tuples where each tuple is (x, y) x being start index, y is end index + 1
+    removal_map - return value of get_mapping_after_normalization()
+    reverse - if True, normalized_indices are actually unnormalized indices and removal_map was calculated using reverse=True in get_mapping_after_normalization()
     """
     removal_keys = sorted(removal_map.keys())
     unnormalized_indices = []
     sign = -1 if reverse else 1
     for start, end in normalized_indices:
         unnorm_start_index = bisect_right(removal_keys, start) - 1
-        unnorm_end_index = bisect_right(removal_keys, end) - 1
+        unnorm_end_index = bisect_right(removal_keys, (end - 1 if reverse else end)) - 1  # not sure if end-1 is specific to reverse case, but seems to be working
 
         unnorm_start = start if unnorm_start_index < 0 else start + (sign * removal_map[removal_keys[unnorm_start_index]])
         unnorm_end = end if unnorm_end_index < 0 else end + (sign * removal_map[removal_keys[unnorm_end_index]])
