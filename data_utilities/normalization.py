@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List
+from typing import Dict, List, Callable
 from functools import reduce, lru_cache
 from bisect import bisect_right
 from bs4 import BeautifulSoup, Tag
