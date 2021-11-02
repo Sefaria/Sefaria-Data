@@ -82,10 +82,52 @@ def test_nested_itag():
     assert text[s:e] == "<sup>outer</sup>"
     (s, e), r = text_to_remove[1]
     assert text[s:e] == """<i class="footnote">bull<sup>nested</sup><i class="footnote">The</i>.</i>"""
-"""
-Definitely a later norm that larger or the same trumps an earlier one
-But what about later norm that's smaller
-e.g.
-<br> => <br/>
-<br/> => </>
-"""
+
+def test_word_to_char():
+    test_string = 'some words go here\n\nhello world'
+    words = ['go', 'here', 'hello']
+    word_indices = (2, 4)
+    result = char_indices_from_word_indices(test_string, [word_indices])[0]
+    start, end = result
+    assert test_string[start:end] == 'go here\n\nhello'
+    assert test_string[start:end].split() == words
+
+
+class TestTextSanitizer:
+
+    text_to_test = [
+        'foo bar <erase me> baz',
+        'hello <nonsense> world',
+        'my name is <not> Jonathan',
+        'out of <good> ideas'
+    ]
+    sanitization_expression = r'\s*<[^<>]+>\s*'
+    dividing_expression = r'\s+'
+
+    @classmethod
+    def sanitizer(cls, x):
+        return re.sub(cls.sanitization_expression, ' ', x)
+
+    def test_initialization(self):
+        sanitizer = TextSanitizer(self.text_to_test, self.dividing_expression)
+        assert sanitizer.get_original_segments() == tuple(self.text_to_test)
+        assert sanitizer.get_sanitized_segments() is None
+
+    def test_sanitize(self):
+        sanitizer = TextSanitizer(self.text_to_test, self.dividing_expression)
+        sanitizer.set_sanitizer(self.sanitizer)
+        sanitizer.sanitize()
+        assert sanitizer.get_sanitized_segments() == (
+            'foo bar baz',
+            'hello world',
+            'my name is Jonathan',
+            'out of ideas'
+        )
+
+    def test_word_to_segment(self):
+        sanitizer = TextSanitizer(self.text_to_test, self.dividing_expression)
+        sanitizer.set_sanitizer(self.sanitizer)
+        sanitizer.sanitize()
+        word_list = sanitizer.get_sanitized_word_list()
+        jon = word_list.index('Jonathan')
+        assert sanitizer.check_sanitized_index(jon) == 2

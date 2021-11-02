@@ -1,5 +1,6 @@
 from collections import defaultdict
 from functools import partial
+from tqdm import tqdm
 import csv, json, django, random, math, re
 from pymongo import MongoClient
 import srsly
@@ -11,7 +12,7 @@ from research.prodigy.functions import wrap_chars_with_overlaps
 
 DATA = "/home/nss/sefaria/datasets/ner/sefaria/ner_output_talmud.json"
 NORMALIZER = NormalizerByLang({
-    "en": NormalizerComposer(['unidecode', 'html']),
+    "en": NormalizerComposer(["br-tag", "itag", "unidecode", "html", "parens-plus-contents", "brackets", "double-space"]),
     "he": NormalizerComposer(['unidecode', 'cantillation', 'maqaf']),
 })
 
@@ -156,7 +157,7 @@ def guess_most_likely_transliteration():
         cout.writerows(out_rows)
 
 def make_en_named_entities_file():
-    b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ', ' son of ', ' the son of ', ' Ben ', ' Bar ']
+    b_replacements = sorted([' ben ', ' bar ', ', son of ', ', the son of ', ' son of ', ' the son of ', ' Ben ', ' Bar '], key=lambda x: len(x), reverse=True)
     unique_en = set()
     with open('/home/nss/sefaria/datasets/ner/sefaria/temp/Yerushalmi People Title Matching - yerushalmi_title_possibilities.csv', 'r') as fin:
         cin = csv.DictReader(fin)
@@ -222,7 +223,7 @@ class FindMissingNames:
             before_words = before.split()
             after_words = after.split()
             before_cap = before_words[-1] if re.search(r'^[A-Z]', before_words[-1] if len(before_words) > 0 else '') else None
-            if before_cap is not None and re.search(fr'(?:{self.word_breakers})$', before_cap) or before_cap in {'Since', 'But', 'And', 'Once', 'When', 'Does', 'For', 'If'}:
+            if before_cap is not None and re.search(fr'(?:{self.word_breakers})$', before_cap) or before_cap in {'Also', 'Where', 'Were', 'Mishnah', 'Before', 'Do', 'Is', 'Even', 'Since', 'But', 'And', 'Once', 'When', 'Does', 'For', 'If', 'Said', 'As', 'Either', 'Maybe', 'Both', 'Following', 'What', 'In', 'There', 'Which', 'So', 'An', 'Now', 'Then', 'Of', 'He'}:
                 before_cap = None
             after_cap = after_words[0] if re.search(r'^[A-Z]', after_words[0] if len(after_words) > 0 else '') else None
             if not (start_match or end_match or before_cap or after_cap): continue
@@ -247,14 +248,137 @@ class FindMissingNames:
             cout.writeheader()
             cout.writerows(self.possible_title_continuations)
 
+def suggest_people_duplicates():
+    from data_utilities.util import WeightedLevenshtein
+    norm2peeps = defaultdict(list)
+    letter_counts = defaultdict(int)
+    with open('/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_basic_en_titles.json', 'r') as fin:
+        jin = json.load(fin)
+        for person_obj in jin:
+            title = person_obj['manualTitles'][0]['text']
+            norm_title = title.replace('Rebbi', '').replace('Rav', '').replace('‘', "'").replace('ˋ', "'").replace('`', "'").replace('ї', 'i').replace('ï', 'i').replace('î', 'i').replace('ĩ', 'i').replace('ś', 's').replace('š', 's').replace('Š', 'S').replace('ü', 'u').lower().replace('ẓ', 'z').replace('\u0301', '').replace('\u0308', '')
+            norm_title = ' '.join(norm_title.split())
+            for char in norm_title:
+                letter_counts[char] += 1
+            norm2peeps[norm_title] += [title]
+    max_letter_count = max(letter_counts.values())
+    min_letter_count = min(letter_counts.values())
+    letter_freqs = {char: (count-min_letter_count)/(max_letter_count-min_letter_count) for char, count in letter_counts.items()}
+    leven = WeightedLevenshtein(letter_freqs)
+    clusters = []
+    for i, (norm_title, titles) in tqdm(enumerate(norm2peeps.items()), total=len(norm2peeps)):
+        found_match = False
+        for j, (norm_title2, titles2) in enumerate(list(norm2peeps.items())[i+1:]):
+            score = leven.calculate(norm_title, norm_title2)
+            if score > 85:
+                print('MATCHED\n', norm_title, '\n', norm_title2, '\n', score)
+                found_match = True
+                norm2peeps[norm_title2] += titles  # merge clusters
+                break
+        if not found_match:
+            clusters += [titles]
+    with open('/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_people_duplicates.json', 'w') as fout:
+        json.dump(clusters, fout, indent=2, ensure_ascii=False)
+
+def make_csv_for_deduping():
+    with open('/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_people_duplicates.json', 'r') as fin:
+        clusters = json.load(fin)
+    with open('/home/nss/sefaria/datasets/ner/sefaria/ner_output_yerushalmi.json', 'r') as fin:
+        mentions = json.load(fin)
+    mentions_by_title = defaultdict(list)
+    for m in mentions:
+        for _id in m['id_matches']:
+            mentions_by_title[_id] += [m]
+    rows = []
+    clusters.sort(key=lambda x: min(*x, key=lambda y: len(y)))
+    for cluster in clusters:
+        for title in cluster:
+            temp_mentions = mentions_by_title[title]
+            row = {
+                "En Title": title,
+                "He Title": "",
+                "Slug or Bonayich ID": "",
+            }
+            for i, m in enumerate(temp_mentions[:5]):
+                row[f'Ref {i+1}'] = m['ref']
+            rows += [row]
+        rows += [{}]
+    with open('/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_people_dudupe.csv', 'w') as fout:
+        cout = csv.DictWriter(fout, ['En Title', 'He Title', 'Slug or Bonayich ID'] + [f'Ref {i+1}' for i in range(5)])
+        cout.writeheader()
+        cout.writerows(rows)
+
+def output_existing_people():
+    from research.knowledge_graph.named_entity_recognition.ner_tagger import CorpusManager
+    raw_named_entities = [
+        {
+            "id": "talmudic-people",
+            "idIsSlug": True,
+            "getLeaves": True
+        },
+        {
+            "id": "mishnaic-people",
+            "idIsSlug": True,
+            "getLeaves": True
+        },
+        {
+            "id": "group-of-talmudic-people",
+            "idIsSlug": True,
+            "getLeaves": True
+        },
+        {
+            "id": "group-of-mishnaic-people",
+            "idIsSlug": True,
+            "getLeaves": True
+        },
+        {
+            "id": "biblical-figures",
+            "idIsSlug": True,
+            "getLeaves": True
+        },
+        {
+            "id": "jewish-people",
+            "idIsSlug": True
+        },
+        {
+            "id": "israel",
+            "idIsSlug": True
+        },
+        {
+            "id": "jesus",
+            "idIsSlug": True
+        },
+        {
+            "namedEntityFile": "sperling_named_entities.json"
+        }
+    ]
+    named_entities = CorpusManager.create_named_entities(raw_named_entities)
+    rows = []
+    for ne in named_entities:
+        assert isinstance(ne, Topic)
+        other_titles = [title_obj['text'] for title_obj in ne.titles if not title_obj.get('primary', False)]
+        rows += [{
+            "Slug": ne.slug,
+            "En": ne.get_primary_title('en'),
+            "He": ne.get_primary_title('he'),
+            "Description": getattr(ne, 'description', {}).get('en', ''),
+            "Other Titles": " | ".join(other_titles)
+        }]
+    with open('/home/nss/sefaria/datasets/ner/sefaria/temp/existing_topics.csv', 'w') as fout:
+        cout = csv.DictWriter(fout, ['Slug', 'En', 'He', 'Description', 'Other Titles'])
+        cout.writeheader()
+        cout.writerows(rows)
+
 if __name__ == "__main__":
     # ttg = TalmudTrainingGenerator(DATA, 'William Davidson Edition - Aramaic', 'he', 'Bavli')
     # ttg.generate_spacy_training()
     # ttg.save_training_to_db('talmud_ner_he')
     # guess_most_likely_transliteration()
     # make_en_named_entities_file()
-    FindMissingNames('JTmock Terumot')
-
+    # FindMissingNames('JTmock Niddah')
+    # suggest_people_duplicates()
+    # make_csv_for_deduping()
+    output_existing_people()
 """
 python -m spacy pretrain ./research/prodigy/configs/talmud_ner.cfg ./research/prodigy/output/pretrain_talmud_ner --code ./research/prodigy/functions.py --gpu-id 0
 

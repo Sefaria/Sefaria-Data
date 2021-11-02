@@ -277,8 +277,6 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
         return list(filter(lambda m: len(already_found_indexes & set(range(m.start, m.end))) == 0 or (m.start, m.end) in already_found_mention_spans, mentions))
 
     def predict_segment(self, corpus_segment, pretagged_mentions=None):
-        from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
-
         norm_text = self.normalizer.normalize(corpus_segment.text, lang=corpus_segment.language)
         mentions = []
         for match in re.finditer(self.named_entity_regex_by_lang[corpus_segment.language], norm_text):
@@ -287,11 +285,11 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
             #     continue
             mentions += [Mention(match.start('prefix'), match.end('ne'), match.group('prefix') + match.group('ne'), prefix_span=match.span('prefix'), ref=corpus_segment.ref, versionTitle=corpus_segment.versionTitle, language=corpus_segment.language)]
         mention_indices = [(mention.start, mention.end) for mention in mentions]
-        norm_map = get_mapping_after_normalization(corpus_segment.text, partial(self.normalizer.find_text_to_remove, lang=corpus_segment.language))
-        mention_indices = convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map)
+        norm_map = self.normalizer.get_mapping_after_normalization(corpus_segment.text, lang=corpus_segment.language)
+        mention_indices = self.normalizer.convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map)
         for mention, unnorm_span in zip(mentions, mention_indices):
             unnorm_start, unnorm_end = NormalizerTools.include_trailing_nikkud(unnorm_span, corpus_segment.text)
-            unnorm_prefix_span = NormalizerTools.include_trailing_nikkud(convert_normalized_indices_to_unnormalized_indices([mention.prefix_span], norm_map)[0], corpus_segment.text)
+            unnorm_prefix_span = NormalizerTools.include_trailing_nikkud(self.normalizer.convert_normalized_indices_to_unnormalized_indices([mention.prefix_span], norm_map)[0], corpus_segment.text)
             mention.add_metadata(start=unnorm_start, end=unnorm_end, mention=corpus_segment.text[unnorm_start:unnorm_end], prefix_span=unnorm_prefix_span)
         mentions = self.filter_already_found_mentions(mentions, corpus_segment.text, corpus_segment.language, pretagged_mentions)
         return mentions
