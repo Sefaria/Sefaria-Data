@@ -18,21 +18,21 @@ except ImportError:
 @spacy.registry.readers("mongo_reader")
 def stream_data(db_host: str, db_port: int, input_collection: str, output_collection: str, random_state: int, train_perc: float, corpus_type: str, min_len: int, unique_by_metadata=True) -> Callable[[Language], Iterator[Example]]:
     my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
+    data = [d for d in getattr(my_db.db, input_collection).find({}) if len(d['text']) > min_len]
+    # make data unique
+    if unique_by_metadata:
+        data = list({(tuple(sorted(d['meta'].items(), key=lambda x: x[0])), d['text']): d for d in data}.values())
+    print("Num examples", len(data))
+    if random_state == -1:
+        train_data, test_data = (data, []) if corpus_type == "train" else ([], data)
+    else:
+        train_data, test_data = train_test_split(data, random_state=random_state, train_size=train_perc)
+    corpus_data = train_data if corpus_type == "train" else test_data
     def generate_stream(nlp):
-        data = [d for d in getattr(my_db.db, input_collection).find({}) if len(d['text']) > min_len]
-        # make data unique
-        if unique_by_metadata:
-            data = list({(tuple(sorted(d['meta'].items(), key=lambda x: x[0])), d['text']): d for d in data}.values())
-        print("Num examples", len(data))
-        if random_state == -1:
-            train_data, test_data = (data, []) if corpus_type == "train" else ([], data)
-        else:
-            train_data, test_data = train_test_split(data, random_state=random_state, train_size=train_perc)
-        corpus_data = train_data if corpus_type == "train" else test_data
         for raw_example in corpus_data:
             doc = nlp.make_doc(raw_example['text'])
             doc.user_data = raw_example['meta']
-            doc.user_data.update({'answer': raw_example['answer'], '_id': raw_example['_id']})
+            doc.user_data.update({'answer': raw_example['answer'], '_id': str(raw_example['_id'])})
             entities = [(span['start'], span['end'], span['label']) for span in raw_example['spans']]
             example = Example.from_dict(doc, {"entities": entities})
             yield example
@@ -54,12 +54,13 @@ def custom_tokenizer_factory():
         return tokenizer
     return custom_tokenizer
 
-def make_evaluation_files(evaluation_data, ner_model, output_folder):
+def make_evaluation_files(evaluation_data, ner_model, output_folder, start=0):
     tp,fp,fn,tn = 0,0,0,0
     data_tuples = [(eg.text, eg) for eg in evaluation_data]
     output_json = []
     # see https://spacy.io/api/language#pipe
-    for doc, example in tqdm(ner_model.pipe(data_tuples, as_tuples=True)):
+    for iexample, (doc, example) in enumerate(tqdm(ner_model.pipe(data_tuples, as_tuples=True))):
+        if iexample < start: continue
         # correct_ents
         ents_x2y = example.get_aligned_spans_x2y(example.reference.ents)
         correct_ents = {(e.start_char, e.end_char, e.label_) for e in ents_x2y}
@@ -83,7 +84,8 @@ def make_evaluation_files(evaluation_data, ner_model, output_folder):
             "tp": [list(ent) for ent in temp_tp],
             "fp": [list(ent) for ent in temp_fp],
             "fn": [list(ent) for ent in temp_fn],
-            "ref": example.predicted.user_data['Ref']
+            "ref": example.predicted.user_data['Ref'],
+            "_id": example.predicted.user_data['_id'],
         }]
     
     srsly.write_jsonl(f"{output_folder}/doc_evaluation.jsonl", output_json)
@@ -140,11 +142,12 @@ def wrap_chars(s, chars_to_wrap, get_wrapped_text):
         return f"""{get_wrapped_text(mention, metadata)}"""
     return re.sub(fr"{dummy_char}+", repl, dummy_text)
 
-def wrap_chars_with_overlaps(s, chars_to_wrap, get_wrapped_text):
+def wrap_chars_with_overlaps(s, chars_to_wrap, get_wrapped_text, return_chars_to_wrap=False):
     chars_to_wrap.sort(key=lambda x: (x[0],x[0]-x[1]))
     for i, (start, end, metadata) in enumerate(chars_to_wrap):
         wrapped_text, start_added, end_added = get_wrapped_text(s[start:end], metadata)
         s = s[:start] + wrapped_text + s[end:]
+        chars_to_wrap[i] = (start, end + start_added + end_added, metadata)
         for j, (start2, end2, metadata2) in enumerate(chars_to_wrap[i+1:]):
             if start2 > end:
                 start2 += end_added
@@ -153,6 +156,8 @@ def wrap_chars_with_overlaps(s, chars_to_wrap, get_wrapped_text):
                 end2 += end_added
             end2 += start_added
             chars_to_wrap[i+j+1] = (start2, end2, metadata2)
+    if return_chars_to_wrap:
+        return s, chars_to_wrap
     return s
 
 def make_evaluation_html(data, output_folder, output_filename):
@@ -242,11 +247,11 @@ def convert_jsonl_to_csv(filename):
 if __name__ == "__main__":
     nlp = spacy.load('./research/prodigy/output/ref_tagging_cpu/model-last')
     # nlp = spacy.load('./research/prodigy/output/sub_citation/model-best')
-    # data = stream_data('localhost', 27017, 'gold_output_full', 'gilyon_input', 614, 0.8, 'test', 0)(nlp)
+    # data = stream_data('localhost', 27017, 'silver_output_full', 'gilyon_input', 614, 0.8, 'test', 20)(nlp)
     # print(make_evaluation_files(data, nlp, './research/prodigy/output/evaluation_results'))
 
-    data = stream_data('localhost', 27017, 'silver_output_binary', 'gilyon_input', -1, 1.0, 'train', 0, unique_by_metadata=False)(nlp)
-    export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results', is_binary=True, start=899) # 1489
+    data = stream_data('localhost', 27017, 'silver_output_full', 'gilyon_input', -1, 1.0, 'train', 0, unique_by_metadata=True)(nlp)
+    export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results', is_binary=False, start=427)  # 897
     convert_jsonl_to_json('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
     # convert_jsonl_to_csv('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
     # spacy.training.offsets_to_biluo_tags(doc, entities)
@@ -256,9 +261,8 @@ python -m spacy train ./research/prodigy/configs/ref_tagging.cfg --output ./rese
 
 to run cpu
 python -m spacy train ./research/prodigy/configs/ref_tagging_cpu.cfg --output ./research/prodigy/output/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0
-Num examples 795
- 53    6000          3.20      0.32   69.72   71.03   68.47    0.70
-
+Num examples 1682
+ 34    7600        136.44      6.50   82.05   82.85   81.27    0.82
 
 to train sub citation
 python -m spacy train ./research/prodigy/configs/sub_citation.cfg --output ./research/prodigy/output/sub_citation --code ./research/prodigy/functions.py --gpu-id 0
@@ -267,7 +271,7 @@ debug data
 python -m spacy debug data ./research/prodigy/configs/ref_tagging_cpu.cfg -c ./research/prodigy/functions.py
 
 pretrain cpu
-python -m spacy pretrain ./research/prodigy/configs/ref_tagging_cpu.cfg ./research/prodigy/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0
+python -m spacy pretrain ./research/prodigy/configs/ref_tagging_cpu.cfg ./research/prodigy/output/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0
 
 convert fasttext vectors
 python -m spacy init vectors he "/home/nss/sefaria/datasets/text classification/fasttext_he_no_prefixes_300.vec" "/home/nss/sefaria/datasets/text classification/prodigy/dim300" --verbose

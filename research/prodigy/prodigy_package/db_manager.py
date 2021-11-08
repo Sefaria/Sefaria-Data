@@ -75,10 +75,10 @@ class MongoProdigyDBManager:
         return True
 
     def get_datasets(self):
-        return list(self.db.datasets.find({"session": False}))
+        return [dataset['name'] for dataset in self.db.datasets.find({"session": False})]
 
     def get_sessions(self):
-        return list(self.db.datasets.find({"session": True}))
+        return [dataset['name'] for dataset in self.db.datasets.find({"session": True})]
 
     datasets = property(get_datasets)
     sessions = property(get_sessions)

@@ -1,5 +1,6 @@
 # encoding=utf-8
-
+import django
+django.setup()
 import re
 import os
 import codecs
@@ -7,8 +8,7 @@ import pytest
 from io import StringIO
 from data_utilities import util
 
-import django
-django.setup()
+
 from sefaria.model import *
 
 
@@ -206,6 +206,17 @@ class TestNormalizationMapping:
         rm = util.get_mapping_after_normalization(text, find_text_to_remove)
         assert rm == {1: 2, 3: 3}
 
+    def test_with_larger_substitution(self):
+        text = "a###b##c"
+        blah = "a----b----c"
+        find_text_to_remove = lambda x: [(m, '----') for m in re.finditer(r'#+', x)]
+        rm = util.get_mapping_after_normalization(text, find_text_to_remove)
+        assert rm == {1: -1, 6: -3}
+
+        norm_inds = (5, 11)
+        unnorm_s, unnorm_e = util.convert_normalized_indices_to_unnormalized_indices([norm_inds], rm)[0]
+        assert text[unnorm_s:unnorm_e] == "b##c"
+
     def test_real_case(self):
         norm_mention = "Rabbi Yehuda"
         norm_regex = r"\s*<[^>]+>\s*"
@@ -225,51 +236,12 @@ class TestNormalizationMapping:
         unnorm_s, unnorm_e = util.convert_normalized_indices_to_unnormalized_indices([(norm_inds[0], norm_inds[0])], rm)[0]
         assert text[unnorm_s:unnorm_e] == ""
 
-    def test_word_to_char(self):
-        test_string = 'some words go here\n\nhello world'
-        words = ['go', 'here', 'hello']
-        word_indices = (2, 4)
-        result = util.char_indices_from_word_indices(test_string, [word_indices])[0]
-        start, end = result
-        assert test_string[start:end] == 'go here\n\nhello'
-        assert test_string[start:end].split() == words
+    def test_reverse(self):
+        text = "a###b##c"
+        find_text_to_remove = lambda x: [(m, ' ') for m in re.finditer(r'#+', x)]
+        norm_text = "a b c"
+        rm = util.get_mapping_after_normalization(text, find_text_to_remove, reverse=True)
+        assert rm == {1: 2, 5: 3}
+        norm_s, norm_e = util.convert_normalized_indices_to_unnormalized_indices([(4, 8)], rm, reverse=True)[0]
+        assert norm_text[norm_s:norm_e] == "b c"
 
-
-class TestTextSanitizer:
-
-    text_to_test = [
-        'foo bar <erase me> baz',
-        'hello <nonsense> world',
-        'my name is <not> Jonathan',
-        'out of <good> ideas'
-    ]
-    sanitization_expression = r'\s*<[^<>]+>\s*'
-    dividing_expression = r'\s+'
-
-    @classmethod
-    def sanitizer(cls, x):
-        return re.sub(cls.sanitization_expression, ' ', x)
-
-    def test_initialization(self):
-        sanitizer = util.TextSanitizer(self.text_to_test, self.dividing_expression)
-        assert sanitizer.get_original_segments() == tuple(self.text_to_test)
-        assert sanitizer.get_sanitized_segments() is None
-
-    def test_sanitize(self):
-        sanitizer = util.TextSanitizer(self.text_to_test, self.dividing_expression)
-        sanitizer.set_sanitizer(self.sanitizer)
-        sanitizer.sanitize()
-        assert sanitizer.get_sanitized_segments() == (
-            'foo bar baz',
-            'hello world',
-            'my name is Jonathan',
-            'out of ideas'
-        )
-
-    def test_word_to_segment(self):
-        sanitizer = util.TextSanitizer(self.text_to_test, self.dividing_expression)
-        sanitizer.set_sanitizer(self.sanitizer)
-        sanitizer.sanitize()
-        word_list = sanitizer.get_sanitized_word_list()
-        jon = word_list.index('Jonathan')
-        assert sanitizer.check_sanitized_index(jon) == 2

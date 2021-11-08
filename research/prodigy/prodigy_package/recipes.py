@@ -16,13 +16,13 @@ def import_file_to_collection(input_file, collection, db_host='localhost', db_po
     getattr(my_db.db, collection).delete_many({})
     getattr(my_db.db, collection).insert_many(stream)
 
-def load_model(model_dir, labels):
+def load_model(model_dir, labels, lang):
     model_exists = True
     try:
         nlp = spacy.load(model_dir)
     except OSError:
         model_exists = False
-        nlp = Hebrew()
+        nlp = Hebrew() if lang == 'he' else English()
     if "ner" not in nlp.pipe_names:
         nlp.add_pipe("ner", last=True)
     ner = nlp.get_pipe("ner")
@@ -42,11 +42,9 @@ def save_model(nlp, model_dir):
 def train_model(nlp, annotations, model_dir):
     batches = minibatch(annotations, size=compounding(4.0, 32.0, 1.001))
     losses = {}
-    for batch in batches:        
-        texts = [eg["text"] for eg in batch]
-        ents_list = [[(span["start"], span["end"], span["label"]) for span in eg.get("spans", [])] for eg in batch]
-        annots = [{"entities": ents} for ents in ents_list]
-        nlp.update(texts, annots, losses=losses)  # TODO add drop=0.5
+    # TODO fix training no longer compatible with spacy 3.  The Language.update method takes a list of Example objects, but got: {<class 'dict'>}
+    # for batch in batches:
+    #     nlp.update(batch, losses=losses)  # TODO add drop=0.5
     save_model(nlp, model_dir)
     return losses
 
@@ -93,12 +91,14 @@ def train_on_current_output(output_collection='examples2_output'):
     view_id=("Annotation interface", "option", "v", str),
     db_host=("Mongo host", "option", None, str),
     db_port=("Mongo port", "option", None, int),
+    dir=("Direction of text to display. Either 'ltr' or 'rtl'", "option", None, str),
+    lang=("Lang of training data. Either 'en' or 'he'", "option", None, str),
     train_on_input=("Should empty model be trained on input spans?", "option", None, int),
 )
-def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, labels, view_id="text", db_host="localhost", db_port=27017, train_on_input=1):
+def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, labels, view_id="text", db_host="localhost", db_port=27017, dir='rtl', lang='he',train_on_input=1):
     my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
     labels = labels.split(',')
-    nlp, model_exists = load_model(model_dir, labels)
+    nlp, model_exists = load_model(model_dir, labels, lang)
     if not model_exists and train_on_input == 1:
         temp_stream = getattr(my_db.db, input_collection).find({}, {"_id": 0})
         train_model(nlp, temp_stream, model_dir)
@@ -132,8 +132,8 @@ def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, 
             "labels": labels,
             "global_css": f"""
                 [data-prodigy-view-id='{view_id}'] .prodigy-content {{
-                    direction: rtl;
-                    text-align: right;
+                    direction: {dir};
+                    text-align: {'right' if dir == 'rtl' else 'left'};
                 }}
             """,
             "javascript": """
@@ -154,7 +154,7 @@ def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, 
 
 if __name__ == "__main__":
     # test_tokenizer(nlp)
-    import_file_to_collection('research/prodigy/data/test_input.jsonl', 'input')
+    import_file_to_collection('../data/test_input.jsonl', 'yerushalmi_input')
 """
 ספר,דה,מספר,שם,לקמן-להלן,תת-ספר,שם-עצמי,קטגוריה
 command to run
@@ -170,6 +170,9 @@ prodigy ref-tagging-recipe ref_tagging2 gilyon_input gilyon_output ./research/pr
 
 command to run on gilyon hashas sub citation
 prodigy ref-tagging-recipe sub_ref_tagging gilyon_sub_citation_input gilyon_sub_citation_output ./research/prodigy/output/sub_citation/model-best ספר,דה,מספר,שם,לקמן-להלן,תת-ספר,שם-עצמי --view-id ner_manual -db-host localhost -db-port 27017 -train-on-input 0 -F ./research/prodigy/functions.py
+
+command to run on yerushalmi
+ prodigy ref-tagging-recipe jeru_ref_tagging yerushalmi_input yerushalmi_output models/jeru_ref_tagging source --view-id ner_manual -db-host localhost -db-port 27017 -dir ltr -F functions.py
 """
 
 """

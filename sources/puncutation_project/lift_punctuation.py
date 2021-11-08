@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals, print_function
 
+import csv
 import re
 
 import bleach
@@ -220,9 +221,10 @@ class TalmudSteinsaltz(object):
         marks = [re.escape(s) for s in cls.punctuation_list()]
         return u'|'.join(marks)
 
-    def lift_punctuation(self):
+    def lift_punctuation(self, possibilities=False):
+        default_ret = [] if possibilities else ''
         if not self.talmud:
-            return ''
+            return default_ret
         priority_map = {
             punc: i
             for i, punc in enumerate(self.punctuation_list())
@@ -233,16 +235,18 @@ class TalmudSteinsaltz(object):
 
         # Talmud mark takes priority, with the exception of the comma.
         if talmud_mark:
-            if talmud_mark.group(1) == ',':
+            if talmud_mark.group(1) == ',' or possibilities:
                 # Comma gets treated as standard punctuation (this is just a rule-of-thumb, feel free to revisit)
                 punc_marks.append(talmud_mark.group(1))
             else:
                 return talmud_mark.group(1)
 
         if punc_marks:
+            if possibilities:
+                return punc_marks
             return min(punc_marks, key=lambda x: priority_map[x])
         else:
-            return ''
+            return default_ret
 
     def reform_pair(self):
         return '{}{}'.format(self.talmud, self.steinsaltz)
@@ -287,7 +291,9 @@ class SteinsaltzIntro(TalmudSteinsaltz):
     def load_talmud_steinsaltz(cls, segment, next_start, *args):
         return cls(segment[:next_start])
 
-    def lift_punctuation(self):
+    def lift_punctuation(self, possibilities=False):
+        if possibilities:
+            return []
         return ''
 
 
@@ -303,7 +309,9 @@ class ConnectedTalmud(TalmudSteinsaltz):
             return True
         return False
 
-    def lift_punctuation(self):
+    def lift_punctuation(self, possibilities=False):
+        if possibilities:
+            return []
         return ''
 
 
@@ -319,7 +327,7 @@ class TSMap(object):
         self.reg_talmud = reg_talmud
         self.talmud_steinsaltz = talmud_steinsaltz
 
-    def get_punctuation_for_talmud(self):
+    def get_punctuation_for_talmud(self, possibilities=False):
         cleaned_talmud = re.sub('{}$'.format(TalmudSteinsaltz.punctuation_regex()), '', self.reg_talmud)
         """
         For punctuation within bold - use simple word counts. In places where the length of both Talmud fragments don't match
@@ -327,11 +335,14 @@ class TSMap(object):
         Let's write two methods: One uses word counts, the other uses word matching.
         """
         if len(cleaned_talmud.split()) == len(self.talmud_steinsaltz.talmud.split()):
-            cleaned_talmud = self.lift_from_bold_counts(cleaned_talmud, self.talmud_steinsaltz)
+            cleaned_talmud = self.lift_from_bold_counts(cleaned_talmud, self.talmud_steinsaltz, possibilities)
         else:
-            cleaned_talmud = self.lift_from_bold_word_match(cleaned_talmud, self.talmud_steinsaltz)
+            cleaned_talmud = self.lift_from_bold_word_match(cleaned_talmud, self.talmud_steinsaltz, possibilities)
 
-        return '{}{}'.format(cleaned_talmud, self.talmud_steinsaltz.lift_punctuation())
+        end_punc = self.talmud_steinsaltz.lift_punctuation(possibilities)
+        if possibilities:
+            return cleaned_talmud + end_punc
+        return '{}{}'.format(cleaned_talmud, end_punc)
 
     @classmethod
     def build_from_map(cls, segment, ts, mapping):
@@ -347,7 +358,7 @@ class TSMap(object):
         return bool(self.reg_talmud)
 
     @staticmethod
-    def lift_from_bold_counts(simple_talmud, talmud_steinsaltz):
+    def lift_from_bold_counts(simple_talmud, talmud_steinsaltz, possibilities=False):
         """
         Add punctuation that appears inside bold part of Steinsaltz elucidation (not at the edges though). This method
         is only to be used when both versions have the same number of words
@@ -363,16 +374,21 @@ class TSMap(object):
         def lift_punctuation(simple, stein):
             punc_match = punc_regex.search(stein)
             if punc_match:
-                return '{}{}'.format(simple, punc_match.group(1))
+                punc = punc_match.group(1)
+                if possibilities:
+                    return [(simple, [punc])]
+                return '{}{}'.format(simple, punc)
             else:
-                return simple
+                return [(simple, [''])] if possibilities else simple
+        if possibilities:
+            return reduce(lambda a, b: a + b, map(lift_punctuation, simple_words, stein_words), [])
         temp_talmud = u' '.join(map(lift_punctuation, simple_words, stein_words))
 
         # strip out punctuation on the edge - this will need to take punctuation from Steinsaltz into account
         return punc_regex.sub('', temp_talmud)
 
     @staticmethod
-    def lift_from_bold_word_match(simple_talmud, talmud_steinsaltz):
+    def lift_from_bold_word_match(simple_talmud, talmud_steinsaltz, possibilities=False):
         """
         Extract punctuation using text matching.
         Go for exact string match first where there is only one match. If that doesn't work, use "rule-of-thumb"
@@ -384,7 +400,7 @@ class TSMap(object):
 
         punc_regex = re.compile(r'({})$'.format(talmud_steinsaltz.punctuation_regex()))
         talmud_words, cleaned_talmud_words = simple_talmud.split(), strip_nikkud(simple_talmud).split()
-
+        punc_list = []
         for word_num, stein_word in enumerate(talmud_steinsaltz.talmud.split()[:-1]):  # don't bother with last word
             punc_match = punc_regex.search(stein_word)
             if not punc_match:
@@ -393,8 +409,10 @@ class TSMap(object):
             stripped = re.sub(r'[^\u05d0-\u05ea]', '', stein_word)
             if cleaned_talmud_words.count(stripped) == 1:  # single, perfect match
                 word_index = cleaned_talmud_words.index(stripped)
-                talmud_words[word_index] = '{}{}'.format(talmud_words[word_index], punc_match.group(1))
-
+                if possibilities:
+                    punc_list += [(talmud_words[word_index], [punc_match.group(1)])]
+                else:
+                    talmud_words[word_index] = '{}{}'.format(talmud_words[word_index], punc_match.group(1))
             else:
                 levenshteins = [WL.calculate(stripped, talmud_word, False) for talmud_word in cleaned_talmud_words]
                 distance_penalties = [1 + abs(0.05*(i-word_num)) for i in range(len(cleaned_talmud_words))]
@@ -403,7 +421,12 @@ class TSMap(object):
                 best_match = min(range(len(scores)), key=lambda x: scores[x])
 
                 # since we're using fuzzy matching, mark with a `~` for manual review
-                talmud_words[best_match] = '{}~{}'.format(talmud_words[best_match], punc_match.group(1))
+                if possibilities:
+                    punc_list += [punc_match.group(1)]
+                else:
+                    talmud_words[best_match] = '{}~{}'.format(talmud_words[best_match], punc_match.group(1))
+        if possibilities:
+            return punc_list
         return ' '.join(talmud_words)
 
 
@@ -411,16 +434,18 @@ class TSSuite(object):
     def __init__(self, tsmap_list):
         self.suite = tsmap_list
 
-    def get_punctuated_talmud(self):
+    def get_punctuated_talmud(self, possibilities=False):
         word_list = []
         for tsmap in self.suite:
             if tsmap.actually_has_talmud():
-                word_list.append(tsmap.get_punctuation_for_talmud())
+                word_list.append(tsmap.get_punctuation_for_talmud(possibilities))
 
                 if tsmap.talmud_steinsaltz.has_dash():
                     word_list.append(u'\u2014')
 
         # return u' '.join([tsmap.get_punctuation_for_talmud() for tsmap in self.suite if tsmap.actually_has_talmud()])
+        if possibilities:
+            return word_list
         return u' '.join(word_list)
 
 
@@ -492,9 +517,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--base_vtitle', default='William Davidson Edition - Aramaic', type=str, help='versionTitle to which punctuation will be added')
     parser.add_argument('-t', '--tractate', type=str, help='tractate on which to add punctuation')
+    parser.add_argument('-c', '--csv', type=str, default=None, help='output punctuated talmud as csv rather than a new version')
     args = parser.parse_args()
     base_vtitle = args.base_vtitle
     tractate = args.tractate
+    csv_dir = args.csv
+    export_as_csv = csv_dir is not None
     print(base_vtitle)
 
     # tref = f'Shabbat 2b.11'
@@ -511,6 +539,7 @@ if __name__ == '__main__':
     # print(base_t, my_t, actual_bleach(my_t), partial_punctuation, final_punctuation, sep='\n\n')
 
     simple, elucidated = sef.Ref(f"{tractate}"), sef.Ref(f"Steinsaltz on {tractate}")
+    rows = []
     for simple_seg in simple.all_segment_refs():
         print(simple_seg.normal())
         elucidated_seg = sef.Ref("Steinsaltz on {}".format(simple_seg.normal()))
@@ -533,4 +562,16 @@ if __name__ == '__main__':
                 new_tc.text = punctuated_text
             except ModeledSegmentError:
                 new_tc.text = base_t
-        new_tc.save()
+        if export_as_csv:
+            rows += [{
+                "Ref": simple_seg.normal(),
+                "Text": new_tc.text
+            }]
+        else:
+            new_tc.save()
+    if export_as_csv:
+        with open(csv_dir, 'w') as fout:
+            c = csv.DictWriter(fout, ['Ref', 'Text'])
+            c.writeheader()
+            c.writerows(rows)
+

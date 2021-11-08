@@ -1,5 +1,5 @@
 from collections import defaultdict
-import re, json, csv, srsly
+import re, json, csv, srsly, spacy
 from tqdm import tqdm
 import django
 django.setup()
@@ -213,11 +213,103 @@ def merge_gold_full_into_silver_binary():
             del binary_gold['tokens']
             del binary_gold['_id']
             binary_gold['answer'] = 'reject'
-            silver_db.output_collection.insert_one(binary_gold)            
+            silver_db.output_collection.insert_one(binary_gold)
+
+def merge_into_silver_full(collection):
+    gold_db = MongoProdigyDBManager(collection)
+    silver_db = MongoProdigyDBManager("silver_output_full")
+    for gold in gold_db.output_collection.find({}):
+        silver_db.output_collection.insert_one(gold)
+
+def run_on_input(nlp, str_list, output_folder, filename='single_run', ref_list=None):
+    from research.prodigy.functions import make_evaluation_html
+    spacy.require_gpu()
+    ent_data = []
+    for i, doc in tqdm(enumerate(nlp.pipe(str_list, batch_size=1000)), total=len(str_list)):
+        ent_data += [{
+            "text": doc.text,
+            "tp": [[ent.start_char, ent.end_char, ent.label_] for ent in doc.ents],
+            "fp": [],
+            "fn": [],
+            "ref": "" if ref_list is None else ref_list[i],
+            "_id": "",
+        }]
+    srsly.write_jsonl(f'{output_folder}/{filename}.jsonl', ent_data)
+    make_evaluation_html(ent_data, output_folder, filename + '.html')
+
+def run_on_version(nlp, title, vtitle, language, filename, return_contents=False):
+    from research.knowledge_graph.named_entity_recognition.ner_tagger import TextNormalizer
+    content_list, ref_list = [], []
+    def action(s, en_tref, he_tref, v):
+        nonlocal content_list, ref_list
+        s = TextChunk._strip_itags(s)
+        content_list += [TextNormalizer.normalize_text(language, s)]
+        ref_list += [en_tref]
+    version = Version().load({"title": title, "versionTitle": vtitle, "language": language})
+    if version is None: return
+    version.walk_thru_contents(action)
+    if return_contents: return content_list, ref_list
+    run_on_input(nlp, content_list, './research/prodigy/output/evaluation_results', filename, ref_list)
+
+def run_on_category(nlp, category, vtitle, language, filename):
+    content_list, ref_list = [], []
+    for title in tqdm(library.get_indexes_in_category(category)):
+        temp_content_list, temp_ref_list = run_on_version(nlp, title, vtitle, language, filename, return_contents=True)
+        content_list += temp_content_list
+        ref_list += temp_ref_list
+    run_on_input(nlp, content_list, './research/prodigy/output/evaluation_results', filename, ref_list)
+ 
+def refactor_labels_gilyon_sub_citation():
+    dbm = MongoProdigyDBManager("gilyon_sub_citation_output")
+    for doc in dbm.output_collection.find({}):
+        for span in doc['spans']:
+            if span['label'] in {'ספר', 'תת-ספר'}:
+                span['label'] = 'כותרת'
+        dbm.output_collection.replace_one({"_id": doc['_id']}, doc)
+
+def refactor_tos_dh_to_be_named():
+    tos_dh_titles = {'תוד"ה', 'תד"ה'}
+    dbm = MongoProdigyDBManager("gilyon_sub_citation_output")
+    for doc in dbm.output_collection.find({}):
+        new_spans = []
+        for span in doc['spans']:
+            span_tokens = [doc['tokens'][i] for i in range(span['token_start'], span['token_end']+1)]
+            if span['label'] == 'דה' and span_tokens[0]['text'] in tos_dh_titles:
+                assert len(span_tokens) == 2
+                for tok in span_tokens:
+                    new_spans += [{
+                        "start": tok["start"],
+                        "end": tok["end"],
+                        "token_start": tok["id"],
+                        "token_end": tok["id"],
+                        "label": "כותרת" if tok["text"] in tos_dh_titles else "דה"
+                    }]
+            else:
+                new_spans += [span]
+        doc['spans'] = new_spans
+        dbm.db.gilyon_sub_citation_output2.replace_one({"_id": doc['_id']}, doc, upsert=True)
+
 if __name__ == "__main__":
     # make_csv_by_filter('examples2_output', 'research/prodigy/output/one_time_output/paren_at_end_list.csv', paren_at_end_filter)
     # modify_data_based_on_csv('/home/nss/Downloads/Dibur Hamatchil Editing - Sheet2.csv', 'examples2_output', 'examples2_output_paren')
     # move_binary_output_to_own_collection()
     # fix_perek()
     # fix_ids("research/prodigy/to_fix.txt")
-    merge_gold_full_into_silver_binary()
+    # refactor_labels_gilyon_sub_citation()
+    # refactor_tos_dh_to_be_named()
+    # merge_gold_full_into_silver_binary()
+    # merge_into_silver_full("gold_output_full")
+    # merge_into_silver_full("gilyon_output")
+
+
+    s = """
+Could I think that they may fulfill their obligation with First Fruits? The verse says, in all your dwelling places you shall eat mazzot, mazzah which may be eaten at any dwelling place; this excludes First Fruits which are not eaten at any dwelling place. They objected, but Second Tithe may not be eaten at any dwelling place! It may be redeemed and be eaten at any dwelling place. Rabbi Abun bar Hiyya asked: What was bought with tithe money and became impure, following Rebbi Jehudah, [what is its status? As it was stated: “If what was bought with tithe money became impure, it should be redeemed. Rebbi Jehudah says, it should be buried. They said to Rebbi Jehudah, if original Second Tithe which became impure is redeemed, what was bought with tithe money and became impure certainly should be redeemed. He said to them, no! If you referred to original Second Tithe, which can be redeemed when it is pure and far from the Place, can you say the same about what was bought with tithe money which cannot be redeemed when it is pure and far from the Place?”] since it is not subject to being redeemed and eaten at any dwelling place, one may not fulfill one’s obligation with it. Rebbi Simeon ben Laqish asked: Ḥallah from dough made from Second Tithe in Jerusalem, since it is not subject to being redeemed and eaten at any dwelling place, one may not fulfill one’s obligation with it. 
+    """
+    # nlp = spacy.load('./research/prodigy/output/talmud_ner_he/model-last')
+    # nlp = spacy.load('./research/prodigy/output/ref_tagging/model-last')
+    # run_on_input(nlp, [s], './research/prodigy/output/evaluation_results')
+    
+    # TALMUD NER
+    # run_on_category(nlp, 'Mock Yerushalmi', 'Guggenheimer Translation 2.1', 'en', 'talmud_en')
+    # run_on_category(nlp, 'Mock Yerushalmi', 'Guggenheimer (structured)', 'he', 'talmud_he')
+    
