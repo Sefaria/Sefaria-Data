@@ -8,12 +8,12 @@ new_file = ""
 
 import os
 import csv
-files = [f for f in os.listdir(".") if f.endswith(".csv")]
+files = [open("intros.csv", 'r')]
 for new_file in files:
     # if "Moed" not in new_file or "Rosh" not in new_file:
     #     continue
     print(new_file)
-    reader = list(csv.reader(open(new_file, 'r')))
+    reader = list(csv.reader(new_file))
     title = reader[0][1]
     vtitle = reader[1][1]
     lang = reader[2][1]
@@ -21,9 +21,11 @@ for new_file in files:
     text = {}
     for row in reader[5:]:
         ref, comm = row
+        print(row)
         tc = TextChunk(Ref(ref), lang=lang, vtitle=vtitle)
         tc.text = comm
-        tc.save(force_save=True)
+        #tc.save()
+
     #     chapter, segment = ref.split()[-1].split(":")
     #     chapter = int(chapter)
     #     segment = int(segment)

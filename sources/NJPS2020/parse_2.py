@@ -287,7 +287,7 @@ def check_for_ftnotes(body):
 
 bible_sections = [ref.normal() for el in library.get_indexes_in_category("Tanakh") for ref in library.get_index(el).all_section_refs()]
 start_at = 0
-document = docx2python("JPS.docx", html=True)
+document = docx2python("betulah.docx", html=True)
 ftnotes = {}
 increment_perek = 0
 heb_uncertain = 0
