@@ -1,0 +1,30 @@
+{
+    "namedEntities": [
+        {
+            "id": "mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "group-of-mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "namedEntityFile": "research/knowledge_graph/named_entity_recognition/sperling_named_entities.json"
+        }
+    ],
+    "corpus": [
+        {
+            "title": "Tosefta",
+            "type": "category",
+            "versions": [
+                {
+                    "language": "he",
+                    "versionTitle": null,
+                    "pretaggedFile": "research/knowledge_graph/named_entity_recognition/sperling_mentions_tosefta.json"
+                }
+            ]
+        }
+    ]
+}

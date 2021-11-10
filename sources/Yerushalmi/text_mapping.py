@@ -20,7 +20,8 @@ from sefaria.utils.hebrew import strip_nikkud
 from sefaria.model.schema import AddressTalmud
 from sefaria.datatype.jagged_array import JaggedArray
 from concurrent.futures.process import ProcessPoolExecutor
-from data_utilities.util import ja_to_xml, TextSanitizer, sanitized_words_to_unsanitized_words, traverse_ja
+from data_utilities.util import ja_to_xml, traverse_ja
+from data_utilities.normalization import TextSanitizer, sanitized_words_to_unsanitized_words
 from data_utilities.ParseUtil import *
 from data_utilities.dibur_hamatchil_matcher import match_ref, match_text
 

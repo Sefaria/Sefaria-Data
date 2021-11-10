@@ -104,8 +104,9 @@ for f in os.listdir("."):
         if orig != len(text_dict[ch]):
             print("Verses in Ch {} are off: {} vs {}".format(ch, orig, len(text_dict[ch])))
         for v, verse in enumerate(text_dict[ch]):
-            text_dict[ch][v] = re.sub("<sup>.{1}</sup>", "", text_dict[ch][v])
-            soup = BeautifulSoup(text_dict[ch][v])
+            text = re.sub("<sup>.{1}</sup>", "", text_dict[ch][v])
+            text = "<html><body>{}</body></html>".format(text)
+            soup = BeautifulSoup(text)
             for i_tag in soup.find_all('i', {"class": "footnote"}):
                 if 'class' in i_tag.attrs:
                     i_tag.decompose()

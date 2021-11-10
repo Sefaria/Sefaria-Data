@@ -13,6 +13,6 @@ setup(
     install_requires=[
         'pymongo',
         'spacy>=3.0.5',
-        'srsly==2.4.0'
+        'srsly==2.4.2'
     ]
 )

@@ -1,0 +1,24 @@
+{
+    "namedEntities": [
+        {
+            "namedEntityFile": "/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_basic_en_titles.json"
+        }
+    ],
+    "normalizers": {
+        "en": ["br-tag", "itag", "unidecode", "html", "parens-plus-contents", "brackets", "double-space"],
+        "he": ["unidecode", "cantillation", "maqaf"]
+    },
+    "rules": [],
+    "corpus": [
+        {
+            "title": "Mock Yerushalmi",
+            "type": "category",
+            "versions": [
+                {
+                    "language": "en",
+                    "versionTitle": "Guggenheimer Translation 2.1"
+                }
+            ]
+        }
+    ]
+}
