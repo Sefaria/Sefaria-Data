@@ -1,8 +1,9 @@
 from sources.functions import *
 import time
-
+links = json.load(open("links_tiferet.json", 'r'))
+print()
 def parse_ftnotes():
-	files = ["Footnotes 1.txt", "Footnotes 2.txt"]
+	files = ["Footnotes 1.txt"]
 	lines = ""
 	for f in files:
 		with open(f, 'r') as open_f:
@@ -19,7 +20,7 @@ def parse_ftnotes():
 	return ftnotes_by_ch
 
 def parse_text(ftnotes_to_insert, title="Tiferet Yisrael"):
-	files = ["Part 1.txt", "Part 2.txt"]
+	files = ["Part 1.txt"]
 	ch = 0
 	curr_ftnote = 0
 	text = {}
@@ -98,7 +99,7 @@ ftnotes_send_text = {
 	"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
 	"versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH002042478/NLI"
 }
-#post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael, Introduction", ftnotes_send_text, server="https://ste.cauldron.sefaria.org")
+#post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael, Introduction", ftnotes_send_text, server="http://localhost:8000")
 for i, ch in enumerate(text[1:]):
 	send_text = {
 		"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
@@ -107,9 +108,9 @@ for i, ch in enumerate(text[1:]):
 		"text": ch
 	}
 	ftnotes_send_text["text"] = ftnotes_to_insert[i+1]
-	#post_text("Tiferet Yisrael {}".format(i+1), send_text, server="https://ste.cauldron.sefaria.org")
+	#post_text("Tiferet Yisrael {}".format(i+1), send_text, server="http://localhost:8000")
 	time.sleep(2)
-	#post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael {}".format(i+1), ftnotes_send_text, server="https://ste.cauldron.sefaria.org")
+	#post_text("Notes by Rabbi Yehoshua Hartman on Tiferet Yisrael {}".format(i+1), ftnotes_send_text, server="http://localhost:8000")
 	time.sleep(2)
 send_text = {
 	"versionTitle": "Tiferet Yisrael, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2010",
@@ -117,7 +118,9 @@ send_text = {
 	"language": "he",
 	"text": text[0]
 }
+print("Links")
 print(len(links))
 
-#post_text("Tiferet Yisrael, Introduction to Tiferet Yisrael", send_text, server="https://ste.cauldron.sefaria.org")
-post_link_in_steps(links, step=500, server="https://ste.cauldron.sefaria.org")
+#post_text("Tiferet Yisrael, Introduction to Tiferet Yisrael", send_text, server="http://localhost:8000")
+#post_link_in_steps(links, step=800, server="https://ste.cauldron.sefaria.org")
+json.dump(links, open("links_tiferet.json", 'w'))

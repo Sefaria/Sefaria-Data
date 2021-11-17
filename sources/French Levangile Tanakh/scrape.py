@@ -67,7 +67,9 @@ def parse():
             assert sorted(verse_nums) == verse_nums
 
             # now get the text
-            text = [re.sub("[;?@:!]", "", str(s.nextSibling).strip().replace("\xa0", "")) if isinstance(s.nextSibling, NavigableString) else None for s in spans]
+            text = [str(s.nextSibling).strip().replace("\xa0", "") if isinstance(s.nextSibling, NavigableString) else None for s in spans]
+            for i, line in enumerate(text):
+                text[i] = re.sub(" ([:;?@!])", "\g<1>", text[i])
             assert None not in text
             books[book][int(ch)] = text
 
@@ -77,7 +79,7 @@ def parse():
         books[book] = convertDictToArray(books[book])
         send_text = {"language": "en", "versionTitle": "La Bible, Traduction Nouvelle, Samuel Cahen, 1831 [fr]",
                      "versionSource": "https://www.levangile.com/Bible-CAH-1-1-1-complet-Contexte-oui.htm", "text": books[book]}
-        post_text(book, send_text, server="http://localhost:8000")
+        post_text(book, send_text, server="http://ste.cauldron.sefaria.org")
 
 
 if __name__ == "__main__":
