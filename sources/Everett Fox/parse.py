@@ -6,7 +6,7 @@ with open("SB Bible.txt", 'r') as f:
     for i, line in enumerate(lines):
         lines[i] = lines[i].replace("@", "")
         lines[i] = lines[i].replace("   ", "\t").replace("\t\t", "\t")
-        if len(lines[i].strip().split()) == 1:
+        if len(lines[i] .strip().split()) == 1:
             book = lines[i].split()[0].strip().title()
             chapter = 1
             text[book] = defaultdict(dict)

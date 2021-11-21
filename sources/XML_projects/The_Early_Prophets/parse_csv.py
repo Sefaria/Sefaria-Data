@@ -35,6 +35,7 @@ with open("The Early Prophets.csv", 'r') as f:
             elif ch >= 1:
                 text[books[book]][ch][-1] += "\n" + comm
 
+
 print(text)
 for text_type in [("Book",text), ("Footnotes", ftnotes)]:
     for type, book in text_type:

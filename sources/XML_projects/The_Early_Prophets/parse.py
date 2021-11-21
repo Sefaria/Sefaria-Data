@@ -10,7 +10,7 @@ def reorder_modify(text):
 
 def tester(x):
     #Chapter 1.
-    return x.tag == "p" and re.search("Chapter \d+\.", x.text)
+    return x.tag == "p" and re.search("Chapters? \d+.{,30}\.", x.text)
 
 if __name__ == "__main__":
     #add_term("Preface", u"פתח דבר", "pseudo_toc_categories", "http://localhost:8000")
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     allowed_attributes = ["id"]
     p = re.compile("\d+a?\.")
 
-    post_info["versionTitle"] = "Responsa on Contemporary Jewish Women's Issues"
+    post_info["versionTitle"] = "The Early Prophets"
     post_info["versionSource"] = "http://www.sefaria.org"
     title = "The Early Prophets"
     file_name = "The_Early_Prophets.xml"

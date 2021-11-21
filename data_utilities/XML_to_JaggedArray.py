@@ -108,7 +108,7 @@ class XML_to_JaggedArray:
                 if len(x) == 1 and x.tag != "p":
                     for grandchild in x[0]:
                         x.append(grandchild)
-                    chapter_txt = re.search("Chapter \S+\.", x[0].text).group(0)
+                    chapter_txt = re.search("Chapters? \S+\.", x[0].text).group(0)
                     x[0].text = x[0].text.replace(chapter_txt, "").strip()
                     x.text = chapter_txt
                     if x.text == "Chapter 1.":
@@ -118,6 +118,7 @@ class XML_to_JaggedArray:
                         curr_book = etree.SubElement(self.root, "book")
                         curr_book.text = books[book]
                     curr_book.append(x)
+            new_root.append(curr_book)
             self.root.clear()
             for x in new_root:
                 self.root.append(x)
