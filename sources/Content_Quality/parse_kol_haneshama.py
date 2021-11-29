@@ -1,6 +1,7 @@
 from sources.functions import *
 finds = {}
 from collections import Counter
+from memory_profiler import profile
 
 
 column_a = []

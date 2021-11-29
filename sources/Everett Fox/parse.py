@@ -1,12 +1,13 @@
 from sources.functions import *
 from collections import *
 text = {}
-with open("SB Bible.txt", 'r') as f:
+non_ascii_chars = set()
+with open("SB Bible.txt", 'r', encoding='cp1252') as f:
     lines = list(f)
     for i, line in enumerate(lines):
         lines[i] = lines[i].replace("@", "")
         lines[i] = lines[i].replace("   ", "\t").replace("\t\t", "\t")
-        if len(lines[i] .strip().split()) == 1:
+        if len(lines[i].strip().split()) == 1:
             book = lines[i].split()[0].strip().title()
             chapter = 1
             text[book] = defaultdict(dict)
@@ -46,5 +47,6 @@ with open("SB Bible.txt", 'r') as f:
                 pasuk_diff = len(text[book][ch].values()) - len(Ref("{} {}".format(book, ch)).all_segment_refs())
                 if pasuk_diff != 0:
                     print("{} {} has pasuk diff of {}".format(book, ch, pasuk_diff))
-                    for p, pasuk in text[book][ch].items():
-                        writer.writerow(["{} {} {}".format(book, ch, p), pasuk])
+                for p, pasuk in text[book][ch].items():
+                    writer.writerow(["{} {} {}".format(book, ch, p), pasuk])
+print(non_ascii_chars)
