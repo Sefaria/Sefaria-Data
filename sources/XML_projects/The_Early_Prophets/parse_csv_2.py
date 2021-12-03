@@ -6,7 +6,10 @@ def dher(x):
     return bleach.clean(result, tags=[], strip=True)
 
 def dher2(s):
-    return dher(s).split("…")[0].strip()
+    poss = dher(s).split("…")[-1].strip()
+    if poss == "":
+        return dher(s).split("…")[0].strip()
+    return poss
 
 
 def dher3(s):
@@ -103,6 +106,7 @@ with open("The Early Prophets.csv", 'r') as f:
 
 bad_results = []
 bad = 0
+ITAG_HOLDER = "$#%^!" # characters that dont occur in text hold place of itags during iteration
 total = 0
 for book in books:
     our_book = book.replace("Ii", "II")
@@ -123,56 +127,51 @@ for book in books:
                     base_words = base_words.split()
                     results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher2, lang='en')
                     # if (-1, -1) in results["matches"]:
-                    #     results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher2, lang='en', prev_matched_results=results["matches"])
+                    #    results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher2, lang='en', prev_matched_results=results["matches"])
                     # if (-1, -1) in results["matches"]:
                     #     results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher3, lang='en', prev_matched_results=results["matches"])
                     curr = 0
                     total += len(results["matches"])
                     i_tags = []
+                    text[book][ch][p] = text[book][ch][p].replace("\n", " <br/>")
+                    words = text[book][ch][p]
+                    text[book][ch][p] = text[book][ch][p].split()
+                    curr = 0
                     for i, x in enumerate(results["matches"]):
-                        i_tag = "<i class='footnote'>" + ftnotes[book][ch][p + 1][i].strip() + "</i>"
-                        ellipsis = [el.strip() for el in re.search("<b>(.*?)</b>", ftnotes[book][ch][p+1][i]).group(1).split("…")]
-                        has_ellipsis = len(ellipsis) > 1
-                        i_tag = (i_tag, " ")
+                        i_tags.append("<sup>•</sup><i class='footnote'>" + ftnotes[book][ch][p + 1][i].strip() + "</i>")
+                        ellipsis = [el.strip() for el in re.search("<b>(.*?)</b>", ftnotes[book][ch][p + 1][i]).group(1).split("…")]
 
+                        ellipsis_or_not_found = False
                         if x == (-1, -1):
-                            last_pos = text[book][ch][p].rfind(results["match_text"][i][1])
-                            if text[book][ch][p].find(results["match_text"][i][1]) == last_pos and last_pos != -1:
-                                i_tags.append(i_tag)
-                                start_of_word = last_pos
-                                while text[book][ch][p][start_of_word] != " " and start_of_word < len(text[book][ch][p]) - 1:
-                                    start_of_word += 1
-                                text[book][ch][p] = text[book][ch][p][:start_of_word] + "^?" + text[book][ch][p][start_of_word:]
+                            j = i
+                            while j < len(results["matches"]) - 1 and results["matches"][j] == (-1, -1):
+                                j += 1
+                            end = results["matches"][j][1]
+                            if end != -1:
+                                end += 1
+                            if curr >= 0 and end > curr:
+                                phrase = " ".join(base_words[curr:end])
+                            elif curr >= 0:
+                                phrase = " ".join(base_words[curr:])
+                            else:
+                                phrase = " ".join(base_words)
+                            if len(phrase) > 0 and phrase.find(results["match_text"][i][1]) >= 0:
+                                ellipsis_or_not_found = True
                             else:
                                 print(f"{book} {ch}:{p+1} -- footnote {ftnotes[book][ch][p+1][i]} not found.")
                                 bad_results.append(results["match_text"][i][1])
+
+                        if ellipsis_or_not_found:
+                            word_num = phrase.split(results["match_text"][i][1])[0].count(" ")+curr
                         else:
-                            i_tags.append(i_tag)
-                            words = text[book][ch][p].replace("\n", "\n ").split()
-                            prior_text = " ".join(words[0:x[0]])
-                            if not has_ellipsis:
-                                until = x[1]
-                            else:
-                                len_phrase = len(ellipsis[-1])
-                                phrase = ellipsis[-1].replace(":", "").replace("[", "").replace("]", "").replace(",","").replace(".", "").replace(";", "")
-                                if phrase not in text[book][ch][p]:
-                                    print(f"{book} {ch}:{p + 1} -- footnote {ftnotes[book][ch][p + 1][i]} not found.")
-                                    bad_results.append(results["match_text"][i][1])
-                                    continue
-                                else:
-                                    char_pos = " ".join(words).find(phrase) + len_phrase
-                                    until = " ".join(words)[len(prior_text.strip())+1:char_pos].count(" ")
+                            word_num = x[1]
 
-                            after_text = " ^?"+" ".join(words[x[0]:until+1])
-                            after_text += i_tag[1]+"$"+" ".join(words[1+until:])
-                            text[book][ch][p] = prior_text+" "+after_text
-                    for i, i_tag in enumerate(i_tags):
-                        i_tag_str, marker = i_tag
-                        text[book][ch][p] = text[book][ch][p].replace("^?", "<sup>{}</sup>".format(i+1)+i_tag_str, 1)
-                        if len(marker) > 1:
-                            text[book][ch][p] = text[book][ch][p].replace("?^", "<sup>-{}</sup>".format(i+1), 1)
-                    text[book][ch][p] = text[book][ch][p].replace("$", " ")
-
+                        if x != (-1, -1):
+                            curr = x[1]
+                        text[book][ch][p][word_num] = text[book][ch][p][word_num]+ITAG_HOLDER
+                    text[book][ch][p] = " ".join(text[book][ch][p]).replace("\n", "<br/>")
+                    for i_tag in i_tags:
+                        text[book][ch][p] = text[book][ch][p].replace(ITAG_HOLDER, i_tag, 1)
     with open(f"ftnotes_{book}.csv", 'w') as f:
         writer = csv.writer(f)
         for ch in ftnotes[book]:
@@ -189,3 +188,57 @@ for book in text:
         "text": text[book]
     }
     post_text(book.replace("Ii", "II"), send_text,server="http://localhost:8000")
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    # ellipsis = [el.strip() for el in re.search("<b>(.*?)</b>", ftnotes[book][ch][p+1][i]).group(1).split("…")]
+                    #     has_ellipsis = len(ellipsis) > 1
+                    #     i_tag = (i_tag, " ")
+                    #
+                    #     if x == (-1, -1):
+                    #         last_pos = text[book][ch][p].rfind(results["match_text"][i][1])
+                    #         if text[book][ch][p].find(results["match_text"][i][1]) == last_pos and last_pos != -1:
+                    #             i_tags.append(i_tag)
+                    #             start_of_word = last_pos
+                    #             while text[book][ch][p][start_of_word] != " " and start_of_word < len(text[book][ch][p]) - 1:
+                    #                 start_of_word += 1
+                    #             text[book][ch][p] = text[book][ch][p][:start_of_word] + "^?" + text[book][ch][p][start_of_word:]
+                    #         else:
+                    #             print(f"{book} {ch}:{p+1} -- footnote {ftnotes[book][ch][p+1][i]} not found.")
+                    #             bad_results.append(results["match_text"][i][1])
+                    #     else:
+                    #         i_tags.append(i_tag)
+                    #         words = text[book][ch][p].replace("\n", "\n ").split()
+                    #         prior_text = " ".join(words[0:x[0]])
+                    #         if not has_ellipsis:
+                    #             until = x[1]
+                    #         else:
+                    #             len_phrase = len(ellipsis[-1])
+                    #             phrase = ellipsis[-1].replace(":", "").replace("[", "").replace("]", "").replace(",","").replace(".", "").replace(";", "")
+                    #             if phrase not in text[book][ch][p]:
+                    #                 print(f"{book} {ch}:{p + 1} -- footnote {ftnotes[book][ch][p + 1][i]} not found.")
+                    #                 bad_results.append(results["match_text"][i][1])
+                    #                 continue
+                    #             else:
+                    #                 char_pos = " ".join(words).find(phrase) + len_phrase
+                    #                 until = " ".join(words)[len(prior_text.strip())+1:char_pos].count(" ")
+                    #
+                    #         after_text = " ^?"+" ".join(words[x[0]:until+1])
+                    #         after_text += i_tag[1]+"$"+" ".join(words[1+until:])
+                    #         text[book][ch][p] = prior_text+" "+after_text
+                    # for i, i_tag in enumerate(i_tags):
+                    #     i_tag_str, marker = i_tag
+                    #     text[book][ch][p] = text[book][ch][p].replace("^?", "<sup>{}</sup>".format(i+1)+i_tag_str, 1)
+                    #     if len(marker) > 1:
+                    #         text[book][ch][p] = text[book][ch][p].replace("?^", "<sup>-{}</sup>".format(i+1), 1)
+                    # text[book][ch][p] = text[book][ch][p].replace("$", " ")

@@ -59,7 +59,7 @@ for path in Path('Kesubos').rglob('*.docx'):
                 assert len(result.split("<b>")) == len(result.split("</b>"))
 
                 for find in re.findall("<u>(.*?)</u>", result):
-                    result = result.replace(f"<u>{find}</u>", f"<small>{find.upper()}</small>")
+                    result = result.replace(f"<u>{find}</u>", f"<br/>{find[0].upper()}<small>{find[1:].upper()}</small>")
             if len(result.strip()) > 0:
                 text["Ketubot"][daf][dh] += result + "<br/>"
 
@@ -77,12 +77,50 @@ for path in Path('Kesubos').rglob('*.docx'):
         ftnotes_in_text = re.findall("----footnote\d+----", text["Ketubot"][daf][dh])
         if len(ftnotes_in_text) == len(ftnotes):
             for i, ftnote in enumerate(ftnotes):
+                if ftnote.startswith("<b>") and ftnote.endswith("</b>"):
+                    ftnote = ftnote.replace("<b>", "", 1).replace("</b>", "", 1)
                 ftnote = f"<sup>{i+1}</sup><i class='footnote'>{ftnote}</i>"
                 text["Ketubot"][daf][dh] = re.sub("----footnote\d+----", ftnote, text["Ketubot"][daf][dh], count=1)
         elif len(ftnotes) > 0 or "----footnote" in text["Ketubot"][daf][dh]:
             print("Footnotes issue in {}".format(path))
             print(f"{len(ftnotes)} vs {len(ftnotes_in_text)}")
 
+        start = -1
+        end = 0
+        prev_end = 0
+        spans = []
+        text["Ketubot"][daf][dh] = text["Ketubot"][daf][dh].replace("<br/>", " <br/>")
+        for l, letter in enumerate(text["Ketubot"][daf][dh]):
+            if re.search("[\u0591-\u05EA׳]+", letter):
+                if start == -1:
+                    start = l
+                end = l + 1
+            elif start >= 0:
+                if start - prev_end > 1:
+                    spans.append((prev_end, start, False))
+                    spans.append((start, end, True))
+                elif start - prev_end == 1:
+                    prev_span_start = spans[-1][0]
+                    spans[-1] = ((prev_span_start, end, True))
+                else:
+                    raise Exception
+                prev_end = end
+                start = -1
+        if end > start >= 0:
+            spans.append((start, end, True))
+        if end != len(text["Ketubot"][daf][dh]):
+            spans.append((end, len(text["Ketubot"][daf][dh]), False))
+
+        chars = list(text["Ketubot"][daf][dh])
+        count = 0
+        words_list = []
+        for span in spans:
+            start, end, heb = span
+            if heb:
+                words_list.append("<span dir='rtl'>" + "".join(chars[start:end]) + "</span>")
+            else:
+                words_list.append("".join(chars[start:end]))
+        text["Ketubot"][daf][dh] = "".join(words_list)
 
 for book in text:
     not_found = defaultdict(list)
@@ -122,5 +160,6 @@ for book in text:
     }
     for daf in text[book]:
         for ref in text[book][daf]:
-            send_text["text"] = text[book][daf][ref]
-            post_text(ref.normal(), send_text, server="http://localhost:8000")
+            if " 2a" in ref.normal():
+                send_text["text"] = text[book][daf][ref]
+                post_text(ref.normal(), send_text, server="http://localhost:8000")
