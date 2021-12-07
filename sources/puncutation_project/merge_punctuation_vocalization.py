@@ -56,7 +56,7 @@ if __name__ == '__main__':
     parser.add_argument('--punctloc', type=str, default=None, help='file location where to find punctuation output. if not specified, defaults to `PUNCT_VTITLE`')
     parser.add_argument('-c', '--csv', type=str, default=None, help='output punctuated talmud as csv rather than a new version')
     args = parser.parse_args()
-    base_ref = Ref(args.book_title)
+    base_ref = Ref(args.tractate)
     csv_dir = args.csv
     export_as_csv = csv_dir is not None
     segments = base_ref.all_segment_refs()

@@ -661,7 +661,7 @@ if __name__ == "__main__":
         t.save()
     except:
         pass
-    create_new_indices()
+    #create_new_indices()
     f = []
     path = "."
     prev_match = None

@@ -99,13 +99,37 @@ class XML_to_JaggedArray:
         self.root.text = self.title
         self.root = self.reorder_structure(self.root)
 
-        for count, child in enumerate(self.root):
-            if self.array_of_names:
-                child.text = str(self.array_of_names[count])
-            elif self.dict_of_names:
-                key = self.cleanNodeName(child[0].text)
-                child[0].text = self.dict_of_names[key]
-            child = self.reorder_structure(child, False)
+        if self.title == "The Early Prophets":
+            books = ["Joshua", "Judges", "I Samuel", "II Samuel", "I Kings", "II Kings"]
+            book = -1
+            curr_book = None
+            new_root = []
+            for i, x in enumerate(self.root):
+                if len(x) == 1 and x.tag != "p":
+                    for grandchild in x[0]:
+                        x.append(grandchild)
+                    chapter_txt = re.search("Chapters? \S+\.", x[0].text).group(0)
+                    x[0].text = x[0].text.replace(chapter_txt, "").strip()
+                    x.text = chapter_txt
+                    if x.text == "Chapter 1.":
+                        if curr_book is not None:
+                            new_root.append(curr_book)
+                        book += 1
+                        curr_book = etree.SubElement(self.root, "book")
+                        curr_book.text = books[book]
+                    curr_book.append(x)
+            new_root.append(curr_book)
+            self.root.clear()
+            for x in new_root:
+                self.root.append(x)
+        else:
+            for count, child in enumerate(self.root):
+                if self.array_of_names:
+                    child.text = str(self.array_of_names[count])
+                elif self.dict_of_names:
+                    key = self.cleanNodeName(child[0].text)
+                    child[0].text = self.dict_of_names[key]
+                child = self.reorder_structure(child, False)
 
         results = self.go_down_to_text(self.root, self.root.text, True)
         #    results = self.handle_special_case(results)
@@ -141,12 +165,12 @@ class XML_to_JaggedArray:
         return text
 
     def cleanNodeName(self, text):
-        if text == "\n":
-            return text
+        if text.strip() == "":
+            return ""
         text = self.cleanText(text)
         text = self.removeChapter(text)
         comma_chars = ['.']
-        remove_chars = ['?'] + re.findall("[\u05D0-\u05EA]+", text)
+        remove_chars = ['?']# + re.findall("[\u05D0-\u05EA]+", text)
         space_chars = ['-']
         while self.english and not any_english_in_str(text[-1]):
             text = text[0:-1]
@@ -294,7 +318,7 @@ class XML_to_JaggedArray:
             if len(text) == 0:
                 continue
             try:
-                text_arr[index] = removeNumberFromStart(text_arr[index])
+                #text_arr[index] = removeNumberFromStart(text_arr[index])
                 text_arr[index] = text_arr[index].replace("<sup><xref", "<xref").replace("</xref></sup>", "</xref>")
                 ft_ids, ft_sup_nums = extractIDsAndSupNums(text_arr[index])
 
