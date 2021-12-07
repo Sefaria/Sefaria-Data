@@ -1,24 +1,136 @@
 {
     "namedEntities": [
         {
-            "namedEntityFile": "/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_basic_en_titles.json"
+            "id": "talmudic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "group-of-talmudic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "group-of-mishnaic-people",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "biblical-figures",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "jewish-people",
+            "idIsSlug": true
+        },
+        {
+            "id": "israel",
+            "idIsSlug": true
+        },
+        {
+            "id": "jesus",
+            "idIsSlug": true
+        },
+        {
+            "namedEntityFile": "/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_nonexisting_topics.json"
         }
     ],
     "normalizers": {
         "en": ["br-tag", "itag", "unidecode", "html", "parens-plus-contents", "brackets", "double-space"],
-        "he": ["unidecode", "cantillation", "maqaf"]
+        "he": ["br-tag", "itag", "unidecode", "cantillation", "maqaf", "double-space"]
     },
-    "rules": [],
+    "rules": [
+        {
+          "rule": {
+            "id": "namedEntityNotInVersionDelete",
+            "appliesToVersions": [
+                {
+                    "versionTitle": "The Jerusalem Talmud, edition by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015",
+                    "language": "he"
+                }
+            ],
+            "versionToCompare": {
+                "versionTitle": "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015",
+                "language": "en"
+            }
+          },
+          "namedEntities": null,
+          "namedEntitiesUNUSED": ["rav", "rabbah-b-nachmani", "rabi", "rava", "shemaiah", "rabbi-shemaya", "shmuel-(amora)", "levi-b-sisi", "rabbi-yaakov-b-qorshai", "omar", "asher", "on-the-son-of-pelet", "shem", "mishma", "adam", "tema", "laban-the-son-of-bethuel", "seir", "arba", "ham", "eli", "mash", "hul", "salah", "er-the-firstborn-son-of-judah", "vashti", "jesse", "esau", "natan", "seth", "dumah", "eglah", "ithamar", "caleb-the-son-of-jephunneh", "eber-the-son-of-shem", "malachi", "sarah", "elah", "naphish", "noah", "jared", "moses", "michal", "iddo", "obed", "gad-the-seer", "massa", "tamar-(absalom)", "hamor", "abijah-the-son-of-jeroboam", "cain", "shelah", "jubal", "shmuel-(prophet)", "jacob", "leah", "javan", "ram"],
+          "comment": "Rav is very ambiguous in Aramaic and less ambiguous in English"
+        },
+        {
+            "rule": {
+                "id": "namedEntityNotInVersionDelete",
+                "appliesToVersions": [
+                    {
+                        "versionTitle": "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015",
+                        "language": "en"
+                    }
+                ],
+                "versionToCompare": {
+                    "versionTitle": "The Jerusalem Talmud, edition by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015",
+                    "language": "he"
+                }
+            },
+            "namedEntities": ["on-the-son-of-pelet", "phut", "nun1", "abba-yudan", "abdon", "eve", "rav-huna", "rebbi-huna"],
+            "comment": "Some people are davka ambiguous in English"
+        },
+        {
+            "rule": {
+                "id": "requiredOtherNamedEntities",
+                "otherNamedEntities": ["hofni"]
+            },
+            "namedEntities": ["pinchas-(son-of-eli)"]
+        },
+        {
+            "rule": {
+                "id": "requiredOtherNamedEntities",
+                "notOtherNamedEntities": ["hofni"]
+            },
+            "namedEntities": ["pinchas"]
+        },
+        {
+            "rule": {
+                "id": "manualCorrections",
+                "correctionsFile": "manual_corrections_yerushalmi.json",
+                "alertWhenMissing": true
+            }
+        }
+    ],
     "corpus": [
         {
-            "title": "Mock Yerushalmi",
+            "title": "Yerushalmi",
             "type": "category",
             "versions": [
                 {
                     "language": "en",
-                    "versionTitle": "Guggenheimer Translation 2.1"
+                    "versionTitle": "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015"
+                },
+                {
+                    "language": "he",
+                    "versionTitle": "The Jerusalem Talmud, edition by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015"
                 }
             ]
         }
-    ]
+    ],
+        "namedEntityRecognizerParams": {
+        "langSpecificParams": {
+            "he": {
+                "prefixRegex": "(?:בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד)??"
+            }
+        },
+        "slugsToDelete": ["arba", "egypt"]
+    },
+    "namedEntityLinkerParams": {
+        "titlesToDelete": {
+            "shmuel-(prophet)": ["Shmuel"],
+            "moses": ["ירד"]
+        }
+    }
 }
