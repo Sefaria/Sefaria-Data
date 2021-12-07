@@ -1,4 +1,4 @@
-import prodigy, srsly, spacy, re
+import prodigy, srsly, spacy, re, string
 from spacy.tokenizer import Tokenizer
 from spacy.lang.en import English
 from spacy.lang.he import Hebrew
@@ -9,6 +9,19 @@ from prodigy.components.preprocess import add_tokens, split_spans
 from db_manager import MongoProdigyDBManager
 
 from pathlib import Path
+
+@spacy.registry.tokenizers("inner_punct_tokenizer")
+def inner_punct_tokenizer_factory():
+    def inner_punct_tokenizer(nlp):
+        infix_re = re.compile(r'''[.\,\?\:\;\...\‘\’\`\“\”\"\'~\–/\(\)]''')
+        prefix_re = spacy.util.compile_prefix_regex(nlp.Defaults.prefixes)
+        suffix_re = spacy.util.compile_suffix_regex(nlp.Defaults.suffixes)
+
+        return Tokenizer(nlp.vocab, prefix_search=prefix_re.search,
+                         suffix_search=suffix_re.search,
+                         infix_finditer=infix_re.finditer,
+                         token_match=None)
+    return inner_punct_tokenizer
 
 def import_file_to_collection(input_file, collection, db_host='localhost', db_port=27017):
     my_db = MongoProdigyDBManager('blah', db_host, db_port)
@@ -30,7 +43,7 @@ def load_model(model_dir, labels, lang):
         ner.add_label(label)
     if not model_exists:
         nlp.begin_training()
-    # nlp.tokenizer = custom_tokenizer(nlp)
+    nlp.tokenizer = inner_punct_tokenizer_factory()(nlp)
     return nlp, model_exists
 
 def save_model(nlp, model_dir):
@@ -154,9 +167,8 @@ def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, 
 
 if __name__ == "__main__":
     # test_tokenizer(nlp)
-    import_file_to_collection('../data/test_input.jsonl', 'yerushalmi_input')
+    import_file_to_collection('../data/test_input.jsonl', 'yerushalmi_input2')
 """
-ספר,דה,מספר,שם,לקמן-להלן,תת-ספר,שם-עצמי,קטגוריה
 command to run
 
 cd research/prodigy
@@ -169,10 +181,14 @@ command to run on gilyon hashas
 prodigy ref-tagging-recipe ref_tagging2 gilyon_input gilyon_output ./research/prodigy/output/ref_tagging_cpu/model-last מקור --view-id ner_manual -db-host localhost -db-port 27017 -F ./research/prodigy/functions.py
 
 command to run on gilyon hashas sub citation
-prodigy ref-tagging-recipe sub_ref_tagging gilyon_sub_citation_input gilyon_sub_citation_output ./research/prodigy/output/sub_citation/model-best ספר,דה,מספר,שם,לקמן-להלן,תת-ספר,שם-עצמי --view-id ner_manual -db-host localhost -db-port 27017 -train-on-input 0 -F ./research/prodigy/functions.py
+prodigy ref-tagging-recipe sub_ref_tagging gilyon_sub_citation_input gilyon_sub_citation_output ./research/prodigy/output/sub_citation/model-best כותרת,דה,מספר,שם,לקמן-להלן,סימן-טווח,שם-עצמי --view-id ner_manual -db-host localhost -db-port 27017 -train-on-input 0 -F ./research/prodigy/functions.py
 
 command to run on yerushalmi
- prodigy ref-tagging-recipe jeru_ref_tagging yerushalmi_input yerushalmi_output models/jeru_ref_tagging source --view-id ner_manual -db-host localhost -db-port 27017 -dir ltr -F functions.py
+ prodigy ref-tagging-recipe jeru_ref_tagging yerushalmi_input yerushalmi_output2 ./output/yerushalmi_refs/model-last source --view-id ner_manual -db-host localhost -db-port 27017 -dir ltr -F functions.py
+
+command to run on yerushalmi sub-citation
+prodigy ref-tagging-recipe sub_jeru_ref_tagging yerushalmi_sub_citation_input yerushalmi_sub_citation_output ./output/yerushalmi_sub_refs/model-last title,DH,number,ibid,dir-ibid,range-symbol,self-ibid,non-cts --view-id ner_manual -db-host localhost -db-port 27017 -train-on-input 0 -dir ltr -F ./functions.py
+
 """
 
 """
