@@ -54,7 +54,20 @@ def custom_tokenizer_factory():
         return tokenizer
     return custom_tokenizer
 
-def make_evaluation_files(evaluation_data, ner_model, output_folder, start=0):
+@spacy.registry.tokenizers("inner_punct_tokenizer")
+def inner_punct_tokenizer_factory():
+    def inner_punct_tokenizer(nlp):
+        infix_re = re.compile(r'''[.\,\?\:\;\...\‘\’\`\“\”\"\'~\–/\(\)]''')
+        prefix_re = spacy.util.compile_prefix_regex(nlp.Defaults.prefixes)
+        suffix_re = spacy.util.compile_suffix_regex(nlp.Defaults.suffixes)
+
+        return Tokenizer(nlp.vocab, prefix_search=prefix_re.search,
+                         suffix_search=suffix_re.search,
+                         infix_finditer=infix_re.finditer,
+                         token_match=None)
+    return inner_punct_tokenizer
+
+def make_evaluation_files(evaluation_data, ner_model, output_folder, start=0, lang='he'):
     tp,fp,fn,tn = 0,0,0,0
     data_tuples = [(eg.text, eg) for eg in evaluation_data]
     output_json = []
@@ -89,13 +102,13 @@ def make_evaluation_files(evaluation_data, ner_model, output_folder, start=0):
         }]
     
     srsly.write_jsonl(f"{output_folder}/doc_evaluation.jsonl", output_json)
-    make_evaluation_html(output_json, output_folder, 'doc_evaluation.html')
+    make_evaluation_html(output_json, output_folder, 'doc_evaluation.html', lang)
     print('PRECISION', 100*round(tp/(tp+fp), 4))
     print('RECALL   ', 100*round(tp/(tp+fn), 4))
     print('F1       ', 100*round(tp/(tp + 0.5 * (fp + fn)),4))
     return tp, fp, tn, fn
 
-def export_tagged_data_as_html(tagged_data, output_folder, is_binary=True, start=0):
+def export_tagged_data_as_html(tagged_data, output_folder, is_binary=True, start=0, lang='he'):
     output_json = []
     for iexample, example in enumerate(tagged_data):
         if iexample < start: continue
@@ -122,7 +135,7 @@ def export_tagged_data_as_html(tagged_data, output_folder, is_binary=True, start
             out_item['text'] = example.text
             out_item['tp'] = [[span.start_char, span.end_char, span.label_] for span in ents_x2y]
         output_json += [out_item]
-    make_evaluation_html(output_json, output_folder, 'doc_export.html')
+    make_evaluation_html(output_json, output_folder, 'doc_export.html', lang)
 
 def wrap_chars(s, chars_to_wrap, get_wrapped_text):
     dummy_char = "█"
@@ -149,7 +162,7 @@ def wrap_chars_with_overlaps(s, chars_to_wrap, get_wrapped_text, return_chars_to
         s = s[:start] + wrapped_text + s[end:]
         chars_to_wrap[i] = (start, end + start_added + end_added, metadata)
         for j, (start2, end2, metadata2) in enumerate(chars_to_wrap[i+1:]):
-            if start2 > end:
+            if start2 >= end:
                 start2 += end_added
             start2 += start_added
             if end2 > end:
@@ -160,7 +173,7 @@ def wrap_chars_with_overlaps(s, chars_to_wrap, get_wrapped_text, return_chars_to
         return s, chars_to_wrap
     return s
 
-def make_evaluation_html(data, output_folder, output_filename):
+def make_evaluation_html(data, output_folder, output_filename, lang='he'):
     html = """
     <html>
       <head>
@@ -187,7 +200,7 @@ def make_evaluation_html(data, output_folder, output_filename):
         wrapped_text = wrap_chars_with_overlaps(d['text'], chars_to_wrap, get_wrapped_text)
         html += f"""
         <p class="ref">{i}) {d['ref']} - ID: {d['_id']}</p>
-        <p dir="rtl" class="doc">{wrapped_text}</p>
+        <p dir="{'rtl' if lang == 'he' else 'ltr'}" class="doc">{wrapped_text}</p>
         """
     html += """
       </body>
@@ -245,33 +258,33 @@ def convert_jsonl_to_csv(filename):
         c.writerows(rows)
 
 if __name__ == "__main__":
-    nlp = spacy.load('./research/prodigy/output/ref_tagging_cpu/model-last')
-    # nlp = spacy.load('./research/prodigy/output/sub_citation/model-best')
-    # data = stream_data('localhost', 27017, 'silver_output_full', 'gilyon_input', 614, 0.8, 'test', 20)(nlp)
-    # print(make_evaluation_files(data, nlp, './research/prodigy/output/evaluation_results'))
+    nlp = spacy.load('./output/yerushalmi_refs/model-last')
+    # nlp = spacy.load('./output/sub_citation/model-best')
+    data = stream_data('localhost', 27017, 'yerushalmi_output', 'gilyon_input', 614, 0.8, 'test', 0)(nlp)
+    print(make_evaluation_files(data, nlp, './output/evaluation_results', lang='en'))
 
-    data = stream_data('localhost', 27017, 'silver_output_full', 'gilyon_input', -1, 1.0, 'train', 0, unique_by_metadata=True)(nlp)
-    export_tagged_data_as_html(data, './research/prodigy/output/evaluation_results', is_binary=False, start=427)  # 897
-    convert_jsonl_to_json('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
-    # convert_jsonl_to_csv('./research/prodigy/output/evaluation_results/doc_evaluation.jsonl')
+    # data = stream_data('localhost', 27017, 'yerushalmi_output', 'gilyon_input', -1, 1.0, 'train', 0, unique_by_metadata=True)(nlp)
+    # export_tagged_data_as_html(data, './output/evaluation_results', is_binary=False, start=0, lang='en')  # 897
+    # convert_jsonl_to_json('./output/evaluation_results/doc_evaluation.jsonl')
+    # convert_jsonl_to_csv('./output/evaluation_results/doc_evaluation.jsonl')
     # spacy.training.offsets_to_biluo_tags(doc, entities)
 """
 to run gpu
-python -m spacy train ./research/prodigy/configs/ref_tagging.cfg --output ./research/prodigy/output/ref_tagging --code ./research/prodigy/functions.py --gpu-id 0
+python -m spacy train ./configs/ref_tagging.cfg --output ./output/ref_tagging --code ./functions.py --gpu-id 0
 
 to run cpu
-python -m spacy train ./research/prodigy/configs/ref_tagging_cpu.cfg --output ./research/prodigy/output/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0
+python -m spacy train ./configs/ref_tagging_cpu.cfg --output ./output/ref_tagging_cpu --code ./functions.py --gpu-id 0
 Num examples 1682
  34    7600        136.44      6.50   82.05   82.85   81.27    0.82
 
 to train sub citation
-python -m spacy train ./research/prodigy/configs/sub_citation.cfg --output ./research/prodigy/output/sub_citation --code ./research/prodigy/functions.py --gpu-id 0
+python -m spacy train ./configs/sub_citation.cfg --output ./output/sub_citation --code ./functions.py --gpu-id 0
 
 debug data
-python -m spacy debug data ./research/prodigy/configs/ref_tagging_cpu.cfg -c ./research/prodigy/functions.py
+python -m spacy debug data ./configs/ref_tagging_cpu.cfg -c ./functions.py
 
 pretrain cpu
-python -m spacy pretrain ./research/prodigy/configs/ref_tagging_cpu.cfg ./research/prodigy/output/ref_tagging_cpu --code ./research/prodigy/functions.py --gpu-id 0
+python -m spacy pretrain ./configs/ref_tagging_cpu.cfg ./output/ref_tagging_cpu --code ./functions.py --gpu-id 0
 
 convert fasttext vectors
 python -m spacy init vectors he "/home/nss/sefaria/datasets/text classification/fasttext_he_no_prefixes_300.vec" "/home/nss/sefaria/datasets/text classification/prodigy/dim300" --verbose
@@ -287,8 +300,16 @@ pretrain process
 
 train on binary process
 - run one_time_scripts.merge_gold_full_into_silver_binary()
-cd /home/nss/sefaria/data/research/prodigy
+cd /home/nss/sefaria/data
 prodigy data-to-spacy output/binary_training --ner ref_tagging --ner-missing --base-model output/ref_tagging_cpu/model-last -F functions.py
 cd ../..
-python -m spacy train ./research/prodigy/output/binary_training/my_config.cfg --output ./research/prodigy/output/ref_tagging_cpu_binary --code ./research/prodigy/functions.py --gpu-id 0 --paths.train ./research/prodigy/output/binary_training/train.spacy --paths.dev ./research/prodigy/output/binary_training/dev.spacy
+python -m spacy train ./output/binary_training/my_config.cfg --output ./output/ref_tagging_cpu_binary --code ./functions.py --gpu-id 0 --paths.train ./output/binary_training/train.spacy --paths.dev ./output/binary_training/dev.spacy
+
+SPECIFIC TRAINING
+
+yerushalmi refs
+python -m spacy train ./configs/talmud_ner-v3.2.cfg --output ./output/yerushalmi_refs2 --code ./functions.py --gpu-id 0
+
+yerushalmi sub_refs
+python -m spacy train ./configs/yerushalmi_sub_citation-v3.2.cfg --output ./output/yerushalmi_sub_refs --code ./functions.py --gpu-id 0
 """
