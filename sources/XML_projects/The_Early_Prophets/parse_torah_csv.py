@@ -12,9 +12,9 @@ with open("Torah.csv", 'r') as f:
         if len(curr_ref) == 0:
             new_rows.append(row)
 
-
+ftnotes_counter = {x: 1 for x in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]}
 new_text = defaultdict(list)
-for row in new_rows:
+for r, row in enumerate(new_rows):
     ref = row[0].rsplit(".")[0]
     new_text[ref].append(row[1])
 
@@ -38,18 +38,25 @@ for b in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
     ftnotes[b] = defaultdict(dict)
     for perek in library.get_index(b).all_section_refs():
         ftnotes[b][perek.sections[0]] = []
+
+ftnote_perek = 1
 for k in new_text:
     for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
         if k.endswith("Torah, "+book):
             start_ftnotes = False
             # parse mini essays and footnotes
-            for line in new_text[k]:
+            for l, line in enumerate(new_text[k]):
+                if line.find("____") == 0:
+                    assert " " not in line
+                    continue
                 m = re.search("^<i>(.*?)</i>\s?(\(.*?\))", line)
-                new_perek = re.search("^(\d+):\d+ ", line)
-                if new_perek:
-                    perek = int(new_perek.group(1))
-                if start_ftnotes:
-                    ftnotes[book][perek].append(line)
+                ftnote_perek_match = re.search("^(\d+):.{,10} <b>(.*?)</b>", line)
+                second_word_bold = re.search("^<b>.*?</b>", " ".join(line.split()[1:])) if " " in line else False
+                if ftnote_perek_match:
+                    ftnote_perek = int(ftnote_perek_match.group(1))
+                    ftnotes[book][ftnote_perek].append(line)
+                elif line[0].isdigit() and second_word_bold:
+                    ftnotes[book][ftnote_perek].append(line)
                 elif m:
                     title, ref = m.group(1), m.group(2)
                     ref = ref.replace("(", "("+book+" ")
@@ -62,8 +69,6 @@ for k in new_text:
                                 essay_refs[(essay_ref, essay_title)].append((title, ref))
                     except Exception as e:
                         invalid_refs.append((title, ref))
-                elif line.find("______") == 0:
-                    start_ftnotes = True
 
 
 vtitle = "https://www.penguinrandomhouse.com/books/55160/the-five-books-of-moses-by-everett-fox/"
@@ -72,6 +77,7 @@ for invalid_ref in invalid_refs:
     print(f"!!! {title} -> {ref}")
 
 new_ftnotes = {}
+ranged_ftnotes = []
 for book in ftnotes:
     new_ftnotes[book] = defaultdict(list)
     for perek in ftnotes[book]:
@@ -88,9 +94,17 @@ for book in ftnotes:
                     Ref(f"{book} {ref}")
                 except:
                     print(f"{book} {ref}")
+                if "-" in ref:
+                    ranged_ftnotes.append(ref)
                 line = ref + " " + " ".join(line.split()[1:])
                 new_ftnotes[book][perek].append(line)
             else:
                 new_ftnotes[book][perek][-1] += "<br/>"+line
-
-pass
+print(ranged_ftnotes)
+print(len(ranged_ftnotes))
+with open("Torah_ftnotes_from_XML.csv", 'w') as f:
+    writer = csv.writer(f)
+    for book in new_ftnotes:
+        for perek in new_ftnotes[book]:
+            for line in new_ftnotes[book][perek]:
+                writer.writerow([f"{book} {line}"])
