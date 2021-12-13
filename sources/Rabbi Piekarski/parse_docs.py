@@ -26,13 +26,13 @@ for path in Path('Kesubos').rglob('*.docx'):
             print("Perhaps table in "+str(path))
             continue
         for i, el in enumerate(html.body[0][0][0]):
-            result = bleach.clean(el, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, strip=True)
+            result = bleach.clean(el, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, strip=True).replace("'", "׳")
             if i == 0:
                 result = result.replace('–', "-")
                 dh = result.split("-")[0].strip()
                 dh = " ".join(re.sub("----footnote\d+----", "", bleach.clean(dh, strip=True, tags=[])).split()[:10])
                 dh = dh.replace('(שייך לע"א)', "").replace("  ", " ").strip()
-                result = result.replace("</b>", "<!b>")
+                result = result.replace("</b>", "").replace("<b>", "")
                 result = result.replace('(שייך לע"א)', "").strip()
                 result = f"<b>{result}</b>"
             else:
@@ -160,6 +160,6 @@ for book in text:
     }
     for daf in text[book]:
         for ref in text[book][daf]:
-            if " 2a" in ref.normal():
+            if " 2a" in ref.normal() or " 2b" in ref.normal():
                 send_text["text"] = text[book][daf][ref]
                 post_text(ref.normal(), send_text, server="http://localhost:8000")

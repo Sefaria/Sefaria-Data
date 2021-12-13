@@ -60,12 +60,13 @@ class XML_to_JaggedArray:
         self.title = title
 
     def set_funcs(self, grab_title_lambda=lambda x: len(x) > 0 and x[0].tag in ["title", "h1", "h2"], reorder_test=lambda x: False,
-                  reorder_modify=lambda x: x, modify_before_parse=lambda x: x, modify_before_post=lambda x: x):
+                  reorder_modify=lambda x: x, modify_before_parse=lambda x: x, modify_before_post=lambda x: x, preparser=None):
         self.modify_before_parse = modify_before_parse
         self.grab_title_lambda = grab_title_lambda
         self.reorder_test = reorder_test
         self.reorder_modify = reorder_modify
         self.modify_before_post = modify_before_post
+        self.preparser = preparser
 
     def convertIMGBase64(self, text):
         tags = re.findall("<img.*?>", text)
@@ -99,29 +100,8 @@ class XML_to_JaggedArray:
         self.root.text = self.title
         self.root = self.reorder_structure(self.root)
 
-        if self.title == "The Early Prophets":
-            books = ["Joshua", "Judges", "I Samuel", "II Samuel", "I Kings", "II Kings"]
-            book = -1
-            curr_book = None
-            new_root = []
-            for i, x in enumerate(self.root):
-                if len(x) == 1 and x.tag != "p":
-                    for grandchild in x[0]:
-                        x.append(grandchild)
-                    chapter_txt = re.search("Chapters? \S+\.", x[0].text).group(0)
-                    x[0].text = x[0].text.replace(chapter_txt, "").strip()
-                    x.text = chapter_txt
-                    if x.text == "Chapter 1.":
-                        if curr_book is not None:
-                            new_root.append(curr_book)
-                        book += 1
-                        curr_book = etree.SubElement(self.root, "book")
-                        curr_book.text = books[book]
-                    curr_book.append(x)
-            new_root.append(curr_book)
-            self.root.clear()
-            for x in new_root:
-                self.root.append(x)
+        if self.preparser:
+            self.root = self.preparser(self.root)
         else:
             for count, child in enumerate(self.root):
                 if self.array_of_names:
@@ -341,7 +321,6 @@ class XML_to_JaggedArray:
                 all = re.findall(footnote_pattern, text_arr[index])
                 for each in all:
                     text_arr[index] = text_arr[index].replace(each, "")
-
 
 
                 text_arr[index] = self.fix_html(text_arr[index])
