@@ -178,8 +178,8 @@ def get_rabbi_char_loc_list(context_list, seg_text, norm_regex=None, repl=None, 
     return rabbi_span_list
 
 def get_rabbi_char_loc(match_span, matched_text, context, seg_text, orig_seg_text, norm_regex, repl):
-    from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
-    from research.knowledge_graph.named_entity_recognition.ner_tagger import TextNormalizer
+    from sefaria.helper.normalization import FunctionNormalizer
+    from research.knowledge_graph.named_entity_recognition.ner_tagger import NormalizerTools
     if match_span[0] == -1:
         return None, None
     matched = matched_text[0]
@@ -209,11 +209,12 @@ def get_rabbi_char_loc(match_span, matched_text, context, seg_text, orig_seg_tex
     start = context_start + rabbi_start_rel
     end = start + rabbi_len
     if norm_regex is not None:
-        def find_text_to_remove(s):
+        def find_text_to_remove(s, **kwargs):
             return [(m, repl) for m in re.finditer(norm_regex, s)]
-        norm_map = get_mapping_after_normalization(orig_seg_text, find_text_to_remove)
-        mention_indices = convert_normalized_indices_to_unnormalized_indices([(start, end)], norm_map)
-        start, end = TextNormalizer.include_trailing_nikkud(mention_indices[0], orig_seg_text)
+        normalizer = FunctionNormalizer(find_text_to_remove)
+        norm_map = normalizer.get_mapping_after_normalization(orig_seg_text)
+        mention_indices = normalizer.convert_normalized_indices_to_unnormalized_indices([(start, end)], norm_map)
+        start, end = NormalizerTools.include_trailing_nikkud(mention_indices[0], orig_seg_text)
     return start, end
 
 def convert_to_spacy_format(rabbi_mentions, vtitle='William Davidson Edition - Aramaic', norm_regex=None, repl=None, **match_text_kwargs):
@@ -411,7 +412,7 @@ def convert_to_mentions_file(he_mentions_file, output_file, only_bonayich_rabbis
                 start = old_start - index
                 end = start + len(Missing Title)
             """
-    with open(f"research/knowledge_graph/named_entity_recognition/{output_file}", "w") as fout:
+    with open(f"{output_file}", "w") as fout:
         json.dump(new_new_mentions, fout, ensure_ascii=False, indent=2)
     print("NUM MISSED", len(unique_missed))
     print("NUM GOT", len(new_new_mentions))
@@ -422,10 +423,10 @@ def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_chan
     import json
     from research.knowledge_graph.named_entity_recognition.ner_tagger import Mention
     from data_utilities.dibur_hamatchil_matcher import match_text
-    from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
+    from sefaria.helper.normalization import FunctionNormalizer
     if manual_changes_file is not None:
         changes = srsly.read_json(manual_changes_file)
-    with open("research/knowledge_graph/named_entity_recognition/sperling_mentions.json", "r") as fin:
+    with open("sperling_mentions.json", "r") as fin:
         j = json.load(fin)
     # add mentions in db b/c sperling_mentions only includes bonayich-only mentions
     for tl in RefTopicLinkSet({"class": "refTopic", "linkType": "mention", "charLevelData.versionTitle": "William Davidson Edition - Aramaic"}):
@@ -466,13 +467,14 @@ def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_chan
             remove_parens = True
             if re.sub(replace_reg_parens, '', text_nikkud) != text:
                 remove_parens = False
+            normalizer = FunctionNormalizer(get_find_text_to_remove(remove_parens))
             norm_text_nikkud = re.sub(replace_reg_parens if remove_parens else replace_reg, '', text_nikkud)
 
             if len(text_nikkud) == 0:
                 continue
             mention_indices = [get_norm_pos(mention.start, mention.end, text) for mention in temp_mentions]
             if manual_changes_file is None:
-                norm_map = get_mapping_after_normalization(text_nikkud, find_text_to_remove=get_find_text_to_remove(remove_parens))
+                norm_map = normalizer.get_mapping_after_normalization(text_nikkud)
             else:
                 temp_wiki_changes = changes.get(seg.normal(), {}).get('wiki', [])
 
@@ -482,9 +484,9 @@ def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_chan
                 for tc in temp_wiki_changes:
                     tc[0][0] += 1
                     tc[0][1] += 1
-                norm_map = get_mapping_after_normalization(text_nikkud, removal_list=temp_wiki_changes)
+                norm_map = normalizer.get_mapping_after_normalization(text_nikkud, removal_list=temp_wiki_changes)
   
-            mention_indices = convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map)
+            mention_indices = normalizer.convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map)
             temp_new_mentions = []
             for mention, (unnorm_start, unnorm_end) in zip(temp_mentions, mention_indices):
                 if manual_changes_file is None:
@@ -570,7 +572,7 @@ def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_chan
                         # print("new_norm_start is None")
                         num_failed += 1
                         continue
-                    new_start, new_end = convert_normalized_indices_to_unnormalized_indices([(new_norm_start, new_norm_end)], norm_map)[0]
+                    new_start, new_end = normalizer.convert_normalized_indices_to_unnormalized_indices([(new_norm_start, new_norm_end)], norm_map)[0]
                     new_mention = re.sub(replace_reg_parens if remove_parens else replace_reg, '', text_nikkud[new_start:new_end])
                     try:
                         assert new_mention == mention.mention, f"'{new_mention} != {mention.mention}' {unnorm_start} {unnorm_end}"
@@ -582,7 +584,7 @@ def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_chan
                     # get_unnormalized pos
             new_mentions += temp_new_mentions
     out = [m.serialize(delete_keys=['versionTitle', 'language']) for m in new_mentions]
-    with open(f"research/knowledge_graph/named_entity_recognition/{mentions_output}", "w") as fout:
+    with open(f"{mentions_output}", "w") as fout:
         json.dump(out, fout, ensure_ascii=False, indent=2)
     print("NUM FAILED", num_failed)
 
@@ -650,16 +652,16 @@ def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1,
     spacy_formatted, rabbi_mentions = convert_to_spacy_format(crude_mentions, vtitle=vtitle, norm_regex="[,\-:;\u0591-\u05bd\u05bf-\u05c5\u05c7]+", repl='', daf_skips=0, rashi_skips=0, overall=0)
     srsly.write_jsonl(out_file1, rabbi_mentions)
     convert_to_mentions_file(out_file1, out_file2, only_bonayich_rabbis=False)
-    with open(f'research/knowledge_graph/named_entity_recognition/{out_file2}', 'r') as fin:
+    with open(f'{out_file2}', 'r') as fin:
         j = json.load(fin)
     with open(f'{DATA_LOC}/../sefaria/{out_file2}', 'w') as fout:
         json.dump(j, fout, indent=2, ensure_ascii=False)
 
 if __name__ == "__main__":
-    # rows_by_mas = get_rows_by_mas()
-    # rabbi_mentions = get_rabbi_mention_segments(rows_by_mas)
-    # spacy_formatted, rabbi_mentions = convert_to_spacy_format(rabbi_mentions)
-    # srsly.write_jsonl(f'{DATA_LOC}/he_mentions.jsonl', rabbi_mentions)
+    rows_by_mas = get_rows_by_mas()
+    rabbi_mentions = get_rabbi_mention_segments(rows_by_mas)
+    spacy_formatted, rabbi_mentions = convert_to_spacy_format(rabbi_mentions)
+    srsly.write_jsonl(f'{DATA_LOC}/he_mentions.jsonl', rabbi_mentions)
     # srsly.write_jsonl(f'{DATA_LOC}/he_training.jsonl', spacy_formatted)
     # display_displacy(f"{DATA_LOC}/he_training.jsonl")
     

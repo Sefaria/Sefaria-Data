@@ -41,40 +41,9 @@
             "namedEntityFile": "sperling_named_entities.json"
         }
     ],
-    "pretagOverrideNamedEntities": [
-        {
-            "id": "rabbi-yaakov-b-qorshai",
-            "idIsSlug": true
-        },
-        {
-            "id": "rabbi-hananyah-b-akabia",
-            "idIsSlug": true
-        },
-        {
-            "id": "abba-yudan",
-            "idIsSlug": true
-        },
-        {
-            "id": "biblical-figures",
-            "idIsSlug": true,
-            "getLeaves": true
-        },
-        {
-            "id": "jewish-people",
-            "idIsSlug": true
-        },
-        {
-            "id": "israel",
-            "idIsSlug": true
-        },
-        {
-            "id": "jesus",
-            "idIsSlug": true
-        }
-    ],
     "normalizers": {
-        "en": ["unidecode", "html"],
-        "he": ["unidecode", "cantillation", "maqaf"]
+        "en": ["br-tag", "itag", "unidecode", "html", "parens-plus-contents", "brackets", "double-space"],
+        "he": ["br-tag", "itag", "unidecode", "cantillation", "maqaf", "double-space"]
     },
     "rules": [
         {
@@ -121,7 +90,7 @@
                     "language": "he"
                 }
             },
-            "namedEntities": ["on-the-son-of-pelet", "phut", "nun1", "abba-yudan", "abdon", "eve"],
+            "namedEntities": ["on-the-son-of-pelet", "phut", "nun1", "abba-yudan", "abdon", "eve", "rav-huna", "rebbi-huna"],
             "comment": "Some people are davka ambiguous in English"
         },
         {
@@ -141,14 +110,15 @@
         {
             "rule": {
                 "id": "manualCorrections",
-                "correctionsFile": "manual_corrections_talmud.json"
+                "correctionsFile": "manual_corrections_talmud.json",
+                "alertWhenMissing": true
             }
         }
     ],
     "corpus": [
         {
-            "title": "Megillah",
-            "type": "index",
+            "title": "Bavli",
+            "type": "category",
             "versions": [
                 {
                     "language": "en",
@@ -156,27 +126,15 @@
                 },
                 {
                     "language": "he",
-                    "versionTitle":"William Davidson Edition - Aramaic",
-                    "pretaggedMentionsInDB": true,
-                    "pretaggedFile": "sperling_mentions.json"
+                    "versionTitle":"William Davidson Edition - Aramaic"
                 },
                 {
                     "language": "he",
-                    "versionTitle":"William Davidson Edition - Vocalized Aramaic",
-                    "pretaggedMentionsInDB": true,
-                    "pretaggedFile": "sperling_mentions_nikkud.json"
+                    "versionTitle":"William Davidson Edition - Vocalized Aramaic"
                 },
                 {
                     "language": "he",
-                    "versionTitle":"William Davidson Edition - Vocalized Punctuated Aramaic",
-                    "pretaggedMentionsInDB": true,
-                    "pretaggedFile": "sperling_mentions_nikkud_punctuated.json"
-                },
-                {
-                    "language": "he",
-                    "versionTitle":"Wikisource Talmud Bavli",
-                    "pretaggedMentionsInDB": true,
-                    "pretaggedFile": "sperling_mentions_wikisource.json"
+                    "versionTitle":"William Davidson Edition - Vocalized Punctuated Aramaic"
                 }
             ]
         }
@@ -184,7 +142,7 @@
     "namedEntityRecognizerParams": {
         "langSpecificParams": {
             "he": {
-                "prefixRegex": "(?:בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד)??"
+                "prefixRegex": "(?:בד|בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד|מד|כד|דב|אד|א)??"
             }
         },
         "slugsToDelete": ["arba", "egypt"]
