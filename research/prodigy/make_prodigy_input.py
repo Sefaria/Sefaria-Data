@@ -5,7 +5,7 @@ django.setup()
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
 from research.prodigy.prodigy_package.db_manager import MongoProdigyDBManager
-from data_utilities.normalization import NormalizerByLang, NormalizerComposer
+from sefaria.helper.normalization import NormalizerComposer
 
 class ProdigyInputWalker:
     def __init__(self, prev_tagged_refs):
