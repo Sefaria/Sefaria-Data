@@ -33,13 +33,24 @@ for k in new_text:
                 except Exception as e:
                     print(e)
 
+ftnotes = defaultdict(dict)
+for b in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
+    ftnotes[b] = defaultdict(dict)
+    for perek in library.get_index(b).all_section_refs():
+        ftnotes[b][perek.sections[0]] = []
 for k in new_text:
     for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-        if k.endswith(book):
+        if k.endswith("Torah, "+book):
+            start_ftnotes = False
             # parse mini essays and footnotes
             for line in new_text[k]:
                 m = re.search("^<i>(.*?)</i>\s?(\(.*?\))", line)
-                if m:
+                new_perek = re.search("^(\d+):\d+ ", line)
+                if new_perek:
+                    perek = int(new_perek.group(1))
+                if start_ftnotes:
+                    ftnotes[book][perek].append(line)
+                elif m:
                     title, ref = m.group(1), m.group(2)
                     ref = ref.replace("(", "("+book+" ")
                     ref = ref.replace("2:4a", "2:4").replace("2:4b", "2:4").replace('–', "-")
@@ -51,8 +62,35 @@ for k in new_text:
                                 essay_refs[(essay_ref, essay_title)].append((title, ref))
                     except Exception as e:
                         invalid_refs.append((title, ref))
+                elif line.find("______") == 0:
+                    start_ftnotes = True
+
+
 vtitle = "https://www.penguinrandomhouse.com/books/55160/the-five-books-of-moses-by-everett-fox/"
 for invalid_ref in invalid_refs:
     title, ref = invalid_ref
     print(f"!!! {title} -> {ref}")
 
+new_ftnotes = {}
+for book in ftnotes:
+    new_ftnotes[book] = defaultdict(list)
+    for perek in ftnotes[book]:
+        for line in ftnotes[book][perek]:
+            if line[0].isdigit():
+                ref = line.split()[0]
+                if ":" not in ref:
+                    ref = f"{perek}:{line.split()[0]}"
+                ref = ref.replace("2:4b", "2:4").replace("/", "-").replace("ff.", "")
+                ref = re.sub("(^\d+:\d+),(\d+)", "\g<1>-\g<2>", ref)
+                if ref.endswith(",") or ref.endswith(":"):
+                    ref = ref[:-1]
+                try:
+                    Ref(f"{book} {ref}")
+                except:
+                    print(f"{book} {ref}")
+                line = ref + " " + " ".join(line.split()[1:])
+                new_ftnotes[book][perek].append(line)
+            else:
+                new_ftnotes[book][perek][-1] += "<br/>"+line
+
+pass

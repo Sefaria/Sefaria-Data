@@ -206,8 +206,8 @@ for book in text_dict:
         "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Hasagot HaRaavad", subcat],
         "collective_title": "Hasagot HaRaavad"
     }
-    add_category(subcat, indx["categories"], server="https://germantalmud.cauldron.sefaria.org")
-    post_index(indx, server="https://germantalmud.cauldron.sefaria.org")
+    add_category(subcat, indx["categories"], server="https://www.sefaria.org")
+    post_index(indx, server="https://www.sefaria.org")
     for perek in text_dict[book]:
         text_dict[book][perek] = convertDictToArray(text_dict[book][perek])
     text_dict[book] = convertDictToArray(text_dict[book])
@@ -217,4 +217,4 @@ for book in text_dict:
         "versionTitle": "Friedberg Edition",
         "versionSource": "https://fjms.genizah.org/"
     }
-    post_text("Hasagot HaRaavad on {}".format(book), send_text, server="https://germantalmud.cauldron.sefaria.org")
+    post_text("Hasagot HaRaavad on {}".format(book), send_text, server="https://www.sefaria.org")
