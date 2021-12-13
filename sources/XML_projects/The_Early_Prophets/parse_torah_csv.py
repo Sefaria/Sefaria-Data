@@ -19,28 +19,40 @@ for row in new_rows:
     new_text[ref].append(row[1])
 
 invalid_refs = []
-valid_refs = []
-for ref in new_text:
+short_refs = {}
+essay_refs = {}
+for k in new_text:
     for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-        if ref.endswith(book):
+        if book in k and not k.endswith(book):
+            poss_ref = new_text[k][0]
+            m = re.search("\((.*?)\)", poss_ref)
+            if m and len(poss_ref) < 50:
+                poss_ref = f"{book} {m.group(1)}".replace('–', "-").replace("1-4:43", "1:1-4:43")
+                try:
+                    essay_refs[(Ref(poss_ref), k)] = []
+                except Exception as e:
+                    print(e)
+
+for k in new_text:
+    for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
+        if k.endswith(book):
             # parse mini essays and footnotes
-            for line in new_text[ref]:
-                m = re.search("<i>(.*?)</i>\s?(\(.*?\))", line)
+            for line in new_text[k]:
+                m = re.search("^<i>(.*?)</i>\s?(\(.*?\))", line)
                 if m:
                     title, ref = m.group(1), m.group(2)
                     ref = ref.replace("(", "("+book+" ")
+                    ref = ref.replace("2:4a", "2:4").replace("2:4b", "2:4").replace('–', "-")
+                    ref = ref.replace("Exodus 28:6-12, 13-14", "Exodus 28:6-14").replace("Deuteronomy 2, 3:1-22", "Deuteronomy 2:1-3:22")
                     try:
-                        Ref(ref[1:-1])
-                        print(f"{title} -> {ref}")
-                        valid_refs.append((title, ref))
-                    except:
+                        for essay in essay_refs.keys():
+                            essay_ref, essay_title = essay
+                            if essay_ref.contains(Ref(ref[1:-1])):
+                                essay_refs[(essay_ref, essay_title)].append((title, ref))
+                    except Exception as e:
                         invalid_refs.append((title, ref))
-        else:
-            # parse major essays
-            pass
-
 vtitle = "https://www.penguinrandomhouse.com/books/55160/the-five-books-of-moses-by-everett-fox/"
-print("\nINVALID REFS:")
 for invalid_ref in invalid_refs:
     title, ref = invalid_ref
-    print(f"*** {title} -> {ref}")
+    print(f"!!! {title} -> {ref}")
+
