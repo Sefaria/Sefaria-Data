@@ -90,6 +90,7 @@ from collections import defaultdict
 from sefaria.helper.normalization import AbstractNormalizer, NormalizerComposer, NormalizerByLang
 
 GERSHAYIM = '\u05F4'
+REGEX_TITLE_CHUNK = 700
 
 class NormalizerTools:
     b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ', ' son of ', ' the son of ', ' Bar ', ' Ben ']
@@ -249,8 +250,13 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
                 for title in ne.get_titles(lang=lang, with_disambiguation=False):
                     title_regs += [re.escape(expansion) for expansion in NormalizerTools.get_rabbi_expansions(title)]
             title_regs.sort(key=lambda x: len(x), reverse=True)
+            print(f"COMPILING {lang} REGEX using {len(title_regs)} titles. {len('|'.join(title_regs).encode('utf-8'))/1024} KBs")
             prefix_reg = lang_params.get('prefixRegex', None)
-            self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\s|{self.word_breakers})[\"{GERSHAYIM}]?(?P<prefix>{prefix_reg or ''}))(?P<ne>{'|'.join(title_regs)})(?=[\"{GERSHAYIM}]?(\s|{self.word_breakers}|$))")
+            self.named_entity_regex_by_lang[lang] = []
+            for i in range(0, len(title_regs), REGEX_TITLE_CHUNK):
+                title_regs_chunk = title_regs[i:i+REGEX_TITLE_CHUNK]
+                regex_chunk = re.compile(fr"(?:(?:^|\s|{self.word_breakers})[\"{GERSHAYIM}]?(?P<prefix>{prefix_reg or ''}))(?P<ne>{'|'.join(title_regs_chunk)})(?=[\"{GERSHAYIM}]?(\s|{self.word_breakers}|$))")
+                self.named_entity_regex_by_lang[lang] += [regex_chunk]
             # self.named_entity_regex_by_lang[lang] = re.compile(fr"(?:(?:^|\b){lang_params.get('prefixRegex', None) or ''})({'|'.join(title_regs)})(?:\b|$)")
     
     @staticmethod
@@ -279,11 +285,16 @@ class NaiveNamedEntityRecognizer(AbstractNamedEntityRecognizer):
     def predict_segment(self, corpus_segment, pretagged_mentions=None):
         norm_text = self.normalizer.normalize(corpus_segment.text, lang=corpus_segment.language)
         mentions = []
-        for match in re.finditer(self.named_entity_regex_by_lang[corpus_segment.language], norm_text):
-            # end = match.end(1)
-            # if not (end == len(norm_text) or re.match(fr"(?:\s|{self.word_breakers}|$)", norm_text[end:end+2])):
-            #     continue
-            mentions += [Mention(match.start('prefix'), match.end('ne'), match.group('prefix') + match.group('ne'), prefix_span=match.span('prefix'), ref=corpus_segment.ref, versionTitle=corpus_segment.versionTitle, language=corpus_segment.language)]
+        matched_indexes = set()
+        for regex_chunk in self.named_entity_regex_by_lang[corpus_segment.language]:
+            for match in regex_chunk.finditer(norm_text):
+                # end = match.end(1)
+                # if not (end == len(norm_text) or re.match(fr"(?:\s|{self.word_breakers}|$)", norm_text[end:end+2])):
+                #     continue
+                temp_matched_indexes = set(range(match.start('prefix'), match.end('ne')))
+                if len(temp_matched_indexes & matched_indexes) != 0: continue
+                matched_indexes |= temp_matched_indexes
+                mentions += [Mention(match.start('prefix'), match.end('ne'), match.group('prefix') + match.group('ne'), prefix_span=match.span('prefix'), ref=corpus_segment.ref, versionTitle=corpus_segment.versionTitle, language=corpus_segment.language)]
         mention_indices = [(mention.start, mention.end) for mention in mentions]
         norm_map = self.normalizer.get_mapping_after_normalization(corpus_segment.text, lang=corpus_segment.language)
         mention_indices = self.normalizer.convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map)
@@ -629,7 +640,7 @@ class CorpusManager:
             if len(version_set) == 0: continue
             version = version_set[0]
             is_pretagged = pretagged_file is not None or pretagged_in_db
-            version.walk_thru_contents(partial(self.create_corpus_segment, is_pretagged))
+            version.walk_thru_contents(partial(self.create_corpus_segment, is_pretagged, version_query['refFilter']))
         
         pretagged_corpus_segments, untagged_corpus_segments = self.partition_corpus_segments()
         ner_mentions = self.ner.predict(untagged_corpus_segments)
@@ -706,7 +717,9 @@ class CorpusManager:
         with open(self.mentions_output_file, "w") as fout:
             json.dump(out, fout, ensure_ascii=False, indent=2)
 
-    def create_corpus_segment(self, is_pretagged, segment_text, en_tref, he_tref, version):
+    def create_corpus_segment(self, is_pretagged, ref_filter, segment_text, en_tref, he_tref, version):
+        if ref_filter is not None and en_tref not in ref_filter:
+            return
         self.corpus_segments += [CorpusSegment(is_pretagged, segment_text, version.language, version.versionTitle, en_tref)]
 
     @staticmethod
@@ -757,6 +770,7 @@ class CorpusManager:
                 for temp_version_query in item["versions"]:
                     version_query_copy = temp_version_query.copy()
                     version_query_copy["title"] = title
+                    version_query_copy["refFilter"] = item.get("refFilter", None)
                     version_queries += [version_query_copy]
         return version_queries
 
