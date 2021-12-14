@@ -1273,8 +1273,8 @@ def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "ner_tagger_input.json",
-        f"{ner_file_prefix}/ner_output_talmud.json",
+        "ner_input/ner_tagger_input_bavli.json",
+        f"{ner_file_prefix}/temp/ner_output_bavli.json",
         f"{ner_file_prefix}/html"
     )
     # corpus_manager.export_named_entities(f"{ner_file_prefix}/named_entities_export.csv")
@@ -1284,8 +1284,8 @@ if __name__ == "__main__":
 
     #corpus_manager.load_mentions()
     corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi'})
-    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he") ("The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015", "en")
-    corpus_manager.filter_cross_validation_by_topics(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_filtered.csv", [{
+    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/temp/cross_validated_by_language.csv", f"{ner_file_prefix}/temp/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/temp/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he") ("The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015", "en")
+    corpus_manager.filter_cross_validation_by_topics(f"{ner_file_prefix}/temp/cross_validated_by_language.csv", f"{ner_file_prefix}/temp/cross_validated_by_language_filtered.csv", [{
             "id": "biblical-figures",
             "idIsSlug": True,
             "getLeaves": True

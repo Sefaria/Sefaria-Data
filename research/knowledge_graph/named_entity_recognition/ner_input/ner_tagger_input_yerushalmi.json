@@ -38,7 +38,7 @@
             "idIsSlug": true
         },
         {
-            "namedEntityFile": "sperling_named_entities.json"
+            "namedEntityFile": "external_named_entities/yerushalmi_nonexisting_topics.json"
         }
     ],
     "normalizers": {
@@ -51,24 +51,12 @@
             "id": "namedEntityNotInVersionDelete",
             "appliesToVersions": [
                 {
-                    "versionTitle": "William Davidson Edition - Aramaic",
-                    "language": "he"
-                },
-                {
-                    "versionTitle": "William Davidson Edition - Vocalized Aramaic",
-                    "language": "he"
-                }, 
-                {
-                    "versionTitle": "William Davidson Edition - Vocalized Punctuated Aramaic",
-                    "language": "he"
-                }, 
-                {
-                    "versionTitle": "Wikisource Talmud Bavli",
+                    "versionTitle": "The Jerusalem Talmud, edition by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015",
                     "language": "he"
                 }
             ],
             "versionToCompare": {
-                "versionTitle": "William Davidson Edition - English",
+                "versionTitle": "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015",
                 "language": "en"
             }
           },
@@ -81,12 +69,12 @@
                 "id": "namedEntityNotInVersionDelete",
                 "appliesToVersions": [
                     {
-                        "versionTitle": "William Davidson Edition - English",
+                        "versionTitle": "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015",
                         "language": "en"
                     }
                 ],
                 "versionToCompare": {
-                    "versionTitle": "William Davidson Edition - Aramaic",
+                    "versionTitle": "The Jerusalem Talmud, edition by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015",
                     "language": "he"
                 }
             },
@@ -110,36 +98,28 @@
         {
             "rule": {
                 "id": "manualCorrections",
-                "correctionsFile": "manual_corrections_talmud.json",
+                "correctionsFile": "manual_corrections/manual_corrections_yerushalmi.json",
                 "alertWhenMissing": true
             }
         }
     ],
     "corpus": [
         {
-            "title": "Bavli",
+            "title": "Yerushalmi",
             "type": "category",
             "versions": [
                 {
                     "language": "en",
-                    "versionTitle": "William Davidson Edition - English"
+                    "versionTitle": "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015"
                 },
                 {
                     "language": "he",
-                    "versionTitle":"William Davidson Edition - Aramaic"
-                },
-                {
-                    "language": "he",
-                    "versionTitle":"William Davidson Edition - Vocalized Aramaic"
-                },
-                {
-                    "language": "he",
-                    "versionTitle":"William Davidson Edition - Vocalized Punctuated Aramaic"
+                    "versionTitle": "The Jerusalem Talmud, edition by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015"
                 }
             ]
         }
     ],
-    "namedEntityRecognizerParams": {
+        "namedEntityRecognizerParams": {
         "langSpecificParams": {
             "he": {
                 "prefixRegex": "(?:בד|בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד|מד|כד|דב|אד|א)??"
@@ -148,22 +128,9 @@
         "slugsToDelete": ["arba", "egypt"]
     },
     "namedEntityLinkerParams": {
-        "nonLiteralCorpus": [
-            {
-                "title": "Bavli",
-                "type": "category",
-                "versions": [
-                    {
-                        "language": "en",
-                        "versionTitle": "William Davidson Edition - English",
-                        "literalRegex": "<b>.+?</b>"
-                    }
-                ]
-            }
-        ],
         "titlesToDelete": {
             "shmuel-(prophet)": ["Shmuel"],
             "moses": ["ירד"]
-        }       
+        }
     }
 }
