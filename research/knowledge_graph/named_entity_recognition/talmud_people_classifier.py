@@ -6,8 +6,7 @@ from pymongo import MongoClient
 import srsly
 django.setup()
 from sefaria.model import *
-from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
-from data_utilities.normalization import NormalizerByLang, NormalizerComposer
+from sefaria.helper.normalization import NormalizerByLang, NormalizerComposer
 from research.prodigy.functions import wrap_chars_with_overlaps
 
 DATA = "/home/nss/sefaria/datasets/ner/sefaria/ner_output_talmud.json"
@@ -67,8 +66,8 @@ class TalmudTrainingGenerator:
         examples = self.raw_training_examples_by_ref[en_tref]
         mention_indices = [(x['start'], x['end']) for x in examples]
         snorm = NORMALIZER.normalize(s, lang=self.language)
-        norm_map = get_mapping_after_normalization(s, partial(NORMALIZER.find_text_to_remove, lang=self.language), reverse=True)
-        mention_indices = convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map, reverse=True)
+        norm_map = NORMALIZER.get_mapping_after_normalization(s, lang=self.language, reverse=True)
+        mention_indices = NORMALIZER.convert_normalized_indices_to_unnormalized_indices(mention_indices, norm_map, reverse=True)
         chars_to_wrap = []
         for example, (start, end) in zip(examples, mention_indices):
             # just to make sure...
@@ -213,8 +212,8 @@ class FindMissingNames:
         from data_utilities.util import get_window_around_match
         mentions = self.mentions_by_ref.get(en_tref, [])
         snorm = self.normalizer.normalize(s)
-        rm = get_mapping_after_normalization(s, self.normalizer.find_text_to_remove, reverse=True)
-        norm_indices = convert_normalized_indices_to_unnormalized_indices([(m['start'], m['end']) for m in mentions], rm, reverse=True)
+        rm = self.normalizer.get_mapping_after_normalization(s, reverse=True)
+        norm_indices = self.normalizer.convert_normalized_indices_to_unnormalized_indices([(m['start'], m['end']) for m in mentions], rm, reverse=True)
         for (start, end), m in zip(norm_indices, mentions):
             assert snorm[start:end] == self.normalizer.normalize(m['mention'])
             before, after = get_window_around_match(start, end, snorm)

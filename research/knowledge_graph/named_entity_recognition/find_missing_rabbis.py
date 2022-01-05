@@ -204,7 +204,7 @@ def convert_final_en_names_to_ner_tagger_input():
                 "gen": bonayich_metadata[int(bid)]["gen"] if (bid != 'N/A' and False) else None,  # manually leave this data out for now
                 "type": bonayich_metadata.get(int(bid), {}).get("type", '') if bid != 'N/A' else None
             }]
-        with open(f"sperling_named_entitie.json", "w") as fout:
+        with open(f"sperling_named_entities.json", "w") as fout:
             json.dump(sperling_entities, fout, ensure_ascii=False, indent=2)
         print("TOTAL NOT MATCHED", num_not_matched)
 

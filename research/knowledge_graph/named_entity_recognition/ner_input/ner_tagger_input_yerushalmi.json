@@ -38,7 +38,7 @@
             "idIsSlug": true
         },
         {
-            "namedEntityFile": "/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_nonexisting_topics.json"
+            "namedEntityFile": "external_named_entities/yerushalmi_nonexisting_topics.json"
         }
     ],
     "normalizers": {
@@ -98,7 +98,7 @@
         {
             "rule": {
                 "id": "manualCorrections",
-                "correctionsFile": "manual_corrections_yerushalmi.json",
+                "correctionsFile": "manual_corrections/manual_corrections_yerushalmi.json",
                 "alertWhenMissing": true
             }
         }

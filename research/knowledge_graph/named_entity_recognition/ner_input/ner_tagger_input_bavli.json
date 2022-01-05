@@ -38,7 +38,7 @@
             "idIsSlug": true
         },
         {
-            "namedEntityFile": "sperling_named_entities.json"
+            "namedEntityFile": "external_named_entities/sperling_named_entities.json"
         }
     ],
     "normalizers": {
@@ -110,7 +110,7 @@
         {
             "rule": {
                 "id": "manualCorrections",
-                "correctionsFile": "manual_corrections_talmud.json",
+                "correctionsFile": "manual_corrections/manual_corrections_bavli.json",
                 "alertWhenMissing": true
             }
         }
@@ -142,7 +142,7 @@
     "namedEntityRecognizerParams": {
         "langSpecificParams": {
             "he": {
-                "prefixRegex": "(?:בד|בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד|מד|כד|דב|אד|א)??"
+                "prefixRegex": "(?:וכד|לכד|וד|בד|בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|מד|כד|דב|אד|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד|א(?!מר))??"
             }
         },
         "slugsToDelete": ["arba", "egypt"]
