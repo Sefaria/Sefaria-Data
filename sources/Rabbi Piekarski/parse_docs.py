@@ -60,8 +60,7 @@ for path in Path('Kesubos').rglob('*.docx'):
 
                 for find in re.findall("<u>(.*?)</u>", result):
                     result = result.replace(f"<u>{find}</u>", f"<br/>{find[0].upper()}<small>{find[1:].upper()}</small>")
-            if len(result.strip()) > 0:
-                text["Ketubot"][daf][dh] += result + "<br/>"
+            text["Ketubot"][daf][dh] += result + "<br/>"
 
         ftnote_consecutive = 0
         for i, el in enumerate(html.footnotes[0][0][0]):
@@ -113,14 +112,16 @@ for path in Path('Kesubos').rglob('*.docx'):
 
         chars = list(text["Ketubot"][daf][dh])
         count = 0
-        words_list = []
-        for span in spans:
-            start, end, heb = span
-            if heb:
-                words_list.append("<span dir='rtl'>" + "".join(chars[start:end]) + "</span>")
-            else:
-                words_list.append("".join(chars[start:end]))
-        text["Ketubot"][daf][dh] = "".join(words_list)
+        # words_list = []
+        # for span in spans:
+        #     start, end, heb = span
+        #     if heb:
+        #         words = "".join(chars[start:end]).split()
+        #         for word in words:
+        #             words_list.append("<span dir='rtl'> " + word + " </span>")
+        #     else:
+        #         words_list.append("".join(chars[start:end]))
+        # text["Ketubot"][daf][dh] = "".join(words_list)
 
 for book in text:
     not_found = defaultdict(list)
@@ -160,6 +161,5 @@ for book in text:
     }
     for daf in text[book]:
         for ref in text[book][daf]:
-            if " 2a" in ref.normal() or " 2b" in ref.normal():
-                send_text["text"] = text[book][daf][ref]
-                post_text(ref.normal(), send_text, server="http://localhost:8000")
+            send_text["text"] = text[book][daf][ref]
+            post_text(ref.normal(), send_text, server="http://localhost:8000")
