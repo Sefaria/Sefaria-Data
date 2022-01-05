@@ -110,36 +110,34 @@ for k in new_text:
 node = None
 root = SchemaNode()
 root.add_primary_titles("Everett Fox", "")
+
 torah_books = ["Torah, "+x+"," for x in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]]
 with open("titles for translation.csv", 'w') as translation_f:
     translation_writer = csv.writer(translation_f)
-    with open("subessay.csv", 'w') as f:
-        writer = csv.writer(f)
-        for ref_title in essay_refs:
-            ref, title = ref_title
-            if node:
-                root.append(node)
-            node = SchemaNode()
-            for torah_book in torah_books:
-                title = title.replace(torah_book, "")
-            node.add_primary_titles(title, "")
-            translation_writer.writerow([title, ""])
-            ref = ref.normal()
-            i = 0
-            for subpart in essay_refs[ref_title]:
-                if isinstance(subpart, tuple):
-                    subref, subtitle = subpart
-                    subref = subref.normal()
-                    subnode = JaggedArrayNode()
-                    subnode.depth = 1
-                    subnode.add_primary_titles(subtitle, "")
-                    subnode.add_structure(["Paragraph"])
-                    node.append(subnode)
-                    translation_writer.writerow([subtitle, ""])
-                    i = 0
-                else:
-                    i += 1
-                    writer.writerow([title, ref, subtitle, subref, i, subpart])
+    for ref_title in essay_refs:
+        ref, title = ref_title
+        if node:
+             root.append(node)
+        node = SchemaNode()
+        for torah_book in torah_books:
+            title = title.replace(torah_book, "")
+        node.add_primary_titles(title, "")
+        translation_writer.writerow([title, ""])
+        ref = ref.normal()
+        i = 0
+        for subpart in essay_refs[ref_title]:
+            if isinstance(subpart, tuple):
+                subref, subtitle = subpart
+                subref = subref.normal()
+                subnode = JaggedArrayNode()
+                subnode.depth = 1
+                subnode.add_primary_titles(subtitle, "")
+                subnode.add_structure(["Paragraph"])
+                node.append(subnode)
+                translation_writer.writerow([subtitle, ""])
+                i = 0
+            else:
+                i += 1
 
 vtitle = "https://www.penguinrandomhouse.com/books/55160/the-five-books-of-moses-by-everett-fox/"
 for invalid_ref in invalid_refs:
