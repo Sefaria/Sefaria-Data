@@ -216,7 +216,7 @@ class Parser():
 
     def post(self, just_links=False):
         server = 'http://localhost:9000'
-        #server = 'https://shem.cauldron.sefaria.org'
+        server = 'https://shem.cauldron.sefaria.org'
         if not just_links:
             shem = 'Shem HaGedolim'
             cats = ["Reference", shem]
@@ -239,8 +239,8 @@ class Parser():
                     text[0][0] = '<b>תנאים</b><br>' + text[0][0]
                     text[26][0] = '<b>אמוראים</b><br>' + text[26][0]
                 version = {'text': text,
-                    'versionTitle': 'Shem HaGedolim',
-                    'versionSource': '',
+                    'versionTitle': 'Podgorze, 1905 (Wikisource edition)',
+                    'versionSource': 'https://www.nli.org.il/he/books/NNL_ALEPH000411346/NLI',
                     'language': 'he'}
                 post_text(name, version, index_count='on', server=server)
         if self.notes_sheerit:

@@ -19,12 +19,13 @@ def find_subref(r1, r2):
 def link_other_ref(trefs, ref):
     tref = [r for r in trefs if not set(ref.all_segment_refs()) & set(Ref(r).all_segment_refs())]
     if len(tref) != 1:
-        #print(f'problem in finding other ref for {ref} while link refs are {trefs}')
+        print(f'problem in finding other ref for {ref} while link refs     are {trefs}')
         return
     return tref[0]
 
 def ref_links_according_book(ref):
     links = ref.linkset()
+    links = [l for l in links if any("JTmock" not in r for r in l.refs)]
     books = {}
     for link in links:
         tref = link_other_ref(link.refs, ref)
@@ -117,7 +118,7 @@ def accur_by_3rd_party(ref):
                 REPORT.append({'refs_before': trefs, 'vectors': common, 'accurated': options, 'changed': False})
 
 if __name__ == '__main__':
-    indexes = [ind for ind in library.get_indexes_in_category('Yerushalmi') if 'JTmock' in ind]
+    indexes = [ind for ind in library.get_indexes_in_category('Yerushalmi')]
     for ind in indexes:
         print(ind)
         for ref in Ref(ind).all_segment_refs():

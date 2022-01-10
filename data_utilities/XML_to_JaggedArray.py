@@ -60,12 +60,13 @@ class XML_to_JaggedArray:
         self.title = title
 
     def set_funcs(self, grab_title_lambda=lambda x: len(x) > 0 and x[0].tag in ["title", "h1", "h2"], reorder_test=lambda x: False,
-                  reorder_modify=lambda x: x, modify_before_parse=lambda x: x, modify_before_post=lambda x: x):
+                  reorder_modify=lambda x: x, modify_before_parse=lambda x: x, modify_before_post=lambda x: x, preparser=None):
         self.modify_before_parse = modify_before_parse
         self.grab_title_lambda = grab_title_lambda
         self.reorder_test = reorder_test
         self.reorder_modify = reorder_modify
         self.modify_before_post = modify_before_post
+        self.preparser = preparser
 
     def convertIMGBase64(self, text):
         tags = re.findall("<img.*?>", text)
@@ -99,13 +100,16 @@ class XML_to_JaggedArray:
         self.root.text = self.title
         self.root = self.reorder_structure(self.root)
 
-        for count, child in enumerate(self.root):
-            if self.array_of_names:
-                child.text = str(self.array_of_names[count])
-            elif self.dict_of_names:
-                key = self.cleanNodeName(child[0].text)
-                child[0].text = self.dict_of_names[key]
-            child = self.reorder_structure(child, False)
+        if self.preparser:
+            self.root = self.preparser(self.root)
+        else:
+            for count, child in enumerate(self.root):
+                if self.array_of_names:
+                    child.text = str(self.array_of_names[count])
+                elif self.dict_of_names:
+                    key = self.cleanNodeName(child[0].text)
+                    child[0].text = self.dict_of_names[key]
+                child = self.reorder_structure(child, False)
 
         results = self.go_down_to_text(self.root, self.root.text, True)
         #    results = self.handle_special_case(results)
@@ -141,12 +145,12 @@ class XML_to_JaggedArray:
         return text
 
     def cleanNodeName(self, text):
-        if text == "\n":
-            return text
+        if text.strip() == "":
+            return ""
         text = self.cleanText(text)
         text = self.removeChapter(text)
         comma_chars = ['.']
-        remove_chars = ['?'] + re.findall("[\u05D0-\u05EA]+", text)
+        remove_chars = ['?']# + re.findall("[\u05D0-\u05EA]+", text)
         space_chars = ['-']
         while self.english and not any_english_in_str(text[-1]):
             text = text[0:-1]
@@ -294,7 +298,7 @@ class XML_to_JaggedArray:
             if len(text) == 0:
                 continue
             try:
-                text_arr[index] = removeNumberFromStart(text_arr[index])
+                #text_arr[index] = removeNumberFromStart(text_arr[index])
                 text_arr[index] = text_arr[index].replace("<sup><xref", "<xref").replace("</xref></sup>", "</xref>")
                 ft_ids, ft_sup_nums = extractIDsAndSupNums(text_arr[index])
 
@@ -317,7 +321,6 @@ class XML_to_JaggedArray:
                 all = re.findall(footnote_pattern, text_arr[index])
                 for each in all:
                     text_arr[index] = text_arr[index].replace(each, "")
-
 
 
                 text_arr[index] = self.fix_html(text_arr[index])

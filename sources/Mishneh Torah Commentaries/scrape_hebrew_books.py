@@ -60,9 +60,9 @@ def rambam_pages(driver):
         driver.quit()
 
 
-def lechem_pages(driver, can_delete=False):
+def lechem_pages(driver, can_delete=False, raavad=False):
     deleted = 0
-    lechem_pages_dict = {}
+    lechem_pages_dict = defaultdict(dict)
 
     for dir in os.listdir("hebrew books/"):
         if not dir.isdigit():
@@ -75,18 +75,24 @@ def lechem_pages(driver, can_delete=False):
                 perek, pasuk = perek_pasuk.split(":")
                 perek = int(perek)
                 pasuk = int(pasuk)
-                if book not in lechem_pages_dict:
-                    lechem_pages_dict[book] = {}
-                if perek not in lechem_pages_dict[book]:
-                    lechem_pages_dict[book][perek] = {}
                 if f.endswith("html"):
                     delete = True
                     soup = BeautifulSoup(open("hebrew books/" + dir + "/" + f, 'r'))
-                    a_tags = soup.find_all("a")
-                    for a_tag in a_tags:
-                        if a_tag.text == "כסף משנה":
+                    if raavad and soup.find("div", {"class": "raavad"}):
+                        if [l for l in soup.find("div", {"class": "raavad"}).contents if isinstance(l, Tag) and l.attrs.get("class", "") == ["five"]]:
+                            raavads = [l for l in soup.find("div", {"class": "raavad"}).contents if isinstance(l, Tag) and l.attrs.get("class", "") == ["five"]]
                             delete = False
-                            lechem_pages_dict[book][perek][pasuk] = "http://hebrewbooks.org/" + a_tag["href"]
+                            if perek not in lechem_pages_dict[book]:
+                                lechem_pages_dict[book][perek] = defaultdict(dict)
+                            lechem_pages_dict[book][perek][pasuk] = [r.text.strip() for r in raavads]
+                    else:
+                        a_tags = soup.find_all("a")
+                        for a_tag in a_tags:
+                            if a_tag.text == """השגות הראבד""":
+                                delete = False
+                                if perek not in lechem_pages_dict[book]:
+                                    lechem_pages_dict[book][perek] = defaultdict(dict)
+                                lechem_pages_dict[book][perek][pasuk] = "http://hebrewbooks.org/" + a_tag["href"]
                     if can_delete and delete:
                         os.remove("hebrew books/" + f)
                         deleted += 1
@@ -120,40 +126,40 @@ books = [Index().load({'title': 'Mishneh Torah, Sacrificial Procedure'}),
 books = [b.title for b in library.get_indexes_in_category("Mishneh Torah")]
 chrome_options = Options()
 chrome_options.add_argument("--headless")
-driver = webdriver.Chrome("/Users/stevenkaplan/Downloads/chromedriver94", chrome_options=chrome_options)
-
+driver = webdriver.Chrome("/Users/stevenkaplan/Downloads/chromedriver", chrome_options=chrome_options)
+perakim_that_matter = ["Hasagot HaRaavad on Mishneh Torah, Marriage"]
+perakim_that_matter = [p.replace("Hasagot HaRaavad on ", "") for p in perakim_that_matter]
 # rambam_pages(driver)
 #
-# lechem = lechem_pages(driver)
-before_sanhedrin = lechem_pages(driver)
+text_dict = lechem_pages(driver, raavad=True)
+# before_sanhedrin = lechem_pages(driver)
 #
-# # before_sanhedrin.update(after_sanhedrin)
-start_book = "Mishneh Torah, Other Sources of Defilement"
-start_ch = 14
-start = True
-for book in before_sanhedrin:
-    print(book)
-    if book != start_book and not start:
-        continue
-    for perek in sorted(before_sanhedrin[book].keys()):
-        print(perek)
-        if perek == start_ch:
-            start = True
-        if start:
-            for pasuk in before_sanhedrin[book][perek]:
-                print(pasuk)
-                url = before_sanhedrin[book][perek][pasuk]
-                source = selenium_get_url("/Users/stevenkaplan/Downloads/chromedriver94", url)
-                with open("Kessef Mishneh html/{} {} {}.html".format(book, perek, pasuk), 'w') as f:
-                    f.write(source)
+# #
+# # # before_sanhedrin.update(after_sanhedrin)
+# start_book = "Mishneh Torah, Sacrifices Rendered Unfit"
+# start_ch = 3
+# start = True
+# for book in before_sanhedrin:
+#     if book != start_book and not start:
+#         continue
+#     for perek in sorted(before_sanhedrin[book].keys()):
+#         if perek == start_ch:
+#             start = True
+#         if start and book in perakim_that_matter:
+#             print(book)
+#             for pasuk in before_sanhedrin[book][perek]:
+#                 url = before_sanhedrin[book][perek][pasuk]
+#                 source = selenium_get_url("/Users/stevenkaplan/Downloads/chromedriver94", url)
+#                 with open("Hasagot HaRaavad html/{} {} {}.html".format(book, perek, pasuk), 'w') as f:
+#                     f.write(source)
 # text_dict = {}
-# for f in os.listdir("Kessef Mishneh html"):
+# for f in os.listdir("Hasagot HaRaavad html"):
 #     if not f.endswith("html"):
 #         continue
 #     perek = int(f.split()[-2])
 #     pasuk = int(f.split()[-1].replace('.html', ''))
 #     book = " ".join(f.split()[:-2])
-#     if book.replace("Mishneh Torah, ", "") not in books.keys():
+#     if book not in perakim_that_matter:
 #         continue
 #     if book not in text_dict:
 #         text_dict[book] = {}
@@ -161,7 +167,7 @@ for book in before_sanhedrin:
 #         text_dict[book][perek] = {}
 #     text_dict[book][perek][pasuk] = []
 #     orig = f
-#     with open("Kessef Mishneh html/" + f, 'r') as f:
+#     with open("Hasagot HaRaavad html/" + f, 'r') as f:
 #         print(f)
 #         soup = BeautifulSoup(f)
 #         el = soup.find(class_="peirush")
@@ -178,35 +184,37 @@ for book in before_sanhedrin:
 #                     text_dict[book][perek][pasuk].append(line_text)
 #                 else:
 #                     text_dict[book][perek][pasuk][-1] += line_text
-#
-# for book in text_dict:
-#     root = JaggedArrayNode()
-#     index = library.get_index(book)
-#     subcat = index.categories[-1]
-#     book_he = index.get_title('he')
-#     root.add_primary_titles("Kessef Mishneh on {}".format(book), "לחם משנה על {}".format(book_he))
-#     root.key = "Kessef Mishneh on {}".format(book)
-#     root.add_structure(["Chapter", "Halakhah", "Paragraph"])
-#     root.validate()
-#     indx = {
-#         "schema": root.serialize(),
-#         "dependence": "Commentary",
-#         "base_text_titles": [book],
-#         "base_text_mapping": "many_to_one",
-#         "title": "Kessef Mishneh on {}".format(book),
-#         "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Kessef Mishneh", subcat],
-#         "collective_title": "Kessef Mishneh"
-#     }
-#     add_category(subcat, indx["categories"], server="https://ste.cauldron.sefaria.org")
-#     post_index(indx, server="https://ste.cauldron.sefaria.org")
-#     for perek in text_dict[book]:
-#         text_dict[book][perek] = convertDictToArray(text_dict[book][perek])
-#     text_dict[book] = convertDictToArray(text_dict[book])
-#     send_text = {
-#         "text": text_dict[book],
-#         "language": "he",
-#         "versionTitle": "Friedberg Edition (no perek skips)",
-#         "versionSource": "https://fjms.genizah.org/"
-#     }
-#     post_text("Kessef Mishneh on {}".format(book), send_text, server="https://ste.cauldron.sefaria.org")
-#     time.sleep(5)
+curr_hasagot = [x for x in library.get_indexes_in_category("Mishneh Torah", include_dependant=True) if x.startswith("Hasagot HaRaav")]
+new_ones = [x for x in text_dict if "Hasagot HaRaavad on " + x not in curr_hasagot]
+for book in text_dict:
+    if book not in new_ones:
+        continue
+    root = JaggedArrayNode()
+    index = library.get_index(book)
+    subcat = index.categories[-1]
+    book_he = index.get_title('he')
+    root.add_primary_titles("Hasagot HaRaavad on {}".format(book),  """השגות הראב"ד על {}""".format(book_he))
+    root.key = "Hasagot HaRaavad on {}".format(book)
+    root.add_structure(["Chapter", "Halakhah", "Paragraph"])
+    root.validate()
+    indx = {
+        "schema": root.serialize(),
+        "dependence": "Commentary",
+        "base_text_titles": [book],
+        "base_text_mapping": "many_to_one",
+        "title": "Hasagot HaRaavad on {}".format(book),
+        "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Hasagot HaRaavad", subcat],
+        "collective_title": "Hasagot HaRaavad"
+    }
+    add_category(subcat, indx["categories"], server="https://www.sefaria.org")
+    post_index(indx, server="https://www.sefaria.org")
+    for perek in text_dict[book]:
+        text_dict[book][perek] = convertDictToArray(text_dict[book][perek])
+    text_dict[book] = convertDictToArray(text_dict[book])
+    send_text = {
+        "text": text_dict[book],
+        "language": "he",
+        "versionTitle": "Friedberg Edition",
+        "versionSource": "https://fjms.genizah.org/"
+    }
+    post_text("Hasagot HaRaavad on {}".format(book), send_text, server="https://www.sefaria.org")

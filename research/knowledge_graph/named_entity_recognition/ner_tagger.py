@@ -87,12 +87,12 @@ from tqdm import tqdm
 from functools import partial, reduce
 from sefaria.model import *
 from collections import defaultdict
-from data_utilities.normalization import AbstractNormalizer, NormalizerComposer, NormalizerByLang
+from sefaria.helper.normalization import AbstractNormalizer, NormalizerComposer, NormalizerByLang
 
 GERSHAYIM = '\u05F4'
 
 class NormalizerTools:
-    b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ', ' son of ', ' the son of ']
+    b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ', ' son of ', ' the son of ', ' Bar ', ' Ben ']
     b_token = ' b. '
     starting_replacements = ['Ben ', 'Bar ', 'The ']
 
@@ -411,7 +411,7 @@ class NaiveEntityLinker(AbstractEntityLinker):
             for rule in self.rules:
                 rule.apply(ref_mentions)
             temp_mentions = list(filter(lambda mention: len(mention.id_matches) > 0, ref_mentions))  # remove any mentions that no longer have id_matches due to rules applied
-            out_mentions += self.combine_mentions(temp_mentions)           
+            out_mentions += self.combine_mentions(temp_mentions)
         return out_mentions
 
 class AbstractRule:
@@ -428,6 +428,12 @@ class AbstractRule:
         return self.named_entities is None or len(set(mention.id_matches) & self.named_entities) > 0
 
     def apply(self, mentions):
+        pass
+
+    def on_applied_all(self, corpus_segments):
+        """
+        callback called after rule has been applied to all segments
+        """
         pass
 
 class MinMaxRefRule(AbstractRule):
@@ -511,8 +517,19 @@ class ManualCorrectionsRule(AbstractRule):
             correction = self.applies_to_dict[self.get_applies_to_key(mention)]
             if correction['correctionType'] == 'mistake':
                 mention.id_matches = []
+                correction['used'] = True
             elif correction['correctionType'] == 'manualIds':
                 mention.id_matches = correction['id_matches']
+                correction['used'] = True
+
+    def on_applied_all(self, corpus_segments):
+        if not self.rule.get("alertWhenMissing", False): return
+        ref_version_set = {(s.ref, s.versionTitle, s.language) for s in corpus_segments}
+        for correction in self.applies_to_dict.values():
+            if (correction['ref'], correction['versionTitle'], correction['language']) not in ref_version_set: continue
+            if not correction.get('used', False):
+                print("UNUSED CORRECTION. Start and end chars may have shifted in text.")
+                print(correction)
 
 class RequiredOtherNamedEntitiesRule(AbstractRule):
     """
@@ -568,6 +585,7 @@ class CorpusManager:
         self.named_entities = []
         self.ner = None
         self.el = None
+        self.rules = []
         self.mentions = []
         self.corpus_version_queries = []
         self.corpus_segments = []
@@ -579,10 +597,10 @@ class CorpusManager:
         self.normalizer = self.create_normalizer(tagging_params.get("normalizers", {}))
         self.named_entities                 = self.create_named_entities(tagging_params["namedEntities"])
         self.pretag_override_named_entities = self.create_named_entities(tagging_params.get("pretagOverrideNamedEntities", []))
-        rules = self.create_rules(tagging_params.get("rules", []))
+        self.rules = self.create_rules(tagging_params.get("rules", []))
         self.ner                    = NaiveNamedEntityRecognizer(self.named_entities, self.normalizer, **tagging_params.get('namedEntityRecognizerParams', {}))
         self.pretag_override_ner = NaiveNamedEntityRecognizer(self.pretag_override_named_entities, self.normalizer, **tagging_params.get('namedEntityRecognizerParams', {}))
-        self.el = NaiveEntityLinker(self.named_entities + self.pretag_override_named_entities, rules, self.normalizer, **tagging_params.get('namedEntityLinkerParams', {}))
+        self.el = NaiveEntityLinker(self.named_entities + self.pretag_override_named_entities, self.rules, self.normalizer, **tagging_params.get('namedEntityLinkerParams', {}))
         self.ner.fit()
         self.pretag_override_ner.fit()
         self.el.fit()
@@ -621,6 +639,11 @@ class CorpusManager:
         self.mentions = el_mentions
         self.deduplicate_mentions()
         self.validate_mention_matches_text()
+        self.on_applied_all_rules()
+
+    def on_applied_all_rules(self):
+        for rule in self.rules:
+            rule.on_applied_all(self.corpus_segments)
 
     def partition_corpus_segments(self):
         pretagged_corpus_segments, untagged_corpus_segments = [], []
@@ -1114,10 +1137,12 @@ class CorpusManager:
                 "Rabbi": r,
                 "Num": len(v),
                 "With Rabbi": w or '',
-                "Refs": ", ".join(v)
+                "Text 1": Ref(v[0]).text('he', "Guggenheimer (structured)").text
             }]
+            for i in range(1, min(len(v), 6)):
+                common_rows[-1][f'Ref {i}'] = v[i]
         with open(common_mistakes_output_file, 'w') as fout:
-            c = csv.DictWriter(fout, ['Action', 'Rabbi', 'With Rabbi', 'Num', 'Refs'])
+            c = csv.DictWriter(fout, ['Action', 'Rabbi', 'With Rabbi', 'Num', 'Text 1'] + [f'Ref {i}' for i in range(1, 6)])
             c.writeheader()
             c.writerows(common_rows)
         
@@ -1248,8 +1273,8 @@ def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "ner_tagger_input_yerushalmi.json",
-        f"{ner_file_prefix}/ner_output_yerushalmi.json",
+        "ner_tagger_input.json",
+        f"{ner_file_prefix}/ner_output_talmud.json",
         f"{ner_file_prefix}/html"
     )
     # corpus_manager.export_named_entities(f"{ner_file_prefix}/named_entities_export.csv")
@@ -1257,15 +1282,15 @@ if __name__ == "__main__":
     # corpus_manager.merge_rabbis_in_mentions(f"{ner_file_prefix}/swap_rabbis.json")
     corpus_manager.save_mentions()
 
-    # corpus_manager.load_mentions()
+    #corpus_manager.load_mentions()
     corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi'})
-    # corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he")
-    # corpus_manager.filter_cross_validation_by_topics(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_filtered.csv", [{
-    #         "id": "biblical-figures",
-    #         "idIsSlug": True,
-    #         "getLeaves": True
-    #     }
-    # ])
+    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he") ("The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015", "en")
+    corpus_manager.filter_cross_validation_by_topics(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_filtered.csv", [{
+            "id": "biblical-figures",
+            "idIsSlug": True,
+            "getLeaves": True
+        }
+    ])
     # compare_two_versions_ner_tagger_output('ner_output_talmud.json', 'ner_output_talmud_word_breakers.json', ner_file_prefix)
     # compare_two_versions_ner_tagger_output('ner_output_mishnah.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
 

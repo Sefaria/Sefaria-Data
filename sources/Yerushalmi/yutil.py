@@ -18,7 +18,7 @@ from sefaria.system.exceptions import BookNameError
 
 
 mesechtot = ["Avodah Zarah", "Bava Batra", "Bava Kamma", "Bava Metzia", "Beitzah", "Berakhot", "Bikkurim", "Chagigah", "Challah", "Demai", "Eruvin", "Gittin", "Horayot", "Ketubot", "Kiddushin", "Kilayim", "Maaser Sheni", "Maasrot", "Makkot", "Megillah", "Moed Katan", "Nazir", "Nedarim", "Niddah", "Orlah", "Peah", "Pesachim", "Rosh Hashanah", "Sanhedrin", "Shabbat", "Shekalim", "Sheviit", "Shevuot", "Sotah", "Sukkah", "Taanit", "Terumot", "Yevamot", "Yoma"]
-jtindxes = ["JTmock " + x for x in mesechtot]
+jtindxes = ["Jerusalem Talmud " + x for x in mesechtot]
 
 g_collection = "g_segs"
 

@@ -136,13 +136,13 @@ def combine_all_sentences_to_paragraphs():
     my_db.db.examples1_input.delete_many({})
     my_db.db.examples1_input.insert_many(combined_examples)
 
-def make_prodigy_input_by_refs(ref_list):
+def make_prodigy_input_by_refs(ref_list, lang, vtitle):
     walker = ProdigyInputWalker([])
     input_list = []
     for tref in ref_list:
         oref = Ref(tref)
-        text = walker.normalizer.normalize(oref.text('he').text)
-        temp_input_list = walker.get_input(text, tref, 'he')
+        text = walker.normalizer.normalize(oref.text(lang, vtitle=vtitle).text)
+        temp_input_list = walker.get_input(text, tref, lang)
         input_list += temp_input_list
     srsly.write_jsonl('data/test_input.jsonl', input_list)
 
@@ -173,7 +173,35 @@ if __name__ == "__main__":
     prev_tagged_refs = get_prev_tagged_refs('gold_output_full')
     # title_list = [i.title for i in IndexSet({"title": re.compile(r'Gilyon HaShas on')})]
     # print(title_list)
-    make_prodigy_input(title_list, [None]*len(title_list), ['en']*len(title_list), prev_tagged_refs)
+    # make_prodigy_input(title_list, [None]*len(title_list), ['en']*len(title_list), prev_tagged_refs)
+    ref_list = [r.strip() for r in """Jerusalem Talmud Yevamot 2:4:8
+    Jerusalem Talmud Chagigah 2:5:2
+    Jerusalem Talmud Chagigah 3:2:5
+    Jerusalem Talmud Horayot 1:1:2
+    Jerusalem Talmud Horayot 1:1:4
+    Jerusalem Talmud Horayot 3:2:14
+    Jerusalem Talmud Horayot 1:8:3
+    Jerusalem Talmud Horayot 1:8:5
+    Jerusalem Talmud Horayot 2:1:2
+    Jerusalem Talmud Horayot 2:5:3
+    Jerusalem Talmud Shabbat 7:2:8
+    Jerusalem Talmud Shabbat 1:8:6
+    Jerusalem Talmud Shabbat 12:1:6
+    Jerusalem Talmud Shabbat 16:5:2
+    Jerusalem Talmud Shabbat 16:7:2
+    Jerusalem Talmud Shabbat 17:6:2
+    Jerusalem Talmud Shabbat 21:3:1
+    Jerusalem Talmud Shabbat 19:5:2
+    Jerusalem Talmud Shabbat 1:8:3
+    Jerusalem Talmud Shabbat 7:2:36
+    Jerusalem Talmud Shabbat 17:1:3
+    Jerusalem Talmud Berakhot 1:1:1
+    Jerusalem Talmud Berakhot 9:1:4
+    Jerusalem Talmud Berakhot 2:8:3
+    Jerusalem Talmud Berakhot 2:4:16
+    Jerusalem Talmud Berakhot 2:4:5
+    Jerusalem Talmud Berakhot 2:3:16""".split('\n')]
+    make_prodigy_input_by_refs(ref_list, 'en', 'Guggenheimer Translation 2.1')
 
     # combine_all_sentences_to_paragraphs()
-    # make_prodigy_input_sub_citation('gilyon_output', 'gilyon_sub_citation_input')
+    # make_prodigy_input_sub_citation('yerushalmi_output2', 'yerushalmi_sub_citation_input2')

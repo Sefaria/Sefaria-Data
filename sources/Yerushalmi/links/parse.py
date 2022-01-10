@@ -26,8 +26,20 @@ try:
         MAPPINGS = json.load(fp)
 except FileNotFoundError:
     MAPPINGS = {}
-yer = 'ירושלמי דמע'
-
+yer = 'תלמוד ירושלמי'
+LINES = {}
+lines = json.load(open('lines_mapping.json', encoding='utf-8'))
+for l in lines:
+    mas, page, line = l.split(', ')
+    try:
+        LINES[mas]
+    except KeyError:
+        LINES[mas] = {}
+    try:
+        LINES[mas][page]
+    except KeyError:
+        LINES[mas][page] = {}
+    LINES[mas][page][line] = lines[l]
 
 def update_json(links):
     try:
@@ -103,11 +115,14 @@ def get_book(book, cat, more_books=[]):
     if book == "תמ'":
         book = "תמו'"
     if book == "מע'":
-        book = "מעש'"
+        book = "מעשרו'"
+    if book == 'מע"ש':
+        book = "מעשר שני"
     books = library.get_indexes_in_category(cat, full_records=True)
     if cat == 'Bavli':
         books = books[:-14]
     books = find_book_abbr(book, [re.sub(f'{to_del} |תלמוד ', '', index.get_title('he')) for index in books]+more_books)
+    books = list(set(books))
     if len(books) != 1:
         #print(f'for {book} found books: {books}in {cat}')
         return ''
@@ -128,7 +143,7 @@ def accurate_ref(text, ref):
     if not text:
         G+=1
         return ref
-    ver = 'Wikisource Talmud Bavli' if Ref(ref).is_bavli() else 'Mishnah, ed. Romm, Vilna 1913' if 'Mishnah' in ref else 'Mechon-Mamre' if 'JTmock' in ref else None
+    ver = 'Wikisource Talmud Bavli' if Ref(ref).is_bavli() else 'Mishnah, ed. Romm, Vilna 1913' if 'Mishnah' in ref else 'Mechon-Mamre' if 'Jerusalem Talmud' in ref else None
     if 'Minor Tractates' in Ref(ref).index.categories:
         ver = None
     match = match_ref(Ref(ref).text('he', ver), [text], base_tokenizer=lambda x: re.sub('[^א-ת ]', '', x).split()
@@ -194,14 +209,26 @@ def misnah_and_tosefta(text):
         refs.append(ref)
     return refs
 
+def next_page(page):
+    page = int(page[:-1]) * 4 + ord(page[-1]) - 96
+    return str(page//4) + chr(page%4+97)
+
 def get_all_chapters_alts(perek):
-    ob = OverlayBuilder('Guggenheimer (structured)', 'Venice Columns', '', '', '')
+    '''ob = OverlayBuilder('Guggenheimer (structured)', 'Venice Columns', '', '', '')
     yerushalmi_chapters = Ref(perek.book).all_subrefs()
     latest_addr = None
     pereks = []
     for yc in yerushalmi_chapters:
         pereks.append(ob.getAddressRangesForPerek(yc, latest_addr))
         latest_addr = pereks[-1][-1]["addr"]
+    return pereks'''
+    pereks = []
+    for node in library.get_index(perek.book).alt_structs['Venice']['nodes']:
+        pereks.append({})
+        page = node['startingAddress']
+        for ref in node['refs']:
+            pereks[-1][page] = ref
+            page = next_page(page)
     return pereks
 
 def find_halakha(loc, mas):
@@ -239,21 +266,29 @@ def find_page(mas, loc, halakha):
     page = f'{daf}{amud}'
     pereks = get_all_chapters_alts(perek)
     if not perek.is_book_level():
-        pereks = [pereks[int(perek.normal().split()[-1])-1]]
+        try:
+            pereks = [pereks[int(perek.normal().split()[-1])-1]]
+        except IndexError:
+            return
     matches = []
     for per in pereks:
-        for p in per:
-            if page == p['addr']:
-                matches.append(p)
+        try:
+            matches.append(per[page])
+        except KeyError:
+            pass
     if not matches:
         print(f'doesnt find page {page} in {mas}')
         return
+    elif len(matches) == 1:
+        ref = matches[0]
+    else:
+        ref = f'{Ref(matches[0]).all_segment_refs()[0].normal()}-{Ref(matches[-1]).all_segment_refs()[-1].normal().split()[-1]}'
     try:
         MAPPINGS[mas]
     except KeyError:
         MAPPINGS[mas] = {}
-    MAPPINGS[mas][f'{page}, {perek}'] = f'{matches[0]["start"].tref}-{matches[-1]["end"].tref.split()[-1]}'
-    return f'{matches[0]["start"].tref}-{matches[-1]["end"].tref.split()[-1]}'
+    MAPPINGS[mas][f'{page}, {perek}'] = ref
+    return ref
 
 def get_yerushalmi(emas, loc, start=None, page=None):
     loc = fix_text(loc)
@@ -342,6 +377,28 @@ def tanaitic(text):
             new.append(ref)
     return new
 
+def get_ref_from_line(mas, page, line, ref):
+    start = Ref(ref).all_segment_refs()[0].normal()
+    end = Ref(ref).all_segment_refs()[-1].normal()
+    line = int(line)
+    for l in range(line):
+        try:
+            start = LINES[mas][page][line-l]
+        except KeyError:
+            pass
+        else:
+            start = sorted(start, key=lambda x: int(x.split(':')[-1]))[0]
+            break
+    for l in range(line, 100):
+        try:
+            end = LINES[mas][page][l]
+        except KeyError:
+            pass
+        else:
+            end = sorted(end, key=lambda x: int(x.split(':')[-1]))[-1]
+            break
+    return Ref(f'{start}-{end.split()[-1]}').normal()
+
 def parallel(text):
     refs = []
     if pd.isna(text) or not text:
@@ -349,7 +406,7 @@ def parallel(text):
     text = fix_text(text)
     if text:
         #yerushalmi
-        for yer in re.findall(r'[^, ]{1,} [^ ]+?, [^ ]* \)[^ ]* ע"[א-ד] \(\d', text) + re.findall(r'[^ ;\)\(]+ [^ \)\(]+ ע"[א-ד]', text): #TODO find also refs after ;
+        for yer in re.findall(r'[^, ]{1,} [^ ]+?, [^ ]* \)[^ ]* ע"[א-ד] \(\d+', text) + re.findall(r'[^ ;\)\(]+ [^ \)\(]+ ע"[א-ד](?: \(\d+)?', text) + re.findall(r'[^ ;\)\(]+ [^ \)\(]+, [^ \)\(]+ \([^ \)\(]+ ע"[א-ד],? \d*', text): #TODO find also refs after ;
             mas = yer.split()[0].replace("ביכ'", "בכורי'").replace('גט', 'גיט')
             if mas == 'שם' or mas == 'דף':
                 continue
@@ -357,7 +414,14 @@ def parallel(text):
             if not mas:
                 continue
             mas = Ref(mas).normal().replace('Mishnah ', '')
-            refs.append(get_yerushalmi(mas, yer))
+            yer_ref = get_yerushalmi(mas, yer)
+            yline = re.findall(r'\d+', yer)
+            if yline and yer_ref:
+                yline = yline[0]
+                ypage = re.findall('[א-פ][א-י]? ע"[א-ד]', yer)[0]
+                refs.append(get_ref_from_line(mas, ypage, yline, yer_ref))
+            else:
+                refs.append(yer_ref)
         #rabba
         for occur in re.findall('([^ ]*?"ר) ([^ ]* [^ ]*)', text):
             book = get_book(occur[0].replace('ב"ר', 'בר"ר'), 'Midrash Rabbah')
@@ -402,12 +466,22 @@ def bavli(text):
 def refresh_vstates():
     for fname in os.listdir('csvs'):
         mas = fname[:-4]
-        Ref(f'JTmock {mas}').index.versionState().refresh()
+        Ref(f'Jerusalem Talmud {mas}').index.versionState().refresh()
 
 def check_sequence(rows):
     for a, b in zip(rows[:-1], rows[1:]):
         if b['ref'].follows(a['ref']):
             print('sequence problem {} found on {} but {} found on {}'.format(a["row"]["תח\' ציטוט"], a["ref"], b["row"]["תח\' ציטוט"], b["ref"]))
+
+def lines_map(mas, item):
+    page_reg = '\(([א-פ][א-י]? ע"[א-ד])'
+    page = re.findall(page_reg, item['row']["מקום בירו'"])[0]
+    line = re.findall(r'\d+', item['row']["מקום בירו'"])[0]
+    global LINES
+    try:
+        LINES[(f'{mas}, {page}, {line}')].add(item['ref'].normal())
+    except KeyError:
+        LINES[(f'{mas}, {page}, {line}')] = {item['ref'].normal()}
 
 if __name__ == '__main__':
     #refresh_vstates()
@@ -443,7 +517,7 @@ if __name__ == '__main__':
         if mas in done:
             continue
         print(mas)
-        Ref(f'JTmock {mas}').index.versionState().refresh()
+        Ref(f'Jerusalem Talmud {mas}').index.versionState().refresh()
         try:
             MAPPINGS[mas]
         except KeyError:
@@ -475,6 +549,7 @@ if __name__ == '__main__':
                 for i, item in enumerate(newpage):
                     if item['ref']:
                         start = item['ref']
+                        #lines_map(mas, item)
                     else:
                         for row in newpage[i+1:]:
                             if row['ref']:
@@ -522,7 +597,7 @@ if __name__ == '__main__':
                     if (not Ref(ref).is_segment_level() or '-' in ref) and yer_text:
                         ref = accurate_ref(yer_text, Ref(ref).normal())
                     links.append({'refs': [yer_ref.normal(), Ref(ref).normal()],
-                                 'type': '',
+                                 'type': 'Related Passage',
                                   'auto': True,
                                   'generated_by': 'yerushalmi tables'})
                 if sys.getsizeof(links) > 10**4:
@@ -534,9 +609,12 @@ if __name__ == '__main__':
         with open('done.json', 'w') as fp:
             json.dump(done, fp)
     update_json(links)
+        
 
     print(Y,N,M)
     print(F,G)
     print(len(links))
     #with open('bad_tables.csv', 'w', encoding='utf-8', newline='') as fp:
     #    fp.write(report)
+
+#json.dump({k: list(v) for k, v in LINES.items()}, open('lines_mapping.json', 'w', encoding='utf-8'))

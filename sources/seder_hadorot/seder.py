@@ -1,6 +1,7 @@
 import django
 django.setup()
 from sefaria.model import *
+from sefaria.model.schema import *
 import re
 from sources.functions import post_text, post_index, getGematria, post_link
 from sefaria.system.exceptions import DuplicateRecordError
@@ -31,14 +32,30 @@ class Node():
             self.node.depth = depth
         self.node.validate()
 
+class DicNoode():
+
+    def __init__(self, first, last, hwm, name=''):
+        self.name = name
+        self.node = DictionaryNode({'lexiconName': 'Seder HaDorot'})
+        self.node.firstWord = first
+        self.node.lastWord = last
+        self.node.headwordMap = hwm
+        if name:
+            pass
+        else:
+            self.node.key = 'default'
+            self.node.default = True
+        self.node.validate()
 
 class Parser():
 
     def __init__(self):
+        seder = 'Seder HaDorot'
         self.alts = []
-        self.index = Node('Seder HaDorot', 'סדר הדורות')
+        self.index = Node(seder, 'סדר הדורות')
         self.intro = Node('Introduction', 'הקדמה', typ='ja', depth=1)
         self.almanac = Node('Almanac', 'סדר ימות עולם')
+        #default = DicNoode('1', '6000', [['האלף הראשון', f'{seder}, Almanach 1-1000'], ['האלף השני', f'{seder}, Almanach 1001-2000'], ['האלף השלישי', f'{seder}, Almanach 2001-3000'], ['האלף הרביעי', f'{seder}, Almanach 3001-4000'], ['האלף החמישי', f'{seder}, Almanach 4001-5000'], ['האלף השישי', f'{seder}, Almanach 5001-6000']])
         default = Node(typ='ja')
         index = Node('Index', 'מפתח', typ='ja')
         self.almanac.node.append(default.node)
@@ -305,8 +322,18 @@ class Parser():
         self.parse_hagahot()
 
     def post(self):
+        '''l = Lexicon()
+        l.name = l.index_title = 'Seder HaDorot'
+        l.version_lang = l.to_language = 'he'
+        l.language = 'heb'
+        l.text_categories = []
+        try:
+            l.save()
+        except DuplicateRecordError:
+            pass'''
+
         server = 'http://localhost:9000'
-        #server = 'https://shem.cauldron.sefaria.org'
+        #server = 'https://jtlinks.cauldron.sefaria.org'
         self.index.node.validate()
         index_dict = {
             "title": self.index.name,

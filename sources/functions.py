@@ -11,10 +11,13 @@ import sys
 import codecs
 import re
 import bleach
+from docx2python import docx2python
+from pathlib import Path
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
 sys.path.insert(0, "../")
 from time import sleep
+from collections import defaultdict, Counter
 from .local_settings import *
 import django
 django.setup()
@@ -31,6 +34,14 @@ from functools import wraps
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup, Tag, NavigableString
+
+ALLOWED_TAGS = ("i", "b", "br", "u", "strong", "em", "big", "small", "img", "sup", "span", "a")
+ALLOWED_ATTRS = {
+    'span': ['class', 'dir'],
+    'i': ['data-commentator', 'data-order', 'class', 'data-label', 'dir'],
+    'img': lambda name, value: name == 'src' and value.startswith("data:image/"),
+    'a': ['dir', 'class', 'href', 'data-ref'],
+}
 
 gematria = {}
 gematria['א'] = 1

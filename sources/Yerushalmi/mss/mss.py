@@ -33,17 +33,32 @@ def get_page_ref(mas, page):
     pereks = get_all_chapters_alts(mas)
     matches = []
     for per in pereks:
-        for p in per:
-            if page == p['addr']:
-                matches.append(p)
+        try:
+            matches.append(per[page])
+        except KeyError:
+            pass
     if not matches:
         print(f'doesnt find page {page} in {mas}')
-        MAPPING[f'{mas}, {page}'] = ('JTmock Makkot 3:5:1', '3:13:5')
-        return 'JTmock Makkot 3:5:1', '3:13:5'
+        MAPPING[f'{mas}, {page}'] = ('Jerusalem Talmud Makkot 3:5:1', '3:13:5')
+        return 'Jerusalem Talmud Makkot 3:5:1', '3:13:5'
+    start = matches[0].all_segment_refs()[0].normal()
+    end = matches[-1].all_segment_refs()[-1].normal().split()[-1]
+    if start.endswith('1:1:2'):
+        start = Ref(start[:-1] + '1')
+    MAPPING[f'{mas}, {page}'] = (start, end)
+    return start, end
+
+    '''    for p in per:
+        if page == p['addr']:
+            matches.append(p)
+    if not matches:
+        print(f'doesnt find page {page} in {mas}')
+        MAPPING[f'{mas}, {page}'] = ('Jerusalem Talmud Makkot 3:5:1', '3:13:5')
+        return 'Jerusalem Talmud Makkot 3:5:1', '3:13:5'
     elif matches[0]["start"].tref.endswith('1:1:2'):
         matches[0]["start"] = Ref(matches[0]["start"].tref[:-1] + '1')
     MAPPING[f'{mas}, {page}'] = (f'{matches[0]["start"].tref}', f'{matches[-1]["end"].tref.split()[-1]}')
-    return f'{matches[0]["start"].tref}', f'{matches[-1]["end"].tref.split()[-1]}'
+    return f'{matches[0]["start"].tref}', f'{matches[-1]["end"].tref.split()[-1]}'''
 
 def create_manusripts():
     m = Manuscript()
