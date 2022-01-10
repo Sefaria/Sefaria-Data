@@ -1,4 +1,16 @@
 from sources.functions import *
+print(Ref("Peninei Halakhah, Family Purity, Introduction").as_ranged_segment_ref())
+assert Ref("Zohar").as_ranged_segment_ref() == Ref("Zohar 1:1a:1-4:211b:1")
+assert Ref("Berakhot").as_ranged_segment_ref() == Ref("Berakhot 2a:1-64a:15")
+assert Ref('Genesis').as_ranged_segment_ref() == Ref('Genesis.1.1-50.26')
+assert Ref('Shabbat.3a.1').as_ranged_segment_ref() == Ref('Shabbat.3a.1')
+assert Ref('Rashi on Shabbat.3b').as_ranged_segment_ref() == Ref('Rashi on Shabbat.3b.1.1-3b.13.1')
+assert Ref('Tur, Orach Chaim.57-59').as_ranged_segment_ref() == Ref('Tur, Orach Chaim.57.1-59.1')
+# empty at the end
+assert Ref('Tosafot on Bava Metzia.2a').as_ranged_segment_ref() == Ref('Tosafot on Bava Metzia.2a.1.1-2a.12.1')
+# empty at the beginning
+assert Ref('Tosafot on Bava Metzia.3a').as_ranged_segment_ref() == Ref('Tosafot on Bava Metzia.3a.1.1-3a.18.1')
+assert Ref('Genesis.1-14').as_ranged_segment_ref() == Ref('Genesis.1.1-14.24')
 mishnayot = library.get_indices_by_collective_title("English Explanation of Mishnah")
 for mishnah in mishnayot:
     index = library.get_index(mishnah)
