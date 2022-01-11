@@ -49,6 +49,7 @@ with open("essays.csv", 'w') as essay_f:
                 m = re.search("\((.*?)\)", poss_ref)
                 if m and len(poss_ref) < 50:
                     poss_ref = f"{book} {m.group(1)}".replace('–', "-").replace("1-4:43", "1:1-4:43")
+                    assert poss_ref.find(":") == -1 or poss_ref.find(":") != poss_ref.rfind(":")
                     try:
                         norm_ref = Ref(poss_ref).as_ranged_segment_ref()
                         essay_refs[(norm_ref, k)] = []
@@ -94,12 +95,15 @@ for k in new_text:
                     ref = ref.replace("2:4a", "2:4").replace("2:4b", "2:4").replace('–', "-")
                     ref = ref.replace("Exodus 28:6-12, 13-14", "Exodus 28:6-14").replace("Deuteronomy 2, 3:1-22", "Deuteronomy 2:1-3:22")
                     try:
+                        not_found = True
                         for essay in essay_refs.keys():
                             essay_ref, essay_title = essay
                             if essay_ref.contains(Ref(ref[1:-1])) and essay_title.find("On the Book") == -1:
                                 essay_refs[(essay_ref, essay_title)].append((Ref(ref[1:-1]).as_ranged_segment_ref(), title))
                                 essay_refs[(essay_ref, essay_title)].append(line.replace(m.group(0), ""))
                                 found_essay = (essay_ref, essay_title)
+                                not_found = False
+                        assert not_found is False
                     except Exception as e:
                         invalid_refs.append((title, ref))
                 elif found_essay:
@@ -112,10 +116,12 @@ root = SchemaNode()
 root.add_primary_titles("Everett Fox", "")
 
 torah_books = ["Torah, "+x+"," for x in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]]
+subessays = defaultdict(dict)
 with open("titles for translation.csv", 'w') as translation_f:
     translation_writer = csv.writer(translation_f)
     for ref_title in essay_refs:
         ref, title = ref_title
+
         if node:
              root.append(node)
         node = SchemaNode()
@@ -124,10 +130,13 @@ with open("titles for translation.csv", 'w') as translation_f:
         node.add_primary_titles(title, "")
         translation_writer.writerow([title, ""])
         ref = ref.normal()
+        title = title.strip()
         i = 0
         for subpart in essay_refs[ref_title]:
             if isinstance(subpart, tuple):
                 subref, subtitle = subpart
+                subtitle = subtitle.strip()
+                subessays[title][subtitle] = [subref.normal()]
                 subref = subref.normal()
                 subnode = JaggedArrayNode()
                 subnode.depth = 1
@@ -138,7 +147,10 @@ with open("titles for translation.csv", 'w') as translation_f:
                 i = 0
             else:
                 i += 1
+                subpart = subpart.strip()
+                subessays[title][subtitle].append(subpart)
 
+json.dump(subessays, open("subessays.json", 'w'))
 vtitle = "https://www.penguinrandomhouse.com/books/55160/the-five-books-of-moses-by-everett-fox/"
 for invalid_ref in invalid_refs:
     title, ref = invalid_ref

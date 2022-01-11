@@ -13,6 +13,7 @@ import re
 import bleach
 from docx2python import docx2python
 from pathlib import Path
+from sefaria.utils.hebrew import *
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
 sys.path.insert(0, "../")
