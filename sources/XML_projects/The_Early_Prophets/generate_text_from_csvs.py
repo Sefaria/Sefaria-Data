@@ -10,7 +10,8 @@ with open("essay contents/essays.csv") as f:
         if book not in order_essays:
             order_essays.append(book)
 subessays = json.load(open("essay contents/subessays.json", 'r'))
-
+other_subessays = json.load(open("essay contents/subessays_full.json", 'r'))
+subessays["The Primeval History"] = other_subessays["I: the Primeval History"]
 order = {"Genesis": order_essays[1:7], "Exodus": order_essays[7:15], "Leviticus": order_essays[15:23], "Numbers": order_essays[23:28], "Deuteronomy": order_essays[28:-1]}
 text = json.load(open("text.json", 'r'))
 book_text = defaultdict(dict)

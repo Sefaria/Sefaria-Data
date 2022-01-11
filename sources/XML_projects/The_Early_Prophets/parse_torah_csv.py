@@ -150,7 +150,7 @@ with open("titles for translation.csv", 'w') as translation_f:
                 subpart = subpart.strip()
                 subessays[title][subtitle].append(subpart)
 
-json.dump(subessays, open("subessays.json", 'w'))
+json.dump(subessays, open("subessays_full.json", 'w'))
 vtitle = "https://www.penguinrandomhouse.com/books/55160/the-five-books-of-moses-by-everett-fox/"
 for invalid_ref in invalid_refs:
     title, ref = invalid_ref
