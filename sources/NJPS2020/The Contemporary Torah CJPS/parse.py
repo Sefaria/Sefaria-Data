@@ -4,6 +4,7 @@ import time
 from bs4 import BeautifulSoup, NavigableString
 from collections import Counter
 endings = set()
+styles = defaultdict(list)
 startings = set()
 verse_length = Counter()
 def check_str(v, pos='ending'):
@@ -38,7 +39,12 @@ for f in os.listdir("."):
         prev_was_lord = False
         for p_num, p in enumerate(xml.find_all("para")):
             if p.name == "para":
-                if len(p) > 1 or len(p.attrs) > 1:
+                if p.get("style", False):
+                    if p["style"] == "rem":
+                        print(p)
+                verses_bool = len([x for x in p.contents if isinstance(x, Tag)]) > 0
+                if (len(p) > 1 or len(p.attrs) > 1):
+                    styles[p["style"]].append(p)
                     if p["style"] in ["q1", "q2"]:
                         text_dict[curr_ch][curr_seg] += "<br/>"
                     for v in p.contents:
@@ -81,7 +87,7 @@ for f in os.listdir("."):
                                     if "–" not in ft_ref:
                                         assert ft_ref in curr_ref
                                     else:
-                                        print(ft_ref)
+                                        pass
                                 elif ft.attrs["style"] == "fq":
                                     ft_txt += "<b>{}</b>".format(ft.text)
                                 elif ft.attrs["style"] == "ft":
@@ -128,23 +134,19 @@ for f in os.listdir("."):
                 diff = 5
             else:
                 diff = 10
-            if abs(len(orig.split()) - len(new.split())) > diff:
-                print("****")
-                print("{} {}:{}".format(title, ch, v+1))
-                print(orig)
-                print(new)
+            # if abs(len(orig.split()) - len(new.split())) > diff:
+            #     print("****")
+            #     print("{} {}:{}".format(title, ch, v+1))
+            #     print(orig)
+            #     print(new)
 
     text_dict = convertDictToArray(text_dict)
     send_text = {
         "language": "en",
-        "versionTitle": "Contemporary JPS",
+        "versionTitle": "Contemporary JPS (tags removed)",
         "versionSource": "https://www.sefaria.org",
         "text": text_dict
     }
-    post_text(title, send_text, server="https://germantalmud.cauldron.sefaria.org")
-    time.sleep(10)
+    #post_text(title, send_text, server="http://localhost:8000")
 
-
-print(p_styles)
-print(other_tags)
-print(verse_length.most_common(20))
+print(styles)

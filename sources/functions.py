@@ -111,26 +111,7 @@ def create_intro():
     intro.validate()
     return intro
 
-def any_hebrew_in_str(line):
-    '''
-    Returns true if there is one Hebrew character in line.
-    Useful for when a bad encoding yields nonsense amidst Hebrew text
-    or when a segment has both English and Hebrew words.
-    :param line:
-    :return:
-    '''
-    is_hebrew = False
-    for i in range(len(line)):
-        char = line[i: i + 2]
-        try:
-            char = char.decode('utf-8')
-            any_hebrew = re.findall("[\u0591-\u05EA]", char)
-            is_hebrew = any_hebrew != []
-            if is_hebrew:
-                return True
-        except UnicodeDecodeError:
-            pass
-    return False
+
 
 def any_english_in_str(line):
     return re.findall("[a-zA-Z0-9]{1}", line) != []

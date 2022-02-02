@@ -251,7 +251,8 @@ class XML_to_JaggedArray:
         def extractIDsAndSupNums(text):
             ft_ids = []
             ft_sup_nums = []
-            xrefs = BeautifulSoup(text).findAll('xref')
+            xrefs = re.findall(footnote_pattern, text) #BeautifulSoup("<p>"+text+"</p>").findAll("xref")
+            xrefs = [BeautifulSoup("<p>"+text+"</p>").find("xref") for text in xrefs]
             for xref in xrefs:
                 ft_ids.append(xref['rid'])
                 ft_sup_nums.append(xref.text)

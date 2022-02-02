@@ -1,6 +1,6 @@
 from sources.functions import *
 from data_utilities.dibur_hamatchil_matcher import match_text
-
+import time
 def dher(x):
     result = re.sub("<b>(.*?)</b>.*", "\g<1>", x).replace(":", "").replace("[", "").replace("]", "").replace(",", "").replace(".", "").replace(";", "")
     return bleach.clean(result, tags=[], strip=True)
@@ -19,7 +19,7 @@ def dher3(s):
 
 
 books = ["Joshua", "Judges", "I Samuel", "Ii Samuel", "I Kings", "Ii Kings"]
-with open("The Early Prophets.csv", 'r') as f:
+with open("The Early Prophets Just Translation.csv", 'r') as f:
 
     # if new chapter, dont add anything until we get to "\d .*?".  then we check to see if it has <bold> tags to decide if it's a footnote
     # all the while, we
@@ -189,14 +189,17 @@ for book in books:
                 writer.writerow([f"{book} {ch}:{p+1}", pasuk])
 
 for book in text:
+    if book in ["Joshua", "Judges", "I Samuel", "II Samuel"]:
+        continue
     text[book] = convertDictToArray(text[book])
     send_text = {
         "language": "en",
         "versionSource": "https://www.penguinrandomhouse.com/books/55159/the-early-prophets-joshua-judges-samuel-and-kings-by-everett-fox/",
-        "versionTitle": "Everett Fox",
+        "versionTitle": "The Early Prophets, by Everett Fox",
         "text": text[book]
     }
-    post_text(book.replace("Ii", "II"), send_text,server="http://localhost:8000")
+    post_text(book.replace("Ii", "II"), send_text,server="https://ste.cauldron.sefaria.org")
+    time.sleep(300)
 
 for x in not_found:
     print(x)
