@@ -9,20 +9,21 @@ import numpy as np
 import pymongo
 from sefaria.settings import *
 import logging
-from data_utilities.util import * #get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
+# from data_utilities.util import * #get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
+from research.link_disambiguator.modify_tanakh_links import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
 import datetime
 # logging.basicConfig(filename='wordLevelData.log', encoding='utf-8', level=logging.DEBUG)
 path = os.getcwd()
 log = open(f'{path}/wordLevelData.log', "w+")
-
 client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)  # (MONGO_ASPAKLARIA_URL)
 db_qf = client.quotations
 
 wl = WeightedLevenshtein()
 min_thresh=22
-find_url = "https://talmudfinder-1-1x.loadbalancer.dicta.org.il/TalmudFinder/api/markpsukim" # PasukFinder
+find_url = "https://talmudfinder-1-3.loadbalancer.dicta.org.il/TalmudFinder/api/markpsukim"  # PasukFinder
 # parse_url = f"https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/parsetogroups?smin={min_thresh}&smax=10000"
-SLEEP_TIME = 1
+SLEEP_TIME = 0
+
 run_type = f'date: {datetime.date} type: chasidut night run'
 
 sandbox = SEFARIA_SERVER.split(".")[0] if SEFARIA_SERVER != "http://localhost:8000" else ''
@@ -55,7 +56,22 @@ def find_pesukim(base_text, mode="tanakh", thresh=0):
         "thresh": thresh,
         "fdirectonly": False
     }
-    response = requests.post(find_url, data=json.dumps(data_text))
+    response = requests.post(find_url, data=json.dumps(data_text), headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0',
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Content-Type': 'text/plain;charset=UTF-8',
+    'Origin': 'https://citation.dicta.org.il',
+    'Connection': 'keep-alive',
+    'Referer': 'https://citation.dicta.org.il/',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-site',
+    'DNT': '1',
+    'Sec-GPC': '1',
+    'TE': 'trailers',
+})
     response_json = response.json()
     sleep(SLEEP_TIME)
     return response_json
@@ -399,6 +415,31 @@ def post_links_from_file(file_name, score=22, server=SEFARIA_SERVER):
             links_to_post.append(l)
     post_link(links_to_post, server=server)
 
+def bunch_refs_to_ranged_refs(links):
+    # assuming all of one side is the same segment looking here at the other side
+    ref_groups= []
+    to_side_orefs = [Ref(l['refs'][0]) for l in links]
+    for r in to_side_orefs:
+        found_group = False
+        prev_r = r.prev_segment_ref()
+        if r.prev_segment_ref() in to_side_orefs:
+            for group_i, group in enumerate(ref_groups):
+                if prev_r in group:
+                    group.append(r)
+                    ref_groups[group_i] = group
+                    found_group = True
+                    break
+        if not found_group:
+            ref_groups.append([r])
+    print(ref_groups)
+    output_links = []
+    # for group in ref_groups:
+    #     if len(group) > 1:
+    #         ranged_ref = Ref(f'{group[0].he_normal()} - {group[-1].he_normal()}')
+    #     else:
+    #         output_links.append(group[0])
+    #     output_links.append(ranged_ref)
+
 
 def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority_tanakh_chunk=None, offline=None, mongopost=True):
     oref = Ref(tref)
@@ -408,7 +449,8 @@ def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority
         # print("no links found")
         return
     links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder', type='quotation_auto') for link_option in link_options])
-    write_to_csv(links, linkMatchs, filename=f"dicta_{tref}")
+    ranged_links = bunch_refs_to_ranged_refs(links)
+    write_to_csv(links, linkMatchs, filename=f"dicta_{oref.book}")
     # print(links)
     # write_links_to_json(f'{tref}', links)
     if post:
@@ -470,7 +512,7 @@ def mongo_post(links):
     db_qf.quotations.insert_many(links)
 
 
-def run_offline(title, cat, min_thresh=22, post=False, mongopost = True, priority_tanakh_chunk_type=None, priority_fallback=None, max_word_number=30):
+def run_offline(title, cat, min_thresh=22, post=False, mongopost=True, priority_tanakh_chunk_type=None, priority_fallback=None, max_word_number=30, offline=True):
     """
 
     :param title:
@@ -486,9 +528,14 @@ def run_offline(title, cat, min_thresh=22, post=False, mongopost = True, priorit
     priority = trivial_priority(title, text_mapping, priority_tanakh_chunk_type)
     all_links = []
     for r in text_mapping.keys():
+        if offline or dicta_results_mapping.get(r, None):
+            offline1 = [text_mapping, dicta_results_mapping]
+        else:
+            print(f'API call, ref {r}')
+            offline1 = None
         if max_word_number and Ref(r).word_count() > max_word_number:
             continue
-        links = dicta_links_from_ref(f'{r}', post=post, min_thresh=min_thresh, offline=[text_mapping, dicta_results_mapping], mongopost=mongopost, priority_tanakh_chunk=priority.get(r,  priority_fallback))
+        links = dicta_links_from_ref(f'{r}', post=post, min_thresh=min_thresh, offline=offline1, mongopost=mongopost, priority_tanakh_chunk=priority.get(r,  priority_fallback))
         if links:
             all_links.extend(links)
     if post:
@@ -522,7 +569,7 @@ def trivial_priority(title, text_mapping, priority_type="perek"):
     else:
         try:
             r = Ref(priority_type)
-            priority = dict((k,r) for k in text_mapping.keys())
+            priority = dict((k, r) for k in text_mapping.keys())
         except AttributeError:
             return {}
     return priority
@@ -531,12 +578,14 @@ def offline_text_mapping_cat(cat):
     os.chdir(f'offline/text_mappings/{re.sub(" ", "_",cat)}')
     for ind_name in library.get_indexes_in_category(cat):
         ind = library.get_index(ind_name)
-        vs = [v for v in ind.all_segment_refs()[1].versionset('he')]
-
+        # vs = [v for v in ind.all_segment_refs()[1].versionset('he')]
+        vset = VersionSet({'title': ind.title, 'language': 'he', "priority" : { '$exists' : 'true' }})
+        vs = vset.records
         if vs:
             try:
                 create_file_for_offline_run(vs[0], ind_name)
             except KeyError:
+                print(ind_name)
                 pass
 
 if __name__ == '__main__':
@@ -558,9 +607,9 @@ if __name__ == '__main__':
     # #
     # # pear = (Ref('פרשת חקת'), Ref('ילקוט שמעוני על התורה, חקת'))
     # # links = get_links_ys(pear, post=True)
-    # text_mapping = get_links_from_file("Tzror_HaMor_on_Torah.json")
+    # text_mappings = get_links_from_file("Tzror_HaMor_on_Torah.json")
     # dicta_results_mapping = get_links_from_file("dicta_answers/Tzror_HaMor_on_Torah.json")
-    # links = dicta_links_from_ref(f'{range_ref}', post=False, min_thresh=22, priority_tanakh_chunk=Ref('Deuteronomy'), offline=[text_mapping, dicta_results_mapping])
+    # links = dicta_links_from_ref(f'{range_ref}', post=False, min_thresh=22, priority_tanakh_chunk=Ref('Deuteronomy'), offline=[text_mappings, dicta_results_mapping])
     # # f.close()
     # log.close()
     # # post_links_from_file("Numbers 13:1-15:41/ys_links.txt", score=10)
@@ -607,4 +656,5 @@ if __name__ == '__main__':
     #     except:
     #         print(f"book {title} failed!")
     # log.close()
-    pass
+    # offline_text_mapping_cat("Liturgy")
+    run_offline("Siddur Sefard", 'Liturgy', min_thresh=25, post=False, mongopost=True, priority_tanakh_chunk_type='psalms', max_word_number=100)

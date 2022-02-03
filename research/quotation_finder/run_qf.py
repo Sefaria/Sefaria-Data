@@ -66,14 +66,20 @@ def post_quotation_links(title, server=SEFARIA_SERVER, q=None):
          "$or": [{"type": "quotation_auto"}, {"type": "dibur_hamatchil"}]}
     ls = LinkSet(q)
     print(f"num of quotation_auto and dibur_hamatchil links {ls.count()}")
-    post_link([l.contents() for l in ls], server=server)
+    to_post = [l.contents() for l in ls]
+    n = len(to_post)
+    i = 0
+    for e in range(0, divmod(n, 300)[0]):
+        print(i)
+        post_link(to_post[i: min(i+300, n)], server=server)
+        i +=300
 
 
 if __name__ == '__main__':
-    def singal_arg(arg):
-        args = re.split("\|", arg)
-        citation_inserts_and_post_links(*args)
-    cProfile.run('singal_arg("Alshich on Torah|Torat Moshe, Warsaw, 1875|Alshich on Torah, Deuteronomy|tanakh_comm")')
+    # def singal_arg(arg):
+    #     args = re.split("\|", arg)
+    #     citation_inserts_and_post_links(*args)
+    # cProfile.run('singal_arg("Alshich on Torah|Torat Moshe, Warsaw, 1875|Alshich on Torah, Deuteronomy|tanakh_comm")')
  # #    arg = "Yalkut Shimoni on Torah|Yalkut Shimoni on Torah|Yalkut Shimoni on Torah|Midrash"
  # #    # singal_arg("Yalkut Shimoni on Nach|Yalkut Shimoni on Nach|Yalkut Shimoni on Nach|Midrash")
  # #    nodes = ['First Day',
@@ -102,3 +108,4 @@ if __name__ == '__main__':
     # run_offline("Alshich on Torah", 'tanakh_comm', min_thresh=25, post=False, mongopost=True, priority_tanakh_chunk_type='perek',
     #             max_word_number=None)
 
+    post_quotation_links('^Siddur', server=SEFARIA_SERVER, q=None)
