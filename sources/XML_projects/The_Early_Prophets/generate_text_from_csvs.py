@@ -1,6 +1,7 @@
 from sources.functions import *
+from collections import OrderedDict
 essays = defaultdict(list)
-subessays = defaultdict(dict)
+subessays = OrderedDict()
 order_essays = []
 with open("essay contents/essays.csv") as f:
     for row in csv.reader(f):
@@ -9,9 +10,22 @@ with open("essay contents/essays.csv") as f:
         essays[book].append(comm)
         if book not in order_essays:
             order_essays.append(book)
-subessays = json.load(open("essay contents/subessays.json", 'r'))
-other_subessays = json.load(open("essay contents/subessays_full.json", 'r'))
-subessays["Part I; The Primeval History"] = other_subessays["I: the Primeval History"]
+subessays = json.load(open("essay contents/subessays_full.json", 'r'))
+# del subessays['Torah, Numbers On Bil’am']
+# del subessays["Part II; The Rebellion Narratives"]['Bil’am the Prophet']
+# del subessays["Part II; The Rebellion Narratives"]['Bil’am’s First Visions']
+
+essays["Part I; The Cult and the Priesthood"].append("O<small>N</small> A<small>NIMAL</small> S<small>ACRIFICE</small>")
+for line in essays["On Animal Sacrifice"]:
+    essays["Part I; The Cult and the Priesthood"].append(line)
+
+essays["Part II; Ritual Pollution and Purification"].append("O<small>N</small> T<small>HE</small> D<small>IETARY</small> R<small>ULES</small>")
+for line in essays["On the Dietary Rules"]:
+    essays["Part II; Ritual Pollution and Purification"].append(line)
+
+essays["Part II; Ritual Pollution and Purification"].append("O<small>N</small> T<small>HE</small> R<small>ITUAL</small> P<small>OLLUTION</small> O<small>F</small> T<small>HE</small> B<small>ODY</small>")
+for line in essays["On the Ritual Pollution of the Body"]:
+    essays["Part II; Ritual Pollution and Purification"].append(line)
 order = {"Genesis": order_essays[1:7], "Exodus": order_essays[7:15], "Leviticus": order_essays[15:23], "Numbers": order_essays[23:28], "Deuteronomy": order_essays[28:-1]}
 text = json.load(open("text.json", 'r'))
 book_text = defaultdict(dict)
@@ -82,8 +96,8 @@ t = Term().load({"name": "Everett Fox"})
 post_term(t.contents(), server="http://localhost:8000")
 indx = {"title": "The Five Books of Moses, by Everett Fox", "schema": root.serialize(), "categories": ["Tanakh", "Modern Commentary on Tanakh"], "dependence": "Commentary",
         "collective_title": "Everett Fox", "base_text_titles": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]}
-#post_index(indx, server="http://localhost:8000")
-vtitle = "The Five Books of Moses, by Everett Fox"
+post_index(indx, server="http://localhost:8000")
+vtitle = "The Five Books of Moses, by Everett Fox. New York, Schocken Books, 1995"
 subessay_links = []
 calls = {}
 essay_refs = {}
@@ -109,6 +123,12 @@ for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
                 print(Ref(everett).text('en').text[0])
                 he_display = f"{library.get_index(book).get_title('he')} {comment_heb} {encode_hebrew_numeral(j+1)}"
                 he_tanakh = Ref(subessays[essay][subessay][0]).he_normal()
+                if "-" in subessays[essay][subessay][0]:
+                    sec, toSec = subessays[essay][subessay][0].split("-") #4:1-16 is OK, 4:1-5:1 is OK, 4-5:1 is not OK, 4-5 is OK
+                    first_colon = sec.find(":") > 0
+                    second_colon = toSec.find(":") > 0
+                    assert not(not first_colon and second_colon)
+
                 subessay_links.append({"refs": [subessays[essay][subessay][0], everett],
                                        "auto": True, "type": "essay", "generated_by": "everett_fox_essay_links",
                                        "versions": [{"title": vtitle,
@@ -140,7 +160,7 @@ for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
 
         calls[f"The Five Books of Moses, by Everett Fox, {book}, {essay}"] = (send_text, "http://localhost:8000")
 
-post_first = False
+post_first = True
 if post_first:
     for ref in calls:
         post_text(ref, calls[ref][0], server=calls[ref][1])
@@ -148,15 +168,23 @@ if post_first:
 
 essay_links = []
 
-
 del essays["Torah, Introduction, To Aid the Reader of Genesis and Exodus"]
 del essays["Suggestions For Further Reading"]
+essays["Part II; Avraham"] = "Genesis 12:1-25:18"
+essay_refs["Part II; Avraham"] = "Genesis 12:1-25:18"
+essays["Part III; Yaakov"] = "Genesis 25:19-36:43"
+essay_refs["Part III; Yaakov"] = "Genesis 25:19-36:43"
+essays["Part III; The Meeting and Covenant At Sinai"] = "Exodus 19:1-24:18"
+essay_refs["Part III; The Meeting and Covenant At Sinai"] = "Exodus 19:1-24:18"
+essays["Part I; Historical Overview"] = "Deuteronomy 1:1-4:43"
+essay_refs["Part I; Historical Overview"] = "Deuteronomy 1:1-4:43"
 for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
     for i, essay in enumerate(order[book]):
         if essay in essays:
             if essays[essay] == "":
                 print(f"No link for {essay} in {book}")
             else:
+                assert essay_refs[essay].find(":") == -1 or (essay_refs[essay].find(":") != essay_refs[essay].rfind(":"))
                 he_display = f"{library.get_index(book).get_title('he')} {essay_heb} {encode_hebrew_numeral(i + 1)}"
                 tanakh_ref = Ref(essay_refs[essay]).as_ranged_segment_ref().normal()
                 ref = Ref(f"The Five Books of Moses, by Everett Fox, {book}, {essay}")
@@ -167,9 +195,9 @@ for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
                                        "auto": True, "type": "essay", "generated_by": "everett_fox_essay_links",
                                      "versions": [{"title": vtitle, "language": "en"}, {"title": vtitle, "language": "en"}],
                                        "displayedText": [{"en": tanakh_ref, "he": he_tanakh_ref}, {"en": essay, "he": he_display}]}))
-# #
-# post_link(essay_links, server="https://ste.cauldron.sefaria.org")
-# post_link(subessay_links, server="https://ste.cauldron.sefaria.org")
+#
+# post_link(essay_links, server="https://germantalmud.cauldron.sefaria.org")
+# post_link(subessay_links, server="https://germantalmud.cauldron.sefaria.org")
 
 #
 #

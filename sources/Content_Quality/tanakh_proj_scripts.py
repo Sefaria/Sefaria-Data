@@ -14,36 +14,34 @@ with open("English Version Titles - version_titles.csv", 'r') as f:
                 v.save(override_dependencies=True)
 
 
-bucket = "sefaria-in-text-images"
-import os
+from sefaria.helper.schema import *
+parent_node = library.get_index("The Five Books of Moses, by Everett Fox").nodes
+intro = "הקדמה "
+parts = ["א", "ב", "ג", "ד"]
+preface = JaggedArrayNode()
+preface.add_primary_titles("Translator's Preface", intro+parts[0])
+preface.add_structure(["Paragraph"])
+preface.validate()
+name = JaggedArrayNode()
+name.add_primary_titles("On the Name of God and Its Translation", intro+parts[1])
+name.add_structure(["Paragraph"])
+name.validate()
+guide = JaggedArrayNode()
+guide.add_primary_titles("Guide to the Pronunciation of Hebrew Names", intro+parts[2])
+guide.add_structure(["Paragraph"])
+guide.validate()
+aid = JaggedArrayNode()
+aid.add_primary_titles("To Aid the Reader of Genesis and Exodus", intro+parts[3])
+aid.add_structure(["Paragraph"])
+aid.validate()
 
-# g = GoogleStorageManager()
-#
-# jpgs = [open("../Everett Fox/The Five Books of Moses, by Everett Fox/"+x, 'r') for x in os.listdir("../Everett Fox/The Five Books of Moses, by Everett Fox") if x.endswith("jpg")]
-# for i, j in enumerate(jpgs):
-#     to_filename = "Fox_Torah_{}.jpg".format(i+1)
-#     g.upload_file(j, to_filename, "sefaria-in-text-images")
+insert_first_child(aid, parent_node)
 
+parent_node = library.get_index("The Five Books of Moses, by Everett Fox").nodes
+insert_first_child(guide, parent_node)
 
-#
-# vtitle = "The Rashi chumash by Rabbi Shraga Silverstein"
-# img = "https://images-na.ssl-images-amazon.com/images/I/51UsUBzedUL.jpg"
-# url = "https://www.amazon.com/Rashi-Chumash-Bereshith-Shraga-Silverstein/dp/1492863203"
-# for title in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-#     vs = VersionSet({"title": title, "versionTitle": vtitle})
-#     assert vs.count() == 1
-#     v = vs[0]
-#     v.purchaseInformationImage = img
-#     v.purchaseInformationURL = url
-#     v.save()
-#
-# vtitle = "The Holy Scriptures: A New Translation (JPS 1917)"
-# img = "https://live.staticflickr.com/5329/17198899114_63c7a50f7c_c.jpg"
-# url = "https://jps.org/books/holy-scriptures-tanakh-1917-edition/"
-# for title in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-#     vs = VersionSet({"title": title, "versionTitle": vtitle})
-#     assert vs.count() == 1
-#     v = vs[0]
-#     v.purchaseInformationImage = img
-#     v.purchaseInformationURL = url
-#     v.save()
+parent_node = library.get_index("The Five Books of Moses, by Everett Fox").nodes
+insert_first_child(name, parent_node)
+
+parent_node = library.get_index("The Five Books of Moses, by Everett Fox").nodes
+insert_first_child(preface, parent_node)
