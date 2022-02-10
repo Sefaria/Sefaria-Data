@@ -225,9 +225,24 @@ def write_to_csv(rows, file_name):
         writer.writeheader()
         writer.writerows(rows)
 
+
+def read_from_csv(file_name):
+    links = []
+    with open(f'{file_name}.csv', 'r') as csv_file:
+        reader = csv.DictReader(csv_file, ['rabbah_ref','rabbah_text','manual'])  # fieldnames = obj_list[0].keys())
+        for row in reader:
+            for m_ref in re.findall("(Esther \d+:\d+)", row['manual']):
+                link = {"refs": [row['rabbah_ref'], m_ref],
+                        "generated_by": "midrash_rabbah_to_megillot_linker_manual",
+                        "auto": False,
+                        "type": "Midrash"}
+                links.append(link)
+        post_link(links, server=SEFARIA_SERVER)
+
+
 if __name__ == '__main__':
 
-    result = addMidrashRabbahMegillotLinks("Esther Rabbah")
+    # result = addMidrashRabbahMegillotLinks("Esther Rabbah")
     # link_options = eichah_DH_match('Lamentations 2', 'Eichah Rabbah.2')
     # links = link_options_to_links(link_options, post=False)
     # Eichah_query = {"generated_by": {"$regex": "midrash_rabbah.*"}, "$and": [{"refs": {"$regex":"Eichah.*"}}]}
@@ -238,5 +253,6 @@ if __name__ == '__main__':
     # dh_length = len(dh.split())
     # comment_text = TextChunk(Ref_comm, lang="he").text
     # print(f'<em>{comment_text[0:dh_length]}<\em>{comment_text[dh_length::]}') #wrong approach
-    based_on_old_linking('Esther')
+    # based_on_old_linking('Esther')
+    read_from_csv('manual_Esther_links')
     pass
