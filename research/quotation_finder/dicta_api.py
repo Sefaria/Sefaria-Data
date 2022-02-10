@@ -124,11 +124,29 @@ def many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=None):
         best_match_option_ref = list(set(priority_tanakh_chunk.all_segment_refs()) & set(many_pesukim_refs))
         best_match = [match for match in result['matches'] if Ref(match['verseDispHeb']) in best_match_option_ref]
         matched = best_match[0] if best_match else matched
-        # print(f"{Ref(matched['verseDispHeb']).normal()} was chosen")
     return matched
 
+def priority_section(parsed_results):
+    if not parsed_results:
+        return None
+    all_results = [sr for seg_results in  parsed_results for sr in seg_results]
+    all_matches = [(Ref(match['verseDispHeb']).section_ref(), match) for result in all_results for match in
+                   result['matches']]
+    d = dict()
+    for k, v in all_matches:
+        if d.get(k, []):
+            d[k].append(v)
+        else:
+            d[k] = [v]
+    all_matches_dict = d
+    d_lengths = [(k,len(v)) for k,v in all_matches_dict.items()]
+    d_lengths.sort(key = lambda x: x[1])
+    return d_lengths[-1][0]
 
-def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, thresh=0, min_thresh=22, priority_tanakh_chunk=None, wrods_to_wipe=''):
+def link_options_from_text(text):
+    pass
+
+def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, thresh=0, min_thresh=22, priority_tanakh_chunk=None, wrods_to_wipe='', seg_split = None):
     """
     the heart of the quotation finder input Ref and output links
     :param base_refs:
@@ -138,51 +156,30 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
     :param thresh:
     :param min_thresh:
     :param priority_tanakh_chunk: oRef the their is strong reson to look for the best match there first ex: base_text: Ref('ילקוט שמעוני על התורה, חקת') priority_tanakh_chunk: Ref('פרשת חקת')
+    :param seg_split: a string that can be used to split a obviously splittable segment (ex: a perek of psalms use seg_split=':')
     :return: list (as long as the list of base_refs - segs) of matches
     """
     Match = namedtuple("Match", ["textMatched", "textToMatch", "score", "startIChar", "endIChar", "pasukStartIWord", "pasukEndIWord", "dh"])
     link_options = []
     dh_link_options = []
-    for base_ref in base_refs:
-        trivial_ref = None
-        if offline:
-            base_text = offline[0][base_ref.normal()]
-            parsed_results = offline[1].get(base_ref.normal(), [])
-        else:
-            base_text = base_ref.text('he').text
 
-            # base_text = strip_cantillation(bleach.clean(base_text, tags=[], strip=True), strip_vowels=True)
-            # base_text = re.sub(f"{wrods_to_wipe}", "", base_text)
-            response_json = find_pesukim(base_text, mode, thresh=thresh)
-            # response_json["results"][0]["ijWordPairs"]
-            parsed_results = dicta_parse(response_json, min_thresh=min_thresh)
+    def get_dicta_matches_text(parsed_results):
         dh_res = [res for res in parsed_results if res['startIChar'] <= 10]  # todo: put this in it's own function
         for result in parsed_results:
-            result['matches'] = [m for m in result['matches'] if m['mode'] == 'Tanakh' and m['score']>=min_thresh]  # use the same parameter name "Tanakh"
+            # result['matches'] = [m for m in result['matches'] if m['mode'] == 'Tanakh' and m['score']>=min_thresh]  # use the same parameter name "Tanakh"
+            result['matches'] = [m for m in result['matches'] if
+                                 m['score'] >= min_thresh]  # use the same parameter name "Tanakh"
             if len(result['matches']) == 0:
                 continue
             result['matches'].sort(key=lambda x: x['score'])
-            matched = result['matches'][-1]
-            # matched_pasuks = [match['verseDispHeb'] for match in result['matches']]
-            # matched_pasuk = matched_pasuks[0]
-            if len(result['matches']) > 1:
-                matched = many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=priority_tanakh_chunk)
-                # many_pesukim_he = [match['verseDispHeb'] for match in result['matches']]
-                # many_pesukim_refs = [Ref(he_disp) for he_disp in many_pesukim_he]
-                # many_pesukim_score = [match['score'] for match in result['matches']]
-                # mean = np.mean(many_pesukim_score)
-                # var = np.var(many_pesukim_score)
-                # if mean > 20 and var < 5:
-                #     suffex = ''.join([f"&p{i+1}={many_pesukim_refs[i].normal()}&lang2=he" for i in list(range(1, len(many_pesukim_refs)))])
-                #     f.write(base_ref.normal())
-                #     f.write(re.sub(" ", "_", f'{sandbox}.cauldron.sefaria.org/{many_pesukim_refs[0].normal()}?lang=he{suffex}\n'))
-                #     print(re.sub(" ", "_", f'{sandbox}.cauldron.sefaria.org/{many_pesukim_refs[0].normal()}?lang=he{suffex}\n'))
-                #     print(f"more than one pasuk option: {many_pesukim_he}")
-                # if priority_tanakh_chunk:
-                #     best_match_option_ref = list(set(priority_tanakh_chunk.all_segment_refs()) & set(many_pesukim_refs))
-                #     best_match = [match for match in result['matches'] if Ref(match['verseDispHeb']) in best_match_option_ref]
-                #     matched = best_match[0] if best_match else matched
-                #     print(f"{Ref(matched['verseDispHeb']).normal()} was chosen")
+            priority_section_matches = [match for match in result['matches'] if priority == Ref(match['verseDispHeb']).section_ref()]
+            if priority and priority_section_matches:
+                    matched = priority_section_matches[-1]
+            else:
+                matched = result['matches'][-1]
+                if len(result['matches']) > 1:
+                    matched = many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=priority_tanakh_chunk)
+
             pasuk_ref = Ref(matched['verseDispHeb'])
             if not pasuk_ref.text('he').text:
                 if pasuk_ref.normal() == 'Numbers 25:19':
@@ -190,22 +187,21 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
                 else:
                     print(f'{pasuk_ref} has no text in it')
                     continue
-            matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel(matched['verseiWords'], pasuk_ref, matched['matchedText'])
-
-            # print(re.sub(" ", "_", f'www.sefaria.org/{base_ref.normal()}?lang=he&p2={pasuk_ref.normal()}'))
+            matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel(matched['verseiWords'], pasuk_ref,
+                                                                         matched['matchedText'])
             matched_wds_base = retreive_bold(result['text'])
             matched_wds_pasuk = retreive_bold(matched['matchedText'])
-            # print(f"{matched_wds_base} | {matched_wds_pasuk}")
             score = matched['score']
             dh_match = result in dh_res
             if priority_tanakh_chunk:
                 dh_match = dh_match and pasuk_ref in priority_tanakh_chunk.all_segment_refs()
-            m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"], matched_pasuk_start, matched_pasuk_end, dh_match)
+            m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"],
+                      matched_pasuk_start, matched_pasuk_end, dh_match)
             link_option = [pasuk_ref, base_ref, m.textMatched, m]
-            if dh_match:
-                trivial_ref = pasuk_ref.normal()
-                link_option.append("dh")
-                dh_link_options.append(link_option)
+            # if dh_match:
+            #     trivial_ref = pasuk_ref.normal()
+            #     link_option.append("dh")
+            #     dh_link_options.append(link_option)
             link_option.append(trivial_ref)
             tc = link_option[1].text('he')
             html_regex = re.compile("<[^>]*?>")
@@ -215,27 +211,39 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             if lv_score < 200:
                 normolized = convert_normalized_indices_to_unnormalized_indices([(m[3], m[4])], normalization_mapping)[
                     0]
-                lv_score = validate_wordLevel2charLevel(tc, normolized, m[0], pasuk=False, wl_min_score=200, html_regex=html_regex)
+                lv_score = validate_wordLevel2charLevel(tc, normolized, m[0], pasuk=False, wl_min_score=200,
+                                                        html_regex=html_regex)
                 try:
                     assert lv_score == 200
-                    # old = link_option[3].copy()
                     link_option[3] = Match(matched_wds_base, matched_wds_pasuk, score, normolized[0], normolized[1],
-                          matched_pasuk_start, matched_pasuk_end, dh_match)
+                                           matched_pasuk_start, matched_pasuk_end, dh_match)
                 except AssertionError:
-                    # startChar = re.search(m[0].split()[0], re.sub(html_regex, '', tc.text)).regs[0][0]
-                    # endChar = [e for e in re.finditer(m[0].split()[-1], re.sub(html_regex, '', tc.text))][-1].regs[0][1]
-                    # if normalization_mapping:
-                    #     normolized = convert_normalized_indices_to_unnormalized_indices([(startChar, endChar)], normalization_mapping)[0]
-                    #     take_2 = validate_wordLevel2charLevel(tc, normolized, m[0], html_regex=html_regex, pasuk=False, wl_min_score=200)
-                    # else:
-                    #     take_2 = validate_wordLevel2charLevel(tc, [startChar, endChar], m[0], pasuk=False, wl_min_score=200)
-                    # if take_2 == 200:
-                    #     link_option[3] = Match(matched_wds_base, matched_wds_pasuk, score, startChar, endChar,
-                    #           matched_pasuk_start, matched_pasuk_end, dh_match)
                     log.write(f'{tc._oref} take_2 lv score is: {lv_score}\n')
             link_options.append(link_option)
-    if onlyDH:
-        return dh_link_options
+            # if onlyDH:
+            #     return dh_link_options
+            # return link_options
+
+    for base_ref in base_refs:
+        trivial_ref = None
+        if offline:
+            base_text = offline[0][base_ref.normal()]
+            parsed_results = [offline[1].get(base_ref.normal(), [])]
+        else:
+            if seg_split:
+                texts = base_ref.text('he').text.split(seg_split)
+            else:
+                texts = [base_ref.text('he').text]
+
+            # base_text = strip_cantillation(bleach.clean(base_text, tags=[], strip=True), strip_vowels=True)
+            # base_text = re.sub(f"{wrods_to_wipe}", "", base_text)
+            response_jsons = [find_pesukim(base_text, mode, thresh=thresh) for base_text in texts if base_text]
+            # response_json["results"][0]["ijWordPairs"]
+            parsed_results = [dicta_parse(response_json, min_thresh=min_thresh) for response_json in response_jsons]
+        parsed_results = [p for p in parsed_results if p]
+        priority = priority_section(parsed_results)
+        for i, response in enumerate(parsed_results):
+            get_dicta_matches_text(response)
     return link_options
 
 
@@ -431,7 +439,6 @@ def bunch_refs_to_ranged_refs(links):
                     break
         if not found_group:
             ref_groups.append([r])
-    print(ref_groups)
     output_links = []
     # for group in ref_groups:
     #     if len(group) > 1:
@@ -441,15 +448,51 @@ def bunch_refs_to_ranged_refs(links):
     #     output_links.append(ranged_ref)
 
 
-def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority_tanakh_chunk=None, offline=None, mongopost=True):
+def bunch_refs_to_ranged_refs(links):
+    # assuming all of one side is the same segment looking here at the other side
+    ref_groups = []
+    Rl = lambda l: Ref(l['refs'][0])
+    links = list(links)
+    links.sort(key=lambda l: int(re.search(':(.*$)', l['refs'][0]).group(1)))
+    to_side_orefs = [Rl(l) for l in links]
+    for l in links:
+        found_group = []
+        prev_r = Rl(l).prev_segment_ref()
+        next_r = Rl(l).next_segment_ref()
+        if prev_r in to_side_orefs or next_r in to_side_orefs:
+            for group_i, group in enumerate(ref_groups):
+                Rlgroup = [Rl(l) for l in group]
+                if prev_r in Rlgroup or next_r in Rlgroup:
+                    # if found_group:
+                    #     ref_groups[group_i].extend(found_group)
+                    group.append(l)
+                    ref_groups[group_i] = group
+                    found_group = True
+                    break
+        if not found_group:
+            ref_groups.append([l])
+
+    # print([Rl(l) for group in ref_groups for l in group])
+    output_links = []
+    for group in ref_groups:
+        if len(group) > 1:
+            ranged_ref_json = group[0].copy()
+            ranged_ref_json['refs'][0] = Ref(f'{Rl(group[0]).he_normal()} - {Rl(group[-1]).he_normal()}').normal()
+            output_links.append(ranged_ref_json)
+        else:
+            output_links.append(group[0])
+    # print([Rl(l) for l in output_links])
+    return output_links
+
+def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority_tanakh_chunk=None, offline=None, mongopost=True, seg_split= None):
     oref = Ref(tref)
     base_refs = oref.all_segment_refs()
-    link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh, priority_tanakh_chunk=priority_tanakh_chunk, offline=offline)
+    link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh, priority_tanakh_chunk=priority_tanakh_chunk, offline=offline, seg_split=seg_split)
     if not link_options:
         # print("no links found")
         return
-    links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder', type='quotation_auto') for link_option in link_options])
-    ranged_links = bunch_refs_to_ranged_refs(links)
+    links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder_ranged', type='quotation_auto') for link_option in link_options])
+    links = bunch_refs_to_ranged_refs(links)
     write_to_csv(links, linkMatchs, filename=f"dicta_{oref.book}")
     # print(links)
     # write_links_to_json(f'{tref}', links)
@@ -657,4 +700,13 @@ if __name__ == '__main__':
     #         print(f"book {title} failed!")
     # log.close()
     # offline_text_mapping_cat("Liturgy")
-    run_offline("Siddur Sefard", 'Liturgy', min_thresh=25, post=False, mongopost=True, priority_tanakh_chunk_type='psalms', max_word_number=100)
+    # run_offline("Siddur Sefard", 'Liturgy', min_thresh=25, post=False, mongopost=True, priority_tanakh_chunk_type='psalms', max_word_number=100)
+    # offline_text_mapping_cat("Liturgy")
+    # run_offline("Siddur Sefard", 'Liturgy', min_thresh=25, post=True, mongopost=True, priority_tanakh_chunk_type='psalms', max_word_number=100, offline=True)
+    seg = Ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah before the Hallel 1')
+    while 'Rosh Chodesh' in seg.next_segment_ref().normal():
+        dicta_links_from_ref(seg.normal(), post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
+                         mongopost=True, seg_split=':')
+        seg = seg.next_segment_ref()
+    # dicta_links_from_ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115:1', post=False, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
+    #                      mongopost=True, seg_split=':')
