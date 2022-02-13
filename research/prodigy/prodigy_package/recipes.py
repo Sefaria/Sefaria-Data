@@ -167,7 +167,7 @@ def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, 
 
 if __name__ == "__main__":
     # test_tokenizer(nlp)
-    import_file_to_collection('../data/test_input.jsonl', 'yerushalmi_input2')
+    import_file_to_collection('../data/test_input.jsonl', 'webpages_input')
 """
 command to run
 

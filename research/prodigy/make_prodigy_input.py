@@ -1,4 +1,5 @@
 import django, regex, srsly, random, re
+from os import walk, path
 from collections import defaultdict
 from tqdm import tqdm
 django.setup()
@@ -8,10 +9,10 @@ from research.prodigy.prodigy_package.db_manager import MongoProdigyDBManager
 from sefaria.helper.normalization import NormalizerComposer
 
 class ProdigyInputWalker:
-    def __init__(self, prev_tagged_refs):
+    def __init__(self, prev_tagged_refs=None):
         self.prodigyInput = []
         self.prodigyInputByVersion = defaultdict(list)
-        self.prev_tagged_refs = prev_tagged_refs
+        self.prev_tagged_refs = prev_tagged_refs or []
         self.normalizer = NormalizerComposer(['unidecode', 'html', 'maqaf', 'cantillation', 'double-space'])
 
     @staticmethod
@@ -100,6 +101,27 @@ def make_prodigy_input(title_list, vtitle_list, lang_list, prev_tagged_refs):
     walker.make_final_input(400)
     srsly.write_jsonl('data/test_input.jsonl', walker.prodigyInput)
 
+
+def make_prodigy_input_webpages(n):
+    LOC = "/Users/nss/sefaria/datasets/webpages"
+    walker = ProdigyInputWalker()
+    chosen = 0
+    for (dirpath, dirnames, filenames) in walk(path.join(LOC, 'he')):
+        for filename in tqdm(filenames, total=n):
+            if random.choice([True, False]): continue
+            if chosen >= n: break
+            chosen += 1
+            with open(path.join(dirpath, filename), 'r') as fin:
+                url = None
+                for iline, line in enumerate(fin):
+                    line = line.strip()
+                    if iline == 0: url = line
+                    if iline < 2: continue
+                    walker.prodigyInput += walker.get_input(line, url, 'he')
+    random.shuffle(walker.prodigyInput)
+    srsly.write_jsonl('data/test_input.jsonl', walker.prodigyInput)
+
+
 def combine_sentences_to_paragraph(sentences):
     if len(sentences) == 0: return
     full_text = ""
@@ -173,35 +195,7 @@ if __name__ == "__main__":
     prev_tagged_refs = get_prev_tagged_refs('gold_output_full')
     # title_list = [i.title for i in IndexSet({"title": re.compile(r'Gilyon HaShas on')})]
     # print(title_list)
-    # make_prodigy_input(title_list, [None]*len(title_list), ['en']*len(title_list), prev_tagged_refs)
-    ref_list = [r.strip() for r in """Jerusalem Talmud Yevamot 2:4:8
-    Jerusalem Talmud Chagigah 2:5:2
-    Jerusalem Talmud Chagigah 3:2:5
-    Jerusalem Talmud Horayot 1:1:2
-    Jerusalem Talmud Horayot 1:1:4
-    Jerusalem Talmud Horayot 3:2:14
-    Jerusalem Talmud Horayot 1:8:3
-    Jerusalem Talmud Horayot 1:8:5
-    Jerusalem Talmud Horayot 2:1:2
-    Jerusalem Talmud Horayot 2:5:3
-    Jerusalem Talmud Shabbat 7:2:8
-    Jerusalem Talmud Shabbat 1:8:6
-    Jerusalem Talmud Shabbat 12:1:6
-    Jerusalem Talmud Shabbat 16:5:2
-    Jerusalem Talmud Shabbat 16:7:2
-    Jerusalem Talmud Shabbat 17:6:2
-    Jerusalem Talmud Shabbat 21:3:1
-    Jerusalem Talmud Shabbat 19:5:2
-    Jerusalem Talmud Shabbat 1:8:3
-    Jerusalem Talmud Shabbat 7:2:36
-    Jerusalem Talmud Shabbat 17:1:3
-    Jerusalem Talmud Berakhot 1:1:1
-    Jerusalem Talmud Berakhot 9:1:4
-    Jerusalem Talmud Berakhot 2:8:3
-    Jerusalem Talmud Berakhot 2:4:16
-    Jerusalem Talmud Berakhot 2:4:5
-    Jerusalem Talmud Berakhot 2:3:16""".split('\n')]
-    make_prodigy_input_by_refs(ref_list, 'en', 'Guggenheimer Translation 2.1')
-
+    #make_prodigy_input(title_list, [None]*len(title_list), ['en']*len(title_list), prev_tagged_refs)
+    make_prodigy_input_webpages(3000)
     # combine_all_sentences_to_paragraphs()
     # make_prodigy_input_sub_citation('yerushalmi_output2', 'yerushalmi_sub_citation_input2')
