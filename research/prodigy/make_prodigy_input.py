@@ -191,7 +191,9 @@ if __name__ == "__main__":
     #     "Tosafot HaRosh on Horayot", "Tosafot Rid on Avodah Zarah Third Recension", "Tosafot Shantz on Sotah",
     #     "Tosafot Yeshanim on Keritot", "HaMaor HaKatan on Eruvin", "Nimukei Yosef on Bava Metzia"
     # ]
-    title_list = library.get_indexes_in_category('Yerushalmi')
+    title_list = [
+        "Ein HaTekhelet", "Shev Shmat'ta", "Havot Yair", "Responsa Chatam Sofer", "Netivot Olam", "Mei HaShiloach", "Pri Tzadik", "Sefer HeArukh"
+    ]
     prev_tagged_refs = get_prev_tagged_refs('gold_output_full')
     # title_list = [i.title for i in IndexSet({"title": re.compile(r'Gilyon HaShas on')})]
     # print(title_list)
