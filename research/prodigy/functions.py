@@ -284,7 +284,7 @@ debug data
 python -m spacy debug data ./configs/ref_tagging_cpu.cfg -c ./functions.py
 
 pretrain cpu
-python -m spacy pretrain ./configs/ref_tagging_cpu.cfg ./output/ref_tagging_cpu --code ./functions.py --gpu-id 0
+python -m spacy pretrain ./configs/talmud_ner-v3.2.cfg  ./output/pretrain_ref_tagging_cpu --code ./functions.py --gpu-id 0
 
 convert fasttext vectors
 python -m spacy init vectors he "/home/nss/sefaria/datasets/text classification/fasttext_he_no_prefixes_300.vec" "/home/nss/sefaria/datasets/text classification/prodigy/dim300" --verbose
@@ -306,6 +306,9 @@ cd ../..
 python -m spacy train ./output/binary_training/my_config.cfg --output ./output/ref_tagging_cpu_binary --code ./functions.py --gpu-id 0 --paths.train ./output/binary_training/train.spacy --paths.dev ./output/binary_training/dev.spacy
 
 SPECIFIC TRAINING
+
+rishonim refs
+python -m spacy train ./configs/talmud_ner-v3.2.cfg --output ./output/ref_tagging_cpu --code ./functions.py --gpu-id 0
 
 yerushalmi refs
 python -m spacy train ./configs/talmud_ner-v3.2.cfg --output ./output/yerushalmi_refs2 --code ./functions.py --gpu-id 0
