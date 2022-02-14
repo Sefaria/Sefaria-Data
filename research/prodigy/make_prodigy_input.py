@@ -103,22 +103,36 @@ def make_prodigy_input(title_list, vtitle_list, lang_list, prev_tagged_refs):
     srsly.write_jsonl('data/test_input.jsonl', walker.prodigyInput)
 
 
+def num_english_chars(s, perc=True):
+    num = 0
+    for match in re.finditer(r'[a-zA-Z]', s):
+        num += (match.end() - match.start())
+    if perc and len(s) > 0:
+        return num / len(s)
+    return num
+
+
 def make_prodigy_input_webpages(n):
     LOC = "/Users/nss/sefaria/datasets/webpages"
     walker = ProdigyInputWalker()
-    chosen = 0
+    nchosen = 0
     for (dirpath, dirnames, filenames) in walk(path.join(LOC, 'he')):
         for filename in tqdm(filenames, total=2*n):  # total is approximate
-            if random.choice([True, False]): continue
-            if chosen >= n: break
-            chosen += 1
+            chosen = random.choice([True, False])
+            if nchosen >= n: break
+            nchosen += int(chosen)
             with open(path.join(dirpath, filename), 'r') as fin:
                 url = None
                 for iline, line in enumerate(fin):
                     line = " ".join(re.split(r'\s+', line)).strip()
-
-                    if iline == 0: url = line
-                    if iline < 2: continue
+                    if iline == 0:
+                        url = line
+                        continue
+                    if num_english_chars(line) > 0.5:
+                        continue
+                    if iline >= 2 and not chosen:
+                        # always include title. only include content if chosen
+                        continue
                     walker.prodigyInput += walker.get_input(line, url, 'he')
     random.shuffle(walker.prodigyInput)
     srsly.write_jsonl('data/test_input.jsonl', walker.prodigyInput)
