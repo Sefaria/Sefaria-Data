@@ -8,6 +8,7 @@ from sefaria.system.exceptions import InputError
 from research.prodigy.prodigy_package.db_manager import MongoProdigyDBManager
 from sefaria.helper.normalization import NormalizerComposer
 
+
 class ProdigyInputWalker:
     def __init__(self, prev_tagged_refs=None):
         self.prodigyInput = []
@@ -53,6 +54,7 @@ class ProdigyInputWalker:
         return text.split('. ')
 
     def get_input(self, text, en_tref, language):
+        text = self.normalizer.normalize(text)
         text_list = text.split('\n')
         temp_input_list = []
         for t in text_list:
@@ -75,7 +77,6 @@ class ProdigyInputWalker:
             print("ignoring", en_tref)
             return
         # text = TextChunk._strip_itags(text)
-        norm_text = self.normalizer.normalize(text)
         temp_input_list = self.get_input(norm_text, en_tref, version.language)
         self.prodigyInputByVersion[(version.versionTitle, version.title, version.language)] += temp_input_list
         
@@ -107,14 +108,15 @@ def make_prodigy_input_webpages(n):
     walker = ProdigyInputWalker()
     chosen = 0
     for (dirpath, dirnames, filenames) in walk(path.join(LOC, 'he')):
-        for filename in tqdm(filenames, total=n):
+        for filename in tqdm(filenames, total=2*n):  # total is approximate
             if random.choice([True, False]): continue
             if chosen >= n: break
             chosen += 1
             with open(path.join(dirpath, filename), 'r') as fin:
                 url = None
                 for iline, line in enumerate(fin):
-                    line = line.strip()
+                    line = " ".join(re.split(r'\s+', line)).strip()
+
                     if iline == 0: url = line
                     if iline < 2: continue
                     walker.prodigyInput += walker.get_input(line, url, 'he')

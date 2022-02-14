@@ -41,7 +41,7 @@ spec:
           # args: [ "while true; do echo Waiting; sleep 100; done" ]
           # args: ["prodigy ref-tagging-recipe ref_tagging input silver_output_full /prodigy-disk/model-last מקור --view-id ner_manual -db-host $MONGO_HOST -db-port 27017 -F ./functions.py"]
           # args: ["prodigy ref-tagging-recipe jeru_ref_tagging yerushalmi_input yerushalmi_output /prodigy-disk/jeru_ref_tagging source --view-id ner_manual -db-host $MONGO_HOST -db-port 27017 -dir ltr -F ./functions.py"]
-          args: [ "prodigy ref-tagging-recipe webpages webpages_input webpages_output /prodigy-disk/model-last מקור --view-id ner_manual -db-host $MONGO_HOST -db-port 27017 -dir rtl -F ./functions.py" ]
+          args: [ "prodigy ref-tagging-recipe webpages webpages_input webpages_output /prodigy-disk/webpage_tagging מקור --view-id ner_manual -db-host $MONGO_HOST -db-port 27017 -dir rtl -F ./functions.py" ]
           ports:
             - containerPort: 8080
               protocol: TCP
