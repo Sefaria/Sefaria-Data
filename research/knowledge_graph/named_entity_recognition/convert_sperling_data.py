@@ -426,17 +426,8 @@ def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_chan
     from sefaria.helper.normalization import FunctionNormalizer
     if manual_changes_file is not None:
         changes = srsly.read_json(manual_changes_file)
-    with open("sperling_mentions.json", "r") as fin:
-        j = json.load(fin)
-    # add mentions in db b/c sperling_mentions only includes bonayich-only mentions
-    for tl in RefTopicLinkSet({"class": "refTopic", "linkType": "mention", "charLevelData.versionTitle": "William Davidson Edition - Aramaic"}):
-        j += [{
-            "start": tl.charLevelData['startChar'],
-            "end": tl.charLevelData['endChar'],
-            "ref": tl.ref,
-            "mention": tl.charLevelData['text'],
-            "id_matches": [tl.toTopic]
-        }]
+    with open("/home/nss/sefaria/datasets/ner/sefaria/ner_output_bavli.json", "r") as fin:
+        j = list(filter(lambda x: x['versionTitle'] == "William Davidson Edition - Aramaic", json.load(fin)))
     mentions_by_seg = defaultdict(list)
     print("TOTAL MENTIONS", len(j))
     for mention in j:
@@ -584,7 +575,7 @@ def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_chan
                     # get_unnormalized pos
             new_mentions += temp_new_mentions
     out = [m.serialize(delete_keys=['versionTitle', 'language']) for m in new_mentions]
-    with open(f"{mentions_output}", "w") as fout:
+    with open(f"pretagged_mentions/{mentions_output}", "w") as fout:
         json.dump(out, fout, ensure_ascii=False, indent=2)
     print("NUM FAILED", num_failed)
 
@@ -657,19 +648,33 @@ def convert_mishnah_and_tosefta_to_mentions(tractate_prefix, in_file, out_file1,
     with open(f'{DATA_LOC}/../sefaria/{out_file2}', 'w') as fout:
         json.dump(j, fout, indent=2, ensure_ascii=False)
 
+def append_mentions_bavli(other_mentions_file, vtitle, lang):
+    import json
+
+    with open("/home/nss/sefaria/datasets/ner/sefaria/ner_output_bavli.json", "r") as fin:
+        orig_mentions = json.load(fin)
+    with open(f"pretagged_mentions/{other_mentions_file}", "r") as fin:
+        other_mentions = json.load(fin)
+        for m in other_mentions:
+            m['versionTitle'] = vtitle
+            m['language'] = lang
+    combined_mentions = orig_mentions + other_mentions
+    with open("/home/nss/sefaria/datasets/ner/sefaria/ner_output_bavli.json", "w") as fout:
+        json.dump(combined_mentions, fout, ensure_ascii=False, indent=2)
+
 if __name__ == "__main__":
-    rows_by_mas = get_rows_by_mas()
-    rabbi_mentions = get_rabbi_mention_segments(rows_by_mas)
-    spacy_formatted, rabbi_mentions = convert_to_spacy_format(rabbi_mentions)
-    srsly.write_jsonl(f'{DATA_LOC}/he_mentions.jsonl', rabbi_mentions)
+    # rows_by_mas = get_rows_by_mas()
+    # rabbi_mentions = get_rabbi_mention_segments(rows_by_mas)
+    # spacy_formatted, rabbi_mentions = convert_to_spacy_format(rabbi_mentions)
+    # srsly.write_jsonl(f'{DATA_LOC}/he_mentions.jsonl', rabbi_mentions)
     # srsly.write_jsonl(f'{DATA_LOC}/he_training.jsonl', spacy_formatted)
     # display_displacy(f"{DATA_LOC}/he_training.jsonl")
     
-    convert_to_mentions_file(f"{DATA_LOC}/he_mentions.jsonl", "sperling_mentions.json", only_bonayich_rabbis=True)
-    convert_mentions_for_alt_version('William Davidson Edition - Vocalized Aramaic', 'sperling_mentions_nikkud.json')
-    convert_mentions_for_alt_version('William Davidson Edition - Vocalized Punctuated Aramaic', 'sperling_mentions_nikkud_punctuated.json')
+    # convert_to_mentions_file(f"{DATA_LOC}/he_mentions.jsonl", "sperling_mentions.json", only_bonayich_rabbis=True)
+    # convert_mentions_for_alt_version('William Davidson Edition - Vocalized Aramaic', 'sperling_mentions_nikkud.json')
+    # convert_mentions_for_alt_version('William Davidson Edition - Vocalized Punctuated Aramaic', 'sperling_mentions_nikkud_punctuated.json')
     convert_mentions_for_alt_version("Wikisource Talmud Bavli", 'sperling_mentions_wikisource.json', '/home/nss/sefaria/datasets/ner/sefaria/wiki_will_changes.json')
-    
+    append_mentions_bavli('sperling_mentions_wikisource.json', "Wikisource Talmud Bavli", 'he')
     # convert_mishnah_and_tosefta_to_mentions("Mishnah ", f"{DATA_LOC}/mishna_names.csv", f'{DATA_LOC}/he_mentions_mishnah.jsonl', "sperling_mentions_mishnah.json", "Torat Emet 357")
     # convert_mishnah_and_tosefta_to_mentions("Tosefta ", f"{DATA_LOC}/tosefta_names.csv", f'{DATA_LOC}/he_mentions_tosefta.jsonl', "sperling_mentions_tosefta.json", None, {"Oholot": "Ohalot", "Oktzin": "Uktsin", "Rosh Hashanah": "Rosh HaShanah"})
   
