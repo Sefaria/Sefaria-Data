@@ -19,7 +19,7 @@ def dher3(s):
 
 
 books = ["Joshua", "Judges", "I Samuel", "Ii Samuel", "I Kings", "Ii Kings"]
-with open("The Early Prophets Just Translation.csv", 'r') as f:
+with open("The Early Prophets.csv", 'r') as f:
 
     # if new chapter, dont add anything until we get to "\d .*?".  then we check to see if it has <bold> tags to decide if it's a footnote
     # all the while, we
