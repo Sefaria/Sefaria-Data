@@ -15,23 +15,7 @@ with open("English Version Titles - version_titles.csv", 'r') as f:
 
 
 from sefaria.helper.schema import *
-parent = library.get_index("The Five Books of Moses, by Everett Fox")
-vayikra_node = parent.nodes.children[-4].children[-3]
-vayikra_pos = 3
-title = "ויקרא הערה ב׳ א"
-new = JaggedArrayNode()
-new.add_primary_titles("Pollution from Tzaraat", title)
-new.add_structure(["Paragraph"])
-attach_branch(new, vayikra_node, vayikra_pos)
 
-parent = library.get_index("The Five Books of Moses, by Everett Fox")
-numbers_node = parent.nodes.children[-3].children[2]
-numbers_pos = 12
-new = JaggedArrayNode()
-title = 'במדבר הערה י״א ב'
-new.add_structure(["Paragraph"])
-new.add_primary_titles("On Bil'am", title)
-attach_branch(new, numbers_node, numbers_pos)
 
 parent_node = library.get_index("The Five Books of Moses, by Everett Fox").nodes
 intro = "הקדמה "
@@ -79,6 +63,24 @@ parent_node = library.get_index("The Five Books of Moses, by Everett Fox").nodes
 
 insert_last_child(sugg, parent_node)
 
+parent = library.get_index("The Five Books of Moses, by Everett Fox")
+vayikra_node = parent.nodes.children[-4].children[-3]
+vayikra_pos = 3
+title = "ויקרא הערה ב׳ א"
+new = JaggedArrayNode()
+new.add_primary_titles("Pollution from Tzaraat", title)
+new.add_structure(["Paragraph"])
+attach_branch(new, vayikra_node, vayikra_pos)
+
+parent = library.get_index("The Five Books of Moses, by Everett Fox")
+numbers_node = parent.nodes.children[-3].children[2]
+numbers_pos = 12
+new = JaggedArrayNode()
+title = 'במדבר הערה י״א ב'
+new.add_structure(["Paragraph"])
+new.add_primary_titles("On Bil'am", title)
+attach_branch(new, numbers_node, numbers_pos)
+
 
 vtitle = "The Five Books of Moses, by Everett Fox. New York, Schocken Books, 1995"
 everett = ["The Five Books of Moses, by Everett Fox, Leviticus, Part II; Ritual Pollution and Purification, Pollution from Tzaraat 2-4",
@@ -94,3 +96,5 @@ for refs in zip(tanakh_refs, everett):
                                                      "language": "en"}],
                                        "displayedText": [{"en": t, "he": Ref(t).he_normal()},
                                                          {"en": e.replace(':', ';'), "he": Ref(e).he_normal()}]}).save()
+
+#def change_node_title(snode, old_title, lang, new_title):

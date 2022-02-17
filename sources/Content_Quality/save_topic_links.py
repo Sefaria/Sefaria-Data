@@ -2,8 +2,8 @@ import django
 django.setup()
 from sefaria.model import *
 import json
-#nes = json.load(open("../../../tetra/temp/ner_output_tetragramatton.json", 'r'))
-nes = json.load(open("ner.json", 'r'))
+nes = json.load(open("../../../tetra/temp/ner.json", 'r'))
+#nes = json.load(open("ner.json", 'r'))
 for ne in nes:
     mention_link = {
         "toTopic": "the-tetragrammaton",

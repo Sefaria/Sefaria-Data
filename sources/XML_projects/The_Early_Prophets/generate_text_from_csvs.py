@@ -108,7 +108,7 @@ t = Term().load({"name": "Everett Fox"})
 post_term(t.contents(), server="http://localhost:8000")
 indx = {"title": "The Five Books of Moses, by Everett Fox", "schema": root.serialize(), "categories": ["Tanakh", "Modern Commentary on Tanakh"], "dependence": "Commentary",
         "collective_title": "Everett Fox", "base_text_titles": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]}
-post_index(indx, server="http://localhost:8000")
+#post_index(indx, server="https://germantalmud.cauldron.sefaria.org")
 vtitle = "The Five Books of Moses, by Everett Fox. New York, Schocken Books, 1995"
 subessay_links = []
 calls = {}
@@ -219,8 +219,8 @@ for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
                                      "versions": [{"title": vtitle, "language": "en"}, {"title": vtitle, "language": "en"}],
                                        "displayedText": [{"en": tanakh_ref, "he": he_tanakh_ref}, {"en": essay, "he": he_display}]}))
 
-post_link(essay_links, server="http://localhost:8000")
-post_link(subessay_links, server="http://localhost:8000")
+post_link(essay_links, server="https://germantalmud.cauldron.sefaria.org")
+post_link(subessay_links, server="https://germantalmud.cauldron.sefaria.org")
 
 #
 #

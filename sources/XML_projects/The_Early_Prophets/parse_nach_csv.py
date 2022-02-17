@@ -20,7 +20,7 @@ new_rows = []
 with open("The Early Prophets.csv", 'r') as f:
     curr_ref = ""
     for row in csv.reader(f):
-        if re.search("^\d+ ", row[1]):# and row[0].rsplit(".")[0] in refs:
+        if re.search("^\d+:?\d* ", row[1]):# and row[0].rsplit(".")[0] in refs:
             curr_ref = row[0].rsplit(".")[0]
         elif row[0].rsplit(".")[0] != curr_ref and len(curr_ref) > 0:
             #print(curr_ref)
@@ -41,14 +41,14 @@ with open("essays.csv", 'w') as essay_f:
     essay_writer = csv.writer(essay_f)
     for k in new_text:
         for book in ["Joshua", "Judges", "Samuel", "Kings"]:
-            if book in k and not k.endswith(book):
+            if book in k and not re.search(f"The Early Prophets, {book}, \d+", k):
                 for l, line in enumerate(new_text[k]):
                     essay_writer.writerow([k, l+1, line])
                 poss_ref = new_text[k][0]
                 if book in ["Samuel", "Kings"]:
                     m = re.search("\((.{,2}) (.*?)\)", poss_ref)
                     if m and len(poss_ref) < 50:
-                        poss_ref = f"{book} {m.group(1)} {m.group(2)}".replace('–', "-")
+                        poss_ref = f"{m.group(1)} {book} {m.group(2)}".replace('–', "-")
                 else:
                     m = re.search("\((.*?)\)", poss_ref)
                     if m and len(poss_ref) < 50:
@@ -72,7 +72,7 @@ found_essay = None
 actual_text = {}
 for k in new_text:
     for book in ["Joshua", "Judges", "I Samuel", "II Samuel", "I Kings", "II Kings"]:
-        if k.endswith("The Early Prophets, "+book):
+        if re.search(f"The Early Prophets, {book}, \d+:\d+", k):
             actual_text[book] = []
             start_ftnotes = False
             # parse mini essays and footnotes
@@ -80,36 +80,43 @@ for k in new_text:
                 if line.find("____") == 0:
                     assert " " not in line
                     continue
-                m = re.search("^<i>(.*?)</i>\s?(\(.*?\)): ", line)
-                ftnote_perek_match = re.search("^(\d+):.{,10} <b>(.*?)</b>", line)
-                second_word_bold = re.search("^<b>.*?</b>", " ".join(line.split()[1:])) if " " in line else False
-                text_match = re.search("^(\d+)", line)
-                if ftnote_perek_match:
-                    ftnote_perek = int(ftnote_perek_match.group(1))
-                    ftnotes[book][ftnote_perek].append(line)
-                    found_essay = None
-                elif line[0].isdigit() and second_word_bold:
-                    ftnotes[book][ftnote_perek].append(line)
-                    found_essay = None
-                elif text_match:
-                    actual_text[book].append(line)
-                    found_essay = None
-                elif m:
-                    title, ref = m.group(1), m.group(2)
-                    ref = ref.replace("(", "("+book+" ")
-                    ref = ref.replace('–', "-")
+                line = line.replace('–', '-')
+                m = re.search("^Chapter ([\d:-]{1,6})\. (.{,50}):", line)
+                if m:
+                    ch = Ref(f"{book} {m.group(1)}")
+                    title = m.group(2)
+                # m = re.search("^<i>(.*?)</i>\s?(\(.*?\)): ", line)
+                # ftnote_perek_match = re.search("^(\d+):.{,10} <b>(.*?)</b>", line)
+                # second_word_bold = re.search("^<b>.*?</b>", " ".join(line.split()[1:])) if " " in line else False
+                # text_match = re.search("^(\d+)", line)
+                # if ftnote_perek_match:
+                #     ftnote_perek = int(ftnote_perek_match.group(1))
+                #     ftnotes[book][ftnote_perek].append(line)
+                #     found_essay = None
+                # elif line[0].isdigit() and second_word_bold:
+                #     ftnotes[book][ftnote_perek].append(line)
+                #     found_essay = None
+                # elif text_match:
+                #     actual_text[book].append(line)
+                #     found_essay = None
+                # elif m:
+                #     title, ref = m.group(1), m.group(2)
+                #     ref = ref.replace("(", "("+book+" ")
+                #     ref = ref.replace('–', "-")
+
+                if 2 == 2:
                     try:
                         not_found = True
                         for essay in essay_refs.keys():
                             essay_ref, essay_title = essay
-                            if essay_ref.contains(Ref(ref[1:-1])) and essay_title.find("On the Book") == -1:
-                                essay_refs[(essay_ref, essay_title)].append((Ref(ref[1:-1]).as_ranged_segment_ref(), title))
+                            if essay_ref.contains(ch):
+                                essay_refs[(essay_ref, essay_title)].append((ch.as_ranged_segment_ref(), title))
                                 essay_refs[(essay_ref, essay_title)].append(line.replace(m.group(0), ""))
                                 found_essay = (essay_ref, essay_title)
                                 not_found = False
                         assert not_found is False
                     except Exception as e:
-                        invalid_refs.append((title, ref))
+                        invalid_refs.append((title, ch))
                 elif found_essay:
                     essay_refs[found_essay].append(line)
                 else:
