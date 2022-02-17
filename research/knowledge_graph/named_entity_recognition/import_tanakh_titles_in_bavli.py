@@ -13,7 +13,7 @@ from collections import defaultdict
 
 ROOT = "/home/nss/Downloads"
 SPERLING = "/home/nss/sefaria/datasets/ner/michael-sperling"
-NER = "/home/nss/sefaria/data/research/knowledge_graph/named_entity_recognition"
+NER = "/home/nss/sefaria/data/research/knowledge_graph/named_entity_recognition/external_named_entities"
 TEMP = "/home/nss/sefaria/datasets/ner/sefaria/temp"
 
 new_titles = "Manual Corrections for Tanakh Figures in Talmud - Titles.csv"
@@ -133,7 +133,7 @@ def import_bonayich_rabbis():
 def get_manual_bavli_corrections():
     corrections = []
     mentions_by_text = defaultdict(list)
-    with open("/home/nss/sefaria/datasets/ner/sefaria/ner_output_talmud.json", "r") as fin:
+    with open("/home/nss/sefaria/datasets/ner/sefaria/ner_output_bavli.json", "r") as fin:
         mentions = json.load(fin)
         for m in mentions:
             mentions_by_text[m['mention']] += [m]
@@ -142,22 +142,14 @@ def get_manual_bavli_corrections():
         # TODO rewrite
         cin = csv.DictReader(fin)
         for row in cin:
-            if len(row['En Title']) == 0: continue
-            slug = row['Slug or Bonayich ID']
-            refs_as_data = row['Use Refs as Data?'] == 'y'
-            if not refs_as_data: continue
-            refs = []
-            for i in range(1, 6):
-                temp_ref = row[f'Ref {i}'].replace('JTmock', 'Jerusalem Talmud')
-                if len(temp_ref) == 0: continue
-                refs += [temp_ref]
-            full_temp_mentions = mentions_by_text[row['En Title']]
+            refs = [row['Ref']]
+            full_temp_mentions = mentions_by_text[row['Error']]
             temp_mentions = list(filter(lambda x: x['ref'] in refs, full_temp_mentions))
-            try:
-                assert len(temp_mentions) == len(refs)
-            except AssertionError:
-                if len(full_temp_mentions) == 0: continue
-                print(f"{len(temp_mentions)} {len(refs)} {len(full_temp_mentions)} {row['En Title']} {slug} {full_temp_mentions[0]['mention']}")
+            # try:
+            #     assert len(temp_mentions) == len(refs)
+            # except AssertionError:
+            #     if len(full_temp_mentions) == 0: continue
+            #     print(f"{len(temp_mentions)} {refs[0]} {len(full_temp_mentions)} {row['Error']} {full_temp_mentions[0]['mention']}")
             corrections += [{
                 "start": m['start'],
                 "end": m['end'],
@@ -165,14 +157,14 @@ def get_manual_bavli_corrections():
                 "language": m['language'],
                 "ref": m['ref'],
                 "mention": m['mention'],
-                "correctionType": "mistake" if len(slug) == 0 else "manualIds",
-                "id_matches": [slug] if len(slug) > 0 else None
+                "correctionType": "mistake" if row['Type'] == 'mistake' else "manualIds",
+                "id_matches": [row['Replace with']] if row['Type'] == 'replace' else None
             } for m in temp_mentions]
-        with open('/home/nss/sefaria/data/research/knowledge_graph/named_entity_recognition/manual_corrections_yerushalmi.json', 'w') as fout:
+        with open('/home/nss/sefaria/data/research/knowledge_graph/named_entity_recognition/manual_corrections/manual_corrections_bavli2.json', 'w') as fout:
             json.dump(corrections, fout, ensure_ascii=False, indent=2)
 
 if __name__ == '__main__':
-    IntraTopicLinkSet({"generatedBy": "bavli-rabbi-import"}).delete()
-    add_titles()
-    import_bonayich_rabbis()
-    # get_manual_bavli_corrections()
+    # IntraTopicLinkSet({"generatedBy": "bavli-rabbi-import"}).delete()
+    # add_titles()
+    # import_bonayich_rabbis()
+    get_manual_bavli_corrections()

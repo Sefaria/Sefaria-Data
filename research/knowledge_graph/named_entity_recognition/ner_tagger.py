@@ -90,7 +90,7 @@ from collections import defaultdict
 from sefaria.helper.normalization import AbstractNormalizer, NormalizerComposer, NormalizerByLang
 
 GERSHAYIM = '\u05F4'
-REGEX_TITLE_CHUNK = 700
+REGEX_TITLE_CHUNK = 100
 
 class NormalizerTools:
     b_replacements = [' ben ', ' bar ', ', son of ', ', the son of ', ' son of ', ' the son of ', ' Bar ', ' Ben ']
@@ -809,20 +809,28 @@ class CorpusManager:
     def generate_html_files_for_mentions(self, special_slug_set=None):
         mentions_by_ref = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         special_mentions_by_ref = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-
+        text_by_version = defaultdict(dict)
+        def collect_text(s, en_tref, he_tref, v: Version):
+            nonlocal text_by_version
+            text_by_version[v.title][(en_tref, v.versionTitle, v.language)] = s
+        unique_versions = set()
         for mention in tqdm(self.mentions, desc="html group by ref"):
-            mentions_by_ref[Ref(mention.ref).index.title][mention.ref][f"{mention.versionTitle}|||{mention.language}"] += [mention]
+            title = Ref(mention.ref).index.title
+            unique_versions.add((title, mention.versionTitle, mention.language))
+            mentions_by_ref[title][mention.ref][f"{mention.versionTitle}|||{mention.language}"] += [mention]
             if special_slug_set is not None and len(special_slug_set & set(mention.id_matches)) > 0:
                 temp_special_slugs = special_slug_set & set(mention.id_matches)
                 for temp_slug in temp_special_slugs:
                     special_mentions_by_ref[temp_slug][mention.ref][f"{mention.versionTitle}|||{mention.language}"] += [mention]
-
+        for title, vtitle, lang in unique_versions:
+            version = Version().load({"title": title, "versionTitle": vtitle, "language": lang})
+            version.walk_thru_contents(collect_text)
         for book, ref_dict in tqdm(mentions_by_ref.items(), desc="make html"):
-            self.generate_html_file(book, ref_dict)
+            self.generate_html_file(book, ref_dict, text_by_version[book])
         for slug, ref_dict in tqdm(special_mentions_by_ref.items(), desc="make special html"):
             self.generate_html_file(slug, ref_dict)
 
-    def generate_html_file(self, filename, ref_dict, annotations_by_ref=None):
+    def generate_html_file(self, filename, ref_dict, text_by_version=None, annotations_by_ref=None):
         annotations_by_ref = annotations_by_ref or {}
         refs_in_order = sorted(ref_dict.keys(), key=lambda x: Ref(x).order_id())
         html = """
@@ -875,7 +883,10 @@ class CorpusManager:
             sorted_versions = sorted(versions.items(), key=lambda x: x[0])
             for version_lang, temp_mentions in sorted_versions:
                 vtitle, lang = version_lang.split('|||')
-                segment_text = oref.text(lang, vtitle=vtitle).text
+                if text_by_version is not None:
+                    segment_text = text_by_version[(ref, vtitle, lang)]
+                else:
+                    segment_text = oref.text(lang, vtitle=vtitle).text
                 linked_text = self.add_html_links(temp_mentions, segment_text)
                 linked_text = TextChunk._strip_itags(linked_text)
                 html += f"""
@@ -894,7 +905,7 @@ class CorpusManager:
         for mention in tqdm(self.mentions, desc="html group by ref"):
             if mention.ref not in limit_to_refs: continue
             mentions_by_ref[mention.ref][f"{mention.versionTitle}|||{mention.language}"] += [mention]
-        self.generate_html_file(filename, mentions_by_ref, annotations_by_ref)
+        self.generate_html_file(filename, mentions_by_ref, annotations_by_ref=annotations_by_ref)
 
     @staticmethod
     def get_snippet(text, mention, padding=30, delim='~'):
@@ -1287,8 +1298,8 @@ def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle
 if __name__ == "__main__":
     ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
     corpus_manager = CorpusManager(
-        "ner_input/ner_tagger_input_bavli.json",
-        f"{ner_file_prefix}/temp/ner_output_bavli.json",
+        "ner_input/ner_tagger_input_mishnah.json",
+        f"{ner_file_prefix}/ner_output_mishnah.json",
         f"{ner_file_prefix}/html"
     )
     # corpus_manager.export_named_entities(f"{ner_file_prefix}/named_entities_export.csv")
@@ -1297,9 +1308,9 @@ if __name__ == "__main__":
     corpus_manager.save_mentions()
 
     #corpus_manager.load_mentions()
-    corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi'})
-    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/temp/cross_validated_by_language.csv", f"{ner_file_prefix}/temp/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/temp/cross_validated_by_language_ambiguities.csv", ("William Davidson Edition - Aramaic", "he"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he") ("The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015", "en")
-    corpus_manager.filter_cross_validation_by_topics(f"{ner_file_prefix}/temp/cross_validated_by_language.csv", f"{ner_file_prefix}/temp/cross_validated_by_language_filtered.csv", [{
+    corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi', 'rav'})
+    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("Mishnah Yomit by Dr. Joshua Kulp", "en"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he") ("The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015", "en")
+    corpus_manager.filter_cross_validation_by_topics(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_filtered.csv", [{
             "id": "biblical-figures",
             "idIsSlug": True,
             "getLeaves": True

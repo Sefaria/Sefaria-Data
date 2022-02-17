@@ -1,4 +1,5 @@
 import django, regex, srsly, random, re
+from os import walk, path
 from collections import defaultdict
 from tqdm import tqdm
 django.setup()
@@ -7,11 +8,12 @@ from sefaria.system.exceptions import InputError
 from research.prodigy.prodigy_package.db_manager import MongoProdigyDBManager
 from sefaria.helper.normalization import NormalizerComposer
 
+
 class ProdigyInputWalker:
-    def __init__(self, prev_tagged_refs):
+    def __init__(self, prev_tagged_refs=None):
         self.prodigyInput = []
         self.prodigyInputByVersion = defaultdict(list)
-        self.prev_tagged_refs = prev_tagged_refs
+        self.prev_tagged_refs = prev_tagged_refs or []
         self.normalizer = NormalizerComposer(['unidecode', 'html', 'maqaf', 'cantillation', 'double-space'])
 
     @staticmethod
@@ -52,6 +54,7 @@ class ProdigyInputWalker:
         return text.split('. ')
 
     def get_input(self, text, en_tref, language):
+        text = self.normalizer.normalize(text)
         text_list = text.split('\n')
         temp_input_list = []
         for t in text_list:
@@ -74,7 +77,6 @@ class ProdigyInputWalker:
             print("ignoring", en_tref)
             return
         # text = TextChunk._strip_itags(text)
-        norm_text = self.normalizer.normalize(text)
         temp_input_list = self.get_input(norm_text, en_tref, version.language)
         self.prodigyInputByVersion[(version.versionTitle, version.title, version.language)] += temp_input_list
         
@@ -99,6 +101,42 @@ def make_prodigy_input(title_list, vtitle_list, lang_list, prev_tagged_refs):
         version.walk_thru_contents(walker.action)
     walker.make_final_input(400)
     srsly.write_jsonl('data/test_input.jsonl', walker.prodigyInput)
+
+
+def num_english_chars(s, perc=True):
+    num = 0
+    for match in re.finditer(r'[a-zA-Z]', s):
+        num += (match.end() - match.start())
+    if perc and len(s) > 0:
+        return num / len(s)
+    return num
+
+
+def make_prodigy_input_webpages(n):
+    LOC = "/Users/nss/sefaria/datasets/webpages"
+    walker = ProdigyInputWalker()
+    nchosen = 0
+    for (dirpath, dirnames, filenames) in walk(path.join(LOC, 'he')):
+        for filename in tqdm(filenames, total=2*n):  # total is approximate
+            chosen = random.choice([True, False])
+            if nchosen >= n: break
+            nchosen += int(chosen)
+            with open(path.join(dirpath, filename), 'r') as fin:
+                url = None
+                for iline, line in enumerate(fin):
+                    line = " ".join(re.split(r'\s+', line)).strip()
+                    if iline == 0:
+                        url = line
+                        continue
+                    if num_english_chars(line) > 0.5:
+                        continue
+                    if iline >= 2 and not chosen:
+                        # always include title. only include content if chosen
+                        continue
+                    walker.prodigyInput += walker.get_input(line, url, 'he')
+    random.shuffle(walker.prodigyInput)
+    srsly.write_jsonl('data/test_input.jsonl', walker.prodigyInput)
+
 
 def combine_sentences_to_paragraph(sentences):
     if len(sentences) == 0: return
@@ -169,39 +207,13 @@ if __name__ == "__main__":
     #     "Tosafot HaRosh on Horayot", "Tosafot Rid on Avodah Zarah Third Recension", "Tosafot Shantz on Sotah",
     #     "Tosafot Yeshanim on Keritot", "HaMaor HaKatan on Eruvin", "Nimukei Yosef on Bava Metzia"
     # ]
-    title_list = library.get_indexes_in_category('Yerushalmi')
+    title_list = [
+        "Ein HaTekhelet", "Shev Shmat'ta", "Havot Yair", "Responsa Chatam Sofer", "Netivot Olam", "Mei HaShiloach", "Pri Tzadik", "Sefer HeArukh"
+    ]
     prev_tagged_refs = get_prev_tagged_refs('gold_output_full')
     # title_list = [i.title for i in IndexSet({"title": re.compile(r'Gilyon HaShas on')})]
     # print(title_list)
-    # make_prodigy_input(title_list, [None]*len(title_list), ['en']*len(title_list), prev_tagged_refs)
-    ref_list = [r.strip() for r in """Jerusalem Talmud Yevamot 2:4:8
-    Jerusalem Talmud Chagigah 2:5:2
-    Jerusalem Talmud Chagigah 3:2:5
-    Jerusalem Talmud Horayot 1:1:2
-    Jerusalem Talmud Horayot 1:1:4
-    Jerusalem Talmud Horayot 3:2:14
-    Jerusalem Talmud Horayot 1:8:3
-    Jerusalem Talmud Horayot 1:8:5
-    Jerusalem Talmud Horayot 2:1:2
-    Jerusalem Talmud Horayot 2:5:3
-    Jerusalem Talmud Shabbat 7:2:8
-    Jerusalem Talmud Shabbat 1:8:6
-    Jerusalem Talmud Shabbat 12:1:6
-    Jerusalem Talmud Shabbat 16:5:2
-    Jerusalem Talmud Shabbat 16:7:2
-    Jerusalem Talmud Shabbat 17:6:2
-    Jerusalem Talmud Shabbat 21:3:1
-    Jerusalem Talmud Shabbat 19:5:2
-    Jerusalem Talmud Shabbat 1:8:3
-    Jerusalem Talmud Shabbat 7:2:36
-    Jerusalem Talmud Shabbat 17:1:3
-    Jerusalem Talmud Berakhot 1:1:1
-    Jerusalem Talmud Berakhot 9:1:4
-    Jerusalem Talmud Berakhot 2:8:3
-    Jerusalem Talmud Berakhot 2:4:16
-    Jerusalem Talmud Berakhot 2:4:5
-    Jerusalem Talmud Berakhot 2:3:16""".split('\n')]
-    make_prodigy_input_by_refs(ref_list, 'en', 'Guggenheimer Translation 2.1')
-
+    #make_prodigy_input(title_list, [None]*len(title_list), ['en']*len(title_list), prev_tagged_refs)
+    make_prodigy_input_webpages(3000)
     # combine_all_sentences_to_paragraphs()
     # make_prodigy_input_sub_citation('yerushalmi_output2', 'yerushalmi_sub_citation_input2')
