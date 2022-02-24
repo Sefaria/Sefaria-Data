@@ -28,6 +28,22 @@ min_thresh=22
 find_url = "https://talmudfinder-1-3.loadbalancer.dicta.org.il/TalmudFinder/api/markpsukim"  # PasukFinder
 # parse_url = f"https://talmudfinder-1-1x.loadbalancer.dicta.org.il/PasukFinder/api/parsetogroups?smin={min_thresh}&smax=10000"
 SLEEP_TIME = 0
+ff_headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0',
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Content-Type': 'text/plain;charset=UTF-8',
+    'Origin': 'https://citation.dicta.org.il',
+    'Connection': 'keep-alive',
+    'Referer': 'https://citation.dicta.org.il/',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-site',
+    'DNT': '1',
+    'Sec-GPC': '1',
+    'TE': 'trailers',
+}
 
 run_type = f'date: {datetime.date} type: chasidut night run'
 
@@ -61,22 +77,7 @@ def find_pesukim(base_text, thresh=0): #mode="tanakh",
         "thresh": thresh,
         "fdirectonly": False
     }
-    response = requests.post(find_url, data=json.dumps(data_text), headers = {
-    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0',
-    'Accept': '*/*',
-    'Accept-Language': 'en-US,en;q=0.5',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Content-Type': 'text/plain;charset=UTF-8',
-    'Origin': 'https://citation.dicta.org.il',
-    'Connection': 'keep-alive',
-    'Referer': 'https://citation.dicta.org.il/',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-    'DNT': '1',
-    'Sec-GPC': '1',
-    'TE': 'trailers',
-})
+    response = requests.post(find_url, data=json.dumps(data_text), headers =ff_headers)
     response_json = response.json()
     sleep(SLEEP_TIME)
     #todo: add a timeout
@@ -96,8 +97,11 @@ def dicta_parse(response_json, min_thresh=22):
         "results": result
     }
 
-    response = requests.post(parse_url, data=json.dumps(data_parse))
+    response = requests.post(parse_url, data=json.dumps(data_parse), headers=ff_headers)
     parsed_results = response.json()
+    keep = {allText: parsed_results}
+    with open(f'{path}/api_results/keep_{mode}.json', 'a+') as fp:
+        json.dump(keep, fp)
     sleep(SLEEP_TIME)
     return parsed_results
 
@@ -717,11 +721,22 @@ if __name__ == '__main__':
     # offline_text_mapping_cat("Liturgy")
     # run_offline("Siddur Sefard", 'Liturgy', min_thresh=25, post=False, mongopost=True, priority_tanakh_chunk_type='psalms', max_word_number=100)
     # offline_text_mapping_cat("Liturgy")
-    # run_offline("Siddur Sefard", 'Liturgy', min_thresh=25, post=True, mongopost=True, priority_tanakh_chunk_type='psalms', max_word_number=100, offline=True)
-    seg = Ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah before the Hallel 1')
-    while 'Rosh Chodesh' in seg.next_segment_ref().normal():
-        dicta_links_from_ref(seg.normal(), post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
-                         mongopost=True, seg_split=':')
-        seg = seg.next_segment_ref()
+    # run_offline("Siddur Sefard", 'Liturgy', min_thresh=22, post=True, mongopost=True, priority_tanakh_chunk_type='psalms', max_word_number=500, offline=False, seg_split=":")
+    # seg = Ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah before the Hallel 1')
+    # seg = Ref('Siddur Sefard, Weekday Maariv, The_Shema 1')
+    # seg = Ref('Siddur Sefard, Upon_Arising, Modeh Ani 1')
+    # while seg:
+    #     dicta_links_from_ref(seg.normal(), post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
+    #                      mongopost=True, seg_split=':')
+    #     seg = seg.next_segment_ref()
     # dicta_links_from_ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115:1', post=False, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
     #                      mongopost=True, seg_split=':')
+
+    # pool = multiprocessing.Pool(5)
+    # pool.map(run_all_night, run_all_night_list)
+
+    # dicta_links_from_ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115:1', post=False, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
+    #                      mongopost=True, seg_split=':')
+
+    dicta_links_from_ref("Siddur Sefard, Upon Arising, Upon Entering Synagogue 4", post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
+                         mongopost=True, seg_split=':')
