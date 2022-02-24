@@ -11,10 +11,11 @@ from sefaria.utils.hebrew import strip_cantillation
 
 
 def addMidrashRabbahMegillotLinks(midrash_name):
+    search_perek = 1
     links = []
     midrash_index = library.get_index(midrash_name)
     megillah_name = midrash_name.replace(" Rabbah", "")
-
+    rows = []
     if megillah_name == u"Shir HaShirim":
         pasuk_refs = midrash_index.all_section_refs()
         for comment_refs in pasuk_refs:
@@ -32,21 +33,42 @@ def addMidrashRabbahMegillotLinks(midrash_name):
         perek_refs = midrash_index.all_section_refs()
         for perek_ref in perek_refs:
             for comment_ref in perek_ref.all_subrefs():
+                if u"Petichta" in comment_ref.normal():
+                    continue
                 location_index = len(comment_ref.normal().split()) - 1
-                if u"Eichah" in comment_ref.normal() and u"Petichta" not in comment_ref.normal():
-                    perek, comment = comment_ref.normal().split()[location_index].split(":")
-                    match = megillah_match(comment_ref, megillah_name, perek)
+                row = {'rabbah_ref': comment_ref.normal()}
+                if megillah_name in comment_ref.normal() and u"Petichta" not in comment_ref.normal():
+                    # if not search_perek:
+                    #     search_perek, comment = comment_ref.normal().split()[location_index].split(":")
+                    match = megillah_match(comment_ref, megillah_name, search_perek)
                 else:
                     match = megillah_match(comment_ref, megillah_name)
 
+                # if not match:
+                #     match = megillah_match(comment_ref, megillah_name)
+                #     if match:
+                #         print(f"3rd time the charm {comment_ref}")
                 if match:
                     perek, pasuk = match
                     megillah_ref = "{} {}:{}".format(megillah_name, perek, pasuk)
                     link = {"refs": [comment_ref.normal(), megillah_ref],
                             "generated_by": "midrash_rabbah_to_megillot_linker",
                             "auto": True,
-                            "type": "Midrash"}
+                            "type": "quotation_auto"}
+                    # links.append(link)
+                else:
+                    print(f"didn't find a match for {comment_ref}")
+                q = {'$and': [{'refs': comment_ref.normal()}, {'refs': {'$regex': f'^{megillah_name} \d'}}]}
+                ls_perek = LinkSet(q)
+                if ls_perek.count():
+                    search_perek = re.search(f'{megillah_name} (\d+):', ls_perek[0].refs[0]).group(1)
+                    row['matcher'] = ''
+                else:
+                    row['matcher'] = megillah_ref
                     links.append(link)
+                rows.append(row)
+
+    write_to_csv(rows, 'matcher_links_2')
     post_link(links, server=SEFARIA_SERVER)
     return links
 
@@ -159,18 +181,78 @@ def link_options_to_links(link_options, post=False):
         post_link(links)
     return links
 
+def based_on_old_linking(megillah):
+    same = None
+    links = []
+    rows = []
+    midrash_index = library.get_index(f'{megillah} Rabbah')
+    perek_refs = midrash_index.all_section_refs()
+    for perek_ref in perek_refs:
+        for comment_ref in perek_ref.all_subrefs():
+            if u"Petichta" in comment_ref.normal():
+                continue
+            q = {'$and': [{'refs.1': comment_ref.normal()}, {'refs.0': {'$regex': f'^{megillah} \d'}}]}
+            ls = LinkSet(q)
+            row = {
+                'rabbah_ref': comment_ref.normal(),
+                'rabbah_text': comment_ref.text('he').text,
+                'current_links': [l.refs[0] for l in ls]
+            }
+            ls_count = ls.count()
+            if not ls_count:
+                assert same is not None
+                link = {
+                    "refs": [comment_ref.normal(), same],
+                    "generated_by": "midrash_rabbah_to_megillot_linker",
+                    "auto": True,
+                    "type": "Quotation_auto"
+                }
+                row['simple'] = same
+                links.append(link)
+            elif ls_count>1:
+                print(f'{comment_ref.normal()}: {[l.refs[0] for l in ls]}')
+            elif ls_count == 1:
+                same = ls[0].refs[0]
+            rows.append(row)
+    print([l['refs'] for l in links], '\n', len(links))
+    # post_link(links)
+    write_to_csv(rows, f'{megillah}_rabbah_{megillah}_links')
+
+
+def write_to_csv(rows, file_name):
+    with open(f'{file_name}.csv', 'a') as csv_file:
+        writer = csv.DictWriter(csv_file, ['rabbah_ref', 'rabbah_text', 'current_links', 'simple', 'matcher'])  # fieldnames = obj_list[0].keys())
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def read_from_csv(file_name):
+    links = []
+    with open(f'{file_name}.csv', 'r') as csv_file:
+        reader = csv.DictReader(csv_file, ['rabbah_ref','rabbah_text','manual'])  # fieldnames = obj_list[0].keys())
+        for row in reader:
+            for m_ref in re.findall("(Esther \d+:\d+)", row['manual']):
+                link = {"refs": [row['rabbah_ref'], m_ref],
+                        "generated_by": "midrash_rabbah_to_megillot_linker_manual",
+                        "auto": False,
+                        "type": "Midrash"}
+                links.append(link)
+        post_link(links, server=SEFARIA_SERVER)
+
 
 if __name__ == '__main__':
 
-    # result = addMidrashRabbahMegillotLinks("Eichah Rabbah")
+    # result = addMidrashRabbahMegillotLinks("Esther Rabbah")
     # link_options = eichah_DH_match('Lamentations 2', 'Eichah Rabbah.2')
     # links = link_options_to_links(link_options, post=False)
     # Eichah_query = {"generated_by": {"$regex": "midrash_rabbah.*"}, "$and": [{"refs": {"$regex":"Eichah.*"}}]}
     # post_links(Eichah_query)
     # Ref_base, Ref_comm, dh, match
-    final_link_matches = best_reflinks_for_maximum_dh(Ref('Lamentations 1'), Ref('Eichah Rabbah.1'), tokenizer=tok, max_dh_len=7)
+    # final_link_matches = best_reflinks_for_maximum_dh(Ref('Lamentations 1'), Ref('Eichah Rabbah.1'), tokenizer=tok, max_dh_len=7)
     # print(dh)
     # dh_length = len(dh.split())
     # comment_text = TextChunk(Ref_comm, lang="he").text
     # print(f'<em>{comment_text[0:dh_length]}<\em>{comment_text[dh_length::]}') #wrong approach
+    # based_on_old_linking('Esther')
+    read_from_csv('manual_Esther_links')
     pass

@@ -13,7 +13,8 @@ from pathlib import Path
 @spacy.registry.tokenizers("inner_punct_tokenizer")
 def inner_punct_tokenizer_factory():
     def inner_punct_tokenizer(nlp):
-        infix_re = re.compile(r'''[.\,\?\:\;\...\‘\’\`\“\”\"\'~\–/\(\)]''')
+        # infix_re = spacy.util.compile_infix_regex(nlp.Defaults.infixes)
+        infix_re = re.compile(r'''[\.\,\?\:\;…\‘\’\`\“\”\"\'~\–\-/\(\)]''')
         prefix_re = spacy.util.compile_prefix_regex(nlp.Defaults.prefixes)
         suffix_re = spacy.util.compile_suffix_regex(nlp.Defaults.suffixes)
 
@@ -165,9 +166,14 @@ def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, 
         }
     }
 
+def test_tokenizer(model_dir, s, lang):
+    nlp, _ = load_model(model_dir, ['na'], lang)
+    for token in nlp.tokenizer(s):
+        print(token)
+
 if __name__ == "__main__":
-    # test_tokenizer(nlp)
-    import_file_to_collection('../data/test_input.jsonl', 'yerushalmi_input2')
+    # test_tokenizer("/Users/nss/sefaria/data/research/prodigy/output/test_model", "abc-adf", 'en')
+    import_file_to_collection('../data/test_input.jsonl', 'webpages_input')
 """
 command to run
 

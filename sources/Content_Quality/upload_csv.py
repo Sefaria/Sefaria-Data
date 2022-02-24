@@ -8,7 +8,7 @@ new_file = ""
 
 import os
 import csv
-files = [open("intros.csv", 'r')]
+files = [open('../../../Downloads/curr exodus jps.csv', 'r')]
 for new_file in files:
     # if "Moed" not in new_file or "Rosh" not in new_file:
     #     continue
@@ -24,7 +24,7 @@ for new_file in files:
         print(row)
         tc = TextChunk(Ref(ref), lang=lang, vtitle=vtitle)
         tc.text = comm
-        #tc.save()
+        tc.save()
 
     #     chapter, segment = ref.split()[-1].split(":")
     #     chapter = int(chapter)

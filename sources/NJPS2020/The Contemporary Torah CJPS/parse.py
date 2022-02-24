@@ -4,6 +4,7 @@ import time
 from bs4 import BeautifulSoup, NavigableString
 from collections import Counter
 endings = set()
+styles = defaultdict(list)
 startings = set()
 verse_length = Counter()
 def check_str(v, pos='ending'):
@@ -38,7 +39,9 @@ for f in os.listdir("."):
         prev_was_lord = False
         for p_num, p in enumerate(xml.find_all("para")):
             if p.name == "para":
-                if len(p) > 1 or len(p.attrs) > 1:
+                verses_bool = len([x for x in p.contents if isinstance(x, Tag)]) > 0
+                if (len(p) > 1 or len(p.attrs) > 1):
+                    styles[p["style"]].append(p)
                     if p["style"] in ["q1", "q2"]:
                         text_dict[curr_ch][curr_seg] += "<br/>"
                     for v in p.contents:
@@ -73,15 +76,22 @@ for f in os.listdir("."):
                             assert v.attrs["style"] == "f"
                             ft_txt = ""
                             for ft in v:
+                                if isinstance(ft, Tag):
+                                    for x in ft.find_all("char", {"style": "tl"}):
+                                        x.replace_with("<i>"+x.text+"</i>")
+                                        print(f"{f.name[:-4]} {curr_ch}:{curr_seg}")
                                 if isinstance(ft, NavigableString):
                                     if len(ft.strip()) > 0:
                                         ft_txt += ft
+                                elif ft.attrs["style"] == "tl":
+                                    print(f"{f.name[:-4]} {curr_ch}:{curr_seg}")
+                                    ft_txt += "<i>{}</i>".format(ft.text)
                                 elif ft.attrs["style"] == 'fr':
                                     ft_ref = ft.text.replace(".", ":").strip()
                                     if "–" not in ft_ref:
                                         assert ft_ref in curr_ref
                                     else:
-                                        print(ft_ref)
+                                        pass
                                 elif ft.attrs["style"] == "fq":
                                     ft_txt += "<b>{}</b>".format(ft.text)
                                 elif ft.attrs["style"] == "ft":
@@ -94,9 +104,14 @@ for f in os.listdir("."):
                             other_tags.add(v.name)
                             if not check_str(text_dict[curr_ch][curr_seg], "ending"):
                                 text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip() + " "
-                            text_dict[curr_ch][curr_seg] += v.text.strip() + " "
+                            if v.attrs.get("style", "") == "tl":
+                                print(f"{f.name[:-4]} {curr_ch}:{curr_seg}")
+                                text_dict[curr_ch][curr_seg] += "<i>"+v.text.strip()+"</i> "
+                            else:
+                                text_dict[curr_ch][curr_seg] += v.text.strip() + " "
                             prev_was_lord = True
                     text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace("  ", " ")
+
 
     for ch in text_dict:
         orig = len(Ref("{} {}".format(title, ch)).all_segment_refs())
@@ -128,23 +143,18 @@ for f in os.listdir("."):
                 diff = 5
             else:
                 diff = 10
-            if abs(len(orig.split()) - len(new.split())) > diff:
-                print("****")
-                print("{} {}:{}".format(title, ch, v+1))
-                print(orig)
-                print(new)
+            # if abs(len(orig.split()) - len(new.split())) > diff:
+            #     print("****")
+            #     print("{} {}:{}".format(title, ch, v+1))
+            #     print(orig)
+            #     print(new)
 
     text_dict = convertDictToArray(text_dict)
     send_text = {
         "language": "en",
-        "versionTitle": "Contemporary JPS",
+        "versionTitle": "The Contemporary Torah, Jewish Publication Society, 2006 (new)",
         "versionSource": "https://www.sefaria.org",
         "text": text_dict
     }
     post_text(title, send_text, server="https://germantalmud.cauldron.sefaria.org")
-    time.sleep(10)
 
-
-print(p_styles)
-print(other_tags)
-print(verse_length.most_common(20))

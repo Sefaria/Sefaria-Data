@@ -130,7 +130,7 @@ def find_all_refs():
     db.rambi.bulk_write(updates)
     print(num_good, num_bad)
 if __name__ == "__main__":
-    # parse_all()
+    parse_all()
     find_all_refs()
 
 """

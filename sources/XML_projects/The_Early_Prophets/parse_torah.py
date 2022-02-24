@@ -52,9 +52,9 @@ if __name__ == "__main__":
     post_info["versionTitle"] = "Torah"
     post_info["versionSource"] = "http://www.sefaria.org"
     title = "Torah"
-    file_name = "The_Five_Books_of_Moses.xml"
+    file_name = "The_Five_Books_of_Moses_Later_Parse.xml"
     lines = open(file_name, 'r', encoding="cp1252").read()
     parser = XML_to_JaggedArray(title, lines, allowed_tags, allowed_attributes, versionInfo=post_info, change_name=True,
                                 titled=True, print_bool=True)
-    parser.set_funcs(reorder_modify=reorder_modify, reorder_test=lambda x: False, preparser=preparser)
+    parser.set_funcs(reorder_modify=reorder_modify, reorder_test=lambda x: False)
     parser.run()

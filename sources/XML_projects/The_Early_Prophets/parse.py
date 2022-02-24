@@ -12,8 +12,10 @@ def preparser(root):
     curr_book = None
     new_root = []
     ch_count = 0
+    essays = []
     for i, x in enumerate(root):
         if len(x) == 1 and x.tag != "p":
+            assert x.tag == "chapter"
             for grandchild in x[0]:
                 x.append(grandchild)
             chapter_txt = re.search("Chapters? \S+\.", x[0].text).group(0)
@@ -25,10 +27,15 @@ def preparser(root):
                 curr_book = etree.SubElement(root, "book")
                 curr_book.text = books[book]
             curr_book.append(x)
+        else:
+            essays.append(x)
+
+
     new_root.append(curr_book)
     root.clear()
-    for curr_book in new_root:
-        root.append(curr_book)
+    for curr_book in essays:
+        if re.search("[\u0591-\u05EA]+", curr_book.text) is None:
+            root.append(curr_book)
     return root
 
 def reorder_modify(text):

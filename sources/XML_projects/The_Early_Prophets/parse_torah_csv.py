@@ -20,7 +20,8 @@ refs = ["Torah, Exodus, Ii: in the Wilderness", "Torah, Exodus, Iii: the Meeting
 new_rows = []
 with open("Torah to be parsed.csv", 'r') as f:
     curr_ref = ""
-    for row in csv.reader(f):
+    lines = list(csv.reader(f))
+    for r, row in enumerate(lines):
         if re.search("^\d+ ", row[1]) and row[0].rsplit(".")[0] in refs:
             curr_ref = row[0].rsplit(".")[0]
         elif row[0].rsplit(".")[0] != curr_ref and len(curr_ref) > 0:

@@ -11,7 +11,21 @@
             "getLeaves": true
         },
         {
-            "namedEntityFile": "research/knowledge_graph/named_entity_recognition/sperling_named_entities.json"
+            "id": "biblical-figures",
+            "idIsSlug": true,
+            "getLeaves": true
+        },
+        {
+            "id": "jewish-people",
+            "idIsSlug": true
+        },
+        {
+            "id": "israel",
+            "idIsSlug": true
+        },
+        {
+            "id": "jesus",
+            "idIsSlug": true
         },
         {
             "id": "rabi",
@@ -32,8 +46,15 @@
                 "text": "רבי יוחנן בן זכאי",
                 "lang": "he"
             }]
+        },
+        {
+            "namedEntityFile": "external_named_entities/sperling_named_entities.json"
         }
     ],
+    "normalizers": {
+        "en": ["br-tag", "itag", "unidecode", "html", "brackets", "double-space"],
+        "he": ["br-tag", "itag", "unidecode", "cantillation", "maqaf", "double-space"]
+    },
     "rules": [
         {
           "rule": {
@@ -53,13 +74,35 @@
                 "language": "en"
             }
           },
-          "namedEntities": ["rabi", "levi-b-sisi", "elisha-ben-abuya", "hillel"],
+          "namedEntities": null,
+          "namedEntitiesUNUSED": ["rabi", "levi-b-sisi", "elisha-ben-abuya", "hillel"],
           "comment": "Rav is very ambiguous in Aramaic and less ambiguous in English"
+        },
+        {
+            "rule": {
+                "id": "namedEntityNotInVersionDelete",
+                "appliesToVersions": [
+                    {
+                        "versionTitle": "William Davidson Edition - English",
+                        "language": "en"
+                    },
+                    {
+                        "versionTitle": "Mishnah Yomit by Dr. Joshua Kulp",
+                        "language": "en"
+                    }
+                ],
+                "versionToCompare": {
+                    "versionTitle": "Torat Emet 357",
+                    "language": "he"
+                }
+            },
+            "namedEntities": ["on-the-son-of-pelet", "phut", "nun1", "abba-yudan", "abdon", "eve", "rav-huna", "rebbi-huna"],
+            "comment": "Some people are davka ambiguous in English"
         },
         {
           "rule": {
             "id": "manualCorrections",
-            "correctionsFile": "research/knowledge_graph/named_entity_recognition/manual_corrections_mishnah.json"
+            "correctionsFile": "manual_corrections/manual_corrections_mishnah.json"
           }
         }
     ],
@@ -91,7 +134,7 @@
     "namedEntityRecognizerParams": {
         "langSpecificParams": {
             "he": {
-                "prefixRegex": "(?:בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד)?"
+                "prefixRegex": "(?:וכד|לכד|ובד|וד|בד|בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|מד|כד|דב|אד|לד|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד|א(?!מר))??"
             }
         }
     },

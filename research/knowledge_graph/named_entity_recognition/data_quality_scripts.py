@@ -444,6 +444,9 @@ def find_changes_between_wiki_and_will():
     for title in tqdm(library.get_indexes_in_category("Bavli")):
         wiki = Version().load({"title": title, "versionTitle": "Wikisource Talmud Bavli", "language": "he"})
         will = Version().load({"title": title, "versionTitle": "William Davidson Edition - Aramaic", "language": "he"})
+        if wiki is None:
+            print(title)
+            continue
         for isec, (wiki_section, will_section) in enumerate(zip(wiki.chapter, will.chapter)):
             for iseg, (wiki_segment, will_segment) in enumerate(zip(wiki_section, will_section)):
                 daf = math.ceil((isec+1)/2)
@@ -640,7 +643,7 @@ if __name__ == "__main__":
     # fix_stub_rabbis()
     # how_much_is_coming_from_bonayich()
     # remove_gen_data()
-    # find_changes_between_wiki_and_will()
+    find_changes_between_wiki_and_will()
     # num_tanakh_person('aaron', "Tanakh: The Holy Scriptures, published by JPS", 'en')
     # find_true_bonayich_rabbis()
     # make_levi_shmuel_csv()
