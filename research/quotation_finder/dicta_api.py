@@ -157,7 +157,9 @@ def priority_section(parsed_results):
     all_matches_dict = d
     d_lengths = [(k,len(v)) for k,v in all_matches_dict.items()]
     d_lengths.sort(key = lambda x: x[1])
-    return d_lengths[-1][0]
+    if max(l[1] for l in d_lengths)> np.mean([l[1] for l in d_lengths]):
+        return d_lengths[-1][0]
+    return None
 
 def link_options_from_text(text):
     pass
