@@ -476,7 +476,7 @@ def bunch_refs_to_ranged_refs(links):
         if len(group) > 1:
             ranged_ref_json = group[0].copy()
             try:
-                ranged_ref_json['refs'][0] = Ref(f'{Rl(group[0]).he_normal()} - {Rl(group[-1]).he_normal()}').normal()
+                ranged_ref_json['refs'][0] = Ref(f'{Rl(group[0]).normal()} - {Rl(group[-1]).normal()}').normal()
                 output_links.append(ranged_ref_json)
             except sefaria.system.exceptions.InputError as e:
                 output_links.extend(group)
@@ -740,5 +740,5 @@ if __name__ == '__main__':
     # dicta_links_from_ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115:1', post=False, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
     #                      mongopost=True, seg_split=':')
 
-    dicta_links_from_ref("Siddur Sefard, Upon Arising, Upon Entering Synagogue 4", post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
+    dicta_links_from_ref("Siddur Sefard, Weekday Shacharit, Song of the Day 20", post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
                          mongopost=True, seg_split=':')
