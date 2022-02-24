@@ -1,5 +1,8 @@
 import django, re, requests, json
 from collections import defaultdict
+
+import sefaria.system.exceptions
+
 django.setup()
 from collections import namedtuple
 import unicodecsv as csv
@@ -9,14 +12,16 @@ import numpy as np
 import pymongo
 from sefaria.settings import *
 import logging
+import multiprocessing
 # from data_utilities.util import * #get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
 from research.link_disambiguator.modify_tanakh_links import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
 import datetime
 # logging.basicConfig(filename='wordLevelData.log', encoding='utf-8', level=logging.DEBUG)
 path = os.getcwd()
-log = open(f'{path}/wordLevelData.log', "w+")
 client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)  # (MONGO_ASPAKLARIA_URL)
 db_qf = client.quotations
+mode ='tanakh'  #'mishna', 'tanakh', 'talmud'
+Mish = lambda x: 'משנה ' + x if mode == 'mishna' else x
 
 wl = WeightedLevenshtein()
 min_thresh=22
@@ -33,7 +38,7 @@ def retreive_bold(st):
     return ' '.join([re.sub('<.*?>', '', w) for w in st.split() if '<b>' in w])
 
 
-def find_pesukim(base_text, mode="tanakh", thresh=0):
+def find_pesukim(base_text, thresh=0): #mode="tanakh",
     """
     Using the dicta citations finder returns results of optional pesukim that correspond to text in the base text and other metadata
     :param base_text: stripped text to look through.
@@ -74,6 +79,7 @@ def find_pesukim(base_text, mode="tanakh", thresh=0):
 })
     response_json = response.json()
     sleep(SLEEP_TIME)
+    #todo: add a timeout
     return response_json
 
 
@@ -98,7 +104,7 @@ def dicta_parse(response_json, min_thresh=22):
 
 def many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=None):
     many_pesukim_he = [match['verseDispHeb'] for match in result['matches']]
-    many_pesukim_refs = [Ref(he_disp) for he_disp in many_pesukim_he]
+    many_pesukim_refs = [Ref(Mish(he_disp)) for he_disp in many_pesukim_he]
     many_pesukim_score = [match['score'] for match in result['matches']]
     mean = np.mean(many_pesukim_score)
     var = np.var(many_pesukim_score)
@@ -122,15 +128,21 @@ def many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=None):
         # print(f"more than one pasuk option for {base_ref.normal()}: {many_pesukim_he}")
     if priority_tanakh_chunk:
         best_match_option_ref = list(set(priority_tanakh_chunk.all_segment_refs()) & set(many_pesukim_refs))
-        best_match = [match for match in result['matches'] if Ref(match['verseDispHeb']) in best_match_option_ref]
-        matched = best_match[0] if best_match else matched
+        best_match = [match for match in result['matches'] if Ref(Mish(match['verseDispHeb'])) in best_match_option_ref]
+        matched = best_match[-1] if best_match else matched
     return matched
 
 def priority_section(parsed_results):
     if not parsed_results:
         return None
     all_results = [sr for seg_results in  parsed_results for sr in seg_results]
-    all_matches = [(Ref(match['verseDispHeb']).section_ref(), match) for result in all_results for match in
+    def match_section_ref(match):
+        if match['mode'] =='Mishna':
+            heb_disp = f" משנה {match['verseDispHeb']}"
+        else:
+            heb_disp = match['verseDispHeb']
+        return Ref(heb_disp).section_ref()
+    all_matches = [(match_section_ref(match), match) for result in all_results for match in
                    result['matches']]
     d = dict()
     for k, v in all_matches:
@@ -172,7 +184,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             if len(result['matches']) == 0:
                 continue
             result['matches'].sort(key=lambda x: x['score'])
-            priority_section_matches = [match for match in result['matches'] if priority == Ref(match['verseDispHeb']).section_ref()]
+            priority_section_matches = [match for match in result['matches'] if priority and priority == Ref(match['verseDispHeb']).section_ref()]
             if priority and priority_section_matches:
                     matched = priority_section_matches[-1]
             else:
@@ -180,45 +192,48 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
                 if len(result['matches']) > 1:
                     matched = many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=priority_tanakh_chunk)
 
-            pasuk_ref = Ref(matched['verseDispHeb'])
+            pasuk_ref = Ref(Mish(matched['verseDispHeb']))
             if not pasuk_ref.text('he').text:
                 if pasuk_ref.normal() == 'Numbers 25:19':
                     pasuk_ref = Ref('Numbers 26:1')
                 else:
                     print(f'{pasuk_ref} has no text in it')
                     continue
-            matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel(matched['verseiWords'], pasuk_ref,
-                                                                         matched['matchedText'])
-            matched_wds_base = retreive_bold(result['text'])
-            matched_wds_pasuk = retreive_bold(matched['matchedText'])
-            score = matched['score']
-            dh_match = result in dh_res
-            if priority_tanakh_chunk:
-                dh_match = dh_match and pasuk_ref in priority_tanakh_chunk.all_segment_refs()
-            m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"],
-                      matched_pasuk_start, matched_pasuk_end, dh_match)
+            if mode == 'tanakh':
+                matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel(matched['verseiWords'], pasuk_ref,
+                                                                             matched['matchedText'])
+                matched_wds_base = retreive_bold(result['text'])
+                matched_wds_pasuk = retreive_bold(matched['matchedText'])
+                score = matched['score']
+                dh_match = result in dh_res
+                if priority_tanakh_chunk:
+                    dh_match = dh_match and pasuk_ref in priority_tanakh_chunk.all_segment_refs()
+                m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"],
+                          matched_pasuk_start, matched_pasuk_end, dh_match)
             link_option = [pasuk_ref, base_ref, m.textMatched, m]
-            # if dh_match:
-            #     trivial_ref = pasuk_ref.normal()
-            #     link_option.append("dh")
-            #     dh_link_options.append(link_option)
-            link_option.append(trivial_ref)
-            tc = link_option[1].text('he')
-            html_regex = re.compile("<[^>]*?>")
-            find_text_to_remove = lambda x: [(m, '') for m in re.finditer(html_regex, x)]
-            normalization_mapping = get_mapping_after_normalization(tc.text, find_text_to_remove=find_text_to_remove)
-            lv_score = validate_wordLevel2charLevel(tc, [m[3], m[4]], m[0], pasuk=False, wl_min_score=200)
-            if lv_score < 200:
-                normolized = convert_normalized_indices_to_unnormalized_indices([(m[3], m[4])], normalization_mapping)[
-                    0]
-                lv_score = validate_wordLevel2charLevel(tc, normolized, m[0], pasuk=False, wl_min_score=200,
-                                                        html_regex=html_regex)
-                try:
-                    assert lv_score == 200
-                    link_option[3] = Match(matched_wds_base, matched_wds_pasuk, score, normolized[0], normolized[1],
-                                           matched_pasuk_start, matched_pasuk_end, dh_match)
-                except AssertionError:
-                    log.write(f'{tc._oref} take_2 lv score is: {lv_score}\n')
+            if mode == 'tanakh':
+                # if dh_match:
+                #     trivial_ref = pasuk_ref.normal()
+                #     link_option.append("dh")
+                #     dh_link_options.append(link_option)
+                link_option.append(trivial_ref)
+                tc = link_option[1].text('he')
+                html_regex = re.compile("<[^>]*?>")
+                find_text_to_remove = lambda x: [(m, '') for m in re.finditer(html_regex, x)]
+                normalization_mapping = get_mapping_after_normalization(tc.text, find_text_to_remove=find_text_to_remove)
+                lv_score = validate_wordLevel2charLevel(tc, [m[3], m[4]], m[0], pasuk=False, wl_min_score=200)
+                if lv_score < 200:
+                    normolized = convert_normalized_indices_to_unnormalized_indices([(m[3], m[4])], normalization_mapping)[
+                        0]
+                    lv_score = validate_wordLevel2charLevel(tc, normolized, m[0], pasuk=False, wl_min_score=200,
+                                                            html_regex=html_regex)
+                    try:
+                        assert lv_score == 200
+                        link_option[3] = Match(matched_wds_base, matched_wds_pasuk, score, normolized[0], normolized[1],
+                                               matched_pasuk_start, matched_pasuk_end, dh_match)
+                    except AssertionError:
+                        # log.write(f'{tc._oref} take_2 lv score is: {lv_score}\n')
+                        pass
             link_options.append(link_option)
             # if onlyDH:
             #     return dh_link_options
@@ -237,7 +252,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
 
             # base_text = strip_cantillation(bleach.clean(base_text, tags=[], strip=True), strip_vowels=True)
             # base_text = re.sub(f"{wrods_to_wipe}", "", base_text)
-            response_jsons = [find_pesukim(base_text, mode, thresh=thresh) for base_text in texts if base_text]
+            response_jsons = [find_pesukim(base_text, thresh=thresh) for base_text in texts if base_text]
             # response_json["results"][0]["ijWordPairs"]
             parsed_results = [dicta_parse(response_json, min_thresh=min_thresh) for response_json in response_jsons]
         parsed_results = [p for p in parsed_results if p]
@@ -317,7 +332,6 @@ def wordLevel2charLevel(wordLevel, pasuk_ref, matched_text):
     except IndexError:
         endChar = word_char_tuples[-1][1]
         # logging.debug(f"IndexError, pasuk: {pasuk_ref.normal()}")
-        log.write(f"IndexError, pasuk: {pasuk_ref.normal()}\n")
         return [0,0]
     return chars #[0], chars[0][1]
     # return startChar, endChar
@@ -342,8 +356,9 @@ def validate_wordLevel2charLevel(tc, charData, dictas_text, html_regex='', pasuk
         return 0
     wl_score = wl.calculate(ours_words[0], theirs_words[0], normalize=True) + wl.calculate(ours_words[-1], theirs_words[-1], normalize=True)
     if wl_score<wl_min_score and pasuk:
+        pass
         # logging.debug(f'charLevelData is not returning the same words as dicta. ours: {ours}, dicta: {theirs}')
-        log.write(f'{tc._oref} charLevelData is not returning the same words as dicta. ours: {ours}, dicta: {theirs} : wl={wl_score}\n')
+        # log.write(f'{tc._oref} charLevelData is not returning the same words as dicta. ours: {ours}, dicta: {theirs} : wl={wl_score}\n')
         # print(f'www.sefaria.org/{tc._oref}: {[ours_words[0], ours_words[-1],theirs_words[0], theirs_words[-1]]}')
     return wl_score
 
@@ -423,29 +438,6 @@ def post_links_from_file(file_name, score=22, server=SEFARIA_SERVER):
             links_to_post.append(l)
     post_link(links_to_post, server=server)
 
-def bunch_refs_to_ranged_refs(links):
-    # assuming all of one side is the same segment looking here at the other side
-    ref_groups= []
-    to_side_orefs = [Ref(l['refs'][0]) for l in links]
-    for r in to_side_orefs:
-        found_group = False
-        prev_r = r.prev_segment_ref()
-        if r.prev_segment_ref() in to_side_orefs:
-            for group_i, group in enumerate(ref_groups):
-                if prev_r in group:
-                    group.append(r)
-                    ref_groups[group_i] = group
-                    found_group = True
-                    break
-        if not found_group:
-            ref_groups.append([r])
-    output_links = []
-    # for group in ref_groups:
-    #     if len(group) > 1:
-    #         ranged_ref = Ref(f'{group[0].he_normal()} - {group[-1].he_normal()}')
-    #     else:
-    #         output_links.append(group[0])
-    #     output_links.append(ranged_ref)
 
 
 def bunch_refs_to_ranged_refs(links):
@@ -477,8 +469,12 @@ def bunch_refs_to_ranged_refs(links):
     for group in ref_groups:
         if len(group) > 1:
             ranged_ref_json = group[0].copy()
-            ranged_ref_json['refs'][0] = Ref(f'{Rl(group[0]).he_normal()} - {Rl(group[-1]).he_normal()}').normal()
-            output_links.append(ranged_ref_json)
+            try:
+                ranged_ref_json['refs'][0] = Ref(f'{Rl(group[0]).he_normal()} - {Rl(group[-1]).he_normal()}').normal()
+                output_links.append(ranged_ref_json)
+            except sefaria.system.exceptions.InputError as e:
+                output_links.extend(group)
+                print("fyi caught this in bunch_refs_to_ranged_refs", e)
         else:
             output_links.append(group[0])
     # print([Rl(l) for l in output_links])
@@ -487,6 +483,10 @@ def bunch_refs_to_ranged_refs(links):
 def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority_tanakh_chunk=None, offline=None, mongopost=True, seg_split= None):
     oref = Ref(tref)
     base_refs = oref.all_segment_refs()
+    # if mode == 'mishna':
+    #     get_dicta_matches_mishna(seg.normal(), onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'),
+    #                              offline=None,
+    #                              seg_split=':')
     link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh, priority_tanakh_chunk=priority_tanakh_chunk, offline=offline, seg_split=seg_split)
     if not link_options:
         # print("no links found")
@@ -555,7 +555,7 @@ def mongo_post(links):
     db_qf.quotations.insert_many(links)
 
 
-def run_offline(title, cat, min_thresh=22, post=False, mongopost=True, priority_tanakh_chunk_type=None, priority_fallback=None, max_word_number=30, offline=True):
+def run_offline(title, cat, min_thresh=22, post=False, mongopost=True, priority_tanakh_chunk_type=None, priority_fallback=None, max_word_number=30, offline=True, seg_split=None):
     """
 
     :param title:
@@ -564,6 +564,7 @@ def run_offline(title, cat, min_thresh=22, post=False, mongopost=True, priority_
     :param post:
     :param mongopost:
     :param priority_tanakh_chunk:
+    :param seg_split:
     :return:
     """
     text_mapping = get_from_file(f"offline/text_mappings/{cat}/{title}.json")
@@ -571,14 +572,14 @@ def run_offline(title, cat, min_thresh=22, post=False, mongopost=True, priority_
     priority = trivial_priority(title, text_mapping, priority_tanakh_chunk_type)
     all_links = []
     for r in text_mapping.keys():
-        if offline or dicta_results_mapping.get(r, None):
+        if offline: # or dicta_results_mapping.get(r, None):
             offline1 = [text_mapping, dicta_results_mapping]
         else:
             print(f'API call, ref {r}')
             offline1 = None
         if max_word_number and Ref(r).word_count() > max_word_number:
             continue
-        links = dicta_links_from_ref(f'{r}', post=post, min_thresh=min_thresh, offline=offline1, mongopost=mongopost, priority_tanakh_chunk=priority.get(r,  priority_fallback))
+        links = dicta_links_from_ref(f'{r}', post=post, min_thresh=min_thresh, offline=offline1, mongopost=mongopost, priority_tanakh_chunk=priority.get(r,  priority_fallback), seg_split=seg_split)
         if links:
             all_links.extend(links)
     if post:
@@ -617,6 +618,7 @@ def trivial_priority(title, text_mapping, priority_type="perek"):
             return {}
     return priority
 
+
 def offline_text_mapping_cat(cat):
     os.chdir(f'offline/text_mappings/{re.sub(" ", "_",cat)}')
     for ind_name in library.get_indexes_in_category(cat):
@@ -630,6 +632,19 @@ def offline_text_mapping_cat(cat):
             except KeyError:
                 print(ind_name)
                 pass
+def read_keep(key):
+    with open(f'{path}/api_results/keep_{mode}.json', 'r') as fp:
+        keep = json.load(fp)
+        if keep.get(key, None):
+            print(keep.get(key, None))
+
+run_all_night_list = library.get_index('Siddur Sefard').all_segment_refs()[3760: 4200]
+
+def run_all_night(seg):
+
+    dicta_links_from_ref(seg.normal(), post=False, onlyDH=False, min_thresh=25, offline=None,
+                         mongopost=True, seg_split='.')
+
 
 if __name__ == '__main__':
 
