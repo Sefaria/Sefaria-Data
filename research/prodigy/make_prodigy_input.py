@@ -214,6 +214,6 @@ if __name__ == "__main__":
     # title_list = [i.title for i in IndexSet({"title": re.compile(r'Gilyon HaShas on')})]
     # print(title_list)
     #make_prodigy_input(title_list, [None]*len(title_list), ['en']*len(title_list), prev_tagged_refs)
-    make_prodigy_input_webpages(3000)
+    # make_prodigy_input_webpages(3000)
     # combine_all_sentences_to_paragraphs()
-    # make_prodigy_input_sub_citation('yerushalmi_output2', 'yerushalmi_sub_citation_input2')
+    make_prodigy_input_sub_citation('webpages_output', 'webpages_sub_citation_input1')

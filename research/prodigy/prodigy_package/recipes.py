@@ -167,14 +167,14 @@ def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, 
         }
     }
 
-def test_tokenizer(model_dir, s, lang):
+def validate_tokenizer(model_dir, s, lang):
     nlp, _ = load_model(model_dir, ['na'], lang)
     for token in nlp.tokenizer(s):
         print(token)
 
 if __name__ == "__main__":
-    # test_tokenizer("/Users/nss/sefaria/data/research/prodigy/output/test_model", "abc-adf", 'en')
-    import_file_to_collection('../data/test_input.jsonl', 'webpages_input')
+    validate_tokenizer("/Users/nss/sefaria/data/research/prodigy/output/test_model", "ה, א-ב", 'he')
+    # import_file_to_collection('../data/test_input.jsonl', 'webpages_input')
 """
 command to run
 

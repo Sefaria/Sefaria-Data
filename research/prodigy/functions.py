@@ -258,10 +258,11 @@ def convert_jsonl_to_csv(filename):
         c.writerows(rows)
 
 if __name__ == "__main__":
-    nlp = spacy.load('./output/yerushalmi_refs/model-last')
+    # nlp = spacy.load('./output/yerushalmi_refs/model-last')
+    nlp = spacy.load('./output/webpages/model-last')
     # nlp = spacy.load('./output/sub_citation/model-best')
-    data = stream_data('localhost', 27017, 'yerushalmi_output', 'gilyon_input', 614, 0.8, 'test', 0)(nlp)
-    print(make_evaluation_files(data, nlp, './output/evaluation_results', lang='en'))
+    data = stream_data('localhost', 27017, 'webpages_output', 'gilyon_input', 614, 0.8, 'test', 0)(nlp)
+    print(make_evaluation_files(data, nlp, './output/evaluation_results', lang='he'))
 
     # data = stream_data('localhost', 27017, 'yerushalmi_output', 'gilyon_input', -1, 1.0, 'train', 0, unique_by_metadata=True)(nlp)
     # export_tagged_data_as_html(data, './output/evaluation_results', is_binary=False, start=0, lang='en')  # 897
@@ -278,7 +279,7 @@ Num examples 1682
  34    7600        136.44      6.50   82.05   82.85   81.27    0.82
 
 to train sub citation
-python -m spacy train ./configs/sub_citation.cfg --output ./output/sub_citation --code ./functions.py --gpu-id 0
+python -m spacy train ./configs/talmud_ner-v3.2.cfg --output ./output/sub_citation --code ./functions.py --gpu-id 0
 
 debug data
 python -m spacy debug data ./configs/ref_tagging_cpu.cfg -c ./functions.py
@@ -308,11 +309,11 @@ python -m spacy train ./output/binary_training/my_config.cfg --output ./output/r
 SPECIFIC TRAINING
 
 rishonim refs
-python -m spacy train ./configs/talmud_ner-v3.2.cfg --output ./output/ref_tagging_cpu --code ./functions.py --gpu-id 0
+python -m spacy train ./configs/talmud_ner-v3.2.cfg --output ./output/webpages --code ./functions.py --gpu-id 0
 
 yerushalmi refs
 python -m spacy train ./configs/talmud_ner-v3.2.cfg --output ./output/yerushalmi_refs2 --code ./functions.py --gpu-id 0
 
 yerushalmi sub_refs
-python -m spacy train ./configs/yerushalmi_sub_citation-v3.2.cfg --output ./output/yerushalmi_sub_refs --code ./functions.py --gpu-id 0
+python -m spacy train ./configs/sub_citation-v3.2.cfg --output ./output/yerushalmi_sub_refs --code ./functions.py --gpu-id 0
 """
