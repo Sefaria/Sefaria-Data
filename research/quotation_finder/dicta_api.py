@@ -133,7 +133,8 @@ def many_pesukim_match(result, base_ref, matched, priority_tanakh_chunk=None):
     if priority_tanakh_chunk:
         best_match_option_ref = list(set(priority_tanakh_chunk.all_segment_refs()) & set(many_pesukim_refs))
         best_match = [match for match in result['matches'] if Ref(Mish(match['verseDispHeb'])) in best_match_option_ref]
-        matched = best_match[-1] if best_match else matched
+        priority_match = best_match[-1] if best_match else matched
+        matched = priority_match if abs(priority_match['score']-matched['score']) < 20 else matched
     return matched
 
 def priority_section(parsed_results):
@@ -740,5 +741,5 @@ if __name__ == '__main__':
     # dicta_links_from_ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115:1', post=False, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
     #                      mongopost=True, seg_split=':')
 
-    dicta_links_from_ref("Siddur Sefard, Weekday Shacharit, Song of the Day 20", post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
+    dicta_links_from_ref("Siddur Sefard, Weekday Shacharit, Torah Reading 5", post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
                          mongopost=True, seg_split=':')
