@@ -985,7 +985,7 @@ class WeightedLevenshtein:
         :param s2: Second string. Determines the number of columns in the Levenshtein matrix.
         :param normalize: True to get a score between 0-100, False to get the weighted Levenshtein score.
         :return: If normalize is True, will return an integer between 0-100, with 100 being a perfect match and 0 being
-        two ompletely different strings with the most expensive swap at every location. Otherwise, the exact weighted
+        two completely different strings with the most expensive swap at every location. Otherwise, the exact weighted
         Levenshtein score will be returned.
         """
         original_s1, original_s2 = s1, s2
