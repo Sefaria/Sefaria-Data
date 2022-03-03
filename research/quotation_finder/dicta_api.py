@@ -485,9 +485,20 @@ def bunch_refs_to_ranged_refs(links):
         else:
             output_links.append(group[0])
     # print([Rl(l) for l in output_links])
+    if mode=="tanakh":
+        for i, group in enumerate(output_links):
+            refs = group['refs']
+            seg_parts = [x for x in re.split("[:.]",strip_nikkud(Ref(refs[1]).text('he').text)) if x.strip()]
+            if wl.calculate(strip_nikkud(Ref(refs[0]).prev_segment_ref().text('he').text), seg_parts[0]) > 80:
+                take2 = Ref(f"{Ref(refs[0]).prev_segment_ref().normal()}-{Ref(group['refs'][0]).orig_tref.split('-')[1]}").normal()
+                output_links[i]['refs'][0] = take2
+            if wl.calculate(strip_nikkud(Ref(refs[0]).next_segment_ref().text('he').text), seg_parts[-1]) > 80:
+                take2 = Ref(f"{Ref(group['refs'][0]).orig_tref.split('-')[0]}-{Ref(refs[0]).next_segment_ref().normal()}")
+                output_links[i] = take2
     return output_links
 
 def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority_tanakh_chunk=None, offline=None, mongopost=True, seg_split= None):
+    tref = re.sub("%2C", ",", re.sub("_", " ", tref))
     oref = Ref(tref)
     base_refs = oref.all_segment_refs()
     # if mode == 'mishna':
@@ -741,5 +752,5 @@ if __name__ == '__main__':
     # dicta_links_from_ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115:1', post=False, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
     #                      mongopost=True, seg_split=':')
 
-    dicta_links_from_ref("Siddur Sefard, Weekday Shacharit, Torah Reading 5", post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
+    dicta_links_from_ref("Siddur_Ashkenaz%2C_Shabbat%2C_Shacharit%2C_Pesukei_Dezimra%2C_Psalm_19.1", post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
                          mongopost=True, seg_split=':')
