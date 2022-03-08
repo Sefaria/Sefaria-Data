@@ -217,10 +217,14 @@ class Section():
                 if Ref(segment['ref']) in starts:
                     start = True
             if prev and 'ref' in prev.keys() and not start:
-                if Ref(segment['ref']).follows(Ref(prev['ref'])):
+                if Ref(segment['ref']) == Ref(prev['ref']).next_segment_ref():
                     prev['ref'] = Ref(f"{Ref(prev['ref']).all_segment_refs()[0].normal()}-{segment['ref'].split()[-1]}").normal()
                     return
                 elif Ref(segment['ref']) == (Ref(prev['ref'])):
+                    return
+                elif set(Ref(prev['ref']).all_segment_refs()) & set(Ref(segment['ref']).all_segment_refs()):
+                    prev['ref'] = Ref(f"{Ref(prev['ref']).all_segment_refs()[0].normal()}-"
+                                      f"{Ref(segment['ref']).all_segment_refs()[-1].normal().split()[-1]}").normal()
                     return
             self.day.sources.append({'node': self.day.node,
                                  'ref': Ref(segment['ref']).normal()})
@@ -475,9 +479,12 @@ class Day():
             with open('log.txt', 'a', encoding='utf-8') as fp:
                 fp.write(f'{refs}\n{ref}\n{text}\n')
 
+        text = ' '.join(text.split())
+        text = re.sub('(?:^| )(.\.) ', r'</div><div><b>\1 </b>', text)
+        text = re.sub('^</div>', '', text) + '</div>'
         self.sources.append({'node': self.node,
                                  'ref': refs[0].normal(),
-                                'text': ' '.join(text.split())})
+                                'text': text})
         self.node += 1
 
     def parse_musar(self):
@@ -581,26 +588,30 @@ class Day():
                         perekpasuk = re.sub('["\'״׳]', '', r.he_normal().split()[-1])
                         perek, pasuk = perekpasuk.split(':')
                         if i == 1 or pasuk == 'א':
-                            l = f'{perek} ({pasuk}) '
+                            l = f'{perek} (<small>{pasuk}</small>) '
                             i = f'{getGematria(perek)} ({(getGematria(pasuk))}) '
                         else:
-                            l = f'({pasuk}) '
+                            l = f'(<small>{pasuk}</small>) '
                             i = f'({(getGematria(pasuk))}) '
                         if r.book in library.get_indexes_in_category('Torah'):
                             targum = '</div><div><small>' + Ref(f'Onkelos {r.normal()}').text('he').text + '</small>'
                         elif r.book in library.get_indexes_in_category('Prophets'):
-                            targum = '</div><div><small>' + Ref(f'Targum Jonathan on {r.normal()}').text('he').text + '</small>'
+                            if self.i != 6:
+                                targum = '</div><div><small>' + Ref(f'Targum Jonathan on {r.normal()}').text('he').text + '</small>'
                         else:
                             targum = '</div><div><small>' + Ref(f'Aramaic Targum to {r.normal()}').text('he').text + '</small>'
                     elif 'Mishnah' in source['ref']:
                         if i > 10 and i % 10:
-                            l = inv_gematria[i//10] + inv_gematria[i%10] + '. '
+                            l = inv_gematria[i//10*10] + inv_gematria[i%10] + '. '
                         else:
                             l = inv_gematria[i] + '. '
                     else:
                         l, i = '', ''
                     he += f"<div>{l}{r.text('he').text.replace('<br>', ' ')}{targum}</div>"
-                    en += f"<div>{i}{en_text.replace('<br>', ' ')}</div>"
+                    en += f"<div>{i}. {en_text.replace('<br>', ' ')}</div>"
+                    if r.book in library.get_indexes_in_category('Prophets') and self.i == 6:
+                        he = he.replace('</div><div>', ' ')
+                        en = en.replace('</div><div>', ' ')
                 source['text'] = {'he': he, 'en': en}
                 source['heRef'] = Ref(source['ref']).he_normal()
             elif 'ref' in source.keys() and 'text' in source.keys():
@@ -696,7 +707,7 @@ if __name__ == '__main__':
     server = 'http://localhost:9000'
     with open('log.txt', 'w', encoding='utf-8') as fp:
         fp.write('')
-    for file in os.listdir('newdata')[:30]:
+    for file in os.listdir('newdata'):
         print(file)
         with open(f'newdata/{file}', encoding='windows-1255') as fp:
             week = Week(BeautifulSoup(fp, 'html.parser'))
