@@ -13,6 +13,8 @@ import pymongo
 from sefaria.settings import *
 import logging
 import multiprocessing
+from multiprocessing import set_start_method, get_context
+# set_start_method("spawn")
 # from data_utilities.util import * #get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
 from research.link_disambiguator.modify_tanakh_links import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
 import datetime
@@ -20,7 +22,7 @@ import datetime
 path = os.getcwd()
 client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)  # (MONGO_ASPAKLARIA_URL)
 db_qf = client.quotations
-mode ='tanakh'  #'mishna', 'tanakh', 'talmud'
+mode ='mishna'  #'mishna', 'tanakh', 'talmud'
 Mish = lambda x: 'משנה ' + x if mode == 'mishna' else x
 
 wl = WeightedLevenshtein()
@@ -45,7 +47,7 @@ ff_headers = {
     'TE': 'trailers',
 }
 
-run_type = f'date: {datetime.date} type: chasidut night run'
+run_type = f"siddur pool run {mode}"
 
 sandbox = SEFARIA_SERVER.split(".")[0] if SEFARIA_SERVER != "http://localhost:8000" else ''
 vtitle = 'Miqra according to the Masorah'  # "Tanach with Ta'amei Hamikra"  #
@@ -77,15 +79,20 @@ def find_pesukim(base_text, thresh=0): #mode="tanakh",
         "thresh": thresh,
         "fdirectonly": False
     }
-    response = requests.post(find_url, data=json.dumps(data_text), headers =ff_headers)
+    try:
+        response = requests.post(find_url, data=json.dumps(data_text), headers =ff_headers, timeout=20)
+    except requests.exceptions.ReadTimeout:
+        return []
     response_json = response.json()
     sleep(SLEEP_TIME)
-    #todo: add a timeout
     return response_json
 
 
 def dicta_parse(response_json, min_thresh=22):
     parse_url = f"https://talmudfinder-1-1x.loadbalancer.dicta.org.il/TalmudFinder/api/parsetogroups?smin={min_thresh}&smax=10000"  # PasukFinder
+    if not response_json:
+        print("response_json timedout")
+        return
     result = response_json['results']
     downloadId = response_json["downloadId"]
     allText = response_json["allText"]
@@ -97,7 +104,7 @@ def dicta_parse(response_json, min_thresh=22):
         "results": result
     }
 
-    response = requests.post(parse_url, data=json.dumps(data_parse), headers=ff_headers)
+    response = requests.post(parse_url, data=json.dumps(data_parse), headers=ff_headers, timeout=20)
     parsed_results = response.json()
     keep = {allText: parsed_results}
     with open(f'{path}/api_results/keep_{mode}.json', 'a+') as fp:
@@ -165,7 +172,7 @@ def priority_section(parsed_results):
 def link_options_from_text(text):
     pass
 
-def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, thresh=0, min_thresh=22, priority_tanakh_chunk=None, wrods_to_wipe='', seg_split = None):
+def get_dicta_matches(base_refs, offline=None, mode=mode, onlyDH = False, thresh=0, min_thresh=22, priority_tanakh_chunk=None, wrods_to_wipe='', seg_split = None):
     """
     the heart of the quotation finder input Ref and output links
     :param base_refs:
@@ -191,7 +198,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             if len(result['matches']) == 0:
                 continue
             result['matches'].sort(key=lambda x: x['score'])
-            priority_section_matches = [match for match in result['matches'] if priority and priority == Ref(match['verseDispHeb']).section_ref()]
+            priority_section_matches = [match for match in result['matches'] if priority and priority == Ref(Mish(match['verseDispHeb'])).section_ref()]
             if priority and priority_section_matches:
                     matched = priority_section_matches[-1]
             else:
@@ -208,15 +215,17 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
                     continue
             if mode == 'tanakh':
                 matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel(matched['verseiWords'], pasuk_ref,
-                                                                             matched['matchedText'])
-                matched_wds_base = retreive_bold(result['text'])
-                matched_wds_pasuk = retreive_bold(matched['matchedText'])
-                score = matched['score']
-                dh_match = result in dh_res
-                if priority_tanakh_chunk:
-                    dh_match = dh_match and pasuk_ref in priority_tanakh_chunk.all_segment_refs()
-                m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"],
-                          matched_pasuk_start, matched_pasuk_end, dh_match)
+                                                                     matched['matchedText'])
+            else:
+                matched_pasuk_start, matched_pasuk_end = [0, 0]
+            matched_wds_base = retreive_bold(result['text'])
+            matched_wds_pasuk = retreive_bold(matched['matchedText'])
+            score = matched['score']
+            dh_match = result in dh_res
+            if priority_tanakh_chunk and mode=='tanakh':
+                dh_match = dh_match and pasuk_ref in priority_tanakh_chunk.all_segment_refs()
+            m = Match(matched_wds_base, matched_wds_pasuk, score, result["startIChar"], result["endIChar"],
+                      matched_pasuk_start, matched_pasuk_end, dh_match)
             link_option = [pasuk_ref, base_ref, m.textMatched, m]
             if mode == 'tanakh':
                 # if dh_match:
@@ -241,6 +250,8 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
                     except AssertionError:
                         # log.write(f'{tc._oref} take_2 lv score is: {lv_score}\n')
                         pass
+            # if mode != 'tanakh':
+            #     link_option = [pasuk_ref, base_ref]
             link_options.append(link_option)
             # if onlyDH:
             #     return dh_link_options
@@ -253,7 +264,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
             parsed_results = [offline[1].get(base_ref.normal(), [])]
         else:
             if seg_split:
-                texts = base_ref.text('he').text.split(seg_split)
+                texts = re.split(seg_split, base_ref.text('he').text)
             else:
                 texts = [base_ref.text('he').text]
 
@@ -269,7 +280,7 @@ def get_dicta_matches(base_refs, offline=None, mode="tanakh", onlyDH = False, th
     return link_options
 
 
-def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True):
+def data_to_link(link_option, type=f"quotation_auto_{mode}", generated_by="", auto=True):
     match = link_option[3]
     pasuk_ref = link_option[0]
     book_match = link_option[1]
@@ -279,7 +290,7 @@ def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True)
      "charLevelData": [],
     "score": match.score,
      "inline_citation": True,
-     "qf_run_type": run_type
+     "qf_run_type": run_type # don't remember what it was made for.
      }
     if generated_by:
         link_json.update({"generated_by": generated_by})
@@ -297,8 +308,8 @@ def data_to_link(link_option, type="quotation_auto", generated_by="", auto=True)
         }
         ]
     link_json["dh"] = match.dh
-    if match.dh:
-        link_json["type"] = "dibur_hamatchil"
+    # if match.dh:
+    #     link_json["type"] = "dibur_hamatchil"
     if link_option[-1]:
         link_json["trivial_ref"] = link_option[-1]
     return link_json, match
@@ -489,10 +500,10 @@ def bunch_refs_to_ranged_refs(links):
         for i, group in enumerate(output_links):
             refs = group['refs']
             seg_parts = [x for x in re.split("[:.]",strip_nikkud(Ref(refs[1]).text('he').text)) if x.strip()]
-            if wl.calculate(strip_nikkud(Ref(refs[0]).prev_segment_ref().text('he').text), seg_parts[0]) > 80:
+            if Ref(refs[0]).prev_segment_ref() and wl.calculate(strip_nikkud(Ref(refs[0]).prev_segment_ref().text('he').text), seg_parts[0]) > 80:
                 take2 = Ref(f"{Ref(refs[0]).prev_segment_ref().normal()}-{Ref(group['refs'][0]).orig_tref.split('-')[1]}").normal()
                 output_links[i]['refs'][0] = take2
-            if wl.calculate(strip_nikkud(Ref(refs[0]).next_segment_ref().text('he').text), seg_parts[-1]) > 80:
+            if Ref(refs[0]).next_segment_ref() and wl.calculate(strip_nikkud(Ref(refs[0]).next_segment_ref().text('he').text), seg_parts[-1]) > 80:
                 take2 = Ref(f"{Ref(group['refs'][0]).orig_tref.split('-')[0]}-{Ref(refs[0]).next_segment_ref().normal()}")
                 output_links[i] = take2
     return output_links
@@ -507,9 +518,9 @@ def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority
     #                              seg_split=':')
     link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=min_thresh, priority_tanakh_chunk=priority_tanakh_chunk, offline=offline, seg_split=seg_split)
     if not link_options:
-        # print("no links found")
-        return
-    links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder_ranged', type='quotation_auto') for link_option in link_options])
+        print("no links found")
+        return []
+    links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder_ranged', type=f'quotation_auto_{mode}') for link_option in link_options])
     links = bunch_refs_to_ranged_refs(links)
     write_to_csv(links, linkMatchs, filename=f"dicta_{oref.book}")
     # print(links)
@@ -538,7 +549,7 @@ def link_a_parashah_node_struct_index(index_name, onlyDH=False, post=False):
         link_options = get_dicta_matches(base_refs, onlyDH=onlyDH, min_thresh=22, priority_tanakh_chunk=pear[0], wrods_to_wipe=w2w)
         if not link_options:
             continue
-        links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_linker_dh', type='quotation_auto') for link_option in link_options])
+        links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_linker_dh', type=f'quotation_auto_{mode}') for link_option in link_options])
         write_to_csv(links, linkMatchs, filename=f"dicta_{base_refs[0].index.title}")
         print(links)
         all_links.extend(links)
@@ -570,7 +581,7 @@ def get_version_mapping(version: Version) -> dict:
 
 
 def mongo_post(links):
-    db_qf.quotations.insert_many(links)
+    db_qf.siddur_quotations.insert_many(links)
 
 
 def run_offline(title, cat, min_thresh=22, post=False, mongopost=True, priority_tanakh_chunk_type=None, priority_fallback=None, max_word_number=30, offline=True, seg_split=None):
@@ -656,12 +667,30 @@ def read_keep(key):
         if keep.get(key, None):
             print(keep.get(key, None))
 
-run_all_night_list = library.get_index('Siddur Sefard').all_segment_refs()[3760: 4200]
+ls = library.get_index('Siddur Sefard').all_segment_refs()
+ls.reverse()
+run_all_night_list = ls
+# with open(f'{path}/list', 'r') as fp:
+#     segs = []
+#     for line in fp.readlines():
+#         seg = Ref(line)
+#         segs.append(seg)
+# run_all_night_list = segs
 
 def run_all_night(seg):
+    print(seg.normal())
+    look_in_db = db_qf.siddur_quotations.find_one({"refs": seg.normal()})
+    if look_in_db:
+        print("found in db")
+        return
+    # else:
+    #     print(seg.normal())
 
-    dicta_links_from_ref(seg.normal(), post=False, onlyDH=False, min_thresh=25, offline=None,
-                         mongopost=True, seg_split='.')
+    db_qf.siddur_quotations.insert_one({"refs": seg.normal(), "type": "Empty links"})
+    dicta_links_from_ref(seg.normal(), post=True, onlyDH=False, min_thresh=25, offline=None,
+                         mongopost=True, seg_split='[:]')
+    print("ran dicta_links")
+
 
 
 if __name__ == '__main__':
@@ -738,19 +767,19 @@ if __name__ == '__main__':
     # run_offline("Siddur Sefard", 'Liturgy', min_thresh=22, post=True, mongopost=True, priority_tanakh_chunk_type='psalms', max_word_number=500, offline=False, seg_split=":")
     # seg = Ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah before the Hallel 1')
     # seg = Ref('Siddur Sefard, Weekday Maariv, The_Shema 1')
-    # seg = Ref('Siddur Sefard, Upon_Arising, Modeh Ani 1')
-    # while seg:
-    #     dicta_links_from_ref(seg.normal(), post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
-    #                      mongopost=True, seg_split=':')
-    #     seg = seg.next_segment_ref()
+    seg = Ref('Siddur Sefard, Shabbat Mincha, Pirkei Avot 64')
+    while seg:
+        dicta_links_from_ref(seg.normal(), post=True, onlyDH=False, min_thresh=33,
+                             priority_tanakh_chunk=None, offline=None,
+                             mongopost=True, seg_split=None)
+        seg = seg.next_segment_ref()
+        # if seg == Ref("Siddur Ashkenaz, Shabbat, Shabbat Evening, Kiddush 6"):
+        #     break
+    # dicta_links_from_ref('Siddur Sefard, Shabbat Mincha, Pirkei Avot 4', post=True, onlyDH=False, min_thresh=33, priority_tanakh_chunk=None, offline=None,
+    #                      mongopost=True, seg_split=None)
+    # with get_context("spawn").Pool(5) as pool:
+    # # pool = multiprocessing.Pool(5)
+    #     pool.map(run_all_night, run_all_night_list)
+
     # dicta_links_from_ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115:1', post=False, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
-    #                      mongopost=True, seg_split=':')
-
-    # pool = multiprocessing.Pool(5)
-    # pool.map(run_all_night, run_all_night_list)
-
-    # dicta_links_from_ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115:1', post=False, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
-    #                      mongopost=True, seg_split=':')
-
-    dicta_links_from_ref("Siddur_Ashkenaz%2C_Shabbat%2C_Shacharit%2C_Pesukei_Dezimra%2C_Psalm_19.1", post=True, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
-                         mongopost=True, seg_split=':')
+    #                      mongopost=True, seg_split='[:.]')
