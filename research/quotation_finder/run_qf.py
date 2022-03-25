@@ -6,6 +6,7 @@ import pstats
 from pstats import SortKey
 from sefaria.model import *
 import cProfile
+from tqdm import tqdm
 
 
 def links_ys_torah():
@@ -74,6 +75,57 @@ def post_quotation_links(title, server=SEFARIA_SERVER, q=None):
         post_link(to_post[i: min(i+300, n)], server=server)
         i +=300
 
+def post_links_from_quotations_collection(title=None, q=None, mode = "tanakh", run_type=f"siddur pool run {mode}"):
+    if not q:
+        if not title:
+            print("must put in title or query")
+        q = {"refs": {"$regex": f"{title}.*"}}
+    ls = db_qf.siddur_quotations.find(q)
+    links = []
+    for l in ls:
+        del l['_id']
+        link_json = l
+        # link_json = {"type": type,
+        #  "refs": [pasuk_ref.normal(), book_match.normal()],
+        #  "auto": auto,
+        #  "charLevelData": [],
+        # "score": l["score"],
+        #  "inline_citation": True,
+        #  "qf_run_type": run_type  # don't remember what it was made for.
+        #  }
+        links.append(link_json)
+    post_link(links)
+
+def mishna_refinement():
+    q = {"type" : "quotation_auto_mishna"}#, "charLevelData.0.startWord": { "$ne" : 0 } }
+    c_mishna = db_qf.siddur_quotations.find(q)
+    ls_mishna = list(c_mishna)
+    print(len(ls_mishna))
+    cnt=0
+    for l in ls_mishna:
+        start_m = l["charLevelData"][0]["startWord"]
+        end_m = l["charLevelData"][0]["endWord"]
+        all_words = Ref(l["refs"][0]).word_count('he')
+        m_percentage = (end_m-start_m)/all_words
+        # print(f"m_percentage: {m_percentage}")
+        if m_percentage > 0.1:
+            print("m_good")
+            print(f"m_percentage: {m_percentage}")
+            print(f"localhost:8000/{re.sub(' ','_',l['refs'][1])}?lang=he&{re.sub(' ','_',l['refs'][0])}\n")
+            # Link().update({"refs":l["refs"]}, {"type": l["type"]+'_good'})
+            cnt+=1
+        start_s = l["charLevelData"][1]["startChar"]
+        end_s = l["charLevelData"][1]["endChar"]
+        all_chars = len(Ref(l["refs"][1]).text('he').text)
+        s_percentage = (end_s - start_s) / all_chars
+        # print(f"segment_percentage: {s_percentage}")
+        if s_percentage > 0.7:
+            print("s_good")
+            print(f"segment_percentage: {s_percentage}")
+            print(f"localhost:8000/{l['refs'][1]}?lang=he&{l['refs'][0]}\n")
+            # Link().update({"refs": l["refs"]}, {"type": l["type"]+'_good'})
+            cnt+=1
+    print(cnt)
 
 if __name__ == '__main__':
     # def singal_arg(arg):
@@ -108,4 +160,32 @@ if __name__ == '__main__':
     # run_offline("Alshich on Torah", 'tanakh_comm', min_thresh=25, post=False, mongopost=True, priority_tanakh_chunk_type='perek',
     #             max_word_number=None)
 
-    post_quotation_links('^Siddur', server=SEFARIA_SERVER, q=None)
+    # post_quotation_links('^Siddur', server=SEFARIA_SERVER)
+    # post_links_from_quotations_collection(q={"qf_run_type": "siddur pool run tanakh", "refs":{"$regex":"^Siddur Ashkenaz.*"}})
+    # post_links_from_quotations_collection(q={"qf_run_type": "siddur pool run", "refs":{"$regex":"^Siddur Ashkenaz.*"}})
+
+    lsa = LinkSet({"type": "quotation_auto_tanakh", "generated_by": "quotation_finder_ranged_preciselink_override"})
+    print(len(lsa))
+    # lsa = list(lsa)
+    # lsa.reverse()
+    i=0
+    cnt = 0
+    while i< len(lsa):
+        print(i)
+        increment = 300
+        ls = lsa[i:i+increment]
+        links=[]
+        for l in tqdm(ls):
+            l=l.contents()
+            l["inline_citation"] = False
+            l["type"] = "quotation_auto_tanakh"
+            if Ref(l["refs"][0]).is_range() or Ref(l["refs"][1]).is_range():
+                links.append(l)
+                cnt+=1
+        post_link(links,  override_preciselink=True)
+        i += increment
+        print(cnt)
+        sleep(20)
+    print("done")
+
+    # mishna_refinement()
