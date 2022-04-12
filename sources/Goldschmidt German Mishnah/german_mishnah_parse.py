@@ -255,7 +255,7 @@ def generate_csv_german_mishna(print_csv=False):
     if print_csv:
         print(csv_string)
 
-    with open(f'german_mishnah_data.csv', 'w') as file:
+    with open(f'Goldschmidt German Mishnah/german_mishnah_data.csv', 'w') as file:
         for line in csv_string:
             file.write(line)
 
