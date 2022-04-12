@@ -66,7 +66,7 @@ def strip_last_new_line(text):
     return text[:-1]
 
 
-# helper function for common Hebrew text grabbing sequence
+# Helper function for common Hebrew text grabbing sequence
 def get_hebrew_mishnah(ref):
     mishnah_title = str(ref)
     hebrew_mishnah = Ref(mishnah_title).text('he').text
@@ -74,6 +74,9 @@ def get_hebrew_mishnah(ref):
     return hebrew_mishnah
 
 
+# Given a link between the mishnah and talmud, this function
+# can conditionally return either the appropriate Mishnah ref
+# or Talmud ref
 def get_ref_from_link(mishnah_talmud_link, return_value):
     refs = mishnah_talmud_link.refs
 
@@ -89,6 +92,7 @@ def get_ref_from_link(mishnah_talmud_link, return_value):
     return talmud_ref
 
 
+# This function prints a summary of our Exploratory Data Analysis
 def print_eda_summary(rn_good_count, rn_bad_count, count_single, num_not_one_to_one, total_refs):
     print("EDA (Exploratory Data Analysis) Summary:")
     print(
@@ -185,7 +189,10 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
 
                     continue
 
-            # Break up the flagged mishnhas
+            # If the Mishnah is a ranged ref, and has been flagged
+            # break it up without any German text passed the first
+            # Mishnah in the ref for a clear visual indicator to the
+            # team manually parsing.
             split_refs = Ref(mishnah_ref).range_list()
             first_ref = True
             for each_ref in split_refs:
@@ -214,6 +221,8 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
             hebrew_mishnah = Ref(mishnah_ref).text('he').text
             hebrew_mishnah = strip_last_new_line(hebrew_mishnah)
 
+        # Base case (one to one, not a ranged ref)
+        # Saves the Mishnah with the corresponding Hebrew text
         mishnah_txt_dict[mishnah_ref] = {'ref': mishnah_ref,
                                          'german_text': german_text,
                                          'hebrew_text': hebrew_mishnah,
@@ -223,7 +232,11 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
                                          "list_rn": all_roman_numerals}
 
     if generate_eda_summary:
-        print_eda_summary(rn_good_count, rn_bad_count, count_single, num_not_one_to_one, total_refs)
+        print_eda_summary(rn_good_count,
+                          rn_bad_count,
+                          count_single,
+                          num_not_one_to_one,
+                          total_refs)
 
     return mishnah_txt_dict
 
@@ -249,5 +262,5 @@ def generate_csv_german_mishna(print_csv=False):
     print("File writing complete")
 
 
-# generate_csv_german_mishna(print_csv=False)
-scrape_german_mishnah_text(generate_eda_summary=True)
+if __name__ == "__main__":
+    generate_csv_german_mishna(print_csv=False)
