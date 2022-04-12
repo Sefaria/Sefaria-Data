@@ -6,8 +6,10 @@ django.setup()
 
 import roman
 import re
+import csv
 from sefaria.model import *
 from sefaria.helper.schema import *
+
 
 # From the list of links between the Mishnah and the Talmud,
 # this function returns a list of Mishnah references
@@ -15,9 +17,10 @@ def get_mishnah_ref_array_from_talmud_links():
     ls = LinkSet({"type": "mishnah in talmud"})
     mishnah_ref_array = []
     for linked_mishnah in ls:
-        mishnah_ref = linked_mishnah.refs[0] if "Mishnah" in linked_mishnah.refs[0] else linked_mishnah.refs[1]
+        mishnah_tref = linked_mishnah.refs[0] if "Mishnah" in linked_mishnah.refs[0] else linked_mishnah.refs[1]
+        mishnah_ref = Ref(mishnah_tref)
         if mishnah_ref.is_range():
-            split_refs = Ref(ref).range_list()
+            split_refs = mishnah_ref.range_list()
             for each_ref in split_refs:
                 mishnah_ref_array.append(each_ref)
         else:
@@ -38,7 +41,7 @@ def get_mishnah_ref_array_from_talmud_links():
 # FALSE - if the Mishnah ref / ranged ref is NOT unique of the list (i.e. Masechet XYZ 2:1-3,
 #         but there's also a link to Masechet XYZ 2:1, 2:2 and 2:2-3.
 def is_one_to_one(ref, mishnah_ref_array):
-    split_refs = Ref(ref).range_list()
+    split_refs = ref.range_list()
     res = True
     for each_ref in split_refs:
         tref = each_ref.normal()
@@ -75,8 +78,9 @@ def get_hebrew_mishnah(ref):
 # can conditionally return either the appropriate Mishnah ref
 # or Talmud ref
 def get_ref_from_link(mishnah_talmud_link):
-    mishnah_ref, talmud_ref = mishnah_talmud_link.refs if "Mishnah" in mishnah_talmud_link.refs[0] else reversed(mishnah_talmud_link.refs)
-    return mishnah_ref, talmud_ref
+    mishnah_ref, talmud_ref = mishnah_talmud_link.refs if "Mishnah" in mishnah_talmud_link.refs[0] else reversed(
+        mishnah_talmud_link.refs)
+    return Ref(mishnah_ref), Ref(talmud_ref)
 
 
 # This function prints a summary of our Exploratory Data Analysis
@@ -101,11 +105,7 @@ def print_eda_summary(rn_good_count, rn_bad_count, count_single, num_not_one_to_
 def scrape_german_mishnah_text(generate_eda_summary=False):
     mishnah_ref_array = get_mishnah_ref_array_from_talmud_links()
 
-    # ToDo - revisit sorting
-    # mishnah_ref_array = mishnah_ref_array.sort(key=lambda ref: ref.order_id())
-    # print(mishnah_ref_array)
-
-    mishnah_txt_dict = {}
+    mishnah_txt_list = []
 
     ls = LinkSet({"type": "mishnah in talmud"})
 
@@ -124,7 +124,7 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
         flag_msg = ""
         mishnah_ref, talmud_ref = get_ref_from_link(mishnah_talmud_link)
 
-        german_text = Ref(talmud_ref).text('en', vtitle='Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]')
+        german_text = talmud_ref.text('en', vtitle='Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]')
         german_text = german_text.text
         german_text = clean_text(german_text)
 
@@ -135,7 +135,7 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
 
             # add a one-to-one check
             one_to_one = is_one_to_one(mishnah_ref, mishnah_ref_array)
-            num_mishnahs = len(Ref(mishnah_ref).range_list())
+            num_mishnahs = len(mishnah_ref.range_list())
 
             # Flag messages
             if not one_to_one:
@@ -159,19 +159,19 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
 
                     individual_mishnahs = re.split(r"<sup>[ixv].*?<\/sup>", german_text)
 
-                    split_refs = Ref(mishnah_ref).range_list()
+                    split_refs = mishnah_ref.range_list()
                     counter = 1  # since '' is at 0
 
                     for each_ref in split_refs:
                         hebrew_mishnah = get_hebrew_mishnah(each_ref)
-                        mishnah_ref_str = str(each_ref)
-                        mishnah_txt_dict[mishnah_ref_str] = {'ref': mishnah_ref_str,
-                                                             'german_text': individual_mishnahs[counter],
-                                                             'hebrew_text': hebrew_mishnah,
-                                                             "is_one_to_one": one_to_one,
-                                                             "flagged_for_manual": flagged,
-                                                             "flag_msg": flag_msg,
-                                                             "list_rn": all_roman_numerals}
+                        mishnah_tref = each_ref.normal()
+                        mishnah_txt_list.append({'tref': mishnah_tref,
+                                                 'german_text': individual_mishnahs[counter],
+                                                 'hebrew_text': hebrew_mishnah,
+                                                 "is_one_to_one": one_to_one,
+                                                 "flagged_for_manual": flagged,
+                                                 "flag_msg": flag_msg,
+                                                 "list_rn": all_roman_numerals})
                         counter += 1
 
                     continue
@@ -180,24 +180,24 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
             # break it up without any German text passed the first
             # Mishnah in the ref for a clear visual indicator to the
             # team manually parsing.
-            split_refs = Ref(mishnah_ref).range_list()
+            split_refs = mishnah_ref.range_list()
             first_ref = True
             for each_ref in split_refs:
                 hebrew_mishnah = get_hebrew_mishnah(each_ref)
-                mishnah_ref_str = str(each_ref)
+                mishnah_tref = each_ref.normal()
 
                 if not first_ref:
                     german_text = ""
 
                 first_ref = False
 
-                mishnah_txt_dict[mishnah_ref_str] = {'ref': mishnah_ref_str,
-                                                     'german_text': german_text,
-                                                     'hebrew_text': hebrew_mishnah,
-                                                     "is_one_to_one": one_to_one,
-                                                     "flagged_for_manual": flagged,
-                                                     "flag_msg": flag_msg,
-                                                     "list_rn": all_roman_numerals}
+                mishnah_txt_list.append({'tref': mishnah_tref,
+                                         'german_text': german_text,
+                                         'hebrew_text': hebrew_mishnah,
+                                         "is_one_to_one": one_to_one,
+                                         "flagged_for_manual": flagged,
+                                         "flag_msg": flag_msg,
+                                         "list_rn": all_roman_numerals})
 
             continue
 
@@ -205,18 +205,18 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
             count_single += 1
 
         if not flagged:
-            hebrew_mishnah = Ref(mishnah_ref).text('he').text
+            hebrew_mishnah = mishnah_ref.text('he').text
             hebrew_mishnah = strip_last_new_line(hebrew_mishnah)
 
         # Base case (one to one, not a ranged ref)
         # Saves the Mishnah with the corresponding Hebrew text
-        mishnah_txt_dict[mishnah_ref] = {'ref': mishnah_ref,
-                                         'german_text': german_text,
-                                         'hebrew_text': hebrew_mishnah,
-                                         "is_one_to_one": one_to_one,
-                                         "flagged_for_manual": flagged,
-                                         "flag_msg": flag_msg,
-                                         "list_rn": all_roman_numerals}
+        mishnah_txt_list.append({'tref': mishnah_ref.normal(),
+                                 'german_text': german_text,
+                                 'hebrew_text': hebrew_mishnah,
+                                 "is_one_to_one": one_to_one,
+                                 "flagged_for_manual": flagged,
+                                 "flag_msg": flag_msg,
+                                 "list_rn": all_roman_numerals})
 
     if generate_eda_summary:
         print_eda_summary(rn_good_count,
@@ -225,30 +225,25 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
                           num_not_one_to_one,
                           total_refs)
 
-    return mishnah_txt_dict
+    return mishnah_txt_list
 
 
 # This function generates the CSV of the Mishnayot
-def generate_csv_german_mishna(print_csv=False):
-    mishnah_dict = scrape_german_mishnah_text()
+def generate_csv_german_mishna():
+    mishnah_list = scrape_german_mishnah_text()
 
     # pipe delimiter instead of comma, since comma in text
-    csv_string = 'mishnah_ref|german_text|hebrew_text|is_one_to_one|flagged_for_manual|flag_msg|list_rn\n'
-
-    for mishnah in mishnah_dict:
-        cur_mishnah = mishnah_dict[mishnah]
-        csv_string += f"{mishnah}|{cur_mishnah['german_text']}|{cur_mishnah['hebrew_text']}|{cur_mishnah['is_one_to_one']}|{cur_mishnah['flagged_for_manual']}|{cur_mishnah['flag_msg']}|{cur_mishnah['list_rn']}\n"
-
-    if print_csv:
-        print(csv_string)
+    headers = ['tref', 'german_text', 'hebrew_text', 'is_one_to_one', 'flagged_for_manual', 'flag_msg',
+               'list_rn']
 
     with open(f'Goldschmidt German Mishnah/german_mishnah_data.csv', 'w') as file:
-        for line in csv_string:
-            file.write(line)
+        mishnah_list.sort(key=lambda x: Ref(x["tref"]).order_id())
+        c = csv.DictWriter(file, delimiter='|', fieldnames=headers)
+        c.writeheader()
+        c.writerows(mishnah_list)
 
     print("File writing complete")
 
 
 if __name__ == "__main__":
-    generate_csv_german_mishna(print_csv=False)
-
+    generate_csv_german_mishna()
