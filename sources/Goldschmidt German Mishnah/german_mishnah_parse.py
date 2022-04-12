@@ -9,24 +9,19 @@ import re
 from sefaria.model import *
 from sefaria.helper.schema import *
 
-
-## TODO:
-# Put in order: ref_list.sort(key=lambda ref: ref.order_id())
-
 # From the list of links between the Mishnah and the Talmud,
 # this function returns a list of Mishnah references
 def get_mishnah_ref_array_from_talmud_links():
     ls = LinkSet({"type": "mishnah in talmud"})
     mishnah_ref_array = []
     for linked_mishnah in ls:
-        refs = linked_mishnah.refs
-
-        if "Mishnah" in refs[0]:
-            mishnah_ref = refs[0]
+        mishnah_ref = linked_mishnah.refs[0] if "Mishnah" in linked_mishnah.refs[0] else linked_mishnah.refs[1]
+        if mishnah_ref.is_range():
+            split_refs = Ref(ref).range_list()
+            for each_ref in split_refs:
+                mishnah_ref_array.append(each_ref)
         else:
-            mishnah_ref = refs[1]
-
-        mishnah_ref_array.append(mishnah_ref)
+            mishnah_ref_array.append(mishnah_ref)
     return mishnah_ref_array
 
 
@@ -106,6 +101,10 @@ def print_eda_summary(rn_good_count, rn_bad_count, count_single, num_not_one_to_
 def scrape_german_mishnah_text(generate_eda_summary=False):
     mishnah_ref_array = get_mishnah_ref_array_from_talmud_links()
 
+    # ToDo - revisit sorting
+    # mishnah_ref_array = mishnah_ref_array.sort(key=lambda ref: ref.order_id())
+    # print(mishnah_ref_array)
+
     mishnah_txt_dict = {}
 
     ls = LinkSet({"type": "mishnah in talmud"})
@@ -132,10 +131,7 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
         # Find all Roman Numerals in the German text, and save to an array
         all_roman_numerals = re.findall(r"<sup>([ixv]+).*?<\/sup>", german_text)
 
-        # Check if the Ref is a ranged ref
-        is_multiple_mishnahs = re.search(r"Mishnah [a-zA-Z\s]*\s\d.*?:\d.*?-", mishnah_ref)
-
-        if is_multiple_mishnahs:
+        if mishnah_ref.is_range():
 
             # add a one-to-one check
             one_to_one = is_one_to_one(mishnah_ref, mishnah_ref_array)
