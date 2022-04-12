@@ -10,6 +10,9 @@ from sefaria.model import *
 from sefaria.helper.schema import *
 
 
+## TODO:
+# Put in order: ref_list.sort(key=lambda ref: ref.order_id())
+
 # From the list of links between the Mishnah and the Talmud,
 # this function returns a list of Mishnah references
 def get_mishnah_ref_array_from_talmud_links():
@@ -27,7 +30,7 @@ def get_mishnah_ref_array_from_talmud_links():
     return mishnah_ref_array
 
 
-# This function determines whether or not a given Mishnah ref
+# This function determines whether a given Mishnah ref
 # has a 1:1 relationship with a passage of Talmud (thus indicating
 # to us that it's the proper segment of Mishnah in the Talmud's translation)
 #
@@ -43,8 +46,8 @@ def is_one_to_one(ref, mishnah_ref_array):
     split_refs = Ref(ref).range_list()
     res = True
     for each_ref in split_refs:
-        mishnah_title = str(each_ref)
-        num_occurrences = mishnah_ref_array.count(mishnah_title)
+        tref = each_ref.normal()
+        num_occurrences = mishnah_ref_array.count(tref)
         if num_occurrences >= 1:
             res = False
     return res
@@ -53,7 +56,7 @@ def is_one_to_one(ref, mishnah_ref_array):
 # Cleans the raw Talmud text of interfering HTML/metadata
 # Leaves in the <super> tags for the Roman Numeral superscripts,
 # and the <b> tags surrounding the first word of every Mishnah,
-# in case that's useful for fine tuning these results.
+# in case that's useful for fine-tuning these results.
 def clean_text(german_text):
     german_text = str(german_text)
     text_array = re.sub(r"<small>|<\/small>|,|\[|\]|\{|\}|\"|\'|\['', '", "", german_text)
@@ -67,8 +70,8 @@ def strip_last_new_line(text):
 
 # Helper function for common Hebrew text grabbing sequence
 def get_hebrew_mishnah(ref):
-    mishnah_title = str(ref)
-    hebrew_mishnah = Ref(mishnah_title).text('he').text
+    tref = ref.normal()
+    hebrew_mishnah = Ref(tref).text('he').text
     hebrew_mishnah = strip_last_new_line(hebrew_mishnah)
     return hebrew_mishnah
 
@@ -76,19 +79,9 @@ def get_hebrew_mishnah(ref):
 # Given a link between the mishnah and talmud, this function
 # can conditionally return either the appropriate Mishnah ref
 # or Talmud ref
-def get_ref_from_link(mishnah_talmud_link, return_value):
-    refs = mishnah_talmud_link.refs
-
-    if "Mishnah" in refs[0]:
-        mishnah_ref = refs[0]
-        talmud_ref = refs[1]
-    else:
-        mishnah_ref = refs[1]
-        talmud_ref = refs[0]
-
-    if return_value == 'Mishnah':
-        return mishnah_ref
-    return talmud_ref
+def get_ref_from_link(mishnah_talmud_link):
+    mishnah_ref, talmud_ref = mishnah_talmud_link.refs if "Mishnah" in mishnah_talmud_link.refs[0] else reversed(mishnah_talmud_link.refs)
+    return mishnah_ref, talmud_ref
 
 
 # This function prints a summary of our Exploratory Data Analysis
@@ -130,11 +123,10 @@ def scrape_german_mishnah_text(generate_eda_summary=False):
         one_to_one = True
         flagged = False
         flag_msg = ""
-        mishnah_ref = get_ref_from_link(mishnah_talmud_link, return_value='Mishnah')
-        talmud_ref = get_ref_from_link(mishnah_talmud_link, return_value='Talmud')
+        mishnah_ref, talmud_ref = get_ref_from_link(mishnah_talmud_link)
 
-        german_text = Ref(talmud_ref).text('en', vtitle='Talmud Bavli. German trans. by Lazarus Goldschmidt, '
-                                                        '1929 [de]').text
+        german_text = Ref(talmud_ref).text('en', vtitle='Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]')
+        german_text = german_text.text
         german_text = clean_text(german_text)
 
         # Find all Roman Numerals in the German text, and save to an array
@@ -263,3 +255,4 @@ def generate_csv_german_mishna(print_csv=False):
 
 if __name__ == "__main__":
     generate_csv_german_mishna(print_csv=False)
+
