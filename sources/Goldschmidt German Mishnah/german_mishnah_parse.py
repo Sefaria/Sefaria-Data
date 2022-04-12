@@ -54,10 +54,9 @@ def is_one_to_one(ref, mishnah_ref_array):
 # Leaves in the <super> tags for the Roman Numeral superscripts,
 # and the <b> tags surrounding the first word of every Mishnah,
 # in case that's useful for fine tuning these results.
-def clean_text(text):
-    text_array = TextChunk._strip_itags(text)
-    text_array = re.sub(r"<i>|<\/i>|<small>|<\/small>|,|\[|\]|\{|\}|\"|\'|\['', '", "",
-                        text_array)  # TODO - clean up and streamline this regex
+def clean_text(german_text):
+    german_text = str(german_text)
+    text_array = re.sub(r"<small>|<\/small>|,|\[|\]|\{|\}|\"|\'|\['', '", "", german_text)
     return text_array
 
 
