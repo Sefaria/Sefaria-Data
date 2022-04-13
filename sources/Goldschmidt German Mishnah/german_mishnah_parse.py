@@ -8,8 +8,6 @@ import roman
 import re
 import csv
 from sefaria.model import *
-from sefaria.helper.schema import *
-
 
 # From the list of links between the Mishnah and the Talmud,
 # this function returns a list of Mishnah references
@@ -28,6 +26,15 @@ def get_mishnah_ref_array_from_talmud_links():
     return mishnah_ref_array
 
 
+# Helper function for 1:1 check
+def checking_one_to_one(ref, mishnah_ref_array):
+    num_occurrences = mishnah_ref_array.count(ref)
+    if num_occurrences > 1:
+        print(num_occurrences)
+        return False
+    return True
+
+
 # This function determines whether a given Mishnah ref
 # has a 1:1 relationship with a passage of Talmud (thus indicating
 # to us that it's the proper segment of Mishnah in the Talmud's translation)
@@ -41,14 +48,14 @@ def get_mishnah_ref_array_from_talmud_links():
 # FALSE - if the Mishnah ref / ranged ref is NOT unique of the list (i.e. Masechet XYZ 2:1-3,
 #         but there's also a link to Masechet XYZ 2:1, 2:2 and 2:2-3.
 def is_one_to_one(ref, mishnah_ref_array):
-    split_refs = ref.range_list()
-    res = True
-    for each_ref in split_refs:
-        tref = each_ref.normal()
-        num_occurrences = mishnah_ref_array.count(tref)
-        if num_occurrences >= 1:
-            res = False
-    return res
+    result = True
+    if ref.is_range():
+        split_refs = ref.range_list()
+        for each_ref in split_refs:
+            result = checking_one_to_one(each_ref, mishnah_ref_array)
+    else: # if single ref
+        result = checking_one_to_one(ref, mishnah_ref_array)
+    return result
 
 
 # Cleans the raw Talmud text of interfering HTML/metadata
@@ -74,6 +81,13 @@ def get_hebrew_mishnah(ref):
     return hebrew_mishnah
 
 
+def get_german_text(talmud_ref):
+    german_text = talmud_ref.text('en', vtitle='Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]')
+    german_text = german_text.text
+    german_text = clean_text(german_text)
+    return german_text
+
+
 # Given a link between the mishnah and talmud, this function
 # can conditionally return either the appropriate Mishnah ref
 # or Talmud ref
@@ -83,147 +97,89 @@ def get_ref_from_link(mishnah_talmud_link):
     return Ref(mishnah_ref), Ref(talmud_ref)
 
 
-# This function prints a summary of our Exploratory Data Analysis
-def print_eda_summary(rn_good_count, rn_bad_count, count_single, num_not_one_to_one, total_refs):
-    print("EDA (Exploratory Data Analysis) Summary:")
-    print(
-        f"{count_single} mishnahs are single refs. That's {round((count_single / total_refs) * 100)}% of our LinkSet")
-    print(f"{total_refs - count_single} mishnahs are ranged refs and require Roman Numeral parsing work (if 1:1).")
-    print(
-        f"{rn_good_count} ranged ref mishnas have corresponding number of Roman Numerals. Of the ranged ref "
-        f"mishnahs, this is {round((rn_good_count / (total_refs - count_single)) * 100)}%")
-    print(
-        f"{rn_bad_count} ranged ref mishnas don't have corresponding number of Roman Numerals (maybe duplicates, "
-        f"omissions etc)")
-    print(f"{num_not_one_to_one} of the ranged ref mishnas are not 1:1")
+# Return the dict item
+def get_mishnah_data(ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals):
+    hebrew_mishnah = get_hebrew_mishnah(ref)
+    mishnah_tref = ref.normal()
+    return {'tref': mishnah_tref,
+            'german_text': german_text,
+            'hebrew_text': hebrew_mishnah,
+            "is_one_to_one": one_to_one,
+            "flagged_for_manual": flagged,
+            "flag_msg": flag_msg,
+            "list_rn": all_roman_numerals}
 
 
 # This is the main function which does the bulk of the scraping work.
 # It returns a dictionary with the Mishnahs and corresponding helpful metadata
 # If you set the param generate_eda_summary to True, it also
 # outputs helpful exploratory data analysis statistics which we used during our parsing planning.
-def scrape_german_mishnah_text(generate_eda_summary=False):
+def scrape_german_mishnah_text():
     mishnah_ref_array = get_mishnah_ref_array_from_talmud_links()
 
     mishnah_txt_list = []
 
     ls = LinkSet({"type": "mishnah in talmud"})
 
-    # EDA Summary Set Up
-    rn_good_count = 0
-    rn_bad_count = 0
-    count_single = 0
-    num_not_one_to_one = 0
-    total_refs = len(ls)
-
     for mishnah_talmud_link in ls:
 
         # default assumptions
-        one_to_one = True
         flagged = False
         flag_msg = ""
-        mishnah_ref, talmud_ref = get_ref_from_link(mishnah_talmud_link)
 
-        german_text = talmud_ref.text('en', vtitle='Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]')
-        german_text = german_text.text
-        german_text = clean_text(german_text)
+        mishnah_ref, talmud_ref = get_ref_from_link(mishnah_talmud_link)
+        german_text = get_german_text(talmud_ref)
 
         # Find all Roman Numerals in the German text, and save to an array
         all_roman_numerals = re.findall(r"<sup>([ixv]+).*?<\/sup>", german_text)
 
+        # add a one-to-one check
+        one_to_one = is_one_to_one(mishnah_ref, mishnah_ref_array)
+
+        # Flag messages
+        if not one_to_one:
+            flagged = True
+            flag_msg = "Not one to one"
+
         if mishnah_ref.is_range():
 
-            # add a one-to-one check
-            one_to_one = is_one_to_one(mishnah_ref, mishnah_ref_array)
-            num_mishnahs = len(mishnah_ref.range_list())
-
-            # Flag messages
-            if not one_to_one:
-                num_not_one_to_one += 1
+            # Mishmatch between the number of Mishnahs and the
+            # number of Roman Numerals
+            if len(mishnah_ref.range_list()) != len(all_roman_numerals) or not one_to_one:
                 flagged = True
-                flag_msg += "Not one to one"
+                flag_msg += "Roman numeral mismatch" if len(flag_msg) < 1 else ", Roman numeral mismatch"
 
-            if num_mishnahs != len(all_roman_numerals):
-                rn_bad_count += 1
-                flagged = True
-                if len(flag_msg) > 1:
-                    flag_msg += ", "  # append if both
-                flag_msg += "Roman numeral mismatch"
+                # If the Mishnah is a ranged ref, and has been flagged
+                # break it up without any German text passed the first
+                # Mishnah in the ref for a clear visual indicator to the
+                # team manually parsing.
+                split_refs = mishnah_ref.range_list()
+                first_ref = True
+                for each_ref in split_refs:
+                    german_text = "" if not first_ref else german_text
+                    first_ref = False
+                    mishnah_txt_list.append(
+                        get_mishnah_data(each_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
 
+
+            # If a ranged ref that's one-to-one, with a correct Roman Numeral set,
+            # we can easily further break down the ranged ref into its components.
             else:
-                rn_good_count += 1
+                individual_mishnahs = re.split(r"<sup>[ixv].*?<\/sup>", german_text)
+                split_refs = mishnah_ref.range_list()
+                counter = 1  # since '' is at 0
 
-                # If a ranged ref that's one-to-one, with a correct Roman Numeral set,
-                # we can easily further break down the ranged ref into its components.
-                if one_to_one:
+                for each_ref in split_refs:
+                    german_text = individual_mishnahs[counter]
+                    mishnah_txt_list.append(
+                        get_mishnah_data(each_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
+                    counter += 1
 
-                    individual_mishnahs = re.split(r"<sup>[ixv].*?<\/sup>", german_text)
-
-                    split_refs = mishnah_ref.range_list()
-                    counter = 1  # since '' is at 0
-
-                    for each_ref in split_refs:
-                        hebrew_mishnah = get_hebrew_mishnah(each_ref)
-                        mishnah_tref = each_ref.normal()
-                        mishnah_txt_list.append({'tref': mishnah_tref,
-                                                 'german_text': individual_mishnahs[counter],
-                                                 'hebrew_text': hebrew_mishnah,
-                                                 "is_one_to_one": one_to_one,
-                                                 "flagged_for_manual": flagged,
-                                                 "flag_msg": flag_msg,
-                                                 "list_rn": all_roman_numerals})
-                        counter += 1
-
-                    continue
-
-            # If the Mishnah is a ranged ref, and has been flagged
-            # break it up without any German text passed the first
-            # Mishnah in the ref for a clear visual indicator to the
-            # team manually parsing.
-            split_refs = mishnah_ref.range_list()
-            first_ref = True
-            for each_ref in split_refs:
-                hebrew_mishnah = get_hebrew_mishnah(each_ref)
-                mishnah_tref = each_ref.normal()
-
-                if not first_ref:
-                    german_text = ""
-
-                first_ref = False
-
-                mishnah_txt_list.append({'tref': mishnah_tref,
-                                         'german_text': german_text,
-                                         'hebrew_text': hebrew_mishnah,
-                                         "is_one_to_one": one_to_one,
-                                         "flagged_for_manual": flagged,
-                                         "flag_msg": flag_msg,
-                                         "list_rn": all_roman_numerals})
-
-            continue
-
-        else:
-            count_single += 1
-
-        if not flagged:
-            hebrew_mishnah = mishnah_ref.text('he').text
-            hebrew_mishnah = strip_last_new_line(hebrew_mishnah)
-
-        # Base case (one to one, not a ranged ref)
-        # Saves the Mishnah with the corresponding Hebrew text
-        mishnah_txt_list.append({'tref': mishnah_ref.normal(),
-                                 'german_text': german_text,
-                                 'hebrew_text': hebrew_mishnah,
-                                 "is_one_to_one": one_to_one,
-                                 "flagged_for_manual": flagged,
-                                 "flag_msg": flag_msg,
-                                 "list_rn": all_roman_numerals})
-
-    if generate_eda_summary:
-        print_eda_summary(rn_good_count,
-                          rn_bad_count,
-                          count_single,
-                          num_not_one_to_one,
-                          total_refs)
+        else: #TODO - how do we handle not 1:1 single refs?
+            # Base case (not a ranged ref - may or may not be 1:1)
+            # Saves the Mishnah with the corresponding Hebrew text
+            mishnah_txt_list.append(
+                get_mishnah_data(mishnah_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
 
     return mishnah_txt_list
 
