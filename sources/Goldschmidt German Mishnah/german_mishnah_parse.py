@@ -9,6 +9,10 @@ import re
 import csv
 from sefaria.model import *
 
+# TODO
+# Length mappings?
+# Single ref 1:1
+
 # From the list of links between the Mishnah and the Talmud,
 # this function returns a list of Mishnah references
 def get_mishnah_ref_array_from_talmud_links():
@@ -30,7 +34,6 @@ def get_mishnah_ref_array_from_talmud_links():
 def checking_one_to_one(ref, mishnah_ref_array):
     num_occurrences = mishnah_ref_array.count(ref)
     if num_occurrences > 1:
-        print(num_occurrences)
         return False
     return True
 
@@ -53,7 +56,7 @@ def is_one_to_one(ref, mishnah_ref_array):
         split_refs = ref.range_list()
         for each_ref in split_refs:
             result = checking_one_to_one(each_ref, mishnah_ref_array)
-    else: # if single ref
+    else:  # if single ref
         result = checking_one_to_one(ref, mishnah_ref_array)
     return result
 
@@ -64,7 +67,7 @@ def is_one_to_one(ref, mishnah_ref_array):
 # in case that's useful for fine-tuning these results.
 def clean_text(german_text):
     german_text = str(german_text)
-    text_array = re.sub(r"<small>|<\/small>|,|\[|\]|\{|\}|\"|\'|\['', '", "", german_text)
+    text_array = re.sub(r"<small>|<\/small>|,|\[|\]|\{|\}|\"|\'|\['', '", "", german_text)  # TODO - fix regex
     return text_array
 
 
@@ -168,14 +171,17 @@ def scrape_german_mishnah_text():
                 individual_mishnahs = re.split(r"<sup>[ixv].*?<\/sup>", german_text)
                 split_refs = mishnah_ref.range_list()
                 counter = 1  # since '' is at 0
+                rn_count = 0
 
                 for each_ref in split_refs:
                     german_text = individual_mishnahs[counter]
+                    german_text = f"<sup>{all_roman_numerals[rn_count]}</sup>{german_text}"
+                    rn_count += 1
                     mishnah_txt_list.append(
                         get_mishnah_data(each_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
                     counter += 1
 
-        else: #TODO - how do we handle not 1:1 single refs?
+        else:  # TODO - check how we handle not 1:1 single refs?
             # Base case (not a ranged ref - may or may not be 1:1)
             # Saves the Mishnah with the corresponding Hebrew text
             mishnah_txt_list.append(
@@ -185,9 +191,7 @@ def scrape_german_mishnah_text():
 
 
 # This function generates the CSV of the Mishnayot
-def generate_csv_german_mishna():
-    mishnah_list = scrape_german_mishnah_text()
-
+def generate_csv_german_mishnah(mishnah_list):
     # pipe delimiter instead of comma, since comma in text
     headers = ['tref', 'german_text', 'hebrew_text', 'is_one_to_one', 'flagged_for_manual', 'flag_msg',
                'list_rn']
@@ -201,5 +205,35 @@ def generate_csv_german_mishna():
     print("File writing complete")
 
 
+# This function takes sections of the same mishnah, and condenses
+# them based on their roman numerals
+def merge_segments_of_mishnah(mishnah_list):
+    # If this tref matches the previous one
+    # if the roman numerals are sequential (check for multiple RN?)
+    # append this text to the previous one
+    # delete this entry
+    len_mishnah_list = len(mishnah_list)
+    i = 0
+    while i < len_mishnah_list:  # dynamic list size
+        prev_mishnah = mishnah_list[i - 1]
+        cur_mishnah = mishnah_list[i]
+
+        if cur_mishnah['tref'] == prev_mishnah['tref']:
+            # Check roman numerals
+            prev_num = re.findall(r"<sup>[ixv].*?(\d)<\/sup>", prev_mishnah['german_text'])
+            cur_num = re.findall(r"<sup>[ixv].*?(\d)<\/sup>", cur_mishnah['german_text'])
+            prev_num = int(prev_num[0]) if len(prev_num) == 1 else None
+            cur_num = int(cur_num[0]) if len(cur_num) == 1 else None
+            if cur_num and prev_num and cur_num - prev_num == 1:
+                prev_mishnah['german_text'] += cur_mishnah['german_text']
+                prev_mishnah['flag_msg'] += ", been merged."
+                mishnah_list.remove(cur_mishnah)
+                len_mishnah_list = len(mishnah_list)  # update len for while loop
+        i += 1
+    return mishnah_list
+
+
 if __name__ == "__main__":
-    generate_csv_german_mishna()
+    mishnah_list = scrape_german_mishnah_text()
+    mishnah_list = merge_segments_of_mishnah(mishnah_list)
+    generate_csv_german_mishnah(mishnah_list)
