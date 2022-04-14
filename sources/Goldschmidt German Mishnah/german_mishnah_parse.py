@@ -5,13 +5,16 @@ import django
 django.setup()
 
 import roman
+import statistics
 import re
 import csv
 from sefaria.model import *
 
+
 # TODO
-# Length mappings?
-# Single ref 1:1
+# Deal with the edge cases - highlighted blank rows on the spreadsheet
+# Length mappings? - for everything not flagged, calculate the ratio. Btwn 1:1-1:3, two std deviations
+# Add another flag for length mappings, out of standard deviation range
 
 # From the list of links between the Mishnah and the Talmud,
 # this function returns a list of Mishnah references
@@ -181,7 +184,7 @@ def scrape_german_mishnah_text():
                         get_mishnah_data(each_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
                     counter += 1
 
-        else:  # TODO - check how we handle not 1:1 single refs?
+        else:
             # Base case (not a ranged ref - may or may not be 1:1)
             # Saves the Mishnah with the corresponding Hebrew text
             mishnah_txt_list.append(
@@ -218,6 +221,7 @@ def merge_segments_of_mishnah(mishnah_list):
         prev_mishnah = mishnah_list[i - 1]
         cur_mishnah = mishnah_list[i]
 
+        # Two of the same
         if cur_mishnah['tref'] == prev_mishnah['tref']:
             # Check roman numerals
             prev_num = re.findall(r"<sup>[ixv].*?(\d)<\/sup>", prev_mishnah['german_text'])
@@ -227,13 +231,65 @@ def merge_segments_of_mishnah(mishnah_list):
             if cur_num and prev_num and cur_num - prev_num == 1:
                 prev_mishnah['german_text'] += cur_mishnah['german_text']
                 prev_mishnah['flag_msg'] += ", been merged."
+                prev_mishnah['flagged_for_manual'] = False  # no longer needs manual parsing
                 mishnah_list.remove(cur_mishnah)
                 len_mishnah_list = len(mishnah_list)  # update len for while loop
+        # Condense later blanks
+        blank_counter = 1
+        rn_in_cur_mishnah = re.findall(r"<sup>([ixv]+).*?<\/sup>", cur_mishnah['german_text'])
+        if len(rn_in_cur_mishnah) > 1 and i < len_mishnah_list - blank_counter:
+            rn_counter = 1
+            individual_mishnahs = re.split(r"<sup>[ixv].*?<\/sup>", cur_mishnah['german_text'])
+            while mishnah_list[i + blank_counter]['german_text'] == '' and rn_counter < len(rn_in_cur_mishnah):
+                mishnah_number = re.findall(r":(\d.*)$", mishnah_list[i + blank_counter]['tref'])
+                mishnah_number = int(mishnah_number[0]) if len(mishnah_number) == 1 else 0
+                numeric_cur_rn = roman.fromRoman(rn_in_cur_mishnah[rn_counter].upper())
+                if numeric_cur_rn == mishnah_number:
+                    mishnah_list[i + blank_counter][
+                        'german_text'] = f"<sup>{rn_in_cur_mishnah[rn_counter]}</sup>{individual_mishnahs[rn_counter]}"
+                    mishnah_list[i + blank_counter]['flagged_for_manual'] = False  # no longer needs manual parsing
+
+                    cur_mishnah['flagged_for_manual'] = False
+                    # Take out chunk
+                    if f"<sup>{rn_in_cur_mishnah[rn_counter]}" in cur_mishnah['german_text']:
+                        index_of_extra_mishnah = cur_mishnah['german_text'].index(
+                            f"<sup>{rn_in_cur_mishnah[rn_counter]}")
+                        cur_mishnah['german_text'] = cur_mishnah['german_text'][:index_of_extra_mishnah]
+                    mishnah_list[i + blank_counter]['flag_msg'] += f", extracted from {cur_mishnah['tref']}"
+
+                    rn_counter += 1
+                blank_counter += 1
+
         i += 1
     return mishnah_list
+
+
+def avg_word_length(mishnah_list):
+    raw_hebrew_words = 0
+    raw_german_words = 0
+    hebrew_word_len_list = []
+    german_word_len_list = []
+    num_missing_mishnahs = 0
+    for each_mishnah in mishnah_list:
+        raw_german_words += len(each_mishnah['german_text'])
+        raw_hebrew_words += len(each_mishnah['hebrew_text'])
+        hebrew_word_len_list.append(len(each_mishnah['hebrew_text']))
+
+        if each_mishnah['german_text'] != '':
+            german_word_len_list.append(len(each_mishnah['german_text']))
+        else:
+            num_missing_mishnahs += 1
+
+    avg_hebrew_wc = raw_hebrew_words / len(mishnah_list)
+    avg_german_wc = raw_german_words / (len(mishnah_list) - num_missing_mishnahs)
+    print(f"Average German Word Count Per Mishnah = {avg_german_wc}")
+    print(f"Average Hebrew Word Count Per Mishnah = {avg_hebrew_wc}")
+    print(statistics.stdev(german_word_len_list))
+    print(statistics.stdev(hebrew_word_len_list))
 
 
 if __name__ == "__main__":
     mishnah_list = scrape_german_mishnah_text()
     mishnah_list = merge_segments_of_mishnah(mishnah_list)
-    generate_csv_german_mishnah(mishnah_list)
+    avg_word_length(mishnah_list)
+    # generate_csv_german_mishnah(mishnah_list)
