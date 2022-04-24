@@ -317,8 +317,10 @@ def flag_if_length_out_of_stdev(mishnah_list, stdev, mean):
 
             if cur_ratio > high:
                 each_mishnah["length_flag"] += f"The ratio between the Hebrew and German word counts of this Mishnah is two standard deviations above the mean "
+                each_mishnah['flagged_for_manual'] = True
             elif cur_ratio < low:
                 each_mishnah["length_flag"] += f"The ratio between the Hebrew and German word counts of this Mishnah is two standard deviations below the mean "
+                each_mishnah['flagged_for_manual'] = True
 
 
 if __name__ == "__main__":
