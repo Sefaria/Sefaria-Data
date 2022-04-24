@@ -13,7 +13,6 @@ from sefaria.model import *
 
 # TODO
 # Deal with the edge cases - highlighted blank rows on the spreadsheet
-# Check stdev with Noah
 
 # From the list of links between the Mishnah and the Talmud,
 # this function returns a list of Mishnah references
@@ -85,7 +84,7 @@ def get_hebrew_mishnah(ref):
     hebrew_mishnah = strip_last_new_line(hebrew_mishnah)
     return hebrew_mishnah
 
-
+# Helper function which, given a tref, returns the text
 def get_german_text(talmud_ref):
     german_text = talmud_ref.text('en', vtitle='Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]')
     german_text = german_text.text
@@ -264,54 +263,68 @@ def merge_segments_of_mishnah(mishnah_list):
     return mishnah_list
 
 
-def mishnah_statistics(mishnah_list, language):
-    if language == 'hebrew':
-        raw_hebrew_words = 0
-        hebrew_word_len_list = []
-        for each_mishnah in mishnah_list:
-            raw_hebrew_words += len(each_mishnah['hebrew_text'])
-            hebrew_word_len_list.append(len(each_mishnah['hebrew_text']))
-        mean = raw_hebrew_words / len(mishnah_list)
-        stdev = statistics.stdev(hebrew_word_len_list)
-        print(f"Mean Hebrew Word Count Per Mishnah = {mean}")
-        print(f"Stdev of Hebrew Word Count Per Mishnah = {stdev}")
+# This is a helper function which calculates specific mishnah statistics
+# regarding the length of the texts, and the ratio between the German and the Hebrew
+# to help indicate errors in the parsing.
+# The method is as follows:
+#
+    # For each mishnah
+    # - strip german html and footnotes
+    # - calculate word len for each
+    # - create a len ratio list
+    # - find the mean of that list as the stdev mean
+    # - return mean and stdev
+def mishnah_statistics(mishnah_list):
 
-    elif language == 'german':
-        raw_german_words = 0
-        german_word_len_list = []
-        num_missing_mishnahs = 0
-        for each_mishnah in mishnah_list:
-            raw_german_words += len(each_mishnah['german_text'])
-            if each_mishnah['german_text'] != '':
-                german_word_len_list.append(len(each_mishnah['german_text']))
-            else:
-                num_missing_mishnahs += 1
+    ratio_list = []
+    missing_mishnahs = 0
+    ratio_aggregate = 0
 
-        mean = raw_german_words / (len(mishnah_list) - num_missing_mishnahs)
-        stdev = statistics.stdev(german_word_len_list)
-        print(f"Mean German Word Count Per Mishnah = {mean}")
-        print(f"Stdev German Word Count Per Mishnah = {stdev}")
+    for each_mishnah in mishnah_list:
 
-    return mean, stdev
+        german_text = TextChunk._strip_itags(each_mishnah['german_text'])
+        german_text = re.sub(r'<.*?>', '', german_text)
+        hebrew_text = each_mishnah['hebrew_text']
+
+        if len(german_text) > 0:
+            wc_ratio_he_to_de = len(hebrew_text)/len(german_text)
+        else:
+            missing_mishnahs += 1
+            wc_ratio_he_to_de = 0
+
+        ratio_aggregate += wc_ratio_he_to_de
+        ratio_list.append(wc_ratio_he_to_de)
+
+    # done manually to account for missing mishnahs
+    mean_of_ratios = ratio_aggregate / (len(mishnah_list) - missing_mishnahs)
+    stdev = statistics.stdev(ratio_list)
+    print(f"Mean of the He/De Word Count Ratios = {mean_of_ratios}")
+    print(f"Stdev of the He/De Word Count Ratios = {stdev}")
+
+    return mean_of_ratios, stdev
 
 
-def flag_if_length_out_of_stdev(mishnah_list, stdev, mean, language):
+def flag_if_length_out_of_stdev(mishnah_list, stdev, mean):
     for each_mishnah in mishnah_list:
         high = mean + 2 * stdev
         low = mean - 2 * stdev
 
-        # TODO - strip footnotes out of German texts, messing with the avges, flagged texts have
-        # robust footnotes
-        if len(each_mishnah[f"{language}_text"]) > high:
-            each_mishnah["length_flag"] += f"{language} text is more than two standard deviations above the mean "
-        elif len(each_mishnah[f"{language}_text"]) < low:
-            each_mishnah["length_flag"] += f"{language} text is less than two standard deviations below the mean "
+        german_text = TextChunk._strip_itags(each_mishnah['german_text'])
+        german_text = re.sub(r'<.*?>', '', german_text)
+        hebrew_text = each_mishnah['hebrew_text']
+        if len(german_text) > 0:
+            cur_ratio = len(hebrew_text)/len(german_text)
+
+            if cur_ratio > high:
+                each_mishnah["length_flag"] += f"The ratio between the Hebrew and German word counts of this Mishnah is two standard deviations above the mean "
+            elif cur_ratio < low:
+                each_mishnah["length_flag"] += f"The ratio between the Hebrew and German word counts of this Mishnah is two standard deviations below the mean "
 
 
 if __name__ == "__main__":
     mishnah_list = scrape_german_mishnah_text()
     mishnah_list = merge_segments_of_mishnah(mishnah_list)
-    german_mean, german_stdev = mishnah_statistics(mishnah_list, language='german')
-    flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean, language="german")
+    german_mean, german_stdev = mishnah_statistics(mishnah_list)
+    flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
 
     generate_csv_german_mishnah(mishnah_list)
