@@ -12,7 +12,11 @@ from sefaria.model import *
 
 
 # TODO
-# Deal with the edge cases - highlighted blank rows on the spreadsheet
+
+# Validate each mishnah in mishnah appears as a tref
+# Make sure that the rn is put back
+# The split cases (berakhot 1:1 has 1, and 2a, and then berakhot 1:2 is empty, and then there's another with 2b)
+
 
 # From the list of links between the Mishnah and the Talmud,
 # this function returns a list of Mishnah references
@@ -83,6 +87,7 @@ def get_hebrew_mishnah(ref):
     hebrew_mishnah = Ref(tref).text('he').text
     hebrew_mishnah = strip_last_new_line(hebrew_mishnah)
     return hebrew_mishnah
+
 
 # Helper function which, given a tref, returns the text
 def get_german_text(talmud_ref):
@@ -263,19 +268,43 @@ def merge_segments_of_mishnah(mishnah_list):
     return mishnah_list
 
 
+# TODO - add edge cases here
+def catch_edge_cases(mishnah_list):
+    i = 0
+    while i < len(mishnah_list):
+        mishnah = mishnah_list[i]
+        nxt_mishnah = mishnah_list[i+1] if i < (len(mishnah_list)-1) else None
+        # If just a roman numeral
+        if len(mishnah['german_text']) < 10:
+            mishnah['flagged_for_manual'] = True
+            mishnah['flag_msg'] = 'Suspected insufficiency in text' if len(
+                mishnah['flag_msg']) == 0 else ', suspected insufficiency in text'
+
+        # If duplicated mishnahs and one is NOT one-to-one and the other is, delete the NOT one-to-one one.
+        if nxt_mishnah and mishnah['tref'] == nxt_mishnah['tref']:
+            if mishnah['is_one_to_one'] == False and nxt_mishnah['is_one_to_one'] == True:
+                print(mishnah)
+                mishnah_list.remove(mishnah)
+            elif nxt_mishnah['is_one_to_one'] == False and mishnah['is_one_to_one'] == True:
+                print(mishnah)
+                mishnah_list.remove(nxt_mishnah)
+        i += 1
+
+    return mishnah_list
+
+
 # This is a helper function which calculates specific mishnah statistics
 # regarding the length of the texts, and the ratio between the German and the Hebrew
 # to help indicate errors in the parsing.
 # The method is as follows:
 #
-    # For each mishnah
-    # - strip german html and footnotes
-    # - calculate word len for each
-    # - create a len ratio list
-    # - find the mean of that list as the stdev mean
-    # - return mean and stdev
+# For each mishnah
+# - strip german html and footnotes
+# - calculate word len for each
+# - create a len ratio list
+# - find the mean of that list as the stdev mean
+# - return mean and stdev
 def mishnah_statistics(mishnah_list):
-
     ratio_list = []
     missing_mishnahs = 0
     ratio_aggregate = 0
@@ -286,21 +315,14 @@ def mishnah_statistics(mishnah_list):
         german_text = re.sub(r'<.*?>', '', german_text)
         hebrew_text = each_mishnah['hebrew_text']
 
-        if len(german_text) > 0:
-            wc_ratio_he_to_de = len(hebrew_text)/len(german_text)
-        else:
-            missing_mishnahs += 1
-            wc_ratio_he_to_de = 0
-
-        ratio_aggregate += wc_ratio_he_to_de
-        ratio_list.append(wc_ratio_he_to_de)
+        if len(german_text) > 10:
+            ratio_he_to_de = len(hebrew_text) / len(german_text)
+            ratio_aggregate += ratio_he_to_de
+            ratio_list.append(ratio_he_to_de)
 
     # done manually to account for missing mishnahs
     mean_of_ratios = ratio_aggregate / (len(mishnah_list) - missing_mishnahs)
     stdev = statistics.stdev(ratio_list)
-    print(f"Mean of the He/De Word Count Ratios = {mean_of_ratios}")
-    print(f"Stdev of the He/De Word Count Ratios = {stdev}")
-
     return mean_of_ratios, stdev
 
 
@@ -313,19 +335,20 @@ def flag_if_length_out_of_stdev(mishnah_list, stdev, mean):
         german_text = re.sub(r'<.*?>', '', german_text)
         hebrew_text = each_mishnah['hebrew_text']
         if len(german_text) > 0:
-            cur_ratio = len(hebrew_text)/len(german_text)
+            cur_ratio = len(hebrew_text) / len(german_text)
 
             if cur_ratio > high:
-                each_mishnah["length_flag"] += f"The ratio between the Hebrew and German word counts of this Mishnah is two standard deviations above the mean "
-                each_mishnah['flagged_for_manual'] = True
+                each_mishnah[
+                    "length_flag"] += f"The ratio between the Hebrew and German word counts of this Mishnah is two standard deviations above the mean "
             elif cur_ratio < low:
-                each_mishnah["length_flag"] += f"The ratio between the Hebrew and German word counts of this Mishnah is two standard deviations below the mean "
-                each_mishnah['flagged_for_manual'] = True
+                each_mishnah[
+                    "length_flag"] += f"The ratio between the Hebrew and German word counts of this Mishnah is two standard deviations below the mean "
 
 
 if __name__ == "__main__":
     mishnah_list = scrape_german_mishnah_text()
     mishnah_list = merge_segments_of_mishnah(mishnah_list)
+    mishnah_list = catch_edge_cases(mishnah_list)
     german_mean, german_stdev = mishnah_statistics(mishnah_list)
     flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
 
