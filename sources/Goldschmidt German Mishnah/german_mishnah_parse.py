@@ -13,9 +13,10 @@ from sefaria.model import *
 
 # TODO
 
-# Validate each mishnah in mishnah appears as a tref
 # Make sure that the rn is put back
 # The split cases (berakhot 1:1 has 1, and 2a, and then berakhot 1:2 is empty, and then there's another with 2b)
+# The cases Shmuel pointed out (my hunch is that they are related to the rn issue)
+# Put the missing mishnahs from validation into the spreadsheet
 
 
 # From the list of links between the Mishnah and the Talmud,
@@ -273,7 +274,7 @@ def catch_edge_cases(mishnah_list):
     i = 0
     while i < len(mishnah_list):
         mishnah = mishnah_list[i]
-        nxt_mishnah = mishnah_list[i+1] if i < (len(mishnah_list)-1) else None
+        nxt_mishnah = mishnah_list[i + 1] if i < (len(mishnah_list) - 1) else None
         # If just a roman numeral
         if len(mishnah['german_text']) < 10:
             mishnah['flagged_for_manual'] = True
@@ -291,6 +292,45 @@ def catch_edge_cases(mishnah_list):
         i += 1
 
     return mishnah_list
+
+
+def create_list_of_mishnah_trefs():
+    mishnah_indices = library.get_indexes_in_category("Mishnah", full_records=True)
+    full_tref_list = []
+    for index in mishnah_indices:
+        mishnah_refs = index.all_segment_refs()
+        for mishnah in mishnah_refs:
+            full_tref_list.append(mishnah.normal())
+    return full_tref_list
+
+
+# Validate that all Mishnahs are in this list
+def validate_mishna(mishnah_list):
+    talmud_indices = library.get_indexes_in_category("Bavli")
+    print(talmud_indices)
+    full_tref_list = create_list_of_mishnah_trefs()
+
+    print("MASECHTOT")
+    # Clean out non-Bavli references
+    i = 0
+    while i < len(full_tref_list):
+        cur_ref = full_tref_list[i]
+        masechet = re.findall(r"[A-Za-z ] ([A-Za-z ].*?) \d", cur_ref)
+        if masechet and masechet[0] not in talmud_indices:
+            full_tref_list.remove(full_tref_list[i])
+            continue
+        i += 1
+
+    i = 0
+    while i < len(mishnah_list):
+        mishnah = mishnah_list[i]
+        if mishnah['tref'] in full_tref_list:
+            full_tref_list.remove(mishnah['tref'])
+        i += 1
+
+    print(f"{len(full_tref_list)} mishnahs not in parse")
+    print(full_tref_list)
+    return full_tref_list
 
 
 # This is a helper function which calculates specific mishnah statistics
@@ -353,3 +393,5 @@ if __name__ == "__main__":
     flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
 
     generate_csv_german_mishnah(mishnah_list)
+
+    validate_mishna(mishnah_list)
