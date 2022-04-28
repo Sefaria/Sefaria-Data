@@ -15,7 +15,7 @@ from sefaria.model import *
 
 # Make sure that the rn is put back
 # The split cases (berakhot 1:1 has 1, and 2a, and then berakhot 1:2 is empty, and then there's another with 2b)
-# The cases Shmuel pointed out (my hunch is that they are related to the rn issue)
+# The cases Shmuel pointed out - MERGE FXN REVISIT.
 # Put the missing mishnahs from validation into the spreadsheet
 
 
@@ -168,10 +168,14 @@ def scrape_german_mishnah_text():
                 first_ref = True
                 for each_ref in split_refs:
                     german_text = "" if not first_ref else german_text
+                    if 'Shabbat' in each_ref.normal():
+                        print(each_ref)
+                        print(f"first ref:{first_ref}, {german_text}")
                     first_ref = False
+                    if each_ref.normal() == 'Mishnah Shabbat 3:4':
+                        print(f"German text is {german_text}")
                     mishnah_txt_list.append(
                         get_mishnah_data(each_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
-
 
             # If a ranged ref that's one-to-one, with a correct Roman Numeral set,
             # we can easily further break down the ranged ref into its components.
@@ -284,10 +288,8 @@ def catch_edge_cases(mishnah_list):
         # If duplicated mishnahs and one is NOT one-to-one and the other is, delete the NOT one-to-one one.
         if nxt_mishnah and mishnah['tref'] == nxt_mishnah['tref']:
             if mishnah['is_one_to_one'] == False and nxt_mishnah['is_one_to_one'] == True:
-                print(mishnah)
                 mishnah_list.remove(mishnah)
             elif nxt_mishnah['is_one_to_one'] == False and mishnah['is_one_to_one'] == True:
-                print(mishnah)
                 mishnah_list.remove(nxt_mishnah)
         i += 1
 
@@ -301,17 +303,9 @@ def create_list_of_mishnah_trefs():
         mishnah_refs = index.all_segment_refs()
         for mishnah in mishnah_refs:
             full_tref_list.append(mishnah.normal())
-    return full_tref_list
 
-
-# Validate that all Mishnahs are in this list
-def validate_mishna(mishnah_list):
-    talmud_indices = library.get_indexes_in_category("Bavli")
-    print(talmud_indices)
-    full_tref_list = create_list_of_mishnah_trefs()
-
-    print("MASECHTOT")
     # Clean out non-Bavli references
+    talmud_indices = library.get_indexes_in_category("Bavli")
     i = 0
     while i < len(full_tref_list):
         cur_ref = full_tref_list[i]
@@ -321,16 +315,17 @@ def validate_mishna(mishnah_list):
             continue
         i += 1
 
-    i = 0
-    while i < len(mishnah_list):
-        mishnah = mishnah_list[i]
-        if mishnah['tref'] in full_tref_list:
-            full_tref_list.remove(mishnah['tref'])
-        i += 1
-
-    print(f"{len(full_tref_list)} mishnahs not in parse")
-    print(full_tref_list)
     return full_tref_list
+
+
+# Validate that all Mishnahs are in this list
+def validate_mishna(mishnah_list):
+    full_tref_list = create_list_of_mishnah_trefs()
+    mishnah_list_trefs = [mishnah['tref'] for mishnah in mishnah_list]
+    not_included = set(full_tref_list)-set(mishnah_list_trefs)
+    print(f"{len(not_included)} mishnahs not in parse")
+    print(not_included)
+    return not_included
 
 
 # This is a helper function which calculates specific mishnah statistics
