@@ -12,10 +12,9 @@ from sefaria.model import *
 
 
 # TODO
-
-# Make sure that the rn is put back
-# The split cases (berakhot 1:1 has 1, and 2a, and then berakhot 1:2 is empty, and then there's another with 2b)
-# The cases Shmuel pointed out - MERGE FXN REVISIT.
+# Merge fixes:
+# # #  - The split cases (berakhot 1:1 has 1, and 2a, and then berakhot 1:2 is empty, and then there's another with 2b)
+# # #  - The cases Shmuel pointed out - likely also a merge issue
 # Put the missing mishnahs from validation into the spreadsheet
 
 
@@ -168,12 +167,7 @@ def scrape_german_mishnah_text():
                 first_ref = True
                 for each_ref in split_refs:
                     german_text = "" if not first_ref else german_text
-                    if 'Shabbat' in each_ref.normal():
-                        print(each_ref)
-                        print(f"first ref:{first_ref}, {german_text}")
                     first_ref = False
-                    if each_ref.normal() == 'Mishnah Shabbat 3:4':
-                        print(f"German text is {german_text}")
                     mishnah_txt_list.append(
                         get_mishnah_data(each_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
 
@@ -273,7 +267,6 @@ def merge_segments_of_mishnah(mishnah_list):
     return mishnah_list
 
 
-# TODO - add edge cases here
 def catch_edge_cases(mishnah_list):
     i = 0
     while i < len(mishnah_list):
@@ -322,7 +315,7 @@ def create_list_of_mishnah_trefs():
 def validate_mishna(mishnah_list):
     full_tref_list = create_list_of_mishnah_trefs()
     mishnah_list_trefs = [mishnah['tref'] for mishnah in mishnah_list]
-    not_included = set(full_tref_list)-set(mishnah_list_trefs)
+    not_included = set(full_tref_list) - set(mishnah_list_trefs)
     print(f"{len(not_included)} mishnahs not in parse")
     print(not_included)
     return not_included
