@@ -166,7 +166,7 @@ def scrape_german_mishnah_text():
                 split_refs = mishnah_ref.range_list()
                 first_ref = True
                 for each_ref in split_refs:
-                    german_text = "" if not first_ref else german_text
+                    german_text = german_text if first_ref else ""
                     first_ref = False
                     mishnah_txt_list.append(
                         get_mishnah_data(each_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
@@ -218,9 +218,10 @@ def merge_segments_of_mishnah(mishnah_list):
     # if the roman numerals are sequential (check for multiple RN?)
     # append this text to the previous one
     # delete this entry
-    len_mishnah_list = len(mishnah_list)
-    i = 0
-    while i < len_mishnah_list:  # dynamic list size
+    i = 1
+    new_mishnah_list = []
+    while i < len(mishnah_list):  # dynamic list size
+
         prev_mishnah = mishnah_list[i - 1]
         cur_mishnah = mishnah_list[i]
 
@@ -236,35 +237,61 @@ def merge_segments_of_mishnah(mishnah_list):
                 prev_mishnah['flag_msg'] += ", been merged."
                 prev_mishnah['flagged_for_manual'] = False  # no longer needs manual parsing
                 mishnah_list.remove(cur_mishnah)
-                len_mishnah_list = len(mishnah_list)  # update len for while loop
-        # Condense later blanks
-        blank_counter = 1
-        rn_in_cur_mishnah = re.findall(r"<sup>([ixv]+).*?<\/sup>", cur_mishnah['german_text'])
-        if len(rn_in_cur_mishnah) > 1 and i < len_mishnah_list - blank_counter:
-            rn_counter = 1
-            individual_mishnahs = re.split(r"<sup>[ixv].*?<\/sup>", cur_mishnah['german_text'])
-            while mishnah_list[i + blank_counter]['german_text'] == '' and rn_counter < len(rn_in_cur_mishnah):
-                mishnah_number = re.findall(r":(\d.*)$", mishnah_list[i + blank_counter]['tref'])
-                mishnah_number = int(mishnah_number[0]) if len(mishnah_number) == 1 else 0
-                numeric_cur_rn = roman.fromRoman(rn_in_cur_mishnah[rn_counter].upper())
-                if numeric_cur_rn == mishnah_number:
-                    mishnah_list[i + blank_counter][
-                        'german_text'] = f"<sup>{rn_in_cur_mishnah[rn_counter]}</sup>{individual_mishnahs[rn_counter]}"
-                    mishnah_list[i + blank_counter]['flagged_for_manual'] = False  # no longer needs manual parsing
-
-                    cur_mishnah['flagged_for_manual'] = False
-                    # Take out chunk
-                    if f"<sup>{rn_in_cur_mishnah[rn_counter]}" in cur_mishnah['german_text']:
-                        index_of_extra_mishnah = cur_mishnah['german_text'].index(
-                            f"<sup>{rn_in_cur_mishnah[rn_counter]}")
-                        cur_mishnah['german_text'] = cur_mishnah['german_text'][:index_of_extra_mishnah]
-                    mishnah_list[i + blank_counter]['flag_msg'] += f", extracted from {cur_mishnah['tref']}"
-
-                    rn_counter += 1
-                blank_counter += 1
-
         i += 1
     return mishnah_list
+
+
+# # TODO - ERROR OCCURS HERE
+# # TODO - trace through the logic here.
+def condense_blanks(mishnah_list):
+    # Condense later blanks
+    new_mishnah_list = []
+
+    # Flag duplicates where one is blank
+    # if the duplicate non-empty starts with a rn-2, look to see if rn-1 is in previous
+    # If so, extract it and append it to the non-empty one, and delete the blank
+    for i in range(0, len(mishnah_list)):
+        cur_mishnah = mishnah_list[i]
+
+        # set neighbors
+        next_mishnah = mishnah_list[i + 1] if i < len(mishnah_list) - 1 else None
+        prev_mishnah = mishnah_list[i - 1] if i >= 1 else None
+
+        if cur_mishnah['german_text'] == '' and prev_mishnah and next_mishnah:
+            # If this blank, has a duplicated non-blank for the same tref
+            if cur_mishnah['tref'] == next_mishnah['tref'] and next_mishnah['german_text'] != '':
+                # check that the next mishnah's first rn is not 1
+
+                # Scrape non-empty neighbors for all their roman numerals
+                next_mishnah_rn_num = re.findall(r"<sup>[ixv].*?(\d)<\/sup>", next_mishnah['german_text'])
+                prev_mishnah_rn_num = re.findall(r"<sup>[ixv].*?(\d)<\/sup>", prev_mishnah['german_text'])
+
+                if '1' in prev_mishnah_rn_num:
+                    cur_mishnah_number = re.findall(r".* \d.*:(\d.*)", cur_mishnah['tref'])
+                    cur_mishnah_number = int(cur_mishnah_number[0])
+                    cur_mishnah_rn = roman.toRoman(cur_mishnah_number).lower()
+                    pattern = re.compile(f"(<sup>{cur_mishnah_rn}\d<\/sup>.*)$")
+
+                    # Capture text
+                    misplaced_text = re.findall(pattern, prev_mishnah['german_text'])
+
+                    # Append to new
+                    cur_mishnah['german_text'] = misplaced_text[0] + next_mishnah['german_text']
+
+                    if next_mishnah_rn_num and next_mishnah_rn_num[0] != '2':
+                        cur_mishnah['flagged_for_manual'] = True
+                        cur_mishnah["flag_msg"] = 'Condensed, but non-sequential RN-numeric tags'
+
+                    # Remove from previous
+                    index_next_mishnah = prev_mishnah['german_text'].find(f"<sup>{cur_mishnah_rn}")
+                    prev_mishnah['german_text'] = prev_mishnah['german_text'][:index_next_mishnah]
+
+                    # Flag next_mishnah for removal
+                    next_mishnah['flag_msg'] = 'REMOVE'
+
+    new_mishnah_list = list(filter(lambda mishnah: mishnah['flag_msg'] != 'REMOVE', mishnah_list))
+
+    return new_mishnah_list
 
 
 def catch_edge_cases(mishnah_list):
@@ -376,9 +403,10 @@ def flag_if_length_out_of_stdev(mishnah_list, stdev, mean):
 if __name__ == "__main__":
     mishnah_list = scrape_german_mishnah_text()
     mishnah_list = merge_segments_of_mishnah(mishnah_list)
-    mishnah_list = catch_edge_cases(mishnah_list)
-    german_mean, german_stdev = mishnah_statistics(mishnah_list)
-    flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
+    mishnah_list = condense_blanks(mishnah_list)
+    # mishnah_list = catch_edge_cases(mishnah_list)
+    # german_mean, german_stdev = mishnah_statistics(mishnah_list)
+    # flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
 
     generate_csv_german_mishnah(mishnah_list)
 
