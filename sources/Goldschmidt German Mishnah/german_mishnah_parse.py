@@ -12,10 +12,7 @@ from sefaria.model import *
 
 
 # TODO
-# Merge fixes:
-#  The split cases (berakhot 1:1 has 1, and 2a, and then berakhot 1:2 is empty, and then there's another with 2b)
-# Put the missing mishnahs from validation into the spreadsheet
-
+# Add a function for catching remaining blanks in the spreadsheet
 
 # From the list of links between the Mishnah and the Talmud,
 # this function returns a list of Mishnah references
@@ -240,7 +237,6 @@ def merge_segments_of_mishnah(mishnah_list):
     return mishnah_list
 
 
-
 def condense_blanks(mishnah_list):
     # Condense later blanks
     new_mishnah_list = []
@@ -300,8 +296,7 @@ def catch_edge_cases(mishnah_list):
         # If just a roman numeral
         if len(mishnah['german_text']) < 10:
             mishnah['flagged_for_manual'] = True
-            mishnah['flag_msg'] = 'Suspected insufficiency in text' if len(
-                mishnah['flag_msg']) == 0 else ', suspected insufficiency in text'
+            mishnah['flag_msg'] = 'Suspected insufficiency in text'
 
         # If duplicated mishnahs and one is NOT one-to-one and the other is, delete the NOT one-to-one one.
         if nxt_mishnah and mishnah['tref'] == nxt_mishnah['tref']:
@@ -344,6 +339,18 @@ def validate_mishna(mishnah_list):
     print(f"{len(not_included)} mishnahs not in parse")
     print(not_included)
     return not_included
+
+
+# Create empty slots for Mishnahs that are missing (order doesn't matter
+# since sorted upon CSV creation)
+def add_empty(mishnah_list):
+    not_included = validate_mishna(mishnah_list)
+
+    for each_ref in not_included:
+        mishnah_data = get_mishnah_data(Ref(each_ref), '', True, True, 'Missing from links', '')
+        mishnah_list.append(mishnah_data)
+
+    return mishnah_list
 
 
 # This is a helper function which calculates specific mishnah statistics
@@ -403,9 +410,8 @@ if __name__ == "__main__":
     mishnah_list = merge_segments_of_mishnah(mishnah_list)
     mishnah_list = condense_blanks(mishnah_list)
     mishnah_list = catch_edge_cases(mishnah_list)
+    mishnah_list = add_empty(mishnah_list)
     german_mean, german_stdev = mishnah_statistics(mishnah_list)
     flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
 
     generate_csv_german_mishnah(mishnah_list)
-
-    validate_mishna(mishnah_list)
