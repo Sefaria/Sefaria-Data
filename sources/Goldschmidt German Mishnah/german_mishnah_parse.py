@@ -13,8 +13,7 @@ from sefaria.model import *
 
 # TODO
 # Merge fixes:
-# # #  - The split cases (berakhot 1:1 has 1, and 2a, and then berakhot 1:2 is empty, and then there's another with 2b)
-# # #  - The cases Shmuel pointed out - likely also a merge issue
+#  The split cases (berakhot 1:1 has 1, and 2a, and then berakhot 1:2 is empty, and then there's another with 2b)
 # Put the missing mishnahs from validation into the spreadsheet
 
 
@@ -241,8 +240,7 @@ def merge_segments_of_mishnah(mishnah_list):
     return mishnah_list
 
 
-# # TODO - ERROR OCCURS HERE
-# # TODO - trace through the logic here.
+
 def condense_blanks(mishnah_list):
     # Condense later blanks
     new_mishnah_list = []
@@ -404,9 +402,9 @@ if __name__ == "__main__":
     mishnah_list = scrape_german_mishnah_text()
     mishnah_list = merge_segments_of_mishnah(mishnah_list)
     mishnah_list = condense_blanks(mishnah_list)
-    # mishnah_list = catch_edge_cases(mishnah_list)
-    # german_mean, german_stdev = mishnah_statistics(mishnah_list)
-    # flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
+    mishnah_list = catch_edge_cases(mishnah_list)
+    german_mean, german_stdev = mishnah_statistics(mishnah_list)
+    flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
 
     generate_csv_german_mishnah(mishnah_list)
 
