@@ -11,25 +11,7 @@ import csv
 from sefaria.model import *
 
 
-# TODO
-# Add a function for catching remaining blanks in the spreadsheet
-
-# From the list of links between the Mishnah and the Talmud,
-# this function returns a list of Mishnah references
-def get_mishnah_ref_array_from_talmud_links():
-    ls = LinkSet({"type": "mishnah in talmud"})
-    mishnah_ref_array = []
-    for linked_mishnah in ls:
-        mishnah_tref = linked_mishnah.refs[0] if "Mishnah" in linked_mishnah.refs[0] else linked_mishnah.refs[1]
-        mishnah_ref = Ref(mishnah_tref)
-        if mishnah_ref.is_range():
-            split_refs = mishnah_ref.range_list()
-            for each_ref in split_refs:
-                mishnah_ref_array.append(each_ref)
-        else:
-            mishnah_ref_array.append(mishnah_ref)
-    return mishnah_ref_array
-
+#### UTILITY FUNCTIONS ####
 
 # Helper function for 1:1 check
 def checking_one_to_one(ref, mishnah_ref_array):
@@ -37,6 +19,37 @@ def checking_one_to_one(ref, mishnah_ref_array):
     if num_occurrences > 1:
         return False
     return True
+
+
+# Cleans the raw Talmud text of interfering HTML/metadata
+# Leaves in the <super> tags for the Roman Numeral superscripts,
+# and the <b> tags surrounding the first word of every Mishnah,
+# in case that's useful for fine-tuning these results.
+def clean_text(german_text):
+    german_text = str(german_text)
+    text_array = re.sub(r"<small>|<\/small>|,|\[|\]|\{|\}|\"|\'|\['', '", "", german_text)
+    return text_array
+
+
+# Strips the last newline character from text to enable CSV formatting
+def strip_last_new_line(text):
+    return text[:-1]
+
+
+# Helper function for common Hebrew text grabbing sequence
+def get_hebrew_mishnah(ref):
+    tref = ref.normal()
+    hebrew_mishnah = Ref(tref).text('he').text
+    hebrew_mishnah = strip_last_new_line(hebrew_mishnah)
+    return hebrew_mishnah
+
+
+# Helper function which, given a tref, returns the text
+def get_german_text(talmud_ref):
+    german_text = talmud_ref.text('en', vtitle='Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]')
+    german_text = german_text.text
+    german_text = clean_text(german_text)
+    return german_text
 
 
 # This function determines whether a given Mishnah ref
@@ -62,47 +75,66 @@ def is_one_to_one(ref, mishnah_ref_array):
     return result
 
 
-# Cleans the raw Talmud text of interfering HTML/metadata
-# Leaves in the <super> tags for the Roman Numeral superscripts,
-# and the <b> tags surrounding the first word of every Mishnah,
-# in case that's useful for fine-tuning these results.
-def clean_text(german_text):
-    german_text = str(german_text)
-    text_array = re.sub(r"<small>|<\/small>|,|\[|\]|\{|\}|\"|\'|\['', '", "", german_text)  # TODO - fix regex
-    return text_array
+# This function creates a list of mishnah trefs, and extracts any masechtot
+# that are not also found in the Bavli (i.e. Pirkei Avot), since this project
+# is focused only on those masechtot which may have a translation in the
+# Bavli already.
+def create_list_of_mishnah_trefs():
+    mishnah_indices = library.get_indexes_in_category("Mishnah", full_records=True)
+    full_tref_list = []
+    for index in mishnah_indices:
+        mishnah_refs = index.all_segment_refs()
+        for mishnah in mishnah_refs:
+            full_tref_list.append(mishnah.normal())
+
+    # Clean out non-Bavli references
+    talmud_indices = library.get_indexes_in_category("Bavli")
+    i = 0
+    while i < len(full_tref_list):
+        cur_ref = full_tref_list[i]
+        masechet = re.findall(r"[A-Za-z ] ([A-Za-z ].*?) \d", cur_ref)
+        if masechet and masechet[0] not in talmud_indices:
+            full_tref_list.remove(full_tref_list[i])
+            continue
+        i += 1
+
+    return full_tref_list
 
 
-# Strips the last newline character from text to enable CSV formatting
-def strip_last_new_line(text):
-    return text[:-1]
+# This is a helper function which calculates specific mishnah statistics
+# regarding the length of the texts, and the ratio between the German and the Hebrew
+# to help indicate errors in the parsing.
+# The method is as follows:
+#
+# For each mishnah
+# - strip german html and footnotes
+# - calculate word len for each
+# - create a len ratio list
+# - find the mean of that list as the stdev mean
+# - return mean and stdev
+def mishnah_statistics(mishnah_list):
+    ratio_list = []
+    missing_mishnahs = 0
+    ratio_aggregate = 0
+
+    for each_mishnah in mishnah_list:
+
+        german_text = TextChunk._strip_itags(each_mishnah['german_text'])
+        german_text = re.sub(r'<.*?>', '', german_text)
+        hebrew_text = each_mishnah['hebrew_text']
+
+        if len(german_text) > 10:
+            ratio_he_to_de = len(hebrew_text) / len(german_text)
+            ratio_aggregate += ratio_he_to_de
+            ratio_list.append(ratio_he_to_de)
+
+    # done manually to account for missing mishnahs
+    mean_of_ratios = ratio_aggregate / (len(mishnah_list) - missing_mishnahs)
+    stdev = statistics.stdev(ratio_list)
+    return mean_of_ratios, stdev
 
 
-# Helper function for common Hebrew text grabbing sequence
-def get_hebrew_mishnah(ref):
-    tref = ref.normal()
-    hebrew_mishnah = Ref(tref).text('he').text
-    hebrew_mishnah = strip_last_new_line(hebrew_mishnah)
-    return hebrew_mishnah
-
-
-# Helper function which, given a tref, returns the text
-def get_german_text(talmud_ref):
-    german_text = talmud_ref.text('en', vtitle='Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]')
-    german_text = german_text.text
-    german_text = clean_text(german_text)
-    return german_text
-
-
-# Given a link between the mishnah and talmud, this function
-# can conditionally return either the appropriate Mishnah ref
-# or Talmud ref
-def get_ref_from_link(mishnah_talmud_link):
-    mishnah_ref, talmud_ref = mishnah_talmud_link.refs if "Mishnah" in mishnah_talmud_link.refs[0] else reversed(
-        mishnah_talmud_link.refs)
-    return Ref(mishnah_ref), Ref(talmud_ref)
-
-
-# Return the dict item
+# Return the dict item representing each row of the CSV
 def get_mishnah_data(ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals):
     hebrew_mishnah = get_hebrew_mishnah(ref)
     mishnah_tref = ref.normal()
@@ -114,6 +146,49 @@ def get_mishnah_data(ref, german_text, one_to_one, flagged, flag_msg, all_roman_
             "flag_msg": flag_msg,
             "list_rn": all_roman_numerals,
             "length_flag": ''}
+
+
+# This function generates the CSV of the Mishnayot
+def generate_csv_german_mishnah(mishnah_list):
+    # pipe delimiter instead of comma, since comma in text
+    headers = ['tref', 'german_text', 'hebrew_text', 'is_one_to_one', 'flagged_for_manual', 'flag_msg',
+               'list_rn', 'length_flag']
+
+    with open(f'Goldschmidt German Mishnah/german_mishnah_data.csv', 'w') as file:
+        mishnah_list.sort(key=lambda x: Ref(x["tref"]).order_id())
+        c = csv.DictWriter(file, delimiter='|', fieldnames=headers)
+        c.writeheader()
+        c.writerows(mishnah_list)
+
+    print("File writing complete")
+
+
+### SCRAPING FUNCTIONS ####
+
+# From the list of links between the Mishnah and the Talmud,
+# this function returns a list of Mishnah references
+def get_mishnah_ref_array_from_talmud_links():
+    ls = LinkSet({"type": "mishnah in talmud"})
+    mishnah_ref_array = []
+    for linked_mishnah in ls:
+        mishnah_tref = linked_mishnah.refs[0] if "Mishnah" in linked_mishnah.refs[0] else linked_mishnah.refs[1]
+        mishnah_ref = Ref(mishnah_tref)
+        if mishnah_ref.is_range():
+            split_refs = mishnah_ref.range_list()
+            for each_ref in split_refs:
+                mishnah_ref_array.append(each_ref)
+        else:
+            mishnah_ref_array.append(mishnah_ref)
+    return mishnah_ref_array
+
+
+# Given a link between the mishnah and talmud, this function
+# can conditionally return either the appropriate Mishnah ref
+# or Talmud ref
+def get_ref_from_link(mishnah_talmud_link):
+    mishnah_ref, talmud_ref = mishnah_talmud_link.refs if "Mishnah" in mishnah_talmud_link.refs[0] else reversed(
+        mishnah_talmud_link.refs)
+    return Ref(mishnah_ref), Ref(talmud_ref)
 
 
 # This is the main function which does the bulk of the scraping work.
@@ -192,20 +267,7 @@ def scrape_german_mishnah_text():
     return mishnah_txt_list
 
 
-# This function generates the CSV of the Mishnayot
-def generate_csv_german_mishnah(mishnah_list):
-    # pipe delimiter instead of comma, since comma in text
-    headers = ['tref', 'german_text', 'hebrew_text', 'is_one_to_one', 'flagged_for_manual', 'flag_msg',
-               'list_rn', 'length_flag']
-
-    with open(f'Goldschmidt German Mishnah/german_mishnah_data.csv', 'w') as file:
-        mishnah_list.sort(key=lambda x: Ref(x["tref"]).order_id())
-        c = csv.DictWriter(file, delimiter='|', fieldnames=headers)
-        c.writeheader()
-        c.writerows(mishnah_list)
-
-    print("File writing complete")
-
+#### FUNCTIONS FOR POST-PROCESSING DATA ###
 
 # This function takes sections of the same mishnah, and condenses
 # them based on their roman numerals
@@ -215,7 +277,6 @@ def merge_segments_of_mishnah(mishnah_list):
     # append this text to the previous one
     # delete this entry
     i = 1
-    new_mishnah_list = []
     while i < len(mishnah_list):  # dynamic list size
 
         prev_mishnah = mishnah_list[i - 1]
@@ -239,8 +300,6 @@ def merge_segments_of_mishnah(mishnah_list):
 
 def condense_blanks(mishnah_list):
     # Condense later blanks
-    new_mishnah_list = []
-
     # Flag duplicates where one is blank
     # if the duplicate non-empty starts with a rn-2, look to see if rn-1 is in previous
     # If so, extract it and append it to the non-empty one, and delete the blank
@@ -288,6 +347,43 @@ def condense_blanks(mishnah_list):
     return new_mishnah_list
 
 
+def extract_joined_mishnahs(mishnah_list):
+    count = 0
+    for i in range(0, len(mishnah_list) - 1):
+        cur_mishnah = mishnah_list[i]
+        next_mishnah = mishnah_list[i + 1]
+
+        # If current mishnah is not blank, but the next one is... (expand for more than 1 blank later)
+        if cur_mishnah['german_text'] != '' and next_mishnah['german_text'] == '':
+            next_mishnah_number = re.findall(r".* \d.*:(\d.*)", next_mishnah['tref'])
+            next_mishnah_number = int(next_mishnah_number[0])
+            next_mishnah_rn = roman.toRoman(next_mishnah_number).lower()
+
+            pattern = re.compile(f"(<sup>{next_mishnah_rn}<\/sup>.*)$")
+
+            # Capture text
+            misplaced_text = re.findall(pattern, cur_mishnah['german_text'])
+
+            # Append to new
+            next_mishnah['german_text'] = misplaced_text[0] if misplaced_text else ''
+
+            # Current mishnah no longer needs parsing
+            cur_mishnah['flagged_for_manual'] = False
+
+            # If the next mishnah was embedded, reset the error flags for the mishnahs
+            if next_mishnah['german_text'] != "":
+                cur_mishnah["flag_msg"] = f"Extracted {next_mishnah['tref']} from this mishnah"
+                next_mishnah['flagged_for_manual'] = False
+                next_mishnah[
+                    'flag_msg'] = f"This Mishnah text was taken from {cur_mishnah['tref']} where it was embedded"
+
+                # Remove extra text from current mishnah
+                index_extra_text = cur_mishnah['german_text'].find(f"<sup>{next_mishnah_rn}")
+                cur_mishnah['german_text'] = cur_mishnah['german_text'][:index_extra_text]
+                count += 1
+    return mishnah_list
+
+
 def catch_edge_cases(mishnah_list):
     i = 0
     while i < len(mishnah_list):
@@ -309,35 +405,11 @@ def catch_edge_cases(mishnah_list):
     return mishnah_list
 
 
-def create_list_of_mishnah_trefs():
-    mishnah_indices = library.get_indexes_in_category("Mishnah", full_records=True)
-    full_tref_list = []
-    for index in mishnah_indices:
-        mishnah_refs = index.all_segment_refs()
-        for mishnah in mishnah_refs:
-            full_tref_list.append(mishnah.normal())
-
-    # Clean out non-Bavli references
-    talmud_indices = library.get_indexes_in_category("Bavli")
-    i = 0
-    while i < len(full_tref_list):
-        cur_ref = full_tref_list[i]
-        masechet = re.findall(r"[A-Za-z ] ([A-Za-z ].*?) \d", cur_ref)
-        if masechet and masechet[0] not in talmud_indices:
-            full_tref_list.remove(full_tref_list[i])
-            continue
-        i += 1
-
-    return full_tref_list
-
-
 # Validate that all Mishnahs are in this list
 def validate_mishna(mishnah_list):
     full_tref_list = create_list_of_mishnah_trefs()
     mishnah_list_trefs = [mishnah['tref'] for mishnah in mishnah_list]
     not_included = set(full_tref_list) - set(mishnah_list_trefs)
-    print(f"{len(not_included)} mishnahs not in parse")
-    print(not_included)
     return not_included
 
 
@@ -353,39 +425,8 @@ def add_empty(mishnah_list):
     return mishnah_list
 
 
-# This is a helper function which calculates specific mishnah statistics
-# regarding the length of the texts, and the ratio between the German and the Hebrew
-# to help indicate errors in the parsing.
-# The method is as follows:
-#
-# For each mishnah
-# - strip german html and footnotes
-# - calculate word len for each
-# - create a len ratio list
-# - find the mean of that list as the stdev mean
-# - return mean and stdev
-def mishnah_statistics(mishnah_list):
-    ratio_list = []
-    missing_mishnahs = 0
-    ratio_aggregate = 0
-
-    for each_mishnah in mishnah_list:
-
-        german_text = TextChunk._strip_itags(each_mishnah['german_text'])
-        german_text = re.sub(r'<.*?>', '', german_text)
-        hebrew_text = each_mishnah['hebrew_text']
-
-        if len(german_text) > 10:
-            ratio_he_to_de = len(hebrew_text) / len(german_text)
-            ratio_aggregate += ratio_he_to_de
-            ratio_list.append(ratio_he_to_de)
-
-    # done manually to account for missing mishnahs
-    mean_of_ratios = ratio_aggregate / (len(mishnah_list) - missing_mishnahs)
-    stdev = statistics.stdev(ratio_list)
-    return mean_of_ratios, stdev
-
-
+# This function flags any Mishnayot whose ratio of Hebrew text / German text
+# is at least two standard deviations away from the mean in either direction.
 def flag_if_length_out_of_stdev(mishnah_list, stdev, mean):
     for each_mishnah in mishnah_list:
         high = mean + 2 * stdev
@@ -405,13 +446,20 @@ def flag_if_length_out_of_stdev(mishnah_list, stdev, mean):
                     "length_flag"] += f"The ratio between the Hebrew and German word counts of this Mishnah is two standard deviations below the mean "
 
 
-if __name__ == "__main__":
-    mishnah_list = scrape_german_mishnah_text()
+# This function calls the helper functions which
+# resolve the obvious mismatch errors in the data
+def process_data(mishnah_list):
     mishnah_list = merge_segments_of_mishnah(mishnah_list)
     mishnah_list = condense_blanks(mishnah_list)
     mishnah_list = catch_edge_cases(mishnah_list)
     mishnah_list = add_empty(mishnah_list)
+    mishnah_list = extract_joined_mishnahs(mishnah_list)
     german_mean, german_stdev = mishnah_statistics(mishnah_list)
     flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
+    return mishnah_list
 
+
+if __name__ == "__main__":
+    mishnah_list = scrape_german_mishnah_text()
+    mishnah_list = process_data(mishnah_list)
     generate_csv_german_mishnah(mishnah_list)
