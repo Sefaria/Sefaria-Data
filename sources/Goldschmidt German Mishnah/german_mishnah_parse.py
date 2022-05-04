@@ -394,7 +394,7 @@ def catch_edge_cases(mishnah_list):
         mishnah = mishnah_list[i]
         nxt_mishnah = mishnah_list[i + 1] if i < (len(mishnah_list) - 1) else None
         # If just a roman numeral
-        if len(mishnah['german_text']) < 10:
+        if len(mishnah['german_text']) < 20:
             mishnah['flagged_for_manual'] = True
             mishnah['flag_msg'] = 'Suspected insufficiency in text'
 
@@ -455,9 +455,9 @@ def flag_if_length_out_of_stdev(mishnah_list, stdev, mean):
 def process_data(mishnah_list):
     mishnah_list = merge_segments_of_mishnah(mishnah_list)
     mishnah_list = condense_blanks(mishnah_list)
-    mishnah_list = catch_edge_cases(mishnah_list)
     mishnah_list = add_empty(mishnah_list)
     mishnah_list = extract_joined_mishnahs(mishnah_list)
+    mishnah_list = catch_edge_cases(mishnah_list)
     german_mean, german_stdev = mishnah_statistics(mishnah_list)
     flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
     return mishnah_list
