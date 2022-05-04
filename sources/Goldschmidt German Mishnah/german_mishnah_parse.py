@@ -27,7 +27,7 @@ def checking_one_to_one(ref, mishnah_ref_array):
 # in case that's useful for fine-tuning these results.
 def clean_text(german_text):
     german_text = str(german_text)
-    text_array = re.sub(r"<small>|<\/small>|,|\[|\]|\{|\}|\"|\'|\['', '", "", german_text)
+    text_array = re.sub(r"\[|\]|\{|\}", "", german_text)
     return text_array
 
 
@@ -329,7 +329,10 @@ def condense_blanks(mishnah_list):
                     misplaced_text = re.findall(pattern, prev_mishnah['german_text'])
 
                     # Append to new
-                    cur_mishnah['german_text'] = misplaced_text[0] + next_mishnah['german_text']
+                    if len(misplaced_text) >= 1:
+                        cur_mishnah['german_text'] = misplaced_text[0] + next_mishnah['german_text']
+                    else:
+                        cur_mishnah['flagged_for_manual'] = True
 
                     if next_mishnah_rn_num and next_mishnah_rn_num[0] != '2':
                         cur_mishnah['flagged_for_manual'] = True
@@ -367,8 +370,9 @@ def extract_joined_mishnahs(mishnah_list):
             # Append to new
             next_mishnah['german_text'] = misplaced_text[0] if misplaced_text else ''
 
-            # Current mishnah no longer needs parsing
-            cur_mishnah['flagged_for_manual'] = False
+            # Current mishnah no longer needs parsing if one-to-one
+            if 'Not one to one' not in cur_mishnah['flag_msg']:
+                cur_mishnah['flagged_for_manual'] = False
 
             # If the next mishnah was embedded, reset the error flags for the mishnahs
             if next_mishnah['german_text'] != "":
