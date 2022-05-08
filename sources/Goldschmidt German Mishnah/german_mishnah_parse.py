@@ -463,7 +463,32 @@ def process_data(mishnah_list):
     return mishnah_list
 
 
+### VALIDATION ####
+
+def diff_german_text(mishnah_list):
+    all_text = []
+
+    ## Here?
+    def action(segment_str, tref, he_tref, version):
+        nonlocal all_text
+        all_text.append(segment_str)
+
+    bavli_indices = library.get_indexes_in_category("Bavli", full_records=True)
+    for index in bavli_indices:
+        german_talmud = Version().load(
+            {"title": index.title, "versionTitle": 'Talmud Bavli. German trans. by Lazarus Goldschmidt, 1929 [de]'})
+        if german_talmud:
+            german_talmud.walk_thru_contents(action)
+    print(f'len of gem = {len(all_text)}')
+    for each_mishnah in mishnah_list:
+        if each_mishnah['german_text'] not in german_talmud:
+            print(each_mishnah['tref'])
+
+
 if __name__ == "__main__":
     mishnah_list = scrape_german_mishnah_text()
     mishnah_list = process_data(mishnah_list)
+    diff_german_text(mishnah_list)
+
     generate_csv_german_mishnah(mishnah_list)
+    print("diff'ing")
