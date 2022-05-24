@@ -39,20 +39,20 @@ def stream_data(db_host: str, db_port: int, input_collection: str, output_collec
 
     return generate_stream
 
-@spacy.registry.tokenizers("custom_tokenizer")
-def custom_tokenizer_factory():
-    def custom_tokenizer(nlp):
-        tag_re = r'<[^>]+>'
-        class_re = r'<[a-z]+ class="[a-z]+">'
-        prefix_re = re.compile(rf'''^(?:[\[({{:"'\u05F4\u05F3§\u05c0\u05c3]|{tag_re}|class="[a-zA-Z\-]+">)''')
-        suffix_re =  re.compile(rf'''(?:[\])}}.,;:?!"'\u05F4\u05F3\u05c0\u05c3]|{tag_re})$''')
-        infix_re = re.compile(rf'''([-~]|{tag_re})''')
-        tokenizer = Tokenizer(nlp.vocab, prefix_search=prefix_re.search,
-                                    suffix_search=suffix_re.search,
-                                    infix_finditer=infix_re.finditer,
-                                    token_match=None)
-        return tokenizer
-    return custom_tokenizer
+# @spacy.registry.tokenizers("custom_tokenizer")
+# def custom_tokenizer_factory():
+#     def custom_tokenizer(nlp):
+#         tag_re = r'<[^>]+>'
+#         class_re = r'<[a-z]+ class="[a-z]+">'
+#         prefix_re = re.compile(rf'''^(?:[\[({{:"'\u05F4\u05F3§\u05c0\u05c3]|{tag_re}|class="[a-zA-Z\-]+">)''')
+#         suffix_re =  re.compile(rf'''(?:[\])}}.,;:?!"'\u05F4\u05F3\u05c0\u05c3]|{tag_re})$''')
+#         infix_re = re.compile(rf'''([-~]|{tag_re})''')
+#         tokenizer = Tokenizer(nlp.vocab, prefix_search=prefix_re.search,
+#                                     suffix_search=suffix_re.search,
+#                                     infix_finditer=infix_re.finditer,
+#                                     token_match=None)
+#         return tokenizer
+#     return custom_tokenizer
 
 @spacy.registry.tokenizers("inner_punct_tokenizer")
 def inner_punct_tokenizer_factory():
@@ -259,9 +259,9 @@ def convert_jsonl_to_csv(filename):
 
 if __name__ == "__main__":
     # nlp = spacy.load('./output/yerushalmi_refs/model-last')
-    nlp = spacy.load('./output/webpages/model-last')
-    # nlp = spacy.load('./output/sub_citation/model-best')
-    data = stream_data('localhost', 27017, 'webpages_output', 'gilyon_input', 614, 0.8, 'test', 0)(nlp)
+    # nlp = spacy.load('./output/webpages/model-last')
+    nlp = spacy.load('/home/nss/sefaria/ML/linker/models/webpages_subref_he/model-best')
+    data = stream_data('localhost', 27017, 'webpages_sub_citation_output', 'gilyon_input', 614, 0.8, 'test', 0)(nlp)
     print(make_evaluation_files(data, nlp, './output/evaluation_results', lang='he'))
 
     # data = stream_data('localhost', 27017, 'yerushalmi_output', 'gilyon_input', -1, 1.0, 'train', 0, unique_by_metadata=True)(nlp)

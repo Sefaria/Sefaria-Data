@@ -62,7 +62,7 @@ def train_model(nlp, annotations, model_dir):
     save_model(nlp, model_dir)
     return losses
 
-def add_model_predictions(nlp, stream):
+def add_model_predictions(nlp, stream, min_found=None):
     """
     Return new generator that wraps stream
     add model predictions to each example of stream
@@ -71,6 +71,8 @@ def add_model_predictions(nlp, stream):
         pred_doc = nlp(example['text'])
         pred_spans = [{"start": pred_doc[ent.start].idx, "end": pred_doc[ent.end-1].idx+len(pred_doc[ent.end-1]), "label": ent.label_} for ent in pred_doc.ents]
         example['spans'] = pred_spans
+        if min_found is not None and len(pred_spans) < min_found:
+            continue
         yield example
 
 
@@ -120,7 +122,7 @@ def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, 
     all_data = list(getattr(my_db.db, input_collection).find({}, {"_id": 0}))  # TODO loading all data into ram to avoid issues of cursor timing out
     stream = filter_existing_refs(all_data, my_db)
     # stream = split_sentences(nlp, all_data, min_length=200)
-    stream = add_model_predictions(nlp, stream)  # uncomment to add model predictions instead of pretagged spans
+    stream = add_model_predictions(nlp, stream, min_found=1)  # uncomment to add model predictions instead of pretagged spans
     stream = add_tokens(nlp, stream, skip=True)
     if view_id == "ner":
         stream = split_spans(stream)
@@ -170,10 +172,17 @@ def ref_tagging_recipe(dataset, input_collection, output_collection, model_dir, 
 def validate_tokenizer(model_dir, s, lang):
     nlp, _ = load_model(model_dir, ['na'], lang)
     for token in nlp.tokenizer(s):
-        print(token)
+        print(token.text)
+
+def validate_alignment(model_dir, lang, text, entities):
+    nlp, exists = load_model(model_dir, ['na'], lang)
+    print("Model Exists:", exists)
+    print(spacy.training.offsets_to_biluo_tags(nlp.make_doc(text), entities))
 
 if __name__ == "__main__":
-    validate_tokenizer("/Users/nss/sefaria/data/research/prodigy/output/test_model", "ה, א-ב", 'he')
+    model_dir = "/home/nss/sefaria/data/research/prodigy/output/webpages/model-last"
+    validate_tokenizer(model_dir, "ה, א-ב", 'he')
+    validate_alignment(model_dir, 'he', "פסוקים א-ו", [(0, 8, 'מספר'), (8, 9, 'סימן-טווח'), (9, 10, 'מספר')])
     # import_file_to_collection('../data/test_input.jsonl', 'webpages_input')
 """
 command to run
