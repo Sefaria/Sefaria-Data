@@ -63,12 +63,14 @@ for cat in tt.all_category_nodes():
             try:
                 object = child.get_category_object()
                 if hasattr(object, 'order') and object.order == new_ord:
+                    new_ord += 5
                     continue
                 object.order = new_ord
             except AttributeError:
                 if cat.get_category_object().path in [['Halakhah'], ['Kabbalah'], ['Second Temple']]:
                     object = library.get_index(child.get_primary_title())
                     if hasattr(object, 'order') and object.order == [new_ord]:
+                        new_ord += 5
                         continue
                     object.order = [new_ord]
                 else:
