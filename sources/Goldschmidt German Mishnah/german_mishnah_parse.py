@@ -135,10 +135,11 @@ def mishnah_statistics(mishnah_list):
 
 
 # Return the dict item representing each row of the CSV
-def get_mishnah_data(ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals):
+def get_mishnah_data(ref, talmud_tref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals):
     hebrew_mishnah = get_hebrew_mishnah(ref)
     mishnah_tref = ref.normal()
-    return {'tref': mishnah_tref,
+    return {'mishnah_tref': mishnah_tref,
+            'talmud_tref': talmud_tref,
             'german_text': german_text,
             'hebrew_text': hebrew_mishnah,
             "is_one_to_one": one_to_one,
@@ -151,11 +152,18 @@ def get_mishnah_data(ref, german_text, one_to_one, flagged, flag_msg, all_roman_
 # This function generates the CSV of the Mishnayot
 def generate_csv_german_mishnah(mishnah_list):
     # pipe delimiter instead of comma, since comma in text
-    headers = ['tref', 'german_text', 'hebrew_text', 'is_one_to_one', 'flagged_for_manual', 'flag_msg',
-               'list_rn', 'length_flag']
+    headers = ['mishnah_tref',
+               'talmud_tref',
+               'german_text',
+               'hebrew_text',
+               'is_one_to_one',
+               'flagged_for_manual',
+               'flag_msg',
+               'list_rn',
+               'length_flag']
 
     with open(f'Goldschmidt German Mishnah/german_mishnah_data.csv', 'w') as file:
-        mishnah_list.sort(key=lambda x: Ref(x["tref"]).order_id())
+        mishnah_list.sort(key=lambda x: Ref(x["mishnah_tref"]).order_id())
         c = csv.DictWriter(file, delimiter='|', fieldnames=headers)
         c.writeheader()
         c.writerows(mishnah_list)
@@ -240,7 +248,7 @@ def scrape_german_mishnah_text():
                     german_text = german_text if first_ref else ""
                     first_ref = False
                     mishnah_txt_list.append(
-                        get_mishnah_data(each_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
+                        get_mishnah_data(each_ref, talmud_ref.normal(), german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
 
             # If a ranged ref that's one-to-one, with a correct Roman Numeral set,
             # we can easily further break down the ranged ref into its components.
@@ -255,14 +263,14 @@ def scrape_german_mishnah_text():
                     german_text = f"<sup>{all_roman_numerals[rn_count]}</sup>{german_text}"
                     rn_count += 1
                     mishnah_txt_list.append(
-                        get_mishnah_data(each_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
+                        get_mishnah_data(each_ref, talmud_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
                     counter += 1
 
         else:
             # Base case (not a ranged ref - may or may not be 1:1)
             # Saves the Mishnah with the corresponding Hebrew text
             mishnah_txt_list.append(
-                get_mishnah_data(mishnah_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
+                get_mishnah_data(mishnah_ref, talmud_ref, german_text, one_to_one, flagged, flag_msg, all_roman_numerals))
 
     return mishnah_txt_list
 
@@ -283,7 +291,7 @@ def merge_segments_of_mishnah(mishnah_list):
         cur_mishnah = mishnah_list[i]
 
         # Two of the same
-        if cur_mishnah['tref'] == prev_mishnah['tref']:
+        if cur_mishnah['mishnah_tref'] == prev_mishnah['mishnah_tref']:
             # Check roman numerals
             prev_num = re.findall(r"<sup>[ixv].*?(\d)<\/sup>", prev_mishnah['german_text'])
             cur_num = re.findall(r"<sup>[ixv].*?(\d)<\/sup>", cur_mishnah['german_text'])
@@ -312,7 +320,7 @@ def condense_blanks(mishnah_list):
 
         if cur_mishnah['german_text'] == '' and prev_mishnah and next_mishnah:
             # If this blank, has a duplicated non-blank for the same tref
-            if cur_mishnah['tref'] == next_mishnah['tref'] and next_mishnah['german_text'] != '':
+            if cur_mishnah['mishnah_tref'] == next_mishnah['mishnah_tref'] and next_mishnah['german_text'] != '':
                 # check that the next mishnah's first rn is not 1
 
                 # Scrape non-empty neighbors for all their roman numerals
@@ -320,7 +328,7 @@ def condense_blanks(mishnah_list):
                 prev_mishnah_rn_num = re.findall(r"<sup>[ixv].*?(\d)<\/sup>", prev_mishnah['german_text'])
 
                 if '1' in prev_mishnah_rn_num:
-                    cur_mishnah_number = re.findall(r".* \d.*:(\d.*)", cur_mishnah['tref'])
+                    cur_mishnah_number = re.findall(r".* \d.*:(\d.*)", cur_mishnah['mishnah_tref'])
                     cur_mishnah_number = int(cur_mishnah_number[0])
                     cur_mishnah_rn = roman.toRoman(cur_mishnah_number).lower()
                     pattern = re.compile(f"(<sup>{cur_mishnah_rn}\d<\/sup>.*)$")
@@ -358,7 +366,7 @@ def extract_joined_mishnahs(mishnah_list):
 
         # If current mishnah is not blank, but the next one is... (expand for more than 1 blank later)
         if cur_mishnah['german_text'] != '' and next_mishnah['german_text'] == '':
-            next_mishnah_number = re.findall(r".* \d.*:(\d.*)", next_mishnah['tref'])
+            next_mishnah_number = re.findall(r".* \d.*:(\d.*)", next_mishnah['mishnah_tref'])
             next_mishnah_number = int(next_mishnah_number[0])
             next_mishnah_rn = roman.toRoman(next_mishnah_number).lower()
 
@@ -376,10 +384,10 @@ def extract_joined_mishnahs(mishnah_list):
 
             # If the next mishnah was embedded, reset the error flags for the mishnahs
             if next_mishnah['german_text'] != "":
-                cur_mishnah["flag_msg"] = f"Extracted {next_mishnah['tref']} from this mishnah"
+                cur_mishnah["flag_msg"] = f"Extracted {next_mishnah['mishnah_tref']} from this mishnah"
                 next_mishnah['flagged_for_manual'] = False
                 next_mishnah[
-                    'flag_msg'] = f"This Mishnah text was taken from {cur_mishnah['tref']} where it was embedded"
+                    'flag_msg'] = f"This Mishnah text was taken from {cur_mishnah['mishnah_tref']} where it was embedded"
 
                 # Remove extra text from current mishnah
                 index_extra_text = cur_mishnah['german_text'].find(f"<sup>{next_mishnah_rn}")
@@ -399,7 +407,7 @@ def catch_edge_cases(mishnah_list):
             mishnah['flag_msg'] = 'Suspected insufficiency in text'
 
         # If duplicated mishnahs and one is NOT one-to-one and the other is, delete the NOT one-to-one one.
-        if nxt_mishnah and mishnah['tref'] == nxt_mishnah['tref']:
+        if nxt_mishnah and mishnah['mishnah_tref'] == nxt_mishnah['mishnah_tref']:
             if mishnah['is_one_to_one'] == False and nxt_mishnah['is_one_to_one'] == True:
                 mishnah_list.remove(mishnah)
             elif nxt_mishnah['is_one_to_one'] == False and mishnah['is_one_to_one'] == True:
@@ -412,7 +420,7 @@ def catch_edge_cases(mishnah_list):
 # Validate that all Mishnahs are in this list
 def validate_mishna(mishnah_list):
     full_tref_list = create_list_of_mishnah_trefs()
-    mishnah_list_trefs = [mishnah['tref'] for mishnah in mishnah_list]
+    mishnah_list_trefs = [mishnah['mishnah_tref'] for mishnah in mishnah_list]
     not_included = set(full_tref_list) - set(mishnah_list_trefs)
     return not_included
 
@@ -423,7 +431,17 @@ def add_empty(mishnah_list):
     not_included = validate_mishna(mishnah_list)
 
     for each_ref in not_included:
-        mishnah_data = get_mishnah_data(Ref(each_ref), '', True, True, 'Missing from links', '')
+        # Query the Talmud Link
+        ls = LinkSet({'refs': each_ref, 'type': 'mishnah in talmud'})
+        talmud_tref = None
+        for link in ls:
+            talmud_tref = link.refs[0] if "Mishnah" not in link.refs[0] else link.refs[1]
+            talmud_tref = talmud_tref.normal()
+        if talmud_tref:
+            mishnah_data = get_mishnah_data(Ref(each_ref), talmud_tref, '', True, True, 'Missing from links', '')
+        else:
+            mishnah_data = get_mishnah_data(Ref(each_ref), 'No link', '', True, True, 'Missing from links', '')
+
         mishnah_list.append(mishnah_data)
 
     return mishnah_list
@@ -481,8 +499,8 @@ def diff_german_text(mishnah_list):
             german_talmud.walk_thru_contents(action)
     print(f'len of gem = {len(all_text)}')
     for each_mishnah in mishnah_list:
-        if each_mishnah['german_text'] not in german_talmud:
-            print(each_mishnah['tref'])
+        if each_mishnah['german_text'] not in all_text:
+            print(each_mishnah['mishnah_tref'])
 
 
 if __name__ == "__main__":
@@ -491,4 +509,3 @@ if __name__ == "__main__":
     diff_german_text(mishnah_list)
 
     generate_csv_german_mishnah(mishnah_list)
-    print("diff'ing")
