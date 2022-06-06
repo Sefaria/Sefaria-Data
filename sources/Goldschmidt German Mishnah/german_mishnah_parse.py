@@ -476,6 +476,11 @@ def process_data(mishnah_list):
     mishnah_list = add_empty(mishnah_list)
     mishnah_list = extract_joined_mishnahs(mishnah_list)
     mishnah_list = catch_edge_cases(mishnah_list)
+
+    # ## Todo - remove?
+    # for mishnah in mishnah_list:
+    #     if mishnah['german_text'] == '':
+    #         print(mishnah['mishnah_tref'])
     german_mean, german_stdev = mishnah_statistics(mishnah_list)
     flag_if_length_out_of_stdev(mishnah_list, stdev=german_stdev, mean=german_mean)
     return mishnah_list
@@ -506,6 +511,6 @@ def diff_german_text(mishnah_list):
 if __name__ == "__main__":
     mishnah_list = scrape_german_mishnah_text()
     mishnah_list = process_data(mishnah_list)
-    diff_german_text(mishnah_list)
+    # diff_german_text(mishnah_list)
 
     generate_csv_german_mishnah(mishnah_list)
