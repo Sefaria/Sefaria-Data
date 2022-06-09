@@ -10,15 +10,6 @@ from sefaria.model import *
 from sefaria.tracker import modify_bulk_text
 
 
-# For each new masechet
-masechet = ""
-# Create a new version
-version = Version({"versionTitle": "Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]",
-                   "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI",
-                   "title": f"Mishnah {masechet}",
-                   "chapter": [],
-                   "language": "en"})
-
 masechet_name = ''
 # Modify bulk text for each row in the CSV in this version
 with open('german_mishnah_data.csv', newline='') as csvfile:
@@ -27,6 +18,13 @@ with open('german_mishnah_data.csv', newline='') as csvfile:
     for row in german_mishnah:
         cur_masechet = re.findall(r"Mishnah (.*?) \d.*?:\d.*?$", row[0])[0]
         if masechet_name != cur_masechet:
+            # Run modify bulk changes on the past masechet
+            if masechet_name: # Skip the first empty one
+                print(f"Modifying for {masechet_name}")
+                print(version_dict)
+                modify_bulk_text(user=1, version=version, text_map=version_dict, skiplinks=True)
+            # clear version_dict
+            version_dict = {}
             masechet_name = cur_masechet
             # Create a new version
             version = Version({"versionTitle": "Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]",
@@ -34,8 +32,13 @@ with open('german_mishnah_data.csv', newline='') as csvfile:
                                "title": f"Mishnah {masechet_name}",
                                "chapter": [],
                                "language": "en"})
-            print(f"Modifying for {version}")
 
-        # create dict for modify_bulk_changes
-        rowdict = {row[0]: row[1]}
-        modify_bulk_text(user=1, version=version, text_map=rowdict, skiplinks=true)
+        # As long as it's in the same version, append the tref and text
+        tref = row[0]
+        text = row[1]
+        version_dict[tref] = text
+
+    print(f"Modifying for {masechet_name}") # hit the last masechet
+    modify_bulk_text(user=1, version=version, text_map=version_dict, skiplinks=True)
+
+
