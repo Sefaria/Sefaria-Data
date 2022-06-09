@@ -162,7 +162,7 @@ def generate_csv_german_mishnah(mishnah_list):
                'list_rn',
                'length_flag']
 
-    with open(f'Goldschmidt German Mishnah/german_mishnah_data.csv', 'w') as file:
+    with open(f'Goldschmidt German Mishnah/german_mishnah_parsing_data.csv', 'w') as file:
         mishnah_list.sort(key=lambda x: Ref(x["mishnah_tref"]).order_id())
         c = csv.DictWriter(file, delimiter='|', fieldnames=headers)
         c.writeheader()
