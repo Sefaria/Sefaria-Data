@@ -21,7 +21,6 @@ with open('german_mishnah_data.csv', newline='') as csvfile:
             # Run modify bulk changes on the past masechet
             if masechet_name: # Skip the first empty one
                 print(f"Modifying for {masechet_name}")
-                print(version_dict)
                 modify_bulk_text(user=1, version=version, text_map=version_dict, skiplinks=True)
             # clear version_dict
             version_dict = {}
