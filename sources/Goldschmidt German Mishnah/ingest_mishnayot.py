@@ -19,9 +19,10 @@ with open('german_mishnah_data.csv', newline='') as csvfile:
         cur_masechet = re.findall(r"Mishnah (.*?) \d.*?:\d.*?$", row[0])[0]
         if masechet_name != cur_masechet:
             # Run modify bulk changes on the past masechet
-            if masechet_name: # Skip the first empty one
+            if masechet_name:
+                # Skip the first empty one
                 print(f"Modifying for {masechet_name}")
-                modify_bulk_text(user=1, version=version, text_map=version_dict, skiplinks=True)
+                modify_bulk_text(user=1, version=version, text_map=version_dict, skip_links=True)
             # clear version_dict
             version_dict = {}
             masechet_name = cur_masechet
@@ -38,6 +39,6 @@ with open('german_mishnah_data.csv', newline='') as csvfile:
         version_dict[tref] = text
 
     print(f"Modifying for {masechet_name}") # hit the last masechet
-    modify_bulk_text(user=1, version=version, text_map=version_dict, skiplinks=True)
+    modify_bulk_text(user=1, version=version, text_map=version_dict, skip_links=True)
 
 
