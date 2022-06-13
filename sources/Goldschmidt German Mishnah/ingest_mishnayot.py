@@ -22,11 +22,15 @@ with open('german_mishnah_data.csv', newline='') as csvfile:
             if masechet_name:
                 # Skip the first empty one
                 print(f"Modifying for {masechet_name}")
-                modify_bulk_text(user=1, version=version, text_map=version_dict, skip_links=True)
+                modify_bulk_text(user=142625, version=version, text_map=version_dict, skip_links=True, count_after=False)
             # clear version_dict
             version_dict = {}
             masechet_name = cur_masechet
             # Create a new version
+            cur_version = VersionSet({'title': f'Mishnah {masechet_name}', 'versionTitle':'Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]'})
+            if cur_version.count() > 0:
+                cur_version.delete()
+            print(cur_version)
             version = Version({"versionTitle": "Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]",
                                "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI",
                                "title": f"Mishnah {masechet_name}",
@@ -39,6 +43,6 @@ with open('german_mishnah_data.csv', newline='') as csvfile:
         version_dict[tref] = text
 
     print(f"Modifying for {masechet_name}") # hit the last masechet
-    modify_bulk_text(user=1, version=version, text_map=version_dict, skip_links=True)
+    modify_bulk_text(user=142625, version=version, text_map=version_dict, skip_links=True, count_after=False)
 
 
