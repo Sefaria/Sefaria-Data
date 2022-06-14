@@ -2,9 +2,6 @@ import django
 
 django.setup()
 
-import roman
-import statistics
-import re
 import csv
 from collections import defaultdict
 from sefaria.model import *
@@ -21,7 +18,6 @@ def create_mappings():
 
 
 def create_version_from_scratch(masechet):
-    # Create a new version
     cur_version = VersionSet({'title': f'{masechet}',
                               'versionTitle': 'Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]'})
     if cur_version.count() > 0:
@@ -37,7 +33,7 @@ def create_version_from_scratch(masechet):
 def upload_text(mappings):
     for masechet, masechet_map in mappings.items():
         version = create_version_from_scratch(masechet)
-        print(f"Modifying for {masechet}")
+        print(f"Uploading text for {masechet}")
         modify_bulk_text(user=142625,
                          version=version,
                          text_map=masechet_map,
