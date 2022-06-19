@@ -110,26 +110,82 @@ def parse_french_mishnah():
     return mishnah_list
 
 
+def get_yerushalmi_linkset_mishnahs():
+    ym_list = []
+    ls = LinkSet({"generated_by": "yerushalmi-mishnah linker"})
+    for link in ls:
+        refs = link.refs
+        mishnah_ref, talmud_ref = refs if "Mishnah" in refs[0] else reversed(refs)
+        ym_list.append(mishnah_ref)
+    return ym_list
+
+
 # Given a tref, where the prev tref is the same
 # Concatenate this yerushalmi mishnah text to the prev
 # Delete this row
-def post_processing_data(mishnah_list):
+def handle_duplicated_single_ref(mishnah_list):
     cleaned_mishnah_list = [mishnah_list[0]]
 
-    for i in range(1, len(mishnah_list)-1):
+    for i in range(1, len(mishnah_list) - 1):
         prev = mishnah_list[i - 1]
         cur = mishnah_list[i]
-        next = mishnah_list[i+1]
+        next = mishnah_list[i + 1]
 
         # If there's a case of a repeated tref, concatenate the text
         # and eliminate the redundancy.
         if cur['mishnah_tref'] == prev['mishnah_tref']:
             prev['yerushalmi_mishnah_text'] += f" {cur['yerushalmi_mishnah_text']}"
             cleaned_mishnah_list.append(prev)
-        elif cur['mishnah_tref'] != next['mishnah_tref']: # avoid double counting bug
+        elif cur['mishnah_tref'] != next['mishnah_tref']:  # avoid double counting bug
             cleaned_mishnah_list.append(cur)
 
     return cleaned_mishnah_list
+
+
+# In the case of a ranged ref without overlap (i.e.
+# Mishnah Berakhot 1:1, Mishnah Berakhot 1:2-3, Mishnah Berakhot 1:4...
+# as opposed to Mishnah Berakhot 1:2, Mishnah Berakhot 1:2-3 where 1:2 is repeated.
+def process_ranged_ref_no_overlap(mishnah_list):
+    cleaned_mishnah_list = []
+    ym_list = get_yerushalmi_linkset_mishnahs()
+
+    for mishnah in mishnah_list:
+        is_overlapping = False
+        if Ref(mishnah['mishnah_tref']).is_range():
+            refs = Ref(mishnah['mishnah_tref']).range_list()
+            refs_normal = []
+            for ref in refs:
+                refs_normal.append(ref.normal())
+            for each_ref in refs_normal:
+                if each_ref in ym_list:
+                    is_overlapping = True
+
+            if not is_overlapping:
+                cleaned_mishnah_list.append({
+                    'mishnah_tref': refs_normal[0],
+                    'talmud_tref': mishnah['talmud_tref'],
+                    'mishnah_mishnah_text': mishnah['mishnah_mishnah_text'],
+                    'yerushalmi_mishnah_text': mishnah['yerushalmi_mishnah_text']
+                })
+                for i in range(1, len(refs_normal)):
+                    cleaned_mishnah_list.append({
+                        'mishnah_tref': refs_normal[i],
+                        'talmud_tref': '',
+                        'mishnah_mishnah_text': '',
+                        'yerushalmi_mishnah_text': ''
+                    })
+            else:
+                cleaned_mishnah_list.append(mishnah)
+        else:
+            cleaned_mishnah_list.append(mishnah)
+    return cleaned_mishnah_list
+
+
+def post_processing_data(mishnah_list):
+    mishnah_list = handle_duplicated_single_ref(mishnah_list)
+    mishnah_list = process_ranged_ref_no_overlap(mishnah_list)
+    return mishnah_list
+
 
 
 def generate_linkset_validation_csv():
