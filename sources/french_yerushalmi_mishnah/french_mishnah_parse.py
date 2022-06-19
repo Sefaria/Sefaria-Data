@@ -142,14 +142,12 @@ def handle_duplicated_single_ref(mishnah_list):
     return cleaned_mishnah_list
 
 
-# In the case of a ranged ref without overlap (i.e.
-# Mishnah Berakhot 1:1, Mishnah Berakhot 1:2-3, Mishnah Berakhot 1:4...
-# as opposed to Mishnah Berakhot 1:2, Mishnah Berakhot 1:2-3 where 1:2 is repeated.
-def process_ranged_ref_no_overlap(mishnah_list):
+def process_ranged_ref(mishnah_list):
     cleaned_mishnah_list = []
     ym_list = get_yerushalmi_linkset_mishnahs()
-
-    for mishnah in mishnah_list:
+    i = 0
+    while i < len(mishnah_list):  # changes dynamically with remove()
+        mishnah = mishnah_list[i]
         is_overlapping = False
         if Ref(mishnah['mishnah_tref']).is_range():
             refs = Ref(mishnah['mishnah_tref']).range_list()
@@ -160,6 +158,9 @@ def process_ranged_ref_no_overlap(mishnah_list):
                 if each_ref in ym_list:
                     is_overlapping = True
 
+            # In the case of a ranged ref without overlap (i.e.
+            # Mishnah Berakhot 1:1, Mishnah Berakhot 1:2-3, Mishnah Berakhot 1:4...
+            # as opposed to Mishnah Berakhot 1:2, Mishnah Berakhot 1:2-3 where 1:2 is repeated.
             if not is_overlapping:
                 cleaned_mishnah_list.append({
                     'mishnah_tref': refs_normal[0],
@@ -167,25 +168,46 @@ def process_ranged_ref_no_overlap(mishnah_list):
                     'mishnah_mishnah_text': mishnah['mishnah_mishnah_text'],
                     'yerushalmi_mishnah_text': mishnah['yerushalmi_mishnah_text']
                 })
-                for i in range(1, len(refs_normal)):
+                for j in range(1, len(refs_normal)):
                     cleaned_mishnah_list.append({
-                        'mishnah_tref': refs_normal[i],
+                        'mishnah_tref': refs_normal[j],
                         'talmud_tref': '',
                         'mishnah_mishnah_text': '',
                         'yerushalmi_mishnah_text': ''
                     })
-            else:
+            elif is_overlapping:  # if it is an overlapping ranged ref
+                # Determine, is the overlap with the prev or the next
+                prev = mishnah_list[i - 1] if i != 0 else None
+                next = mishnah_list[i + 1] if i != len(mishnah_list) - 1 else None
+                # if prev, pre-concat to the ranged ref
+                if prev['mishnah_tref'] in refs_normal:
+                    print(mishnah)
+                    mishnah[
+                        'yerushalmi_mishnah_text'] = f"{prev['yerushalmi_mishnah_text']} {mishnah['yerushalmi_mishnah_text']}"
+                    mishnah['talmud_tref'] = f"{prev['talmud_tref']}-{mishnah['talmud_tref']}"
+                    print(mishnah)
+                    cleaned_mishnah_list.remove(prev)  # already was appended
+
+                # if next, concat to the ranged ref
+                elif next['mishnah_tref'] in refs_normal:
+                    mishnah['yerushalmi_mishnah_text'] += f" {next['yerushalmi_mishnah_text']}"
+                    mishnah['talmud_tref'] += f"-{next['talmud_tref']}"
+                    mishnah_list.remove(next)
+
+                # only append the ranged ref
                 cleaned_mishnah_list.append(mishnah)
+
         else:
             cleaned_mishnah_list.append(mishnah)
+        i +=1
+
     return cleaned_mishnah_list
 
 
 def post_processing_data(mishnah_list):
     mishnah_list = handle_duplicated_single_ref(mishnah_list)
-    mishnah_list = process_ranged_ref_no_overlap(mishnah_list)
+    mishnah_list = process_ranged_ref(mishnah_list)
     return mishnah_list
-
 
 
 def generate_linkset_validation_csv():
@@ -198,42 +220,5 @@ def generate_linkset_validation_csv():
                                 'yerushalmi_mishnah_text'], 'french_mishnah_list')
 
 
-## Todo - note, we moved away from this approach since the linkset looks good
-def pure_validation_csv():
-    mm_csv_list = []
-    ym_csv_list = []
-
-    # For each Mishnah in Yerushalmi
-    mishnah_mishnah_trefs = create_list_of_mishnah_mishnah_trefs()
-    yerushalmi_mishnah_trefs = create_list_of_yerushalmi_mishnah_trefs()
-
-    print(f"mm trefs: {len(mishnah_mishnah_trefs)}, ym_trefs: {len(yerushalmi_mishnah_trefs)}")
-    # Retrieve Ref and Text
-    for mm_tref in mishnah_mishnah_trefs:
-        tref = mm_tref
-        text = get_hebrew_text(Ref(tref), type="mishnah-mishnah")
-        mm_csv_list.append({'mishnah_mishnah_tref': tref, 'mishnah_mishnah_text': text})
-        # Append to list, and order
-
-    mm_csv_list.sort(key=lambda x: Ref(x["mishnah_mishnah_tref"]).order_id())
-    generate_csv(mm_csv_list,
-                 headers=['mishnah_mishnah_tref',
-                          'mishnah_mishnah_text'],
-                 file_name='fr_mm_pure_validation')
-
-    # Retrieve Ref and Text in Talmud
-    for ym_tref in yerushalmi_mishnah_trefs:
-        tref = ym_tref
-        text = get_hebrew_text(Ref(tref), type="yerushalmi-mishnah")
-        ym_csv_list.append({'yerushalmi_mishnah_tref': tref, 'yerushalmi_mishnah_text': text})
-
-    ym_csv_list.sort(key=lambda x: Ref(x["yerushalmi_mishnah_tref"]).order_id())
-    generate_csv(ym_csv_list,
-                 headers=['yerushalmi_mishnah_tref',
-                          'yerushalmi_mishnah_text'],
-                 file_name='fr_ym_pure_validation')
-
-
 if __name__ == "__main__":
     generate_linkset_validation_csv()
-    # pure_validation_csv()
