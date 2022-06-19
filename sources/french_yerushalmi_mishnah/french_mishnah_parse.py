@@ -14,13 +14,12 @@ def generate_csv(dict_list, headers, file_name):
         c = csv.DictWriter(file, fieldnames=headers)
         c.writeheader()
         c.writerows(dict_list)
-
     print(f"File writing of {file_name} complete")
 
 
-def clean_text(german_text):
-    german_text = str(german_text)
-    text_array = re.sub(r"\[|\]|\{|\}", "", german_text)
+def clean_text(raw_text):
+    raw_text = str(raw_text)
+    text_array = re.sub(r"\[|\]|\{|\}", "", raw_text)
     return text_array
 
 
@@ -31,8 +30,6 @@ def create_list_yerushalmi_masechtot():
         masechet = re.findall(r"Jerusalem Talmud (.*?)$", index)
         yerushalmi_masechtot.append(masechet[0])
     return yerushalmi_masechtot
-
-
 
 
 # This function creates a list of mishnah trefs, and extracts any masechtot
@@ -48,7 +45,7 @@ def create_list_of_yerushalmi_mishnah_trefs():
             mishnah_tref = mishnah.normal()
             first_segment = re.match(r".*:1$", mishnah_tref)
 
-            # First segment is usually a Mishnaic text
+            # First segment is usually the Mishnah text
             if first_segment:
                 full_tref_list.append(mishnah_tref)
     return full_tref_list
@@ -59,7 +56,7 @@ def create_list_of_yerushalmi_mishnah_trefs():
 def create_list_of_mishnah_mishnah_trefs():
     mishnah_indices = library.get_indexes_in_category("Mishnah", full_records=True)
     full_tref_list = []
-    yerushalmi_mishnah_refs=[]
+    yerushalmi_mishnah_mishnah_refs = []
     for index in mishnah_indices:
         mishnah_refs = index.all_segment_refs()
         for mishnah in mishnah_refs:
@@ -67,10 +64,10 @@ def create_list_of_mishnah_mishnah_trefs():
     yerushalmi_masechtot = create_list_yerushalmi_masechtot()
 
     for mishnah in full_tref_list:
-        mishnah_masechet = re.findall(r"[A-Za-z ] ([A-Za-z ].*?) \d", mishnah)[0]
+        mishnah_masechet = Ref(mishnah).index.title
         if mishnah_masechet in yerushalmi_masechtot:
-            yerushalmi_mishnah_refs.append(mishnah)
-    return yerushalmi_mishnah_refs
+            yerushalmi_mishnah_mishnah_refs.append(mishnah)
+    return yerushalmi_mishnah_mishnah_refs
 
 
 def get_french_text(talmud_ref):
@@ -116,12 +113,14 @@ def parse_french_mishnah():
 def generate_linkset_validation_csv():
     mishnah_list = parse_french_mishnah()
     mishnah_list.sort(key=lambda x: Ref(x["mishnah_tref"]).order_id())
+    # Todo - post processing here
     generate_csv(mishnah_list, ['mishnah_tref',
                                 'talmud_tref',
                                 'mishnah_mishnah_text',
                                 'yerushalmi_mishnah_text'], 'fr_linkset_mishnah_validation')
 
 
+## Todo - note, we moved away from this approach since the linkset looks good
 def pure_validation_csv():
     mm_csv_list = []
     ym_csv_list = []
