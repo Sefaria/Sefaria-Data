@@ -110,14 +110,36 @@ def parse_french_mishnah():
     return mishnah_list
 
 
+# Given a tref, where the prev tref is the same
+# Concatenate this yerushalmi mishnah text to the prev
+# Delete this row
+def post_processing_data(mishnah_list):
+    cleaned_mishnah_list = [mishnah_list[0]]
+
+    for i in range(1, len(mishnah_list)-1):
+        prev = mishnah_list[i - 1]
+        cur = mishnah_list[i]
+        next = mishnah_list[i+1]
+
+        # If there's a case of a repeated tref, concatenate the text
+        # and eliminate the redundancy.
+        if cur['mishnah_tref'] == prev['mishnah_tref']:
+            prev['yerushalmi_mishnah_text'] += f" {cur['yerushalmi_mishnah_text']}"
+            cleaned_mishnah_list.append(prev)
+        elif cur['mishnah_tref'] != next['mishnah_tref']: # avoid double counting bug
+            cleaned_mishnah_list.append(cur)
+
+    return cleaned_mishnah_list
+
+
 def generate_linkset_validation_csv():
     mishnah_list = parse_french_mishnah()
     mishnah_list.sort(key=lambda x: Ref(x["mishnah_tref"]).order_id())
-    # Todo - post processing here
+    mishnah_list = post_processing_data(mishnah_list)
     generate_csv(mishnah_list, ['mishnah_tref',
                                 'talmud_tref',
                                 'mishnah_mishnah_text',
-                                'yerushalmi_mishnah_text'], 'fr_linkset_mishnah_validation')
+                                'yerushalmi_mishnah_text'], 'french_mishnah_list')
 
 
 ## Todo - note, we moved away from this approach since the linkset looks good
@@ -157,5 +179,5 @@ def pure_validation_csv():
 
 
 if __name__ == "__main__":
-    # generate_linkset_validation_csv()
-    pure_validation_csv()
+    generate_linkset_validation_csv()
+    # pure_validation_csv()
