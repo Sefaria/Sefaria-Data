@@ -8,6 +8,8 @@ from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
 
 
+# Todo - create a utility file?
+
 # This function generates a CSV given a list of dicts
 def generate_csv(dict_list, headers, file_name):
     with open(f'{file_name}.csv', 'w+') as file:
@@ -109,6 +111,7 @@ def parse_french_mishnah():
         mm_text = get_hebrew_text(Ref(mishnah_ref), type="mishnah-mishnah")
         ym_text = get_hebrew_text(Ref(talmud_ref), type="yerushalmi-mishnah")
 
+        # Todo create row class (and manager?)
         mishnah_list.append({
             'mishnah_tref': mishnah_ref,
             'talmud_tref': talmud_ref,
@@ -184,6 +187,7 @@ def process_ranged_ref(mishnah_list):
                         'yerushalmi_mishnah_text': ''
                     })
             elif is_overlapping:  # if it is an overlapping ranged ref
+                # Todo - break up this function for readabiltiy, inside manager class?
                 # Determine, is the overlap with the prev or the next
                 prev = mishnah_list[i - 1] if i != 0 else None
                 next = mishnah_list[i + 1] if i != len(mishnah_list) - 1 else None
@@ -192,12 +196,13 @@ def process_ranged_ref(mishnah_list):
                     print(mishnah)
                     mishnah[
                         'yerushalmi_mishnah_text'] = f"{prev['yerushalmi_mishnah_text']} {mishnah['yerushalmi_mishnah_text']}"
-                    mishnah['talmud_tref'] = f"{prev['talmud_tref']}, {get_numbers_from_yerushalmi_tref(mishnah['talmud_tref'])}"
+                    mishnah[
+                        'talmud_tref'] = f"{prev['talmud_tref']}, {get_numbers_from_yerushalmi_tref(mishnah['talmud_tref'])}"
                     print(mishnah)
                     cleaned_mishnah_list.remove(prev)  # already was appended
 
                 # if next, concat to the ranged ref
-                elif next['mishnah_tref'] in refs_normal:
+                if next['mishnah_tref'] in refs_normal:
                     mishnah['yerushalmi_mishnah_text'] += f" {next['yerushalmi_mishnah_text']}"
                     mishnah['talmud_tref'] += f", {get_numbers_from_yerushalmi_tref(next['talmud_tref'])}"
                     mishnah_list.remove(next)
@@ -207,11 +212,12 @@ def process_ranged_ref(mishnah_list):
 
         else:
             cleaned_mishnah_list.append(mishnah)
-        i +=1
+        i += 1
 
     return cleaned_mishnah_list
 
 
+# Todo - processors - part of the manager class
 def post_processing_data(mishnah_list):
     mishnah_list = handle_duplicated_single_ref(mishnah_list)
     mishnah_list = process_ranged_ref(mishnah_list)
@@ -220,8 +226,8 @@ def post_processing_data(mishnah_list):
 
 def generate_linkset_validation_csv():
     mishnah_list = parse_french_mishnah()
-    mishnah_list.sort(key=lambda x: Ref(x["mishnah_tref"]).order_id())
     mishnah_list = post_processing_data(mishnah_list)
+    mishnah_list.sort(key=lambda x: Ref(x["mishnah_tref"]).order_id())
     generate_csv(mishnah_list, ['mishnah_tref',
                                 'talmud_tref',
                                 'mishnah_mishnah_text',
