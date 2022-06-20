@@ -23,6 +23,14 @@ def clean_text(raw_text):
     return text_array
 
 
+def get_numbers_from_yerushalmi_tref(y_tref):
+    result = re.findall(r".* (\d*:\d*:\d*)$", y_tref)
+    if result:
+        return result[0]
+    else:
+        return y_tref
+
+
 def create_list_yerushalmi_masechtot():
     yerushalmi_masechtot = []
     talmud_indices = library.get_indexes_in_category("Yerushalmi")
@@ -184,14 +192,14 @@ def process_ranged_ref(mishnah_list):
                     print(mishnah)
                     mishnah[
                         'yerushalmi_mishnah_text'] = f"{prev['yerushalmi_mishnah_text']} {mishnah['yerushalmi_mishnah_text']}"
-                    mishnah['talmud_tref'] = f"{prev['talmud_tref']}-{mishnah['talmud_tref']}"
+                    mishnah['talmud_tref'] = f"{prev['talmud_tref']}, {get_numbers_from_yerushalmi_tref(mishnah['talmud_tref'])}"
                     print(mishnah)
                     cleaned_mishnah_list.remove(prev)  # already was appended
 
                 # if next, concat to the ranged ref
                 elif next['mishnah_tref'] in refs_normal:
                     mishnah['yerushalmi_mishnah_text'] += f" {next['yerushalmi_mishnah_text']}"
-                    mishnah['talmud_tref'] += f"-{next['talmud_tref']}"
+                    mishnah['talmud_tref'] += f", {get_numbers_from_yerushalmi_tref(next['talmud_tref'])}"
                     mishnah_list.remove(next)
 
                 # only append the ranged ref
