@@ -227,7 +227,9 @@ def handle_non_overlapping_ranged_ref(cleaned_mishnah_list, refs_normal, mishnah
         MishnahRow(refs_normal[0], mishnah['talmud_tref'], mishnah['mishnah_mishnah_text'],
                    mishnah['yerushalmi_mishnah_text']).get_row())
     for j in range(1, len(refs_normal)):
-        cleaned_mishnah_list.append(MishnahRow(refs_normal[j], '', '', '').get_row())
+        cur_mishnah_ref = refs_normal[j]
+        he_mishnah_mishnah_text = get_hebrew_text(Ref(cur_mishnah_ref))
+        cleaned_mishnah_list.append(MishnahRow(cur_mishnah_ref, '', he_mishnah_mishnah_text, '').get_row())
 
 
 def handle_overlap(cleaned_mishnah_list, refs_normal, mishnah, mishnah_list, i):
