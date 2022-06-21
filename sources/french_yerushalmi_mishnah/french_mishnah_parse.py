@@ -220,10 +220,13 @@ def handle_duplicated_single_ref(mishnah_list):
     return cleaned_mishnah_list
 
 
-def handle_non_overlapping_ranged_ref(cleaned_mishnah_list, refs_normal, mishnah):
+def split_ranged_refs(cleaned_mishnah_list, refs_normal, mishnah):
     cleaned_mishnah_list.append(
-        MishnahRow(refs_normal[0], mishnah['talmud_tref'], mishnah['mishnah_mishnah_text'],
-                   mishnah['yerushalmi_mishnah_text']).get_row())
+        MishnahRow(refs_normal[0],
+                   mishnah['talmud_tref'],
+                   get_hebrew_text(Ref(refs_normal[0]), type="mishnah-mishnah"),
+                   mishnah['yerushalmi_mishnah_text']
+                   ).get_row())
     for j in range(1, len(refs_normal)):
         cur_mishnah_ref = refs_normal[j]
         he_mishnah_mishnah_text = get_hebrew_text(Ref(cur_mishnah_ref), type="mishnah-mishnah")
@@ -248,8 +251,8 @@ def handle_overlap(cleaned_mishnah_list, refs_normal, mishnah, mishnah_list, i):
         mishnah['talmud_tref'] += f", {get_numbers_from_yerushalmi_tref(next['talmud_tref'])}"
         mishnah_list.remove(next)
 
-    # only append the ranged ref
-    cleaned_mishnah_list.append(mishnah)
+    # flatten out the concatenated ranged ref
+    split_ranged_refs(cleaned_mishnah_list, refs_normal, mishnah)
 
 
 def process_ranged_ref(mishnah_list):
@@ -263,11 +266,13 @@ def process_ranged_ref(mishnah_list):
 
             # In the case of a ranged ref without overlap with other refs
             if not is_overlapping:
-                handle_non_overlapping_ranged_ref(cleaned_mishnah_list, refs_normal, mishnah)
+                split_ranged_refs(cleaned_mishnah_list, refs_normal, mishnah)
 
             # if it is an overlapping ranged ref
             elif is_overlapping:
                 handle_overlap(cleaned_mishnah_list, refs_normal, mishnah, mishnah_list, i)
+
+
 
         # If not a ranged ref
         else:
