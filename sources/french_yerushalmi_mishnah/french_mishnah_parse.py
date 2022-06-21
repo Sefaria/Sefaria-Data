@@ -200,8 +200,6 @@ def check_overlap(refs_normal):
 # Given a tref, where the prev tref is the same
 # Concatenate this yerushalmi mishnah text to the prev
 # Delete this row
-
-# TODO - Concatenate ref
 def handle_duplicated_single_ref(mishnah_list):
     cleaned_mishnah_list = [mishnah_list[0]]
 
@@ -228,7 +226,7 @@ def handle_non_overlapping_ranged_ref(cleaned_mishnah_list, refs_normal, mishnah
                    mishnah['yerushalmi_mishnah_text']).get_row())
     for j in range(1, len(refs_normal)):
         cur_mishnah_ref = refs_normal[j]
-        he_mishnah_mishnah_text = get_hebrew_text(Ref(cur_mishnah_ref))
+        he_mishnah_mishnah_text = get_hebrew_text(Ref(cur_mishnah_ref), type="mishnah-mishnah")
         cleaned_mishnah_list.append(MishnahRow(cur_mishnah_ref, '', he_mishnah_mishnah_text, '').get_row())
 
 
