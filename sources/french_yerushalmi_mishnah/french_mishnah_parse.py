@@ -4,8 +4,60 @@ django.setup()
 
 import csv
 import re
+from dataclasses import dataclass
+
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
+
+
+# @dataclass
+class MishnahRow:
+
+    def __init__(self, mishnah_tref, talmud_tref, mishnah_mishnah_text, yerushalmi_mishnah_text):
+        self.mishnah_tref = mishnah_tref
+        self.talmud_tref = talmud_tref
+        self.mishnah_mishnah_text = mishnah_mishnah_text
+        self.yerushalmi_mishnah_text = yerushalmi_mishnah_text
+
+    def __str__(self):
+        return f"Mishnah Tref: {self.mishnah_tref}, " \
+               f"Talmud Tref: {self.talmud_tref}, " \
+               f"Mishnah Mishnah Text: {self.mishnah_mishnah_text}, " \
+               f"Yerushalmi Mishnah Text: {self.yerushalmi_mishnah_text}"
+
+    # Returns a dictionary representation of the row
+    def get_row(self):
+        return {
+            "mishnah_tref": self.mishnah_tref,
+            "talmud_tref": self.talmud_tref,
+            "mishnah_mishnah_text": self.mishnah_mishnah_text,
+            "yerushalmi_mishnah_text": self.yerushalmi_mishnah_text
+        }
+
+    # Accessors and Mutators
+    def set_mishnah_tref(self, new_tref):
+        self.mishnah_tref = new_tref
+
+    def set_talmud_tref(self, new_tref):
+        self.talmud_tref = new_tref
+
+    def set_mishnah_mishnah_text(self, new_text):
+        self.mishnah_mishnah_text = new_text
+
+    def set_yerushalmi_mishnah_text(self, new_text):
+        self.yerushalmi_mishnah_text = new_text
+
+    def get_mishnah_tref(self):
+        return self.mishnah_tref
+
+    def get_talmud_tref(self):
+        return self.talmud_tref
+
+    def get_mishnah_mishnah_text(self):
+        return self.mishnah_mishnah_text
+
+    def get_yerushalmi_mishnah_text(self):
+        return self.yerushalmi_mishnah_text
 
 
 # Todo - create a utility file?
@@ -110,14 +162,7 @@ def parse_french_mishnah():
         french_text = get_french_text(Ref(talmud_ref))
         mm_text = get_hebrew_text(Ref(mishnah_ref), type="mishnah-mishnah")
         ym_text = get_hebrew_text(Ref(talmud_ref), type="yerushalmi-mishnah")
-
-        # Todo create row class (and manager?)
-        mishnah_list.append({
-            'mishnah_tref': mishnah_ref,
-            'talmud_tref': talmud_ref,
-            'mishnah_mishnah_text': mm_text,
-            'yerushalmi_mishnah_text': ym_text
-        })
+        mishnah_list.append(MishnahRow(mishnah_ref, talmud_ref, mm_text, ym_text).get_row())
     return mishnah_list
 
 
@@ -138,6 +183,7 @@ def handle_duplicated_single_ref(mishnah_list):
     cleaned_mishnah_list = [mishnah_list[0]]
 
     for i in range(1, len(mishnah_list) - 1):
+
         prev = mishnah_list[i - 1]
         cur = mishnah_list[i]
         next = mishnah_list[i + 1]
@@ -149,7 +195,6 @@ def handle_duplicated_single_ref(mishnah_list):
             cleaned_mishnah_list.append(prev)
         elif cur['mishnah_tref'] != next['mishnah_tref']:  # avoid double counting bug
             cleaned_mishnah_list.append(cur)
-
     return cleaned_mishnah_list
 
 
@@ -173,32 +218,23 @@ def process_ranged_ref(mishnah_list):
             # Mishnah Berakhot 1:1, Mishnah Berakhot 1:2-3, Mishnah Berakhot 1:4...
             # as opposed to Mishnah Berakhot 1:2, Mishnah Berakhot 1:2-3 where 1:2 is repeated.
             if not is_overlapping:
-                cleaned_mishnah_list.append({
-                    'mishnah_tref': refs_normal[0],
-                    'talmud_tref': mishnah['talmud_tref'],
-                    'mishnah_mishnah_text': mishnah['mishnah_mishnah_text'],
-                    'yerushalmi_mishnah_text': mishnah['yerushalmi_mishnah_text']
-                })
+                cleaned_mishnah_list.append(
+                    MishnahRow(refs_normal[0], mishnah['talmud_tref'], mishnah['mishnah_mishnah_text'],
+                               mishnah['yerushalmi_mishnah_text']).get_row())
                 for j in range(1, len(refs_normal)):
-                    cleaned_mishnah_list.append({
-                        'mishnah_tref': refs_normal[j],
-                        'talmud_tref': '',
-                        'mishnah_mishnah_text': '',
-                        'yerushalmi_mishnah_text': ''
-                    })
+                    cleaned_mishnah_list.append(MishnahRow(refs_normal[j], '', '', '').get_row())
+
             elif is_overlapping:  # if it is an overlapping ranged ref
-                # Todo - break up this function for readabiltiy, inside manager class?
+                # Todo - break up this function for readability, inside manager class?
                 # Determine, is the overlap with the prev or the next
                 prev = mishnah_list[i - 1] if i != 0 else None
                 next = mishnah_list[i + 1] if i != len(mishnah_list) - 1 else None
                 # if prev, pre-concat to the ranged ref
                 if prev['mishnah_tref'] in refs_normal:
-                    print(mishnah)
                     mishnah[
                         'yerushalmi_mishnah_text'] = f"{prev['yerushalmi_mishnah_text']} {mishnah['yerushalmi_mishnah_text']}"
                     mishnah[
                         'talmud_tref'] = f"{prev['talmud_tref']}, {get_numbers_from_yerushalmi_tref(mishnah['talmud_tref'])}"
-                    print(mishnah)
                     cleaned_mishnah_list.remove(prev)  # already was appended
 
                 # if next, concat to the ranged ref
@@ -226,7 +262,9 @@ def post_processing_data(mishnah_list):
 
 def generate_linkset_validation_csv():
     mishnah_list = parse_french_mishnah()
+    print("got mishnah list")
     mishnah_list = post_processing_data(mishnah_list)
+    print("post-processing data")
     mishnah_list.sort(key=lambda x: Ref(x["mishnah_tref"]).order_id())
     generate_csv(mishnah_list, ['mishnah_tref',
                                 'talmud_tref',
