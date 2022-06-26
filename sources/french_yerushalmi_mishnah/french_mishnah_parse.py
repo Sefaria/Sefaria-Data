@@ -221,10 +221,14 @@ def check_overlap(refs_normal):
     return is_overlapping
 
 
-# Given a tref, where the prev tref is the same
-# Concatenate this yerushalmi mishnah text to the prev
-# Delete this row
 def handle_duplicated_single_ref(mishnah_list):
+    """
+    In a case of two duplicated single refs in the linkset, concatenate the Yerushalmi refs and
+    text segments, and then delete the duplication
+
+    :param mishnah_list: list of MishnahRow objects
+    :returns cleaned_mishnah_list: new list with changes applied
+    """
     cleaned_mishnah_list = [mishnah_list[0]]
 
     for i in range(1, len(mishnah_list) - 1):
@@ -245,6 +249,18 @@ def handle_duplicated_single_ref(mishnah_list):
 
 
 def split_ranged_refs(cleaned_mishnah_list, refs_normal, mishnah):
+    """
+    In a case where a ranged ref of Mishnah is connected to a single segment of
+    Yerushalmi with no overlap, we split the Mishnah and leave the subsequent talmud sections blank for
+    manual evaluation.
+
+    ex:
+    Mishnah Berakhot 1:2-3 -----> Talmud Yerushalmi Berakhot 1:2:1
+
+    becomes:
+    Mishnah Berakhot 1:2 -----> Talmud Yerushalmi Berakhot 1:2:1
+    Mishnah Berakhot 1:3 ------> ""
+    """
     cleaned_mishnah_list.append(
         MishnahRow(refs_normal[0],
                    mishnah.talmud_tref,
@@ -258,7 +274,16 @@ def split_ranged_refs(cleaned_mishnah_list, refs_normal, mishnah):
 
 
 def handle_overlap(cleaned_mishnah_list, refs_normal, mishnah, mishnah_list, i):
-    # Determine, is the overlap with the prev or the next
+    """
+    Given an identified ranged ref overlap, this function handles the overlap and
+    concatenates text as necessary so every MishnahRow has a single, unique Mishnah Tref
+
+    :param cleaned_mishnah_list: a list of Mishnah Row objects already midway processed
+    :param refs_normal: a list of single tref strings of the given ranged ref (i.e. Berakhot 2:3-5 --> Berakhot 2:3, 2:4, 2:5)
+    :param mishnah:  The current Mishnah Row object
+    :param mishnah_list: The original list of Mishnah Row objects
+    :param i: an integer representing the index of the loop
+    """
     prev = mishnah_list[i - 1] if i != 0 else None
     next = mishnah_list[i + 1] if i != len(mishnah_list) - 1 else None
     # if prev, pre-concat to the ranged ref
@@ -278,6 +303,10 @@ def handle_overlap(cleaned_mishnah_list, refs_normal, mishnah, mishnah_list, i):
 
 
 def process_ranged_ref(mishnah_list):
+    """
+    Given a ranged ref, this function flattens it (i.e. breaks it into single refs) for manual processing
+    based on whether or not it is or isn't overlapping
+    """
     cleaned_mishnah_list = []
     i = 0
     while i < len(mishnah_list):  # changes dynamically with remove()
@@ -293,8 +322,6 @@ def process_ranged_ref(mishnah_list):
             # if it is an overlapping ranged ref
             elif is_overlapping:
                 handle_overlap(cleaned_mishnah_list, refs_normal, mishnah, mishnah_list, i)
-
-
 
         # If not a ranged ref
         else:
