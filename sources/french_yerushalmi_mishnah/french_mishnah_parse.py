@@ -16,12 +16,14 @@ class MishnahRow:
         self.talmud_tref = talmud_tref
         self.mishnah_mishnah_text = mishnah_mishnah_text
         self.yerushalmi_mishnah_text = yerushalmi_mishnah_text
+        self.yerushalmi_french_text = ""
 
     def __str__(self):
         return f"Mishnah Tref: {self.mishnah_tref}, " \
                f"Talmud Tref: {self.talmud_tref}, " \
                f"Mishnah Mishnah Text: {self.mishnah_mishnah_text}, " \
-               f"Yerushalmi Mishnah Text: {self.yerushalmi_mishnah_text}"
+               f"Yerushalmi Mishnah Text: {self.yerushalmi_mishnah_text}," \
+               f"French Yerushalmi Mishnah Text: {self.yerushalmi_french_text}"
 
     # Returns a dictionary representation of the row
     def get_row(self):
@@ -29,8 +31,20 @@ class MishnahRow:
             "mishnah_tref": self.mishnah_tref,
             "talmud_tref": self.talmud_tref,
             "mishnah_mishnah_text": self.mishnah_mishnah_text,
-            "yerushalmi_mishnah_text": self.yerushalmi_mishnah_text
+            "yerushalmi_mishnah_text": self.yerushalmi_mishnah_text,
+            "yerushalmi_french_text": self.yerushalmi_french_text
         }
+
+    # template for new init minus french mishna
+    def get_template_row(self):
+        return {
+            "mishnah_tref": self.mishnah_tref,
+            "talmud_tref": self.talmud_tref,
+            "mishnah_mishnah_text": self.mishnah_mishnah_text,
+            "yerushalmi_mishnah_text": self.yerushalmi_mishnah_text}
+
+    def add_french_text(self, text):
+        self.yerushalmi_french_text = text
 
 
 class FrenchMishnahManager:
@@ -45,8 +59,10 @@ class FrenchMishnahManager:
         self.parse_french_mishnah()
         print("Post Processing the Data")
         self.post_processing_data()
+        print("Adding french text")
+        self.mishnah_list = self.add_french_text()
         print("Sorting the Data")
-        self.mishnah_list.sort(key=lambda x: Ref(x["mishnah_tref"]).order_id())
+        self.mishnah_list.sort(key=lambda x: Ref(x.mishnah_tref).order_id())
         print("Writing to a CSV")
         self.generate_csv()
 
@@ -56,10 +72,9 @@ class FrenchMishnahManager:
         for link in ls:
             refs = link.refs
             mishnah_ref, talmud_ref = refs if "Mishnah" in refs[0] else reversed(refs)
-            french_text = get_french_text(Ref(talmud_ref))
             mm_text = get_hebrew_text(Ref(mishnah_ref), type="mishnah-mishnah")
             ym_text = get_hebrew_text(Ref(talmud_ref), type="yerushalmi-mishnah")
-            self.mishnah_list.append(MishnahRow(mishnah_ref, talmud_ref, mm_text, ym_text).get_row())
+            self.mishnah_list.append(MishnahRow(mishnah_ref, talmud_ref, mm_text, ym_text))
 
     def post_processing_data(self):
         print("parsing single refs")
@@ -67,15 +82,50 @@ class FrenchMishnahManager:
         print("parsing ranged refs")
         self.mishnah_list = process_ranged_ref(self.mishnah_list)
 
+    def add_french_text(self):
+        list_with_french_text = []
+        for mishnah in self.mishnah_list:
+            if mishnah.talmud_tref == "":
+                mishnah_dict = mishnah.get_template_row()
+                mishnah_copy = MishnahRow(**mishnah_dict)
+                mishnah_copy.add_french_text("")
+                list_with_french_text.append(mishnah_copy)
+            elif ", " in mishnah.talmud_tref:  # multiple refs
+                tref_prefix = re.findall(r"(Jerusalem Talmud [A-Za-z ]*)\s", mishnah.talmud_tref)[0]
+                concat_text = ""
+                trefs = mishnah.talmud_tref.split(", ")
+                for i in range(len(trefs)):
+                    french_text = get_french_text(Ref(trefs[i])) if i == 0 else get_french_text(
+                        Ref(f"{tref_prefix} {trefs[i]}"))
+                    concat_text += f" {french_text}"
+                    print(f"french text for {mishnah.talmud_tref} is {concat_text}")
+                mishnah_dict = mishnah.get_template_row()
+                mishnah_copy = MishnahRow(**mishnah_dict)
+                mishnah_copy.add_french_text(concat_text)
+                list_with_french_text.append(mishnah_copy)
+            else:
+                french_text = get_french_text(Ref(mishnah.talmud_tref))
+                print(f"french text for {mishnah.talmud_tref} is {french_text}")
+                mishnah_dict = mishnah.get_template_row()
+                mishnah_copy = MishnahRow(**mishnah_dict)
+                mishnah_copy.add_french_text(french_text)
+                list_with_french_text.append(mishnah_copy)
+        print(list_with_french_text)
+        return list_with_french_text
+
     def generate_csv(self):
+        dict_list = []
+        for mishnah in self.mishnah_list:
+            dict_list.append(mishnah.get_row())
         headers = ['mishnah_tref',
                    'talmud_tref',
                    'mishnah_mishnah_text',
-                   'yerushalmi_mishnah_text']
+                   'yerushalmi_mishnah_text',
+                   'yerushalmi_french_text']
         with open('french_mishnah.csv', 'w+') as file:
             c = csv.DictWriter(file, fieldnames=headers)
             c.writeheader()
-            c.writerows(self.mishnah_list)
+            c.writerows(dict_list)
         print(f"File writing of french mishnah complete")
 
 
@@ -90,7 +140,7 @@ def get_yerushalmi_linkset_mishnahs():
 
 
 def create_normalized_ref_list(mishnah):
-    refs = Ref(mishnah['mishnah_tref']).range_list()
+    refs = Ref(mishnah.mishnah_tref).range_list()
     refs_normal = []
     for ref in refs:
         refs_normal.append(ref.normal())
@@ -120,11 +170,11 @@ def handle_duplicated_single_ref(mishnah_list):
 
         # If there's a case of a repeated tref, concatenate the text
         # and eliminate the redundancy.
-        if cur['mishnah_tref'] == prev['mishnah_tref']:
-            prev['yerushalmi_mishnah_text'] += f" {cur['yerushalmi_mishnah_text']}"
-            prev['talmud_tref'] += f", {get_numbers_from_yerushalmi_tref(cur['talmud_tref'])}"
+        if cur.mishnah_tref == prev.mishnah_tref:
+            prev.yerushalmi_mishnah_text += f" {cur.yerushalmi_mishnah_text}"
+            prev.talmud_tref += f", {get_numbers_from_yerushalmi_tref(cur.talmud_tref)}"
             cleaned_mishnah_list.append(prev)
-        elif cur['mishnah_tref'] != next['mishnah_tref']:  # avoid double counting bug
+        elif cur.mishnah_tref != next.mishnah_tref:  # avoid double counting bug
             cleaned_mishnah_list.append(cur)
     return cleaned_mishnah_list
 
@@ -132,14 +182,14 @@ def handle_duplicated_single_ref(mishnah_list):
 def split_ranged_refs(cleaned_mishnah_list, refs_normal, mishnah):
     cleaned_mishnah_list.append(
         MishnahRow(refs_normal[0],
-                   mishnah['talmud_tref'],
+                   mishnah.talmud_tref,
                    get_hebrew_text(Ref(refs_normal[0]), type="mishnah-mishnah"),
-                   mishnah['yerushalmi_mishnah_text']
-                   ).get_row())
+                   mishnah.yerushalmi_mishnah_text
+                   ))
     for j in range(1, len(refs_normal)):
         cur_mishnah_ref = refs_normal[j]
         he_mishnah_mishnah_text = get_hebrew_text(Ref(cur_mishnah_ref), type="mishnah-mishnah")
-        cleaned_mishnah_list.append(MishnahRow(cur_mishnah_ref, '', he_mishnah_mishnah_text, '').get_row())
+        cleaned_mishnah_list.append(MishnahRow(cur_mishnah_ref, '', he_mishnah_mishnah_text, ''))
 
 
 def handle_overlap(cleaned_mishnah_list, refs_normal, mishnah, mishnah_list, i):
@@ -147,17 +197,15 @@ def handle_overlap(cleaned_mishnah_list, refs_normal, mishnah, mishnah_list, i):
     prev = mishnah_list[i - 1] if i != 0 else None
     next = mishnah_list[i + 1] if i != len(mishnah_list) - 1 else None
     # if prev, pre-concat to the ranged ref
-    if prev['mishnah_tref'] in refs_normal:
-        mishnah[
-            'yerushalmi_mishnah_text'] = f"{prev['yerushalmi_mishnah_text']} {mishnah['yerushalmi_mishnah_text']}"
-        mishnah[
-            'talmud_tref'] = f"{prev['talmud_tref']}, {get_numbers_from_yerushalmi_tref(mishnah['talmud_tref'])}"
+    if prev.mishnah_tref in refs_normal:
+        mishnah.yerushalmi_mishnah_text = f"{prev.yerushalmi_mishnah_text} {mishnah.yerushalmi_mishnah_text}"
+        mishnah.talmud_tref = f"{prev.talmud_tref}, {get_numbers_from_yerushalmi_tref(mishnah.talmud_tref)}"
         cleaned_mishnah_list.remove(prev)  # already was appended
 
     # if next, concat to the ranged ref
-    if next['mishnah_tref'] in refs_normal:
-        mishnah['yerushalmi_mishnah_text'] += f" {next['yerushalmi_mishnah_text']}"
-        mishnah['talmud_tref'] += f", {get_numbers_from_yerushalmi_tref(next['talmud_tref'])}"
+    if next.mishnah_tref in refs_normal:
+        mishnah.yerushalmi_mishnah_text += f" {next.yerushalmi_mishnah_text}"
+        mishnah.talmud_tref += f", {get_numbers_from_yerushalmi_tref(next.talmud_tref)}"
         mishnah_list.remove(next)
 
     # flatten out the concatenated ranged ref
@@ -169,7 +217,7 @@ def process_ranged_ref(mishnah_list):
     i = 0
     while i < len(mishnah_list):  # changes dynamically with remove()
         mishnah = mishnah_list[i]
-        if Ref(mishnah['mishnah_tref']).is_range():
+        if Ref(mishnah.mishnah_tref).is_range():
             refs_normal = create_normalized_ref_list(mishnah)
             is_overlapping = check_overlap(refs_normal)
 
@@ -193,7 +241,7 @@ def process_ranged_ref(mishnah_list):
 
 # # # # Utility Functions # # # #
 def create_normalized_ref_list(mishnah):
-    refs = Ref(mishnah['mishnah_tref']).range_list()
+    refs = Ref(mishnah.mishnah_tref).range_list()
     refs_normal = []
     for ref in refs:
         refs_normal.append(ref.normal())
