@@ -25,8 +25,10 @@ class MishnahRow:
                f"Yerushalmi Mishnah Text: {self.yerushalmi_mishnah_text}," \
                f"French Yerushalmi Mishnah Text: {self.yerushalmi_french_text}"
 
-    # Returns a dictionary representation of the row
     def get_row(self):
+        """
+        Returns a dictionary representation of the Row object
+        """
         return {
             "mishnah_tref": self.mishnah_tref,
             "talmud_tref": self.talmud_tref,
@@ -37,6 +39,11 @@ class MishnahRow:
 
     # template for new init minus french mishna
     def get_template_row(self):
+        """
+        In certain cases, we need to copy the row to a new init
+        without the French Mishnah field. This function returns a dictionary
+        representation of the object for all fields but French Mishnah.
+        """
         return {
             "mishnah_tref": self.mishnah_tref,
             "talmud_tref": self.talmud_tref,
@@ -44,6 +51,10 @@ class MishnahRow:
             "yerushalmi_mishnah_text": self.yerushalmi_mishnah_text}
 
     def add_french_text(self, text):
+        """
+        Simple mutator to modify the French Text field
+        :param text: String
+        """
         self.yerushalmi_french_text = text
 
 
@@ -55,6 +66,18 @@ class FrenchMishnahManager:
         self.ym_list = []  # list of Yerushalmi mishnahs
 
     def run(self):
+        """
+        Runner function which orchestrates all of the processes for the
+        complete French Mishnah Parse.
+        The steps are as follows:
+        1. Parse French Mishnah - collect the refs based on the linkset
+        2. Post Processing Data - clean up the data for manual work
+            a. Single refs
+            b. Ranged refs
+        3. Add French Text - add the French Text to the cleaned refs
+        4. Sort the data according to Mishnah Tref
+        5. Generate a CSV
+        """
         print("Parsing French Mishnah")
         self.parse_french_mishnah()
         print("Post Processing the Data")
@@ -67,6 +90,9 @@ class FrenchMishnahManager:
         self.generate_csv()
 
     def parse_french_mishnah(self):
+        """
+        Collects the initial data based on the linkset
+        """
         ls = LinkSet({"generated_by": "yerushalmi-mishnah linker"})
 
         for link in ls:
@@ -77,12 +103,28 @@ class FrenchMishnahManager:
             self.mishnah_list.append(MishnahRow(mishnah_ref, talmud_ref, mm_text, ym_text))
 
     def post_processing_data(self):
-        print("parsing single refs")
+        """
+        Handles the post processing of the data, calls the functions
+        which handle the single, then the ranged refs.
+        """
         self.mishnah_list = handle_duplicated_single_ref(self.mishnah_list)
-        print("parsing ranged refs")
         self.mishnah_list = process_ranged_ref(self.mishnah_list)
 
     def add_french_text(self):
+        """
+        Iterates through mishnah_list, and for each MishnahRow adds the
+        appropriate French text according to the processed Talmud Ref
+
+        Three main cases:
+        1. No talmud ref - keep the French Text blank
+        2. Multiple talmud refs separated by commas - build a concatenation of the French text for
+                                                      each of those refs and append to the Mishnah Row
+        3. One talmud ref - Add the French Text
+
+        Since we were having some referencing issues, we copy the existing Mishnah Row object,
+        edit the copy, and then overwrite the new object with a new Mishnah List of the
+        copied and edited objects.
+        """
         list_with_french_text = []
         for mishnah in self.mishnah_list:
             if mishnah.talmud_tref == "":
@@ -114,6 +156,9 @@ class FrenchMishnahManager:
         return list_with_french_text
 
     def generate_csv(self):
+        """
+        Generates a CSV based on a list of dictionaries containing the data
+        """
         dict_list = []
         for mishnah in self.mishnah_list:
             dict_list.append(mishnah.get_row())
@@ -129,7 +174,12 @@ class FrenchMishnahManager:
         print(f"File writing of french mishnah complete")
 
 
+# # # # # Post-Processing Utility Functions # # # # #
 def get_yerushalmi_linkset_mishnahs():
+    """
+    Generates a list of Mishnah Trefs linked to Yerushalmi segments
+    :returns ym_list: list of Strings of Mishnah Trefs
+    """
     ym_list = []
     ls = LinkSet({"generated_by": "yerushalmi-mishnah linker"})
     for link in ls:
@@ -140,6 +190,12 @@ def get_yerushalmi_linkset_mishnahs():
 
 
 def create_normalized_ref_list(mishnah):
+    """
+    Given a ranged mishnah Ref, create a list
+    of the normalized trefs (i.e. Berakhot 2:1-3 becomes ['Berakhot 2:1', 'Berakhot 2:2', 'Berakhot 2:3'])
+    :param mishnah: ranged Mishnah Ref object
+    :returns refs_normal: List of Strings, normalized refs
+    """
     refs = Ref(mishnah.mishnah_tref).range_list()
     refs_normal = []
     for ref in refs:
@@ -148,6 +204,15 @@ def create_normalized_ref_list(mishnah):
 
 
 def check_overlap(refs_normal):
+    """
+    For a ranged ref, checks if any of the component Mishnahs exist somewhere else in the linkset
+    i.e. if we had "Mishnah Berakhot 1:1, Mishnah Berakhot 1:2-3, Mishnah Berakhot 1:3" in our linkset,
+    we'd identify that Mishnah Berakhot 1:3 is an "overlapping" ref with two talmud segments associated with it
+    which is critical for the post processing
+
+    :param refs_normal: List of normalized mishnah trefs creating a ranged Ref
+    :returns is_overlapping: Boolean if the ranged ref represented by refs_normal is considered overlapping
+    """
     ym_list = get_yerushalmi_linkset_mishnahs()
     is_overlapping = False
     for each_ref in refs_normal:
@@ -239,7 +304,7 @@ def process_ranged_ref(mishnah_list):
     return cleaned_mishnah_list
 
 
-# # # # Utility Functions # # # #
+# # # # General Utility Functions # # # #
 def create_normalized_ref_list(mishnah):
     refs = Ref(mishnah.mishnah_tref).range_list()
     refs_normal = []
