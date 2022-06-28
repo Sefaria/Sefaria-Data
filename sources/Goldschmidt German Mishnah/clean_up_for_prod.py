@@ -16,11 +16,10 @@ def remove_roman_numerals():
     with open('german_mishnah_data.csv', newline='') as csvfile:
         german_mishnah_csv = csv.DictReader(csvfile)
         for row in german_mishnah_csv:
-            cleaned_text = re.sub(r"<sup>([xvilcdm]*)<\/sup>", "", row['de_text'])
+            cleaned_text = re.sub(r"<sup>([xvilcdm]*)<\/sup>|<sup>([xvilcdm]*,\d)<\/sup>", "", row['de_text'])
             cur_row_dict = {"mishnah_tref": row['mishnah_tref'], "de_text": cleaned_text}
             dict_list.append(cur_row_dict)
     return dict_list
-
 
 
 def identify_chapter(tref):
@@ -29,27 +28,27 @@ def identify_chapter(tref):
 
 
 def renumber_footnotes_by_chapter(list_of_rows):
-        chapter = 1
-        count = 1
-        renumbered_list = []
-        for row in list_of_rows:
-            renumbered_text = ""
-            cur_chapter = identify_chapter(row['mishnah_tref'])
-            if chapter != cur_chapter:
-                # Reset chapter
-                chapter = cur_chapter
-                # Reset the count
-                count = 1
+    chapter = 1
+    count = 1
+    renumbered_list = []
+    for row in list_of_rows:
+        renumbered_text = ""
+        cur_chapter = identify_chapter(row['mishnah_tref'])
+        if chapter != cur_chapter:
+            # Reset chapter
+            chapter = cur_chapter
+            # Reset the count
+            count = 1
 
-            if 'footnote' in row['de_text']:
-                renumbered_text = re.sub(r"<sup>(\d*)<\/sup><i class=""footnote"">", str(count), row['de_text'])
-                count += 1
+        if 'footnote' in row['de_text']:
+            renumbered_text = re.sub(r"<sup>(\d*)<\/sup><i class=""footnote"">", str(count), row['de_text'])
+            count += 1
 
-            if len(renumbered_text) > 1:
-                renumbered_list.append({'mishnah_tref': row['mishnah_tref'], 'de_text': renumbered_text})
-            else:
-                renumbered_list.append(row)
-        return renumbered_list
+        if len(renumbered_text) > 1:
+            renumbered_list.append({'mishnah_tref': row['mishnah_tref'], 'de_text': renumbered_text})
+        else:
+            renumbered_list.append(row)
+    return renumbered_list
 
 
 # This function generates the CSV of the Mishnayot
