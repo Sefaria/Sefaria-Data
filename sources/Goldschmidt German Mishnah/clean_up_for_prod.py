@@ -22,24 +22,20 @@ def remove_roman_numerals():
     return dict_list
 
 
-def identify_chapter(tref):
-    chapter = re.findall(r".* (\d*):", tref)[0]
-    return int(chapter)
-
-
 def renumber_footnotes_by_chapter(list_of_rows):
     chapter = 1
     count = 1
     renumbered_list = []
     for row in list_of_rows:
         renumbered_text = ""
-        cur_chapter = identify_chapter(row['mishnah_tref'])
+        cur_chapter = Ref(row['mishnah_tref']).sections[0]
         if chapter != cur_chapter:
             # Reset chapter
             chapter = cur_chapter
             # Reset the count
             count = 1
 
+        # Todo - deal with multiple footnotes, Zevachim 2:1?
         if 'footnote' in row['de_text']:
             renumbered_text = re.sub(r"<sup>(\d*)<\/sup><i class=""footnote"">", str(count), row['de_text'])
             count += 1
