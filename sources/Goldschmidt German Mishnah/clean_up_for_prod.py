@@ -35,12 +35,16 @@ def renumber_footnotes_by_chapter(list_of_rows):
             # Reset the count
             count = 1
 
-        # Todo - comment this (also - add space if no punctuation?)
+        # Todo - add explanatory comments
         matches = re.finditer(r"<sup>(\d*)<\/sup><i class=\"footnote\">", row['de_text'])
+        matches = list(matches)
         fixed_footnote_text = ''
         is_first_match = True
         old_idx = 0
+        if len(matches) > 0:
+            last = matches[-1]
         for match in matches:
+            is_last_match = True if match == last else False
             start_idx = match.start()
             end_idx = match.end()
             match_str = de_text[start_idx:end_idx]
@@ -51,7 +55,16 @@ def renumber_footnotes_by_chapter(list_of_rows):
             else:
                 fixed_footnote_text += de_text[old_idx:start_idx]
 
+            # Fix punctuation issue (i.e. if no punctuation, add a space)
+            if de_text[end_idx] != "," or de_text[end_idx] != "." or de_text[end_idx] != ";" or de_text[end_idx] != " ":
+                fixed_footnote += " "
+                end_idx += 1
+
             fixed_footnote_text += fixed_footnote
+
+            if is_last_match:
+                fixed_footnote_text += de_text[end_idx:]
+
             count += 1
             is_first_match = False
             old_idx = end_idx
@@ -61,6 +74,21 @@ def renumber_footnotes_by_chapter(list_of_rows):
         else:
             renumbered_list.append(row)
     return renumbered_list
+
+
+def post_process(mishnah_list):
+    cleaned_text_list = []
+    # if de text starts with a space, or punctuation
+    for mishnah in mishnah_list:
+        cleaned_text = mishnah['de_text']
+        cleaned_text = cleaned_text.lstrip(".")
+        cleaned_text = cleaned_text.lstrip(",")
+        cleaned_text = cleaned_text.lstrip(";")
+        cleaned_text = cleaned_text.lstrip()
+        cleaned_text_list.append({'mishnah_tref': mishnah['mishnah_tref'], 'de_text': cleaned_text})
+    return cleaned_text_list
+
+
 
 
 # This function generates the CSV of the Mishnayot
@@ -80,6 +108,7 @@ def generate_csv(mishnah_list):
 def run():
     mishnah_list = remove_roman_numerals()
     mishnah_list = renumber_footnotes_by_chapter(mishnah_list)
+    mishnah_list = post_process(mishnah_list)
     generate_csv(mishnah_list)
 
 
