@@ -13,7 +13,7 @@ from sefaria.model import *
 
 def remove_roman_numerals():
     dict_list = []
-    with open('german_mishnah_data.csv', newline='') as csvfile:
+    with open('german_mishnah_data_original.csv', newline='') as csvfile:
         german_mishnah_csv = csv.DictReader(csvfile)
         for row in german_mishnah_csv:
             cleaned_text = re.sub(r"<sup>([xvilcdm]*)<\/sup>|<sup>([xvilcdm]*,\d)<\/sup>", "", row['de_text'])
@@ -27,21 +27,37 @@ def renumber_footnotes_by_chapter(list_of_rows):
     count = 1
     renumbered_list = []
     for row in list_of_rows:
-        renumbered_text = ""
         cur_chapter = Ref(row['mishnah_tref']).sections[0]
+        de_text = row['de_text']
         if chapter != cur_chapter:
             # Reset chapter
             chapter = cur_chapter
             # Reset the count
             count = 1
 
-        # Todo - deal with multiple footnotes, Zevachim 2:1?
-        if 'footnote' in row['de_text']:
-            renumbered_text = re.sub(r"<sup>(\d*)<\/sup><i class=""footnote"">", str(count), row['de_text'])
-            count += 1
+        # Todo - comment this (from @shanee - add space if no punctuation (also just stam fix!!)
+        matches = re.finditer(r"<sup>(\d*)<\/sup><i class=\"footnote\">", row['de_text'])
+        fixed_footnote_text = ''
+        is_first_match = True
+        old_idx = 0
+        for match in matches:
+            start_idx = match.start()
+            end_idx = match.end()
+            match_str = de_text[start_idx:end_idx]
+            fixed_footnote = re.sub(r"\d+", str(count), match_str)
 
-        if len(renumbered_text) > 1:
-            renumbered_list.append({'mishnah_tref': row['mishnah_tref'], 'de_text': renumbered_text})
+            if is_first_match:
+                fixed_footnote_text += de_text[:start_idx]
+            else:
+                fixed_footnote_text += de_text[old_idx:start_idx]
+
+            fixed_footnote_text += fixed_footnote
+            count += 1
+            is_first_match = False
+            old_idx = end_idx
+
+        if len(fixed_footnote_text) > 1:
+            renumbered_list.append({'mishnah_tref': row['mishnah_tref'], 'de_text': fixed_footnote_text})
         else:
             renumbered_list.append(row)
     return renumbered_list
