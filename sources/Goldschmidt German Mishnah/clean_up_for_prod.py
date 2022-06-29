@@ -35,7 +35,7 @@ def renumber_footnotes_by_chapter(list_of_rows):
             # Reset the count
             count = 1
 
-        # Todo - comment this (from @shanee - add space if no punctuation (also just stam fix!!)
+        # Todo - comment this (also - add space if no punctuation?)
         matches = re.finditer(r"<sup>(\d*)<\/sup><i class=\"footnote\">", row['de_text'])
         fixed_footnote_text = ''
         is_first_match = True
