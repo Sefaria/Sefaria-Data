@@ -10,7 +10,7 @@ from sefaria.tracker import modify_bulk_text
 
 def create_mappings():
     mappings = defaultdict(dict)
-    with open('german_mishnah_data.csv', newline='') as csvfile:
+    with open('german_mishnah_data_cleaned.csv', newline='') as csvfile:
         german_mishnah_csv = csv.DictReader(csvfile)
         for row in german_mishnah_csv:
             mappings[Ref(row['mishnah_tref']).index.title][row['mishnah_tref']] = row['de_text']
