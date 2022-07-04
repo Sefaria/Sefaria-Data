@@ -63,7 +63,7 @@ def renumber_footnotes_by_chapter(list_of_rows):
             fixed_footnote_text += fixed_footnote
 
             if is_last_match:
-                fixed_footnote_text += de_text[end_idx:]
+                fixed_footnote_text += de_text[end_idx-1:]
 
             count += 1
             is_first_match = False
