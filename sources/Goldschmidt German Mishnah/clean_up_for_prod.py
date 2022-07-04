@@ -67,7 +67,7 @@ def renumber_footnotes_by_chapter(list_of_rows):
 
             count += 1
             is_first_match = False
-            old_idx = end_idx
+            old_idx = end_idx-1
 
         if len(fixed_footnote_text) > 1:
             renumbered_list.append({'mishnah_tref': row['mishnah_tref'], 'de_text': fixed_footnote_text})
