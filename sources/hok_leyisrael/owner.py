@@ -5,7 +5,7 @@ from sefaria.system.database import db
 from sefaria.model import *
 
 ids = Collection().load({'slug':'חק-לישראל'}).sheets
-owner = 153733
+owner = 153800
 for i in ids:
     sheet = get_sheet(i)
     sheet['owner'] = owner

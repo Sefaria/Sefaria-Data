@@ -76,6 +76,6 @@ for cat in tt.all_category_nodes():
                 else:
                     continue
             print(object, object.order)
-            object.save()
+            object.save(override_dependencies=True)
             new_ord += 5
 
