@@ -1,7 +1,8 @@
 import django
 
 django.setup()
-from sefaria.helper.schema import *
+from sefaria.helper.schema import convert_jagged_array_to_schema_with_default, insert_first_child, library, TextChunk, \
+    JaggedArrayNode, Ref
 import re
 
 
@@ -41,10 +42,10 @@ with open("introductions_tur.txt", 'r') as f:
         else:
             tur_intros[cur_chelek].append(line.rstrip())
 
-
 for chelek in tur_intros:
     chelek_ref = Ref(f"Tur, {chelek_map[chelek]}, Introduction")
-    version =f"Tur {chelek_map[chelek]}, Vilna, 1923" if chelek_map[chelek] == "Orach Chaim" else f"{chelek_map[chelek]}, Vilna, 1923"
+    version = f"Tur {chelek_map[chelek]}, Vilna, 1923" if chelek_map[
+                                                              chelek] == "Orach Chaim" else f"{chelek_map[chelek]}, Vilna, 1923"
     tur_text_chunk = TextChunk(chelek_ref, lang="he", vtitle=version)
     tur_text_chunk.text = tur_intros[chelek]
     tur_text_chunk.save()
