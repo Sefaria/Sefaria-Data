@@ -1,7 +1,8 @@
 import django
 django.setup()
 
-from sefaria.helper.schema import *
+from sefaria.helper.schema import insert_first_child, library, TextChunk, \
+    JaggedArrayNode, Ref
 
 
 def create_intro():
