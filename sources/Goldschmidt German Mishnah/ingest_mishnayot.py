@@ -26,7 +26,11 @@ def create_version_from_scratch(masechet):
                        "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH001042448/NLI",
                        "title": f"{masechet}",
                        "chapter": [],
-                       "language": "en"})
+                       "language": "en",
+                       "digitizedBySefaria": True,
+                       "license": "Public Domain",
+                       "status": "locked"
+                       })
     return version
 
 
