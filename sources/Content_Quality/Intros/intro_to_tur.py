@@ -20,6 +20,8 @@ i = library.get_index("Tur")
 for ja_node in i.nodes.children:
     convert_jagged_array_to_schema_with_default(ja_node)
 
+# Reload index
+i = library.get_index("Tur")
 for schema_node in i.nodes.children:
     intro = create_intro()
     insert_first_child(intro, schema_node)
