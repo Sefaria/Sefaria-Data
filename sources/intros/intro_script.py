@@ -8,11 +8,6 @@ from sefaria.model import *
 from sefaria.helper.schema import convert_simple_index_to_complex, convert_jagged_array_to_schema_with_default, \
     insert_first_child
 
-
-# TODO
-# - Fix Abarbanel getting an intro for each book
-# - Fix DB double run issue
-
 def create_intro():
     intro = JaggedArrayNode()
     intro.add_structure(["Paragraph"])
@@ -72,16 +67,16 @@ def run(index_dict):
                 convert_children_to_schema_nodes(child_tref)
                 create_intro_complex_text(child_tref)
 
-        if isinstance(node, JaggedArrayNode):
+        if isinstance(node, JaggedArrayNode):  # Simple index
             if not node.parent and not node.children:
                 print("Converting simple index to complex")
-                # convert_simple_index_to_complex(library.get_index(node_title))
-                # create_intro_complex_text(node_title)
+                convert_simple_index_to_complex(library.get_index(node_title))
+                create_intro_complex_text(node_title)
         else:  # Schema node (BY case)
             print("Adding intro to an existing schema node")
             i = library.get_index(node_title)
             intro = create_intro()
-            # insert_first_child(intro, i.nodes)
+            insert_first_child(intro, i.nodes)
 
 
 if __name__ == '__main__':
