@@ -167,7 +167,7 @@ class FrenchMishnahManager:
                    'mishnah_mishnah_text',
                    'yerushalmi_mishnah_text',
                    'yerushalmi_french_text']
-        with open('french_mishnah.csv', 'w+') as file:
+        with open('french_mishnah_pre_parse.csv', 'w+') as file:
             c = csv.DictWriter(file, fieldnames=headers)
             c.writeheader()
             c.writerows(dict_list)
