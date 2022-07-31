@@ -19,7 +19,7 @@ def create_mappings():
 
 def create_version_from_scratch(masechet):
     cur_version = VersionSet({'title': f'{masechet}',
-                              'versionTitle': 'Talmud Bavli. German. Lazarus Goldschmidt. 1929 [de]'})
+                              'versionTitle': 'Le Talmud de Jérusalem, traduit par Moise Schwab, 1878-1890 [fr]'})
     if cur_version.count() > 0:
         cur_version.delete()
     version = Version({"versionTitle": "Le Talmud de Jérusalem, traduit par Moise Schwab, 1878-1890 [fr]",
