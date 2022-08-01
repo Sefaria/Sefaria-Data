@@ -8,6 +8,7 @@ from sefaria.model import *
 from sefaria.helper.schema import convert_simple_index_to_complex, convert_jagged_array_to_schema_with_default, \
     insert_first_child
 
+
 def create_intro():
     intro = JaggedArrayNode()
     intro.add_structure(["Paragraph"])
@@ -57,23 +58,22 @@ def run(index_dict):
 
         node = Ref(node_title).index_node
 
-        print(node)
-
         if len(index_dict[node_title]) > 1:  # Multiple indices for the children
             print("Converting children from JA to schema nodes")
             for child in node.children:
                 child_tref = str(child)
-                print(f"Up to {child_tref}")
+                print(f"Adding intro to {child_tref}")
                 convert_children_to_schema_nodes(child_tref)
                 create_intro_complex_text(child_tref)
 
-        if isinstance(node, JaggedArrayNode):  # Simple index
+        elif isinstance(node, JaggedArrayNode):  # Simple index
             if not node.parent and not node.children:
                 print("Converting simple index to complex")
                 convert_simple_index_to_complex(library.get_index(node_title))
                 create_intro_complex_text(node_title)
         else:  # Schema node (BY case)
             print("Adding intro to an existing schema node")
+            print(f"for {node_title}")
             i = library.get_index(node_title)
             intro = create_intro()
             insert_first_child(intro, i.nodes)
