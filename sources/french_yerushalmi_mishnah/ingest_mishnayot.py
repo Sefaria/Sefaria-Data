@@ -27,7 +27,6 @@ def create_version_from_scratch(masechet):
                        "title": f"{masechet}",
                        "chapter": [],
                        "language": "en",
-                       "digitizedBySefaria": True,
                        "license": "Public Domain",
                        "status": "locked"
                        })
