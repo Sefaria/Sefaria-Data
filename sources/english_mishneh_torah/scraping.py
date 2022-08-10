@@ -7,36 +7,65 @@ import csv
 
 number_map = {
     "Chapter One": 1,
+    "Chapter 1": 1,
     "Chapter Two": 2,
+    "Chapter 2": 2,
     "Chapter Three": 3,
+    "Chapter 3": 3,
     "Chapter Four": 4,
+    "Chapter 4": 4,
     "Chapter Five": 5,
+    "Chapter 5": 5,
     "Chapter Six": 6,
+    "Chapter 6": 6,
     "Chapter Seven": 7,
+    "Chapter 7": 7,
     "Chapter Eight": 8,
+    "Chapter 8": 8,
     "Chapter Nine": 9,
+    "Chapter 9": 9,
     "Chapter Ten": 10,
+    "Chapter 10": 10,
     "Chapter Eleven": 11,
+    "Chapter 11": 11,
     "Chapter Twelve": 12,
     "Chapter 12": 12,
     "Chapter Thirteen": 13,
+    "Chapter 13": 13,
     "Chapter Fourteen": 14,
+    "Chapter 14": 14,
     "Chapter Fifteen": 15,
+    "Chapter 15": 15,
     "Chapter Sixteen": 16,
+    "Chapter 16": 16,
     "Chapter Seventeen": 17,
+    "Chapter 17": 17,
     "Chapter Eighteen": 18,
+    "Chapter 18": 18,
     "Chapter Nineteen": 19,
+    "Chapter 19": 19,
     "Chapter Twenty": 20,
+    "Chapter 20": 20,
     "Chapter Twenty One": 21,
+    "Chapter 21": 21,
     "Chapter Twenty Two": 22,
+    "Chapter 22": 22,
     "Chapter Twenty Three": 23,
+    "Chapter 23": 23,
     "Chapter Twenty Four": 24,
+    "Chapter 24": 24,
     "Chapter Twenty Five": 25,
+    "Chapter 25": 25,
     "Chapter Twenty Six": 26,
+    "Chapter 26": 26,
     "Chapter Twenty Seven": 27,
+    "Chapter 27": 27,
     "Chapter Twenty Eight": 28,
+    "Chapter 28": 28,
     "Chapter Twenty Nine": 29,
+    "Chapter 29": 29,
     "Chapter Thirty": 30,
+    "Chapter 30": 30,
 }
 
 
@@ -60,7 +89,12 @@ def extract_book_chapter(soup, date_string):
     regex_tuple = re.findall(r">(.*) - (.*)<", capture)[0]
     book = regex_tuple[0]
     en_chapter = regex_tuple[1]
-    if book == "Order of Prayers":
+
+    # Special cases
+    if en_chapter == 'Text of the Haggadah':
+        num_chapter = 1
+
+    elif book == "Order of Prayers":
         if date_string == "10/22/2020":
             num_chapter = 1
         elif date_string == "10/23/2020":
@@ -71,6 +105,7 @@ def extract_book_chapter(soup, date_string):
             num_chapter = 4
     else:
         num_chapter = number_map[en_chapter]
+
     print(f"Scraping {book},  {en_chapter} - date: {date_string}")
     return book, num_chapter
 
@@ -100,7 +135,8 @@ def daterange(start_date, end_date):
 
 def scrape():
     halakhot = []
-    start_date = date(2020, 7, 22)
+    # start_date = date(2020, 7, 22)
+    start_date = date(2021, 4, 16)
     end_date = date(2023, 4, 22)
 
     for single_date in daterange(start_date, end_date):
@@ -122,6 +158,8 @@ if __name__ == '__main__':
     scrape()
 
 # TODO
+# Full run!
+# Put number map in a separate tab?
 # Make into a class modifying the shared list with a run() function
 # Map the book names to Sefaria book names
 # Post processing - remove links and link to Sefaria internally?
