@@ -135,9 +135,8 @@ def daterange(start_date, end_date):
 
 def scrape():
     halakhot = []
-    # start_date = date(2020, 7, 22)
-    start_date = date(2021, 4, 16)
-    end_date = date(2023, 4, 22)
+    start_date = date(2020, 7, 22)
+    end_date = date(2023, 4, 23)
 
     for single_date in daterange(start_date, end_date):
         date_string = single_date.strftime("%m/%d/%Y")
@@ -149,6 +148,7 @@ def scrape():
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(halakhot)
 
+    print("Data Scraping complete")
     return halakhot
 
 
@@ -158,8 +158,8 @@ if __name__ == '__main__':
     scrape()
 
 # TODO
-# Full run!
-# Put number map in a separate tab?
+# Put number map in a separate file?
 # Make into a class modifying the shared list with a run() function
 # Map the book names to Sefaria book names
 # Post processing - remove links and link to Sefaria internally?
+# Note discrepancies for Shmuel - Hagaddah, and Seder HaTefillah (Chabad has 4 sections instead of 5)
