@@ -122,5 +122,6 @@ if __name__ == '__main__':
     scrape()
 
 # TODO
-# Make into a class modifying the shared dict with a run() function
+# Make into a class modifying the shared list with a run() function
 # Map the book names to Sefaria book names
+# Post processing - remove links and link to Sefaria internally?
