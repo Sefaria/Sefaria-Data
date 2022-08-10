@@ -54,14 +54,24 @@ def selenium_firefox_get(url):
     return src
 
 
-def extract_book_chapter(soup):
+def extract_book_chapter(soup, date_string):
     capture = soup.find_all(class_="rambam_h2")[0]
     capture = str(capture)
     regex_tuple = re.findall(r">(.*) - (.*)<", capture)[0]
     book = regex_tuple[0]
     en_chapter = regex_tuple[1]
-    num_chapter = number_map[en_chapter]
-    print(f"Scraping {book},  {en_chapter}")
+    if book == "Order of Prayers":
+        if date_string == "10/22/2020":
+            num_chapter = 1
+        elif date_string == "10/23/2020":
+            num_chapter = 2
+        elif date_string == "10/24/2020":
+            num_chapter = 3
+        elif date_string == "10/25/2020":
+            num_chapter = 4
+    else:
+        num_chapter = number_map[en_chapter]
+    print(f"Scraping {book},  {en_chapter} - date: {date_string}")
     return book, num_chapter
 
 
@@ -77,9 +87,9 @@ def scrape_text(soup, book, num_chapter, halakhot):
             halakhot.append({"ref": f"{book} {num_chapter}.{num}", "text": txt})
 
 
-def get_chapter(src, halakhot):
+def get_chapter(src, halakhot, date_string):
     soup = BeautifulSoup(src, 'html.parser')
-    book, num_chapter = extract_book_chapter(soup)
+    book, num_chapter = extract_book_chapter(soup, date_string)
     scrape_text(soup, book, num_chapter, halakhot)
 
 
@@ -96,7 +106,7 @@ def scrape():
     for single_date in daterange(start_date, end_date):
         date_string = single_date.strftime("%m/%d/%Y")
         src = selenium_firefox_get(f"https://www.chabad.org/dailystudy/rambam.asp?tdate={date_string}&rambamChapters=1")
-        get_chapter(src, halakhot)
+        get_chapter(src, halakhot, date_string)
 
     with open('mishneh_torah_data.csv', 'w+') as csvfile:
         headers = ['ref', 'text']
@@ -110,7 +120,6 @@ def scrape():
 # end date = 4/22/2023
 if __name__ == '__main__':
     scrape()
-
 
 # TODO
 # Make into a class modifying the shared dict with a run() function
