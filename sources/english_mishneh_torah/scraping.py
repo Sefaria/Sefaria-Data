@@ -3,6 +3,7 @@ from selenium.webdriver.firefox.options import Options
 from datetime import date, timedelta
 from bs4 import BeautifulSoup
 import re
+import csv
 
 number_map = {
     "Chapter One": 1,
@@ -39,8 +40,6 @@ number_map = {
 }
 
 
-# print(soup.prettify())
-
 def selenium_firefox_get(url):
     profile = webdriver.FirefoxProfile()
     profile.set_preference("javascript.enabled", False);
@@ -62,28 +61,26 @@ def extract_book_chapter(soup):
     book = regex_tuple[0]
     en_chapter = regex_tuple[1]
     num_chapter = number_map[en_chapter]
-    print(f"book: {book}, en_chap: {en_chapter}, num_chap: {num_chapter}")
+    print(f"Scraping {book},  {en_chapter}")
     return book, num_chapter
 
 
-def scrape_text(soup, book, num_chapter, halakha_dict):
+def scrape_text(soup, book, num_chapter, halakhot):
     text_array = soup.find_all(class_='co_verse')
     for halakha in text_array:
         halakha_str = str(halakha)
         num = re.findall(r"<span class=\"co_verse\" index=\"(\d*?)\">", halakha_str)
         num = num[0] if len(num) > 0 else None  # None in case of end / sikum etc
-        # print(num)
         txt = re.findall(r"<span class=\"co_verse\" index=\"\d*\">.*?</a>(.*)</span>", halakha_str, re.DOTALL)
         txt = txt[0] if len(txt) > 0 else None
-        # print(txt)
         if num and txt:
-            halakha_dict[f"{book} {num_chapter}.{num}"] = txt
+            halakhot.append({"ref": f"{book} {num_chapter}.{num}", "text": txt})
 
 
-def get_chapter(src, halakha_dict):
+def get_chapter(src, halakhot):
     soup = BeautifulSoup(src, 'html.parser')
     book, num_chapter = extract_book_chapter(soup)
-    scrape_text(soup, book, num_chapter, halakha_dict)
+    scrape_text(soup, book, num_chapter, halakhot)
 
 
 def daterange(start_date, end_date):
@@ -92,20 +89,29 @@ def daterange(start_date, end_date):
 
 
 def scrape():
-    halakha_dict = {}
+    halakhot = []
     start_date = date(2020, 7, 22)
-    # end_date = date(2023, 4, 22)
-    end_date = date(2020, 8, 22)
+    end_date = date(2023, 4, 22)
 
     for single_date in daterange(start_date, end_date):
         date_string = single_date.strftime("%m/%d/%Y")
         src = selenium_firefox_get(f"https://www.chabad.org/dailystudy/rambam.asp?tdate={date_string}&rambamChapters=1")
-        get_chapter(src, halakha_dict)
+        get_chapter(src, halakhot)
 
-    print(halakha_dict)
+    with open('mishneh_torah_data.csv', 'w+') as csvfile:
+        headers = ['ref', 'text']
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writerows(halakhot)
+
+    return halakhot
 
 
 # start_date = 7/22/2020
 # end date = 4/22/2023
 if __name__ == '__main__':
     scrape()
+
+
+# TODO
+# Make into a class modifying the shared dict with a run() function
+# Map the book names to Sefaria book names
