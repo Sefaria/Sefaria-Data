@@ -79,27 +79,26 @@ class DictaLibraryManager:
 @dataclass
 class DictaParallel:
     base_tref: str
-    url: str
     baseTextLength: int
     baseStartChar: int
-    baseStartToken: int
-    baseEndToken: int
     baseMatchedText: str
-    compBookXmlId: str
-    compName: str
-    compNameHe: str
-    sortOrder: int
-    compTextLength: int
-    compStartChar: int
-    compMatchedText: str
-    identified: int = None  # no idea what this is
+    sources: list
+    tool: str
+    baseStartToken: int = None
+    baseEndToken: int = None
 
     def serialize(self):
-        comp_text = self.compMatchedText[self.compStartChar:self.compStartChar+self.compTextLength]
-        base_text = self.baseMatchedText  # TODO not clear how to find exact snippet
-        # TODO majorly truncating text because its huge
-        return f"{base_text[:1000]}<br><small>{comp_text[:1000]}<br>({self.compNameHe})</small>"
+        base_text = self.baseMatchedText
+        best_comp = self.__best_comp()
+        comp_text = best_comp['compDisplayText']
+        comp_name = best_comp.get('compNameHe', best_comp.get('verseDispHe', ''))
+        if not comp_name:
+            print(best_comp)
+        return f"<b>{base_text[:1000]}</b><br><small>{comp_text[:1000]}<br>({comp_name})</small>"
 
+    def __best_comp(self):
+        sorted_comps = sorted(self.sources, key=lambda x: len(x.get('compMatchedText', '')))
+        return sorted_comps[-1]
 
 @dataclass
 class DictaPage:
@@ -110,7 +109,7 @@ class DictaPage:
     def parse(self, root_dir, book_title):
         jin = self.__get_json_content(root_dir)
         text = self.__get_text(jin)
-        paragraphs = list(filter(lambda x: len(x) > 0, text.split('\n')))
+        paragraphs = list(filter(lambda x: len(x) > 0 or True, text.split('\n')))
         index = self.__get_zero_based_index()
         parallels = self.__get_parallels(jin, book_title, index, paragraphs)
         return paragraphs, index, parallels
@@ -131,11 +130,41 @@ class DictaPage:
 
     @staticmethod
     def __get_parallels(jin: dict, book_title: str, page_index: int, paragraphs: List[str]):
-        parallels = jin['data']['parallelsResults']['results'][0]['data']
+        parallels = filter(lambda x: x and x['tool'] == 'parallels', jin['data']['postProcessedSources'])
         return map(partial(DictaPage.__create_parallel_object, book_title, page_index, paragraphs), parallels)
 
     @staticmethod
     def __create_parallel_object(book_title:str, page_index: int, paragraphs: List[str], parallel_dict: dict):
+        from bisect import bisect_right
+        base_text_match = parallel_dict['baseMatchedText']
+        parag_end_indexes = reduce(
+            lambda a, b: a + [len(b) + ((a[-1] + 1) if len(a) > 0 else 0)],
+            paragraphs, []
+        )
+        start_seg_index = bisect_right(parag_end_indexes, parallel_dict['baseStartChar'])
+        end_seg_index = bisect_right(parag_end_indexes, parallel_dict['baseStartChar'] + len(base_text_match))
+
+        # testing
+        segs_with_base_text = " ".join(paragraphs[start_seg_index: end_seg_index + 1])
+        assert base_text_match in segs_with_base_text
+        if start_seg_index < end_seg_index:
+            # move start forward
+            segs_wo_base_text = " ".join(paragraphs[start_seg_index+1: end_seg_index+1])
+            #assert base_text_match not in segs_wo_base_text
+            # move end backward
+            segs_wo_base_text = " ".join(paragraphs[start_seg_index:end_seg_index])
+            #assert base_text_match not in segs_wo_base_text
+
+        # base tref
+        seg_str = f"{start_seg_index+1}" if start_seg_index == end_seg_index else f"{start_seg_index+1}-{end_seg_index+1}"
+        base_tref = f"{book_title} {page_index+1}:{seg_str}"
+        return DictaParallel(
+            base_tref=base_tref,
+            **parallel_dict
+        )
+
+    @staticmethod
+    def __create_parallel_object_DEPRECATED(book_title:str, page_index: int, paragraphs: List[str], parallel_dict: dict):
         from bisect import bisect_right
         import pylcs
         base_text_match = parallel_dict['baseMatchedText']
@@ -221,14 +250,11 @@ class DictaBook:
         all_parallels = []
         for page in tqdm(self.pages, desc=self.fileName):
             paragraphs, index, parallels = page.parse(self._root_path, self.index['title'])
-            parallels = list(parallels)
-            parallels.sort(key=lambda x: x.compTextLength, reverse=True)
+            all_parallels += [list(parallels)]
             while len(parsed_pages) < index:
                 parsed_pages += [[]]
                 # all_parallels += [[]] TODO currently don't require parallels to have same pagination as base text
             parsed_pages += [paragraphs]
-            # TODO truncating len of parallels because they're huge
-            all_parallels += [parallels[:10]]
         self.version = {
             "text": parsed_pages,
             "versionTitle": "Dicta Library",
@@ -253,4 +279,10 @@ if __name__ == '__main__':
     dicta.parse_and_post_book(args.book, args.server, post=True)
     dicta.create_and_post_parallels_commentary(args.server, post=True)
 
-# https://ste.cauldron.sefaria.org
+# https://dicta-library.cauldron.sefaria.org
+
+"""
+TODO get rid of empty paragraphs but make sure start chars are correct
+TODO see if we can get citations working
+TODO add commentary markers
+"""
