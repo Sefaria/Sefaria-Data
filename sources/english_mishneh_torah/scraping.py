@@ -112,11 +112,19 @@ def extract_book_chapter(soup, date_string):
 
 def scrape_text(soup, book, num_chapter, halakhot):
     text_array = soup.find_all(class_='co_verse')
+
+    if book == "Order of Prayers": # Since the format isn't exactly with halacha numbers, slightly different regexes
+        num_patt = r"<span class=\"co_verse\" hideversenumber=\"true\" index=\"(\d*?)\">"
+        txt_patt = r"<span class=\"co_verse\" hideversenumber=\"true\" index=\"\d*\">(.*?)</span>"
+    else:
+        num_patt = r"<span class=\"co_verse\" index=\"(\d*?)\">"
+        txt_patt = r"<span class=\"co_verse\" index=\"\d*\">.*?</a>(.*)</span>"
+
     for halakha in text_array:
         halakha_str = str(halakha)
-        num = re.findall(r"<span class=\"co_verse\" index=\"(\d*?)\">", halakha_str)
+        num = re.findall(num_patt, halakha_str)
         num = num[0] if len(num) > 0 else None  # None in case of end / sikum etc
-        txt = re.findall(r"<span class=\"co_verse\" index=\"\d*\">.*?</a>(.*)</span>", halakha_str, re.DOTALL)
+        txt = re.findall(txt_patt, halakha_str, re.DOTALL)
         txt = txt[0] if len(txt) > 0 else None
         if num and txt:
             halakhot.append({"ref": f"{book} {num_chapter}.{num}", "text": txt})
@@ -135,15 +143,22 @@ def daterange(start_date, end_date):
 
 def scrape():
     halakhot = []
-    start_date = date(2020, 7, 22)
-    end_date = date(2023, 4, 23)
+    # start_date = date(2020, 7, 22)
+    # end_date = date(2023, 4, 23)
+    start_date = date(2020, 10, 22)
+    end_date = date(2020, 10, 26)
 
     for single_date in daterange(start_date, end_date):
         date_string = single_date.strftime("%m/%d/%Y")
         src = selenium_firefox_get(f"https://www.chabad.org/dailystudy/rambam.asp?tdate={date_string}&rambamChapters=1")
         get_chapter(src, halakhot, date_string)
 
-    with open('mishneh_torah_data.csv', 'w+') as csvfile:
+    # with open('mishneh_torah_data.csv', 'w+') as csvfile:
+    #     headers = ['ref', 'text']
+    #     writer = csv.DictWriter(csvfile, fieldnames=headers)
+    #     writer.writerows(halakhot)
+
+    with open('order_of_prayers.csv', 'w+') as csvfile:
         headers = ['ref', 'text']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(halakhot)
@@ -163,3 +178,5 @@ if __name__ == '__main__':
 # Map the book names to Sefaria book names
 # Post processing - remove links and link to Sefaria internally?
 # Note discrepancies for Shmuel - Hagaddah, and Seder HaTefillah (Chabad has 4 sections instead of 5)
+
+# Run scrape just to get text for Order of Prayer
