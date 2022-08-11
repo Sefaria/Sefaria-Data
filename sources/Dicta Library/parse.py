@@ -276,9 +276,7 @@ class DictaBook:
         post_text(self.index['title'], self.version, server=server, skip_links=True)
 
     def __create_index(self):
-        # TODO using fileName as stand-in for English title for now
-        en_title = self.fileName.capitalize()
-        self.index = create_simple_index(en_title, self.displayName, ["Responsa"], ["Daf", "Paragraph"], address_types=['Integer', 'Integer'])
+        self.index = create_simple_index(self.displayNameEnglish, self.displayName, ["Responsa"], ["Daf", "Paragraph"], address_types=['Integer', 'Integer'])
 
     def __create_version(self):
         parsed_pages = []
