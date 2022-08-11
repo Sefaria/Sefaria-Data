@@ -66,9 +66,10 @@ class Line(object):
 
 class Paragraph(object):
     """Multiple lines grouped together"""
-    def __init__(self, tikkun):
+    def __init__(self, tikkun, daf):
         self.lines = []
         self.tikkun = tikkun
+        self.page = daf
 
     def add_line(self, line):
         self.lines.append(line)
@@ -78,6 +79,7 @@ class Daf(object):
     def __init__(self, name):
         self.name = name
         self.lines = []
+        self.paragraphs = []
 
 
 class WordFootnote(object):
