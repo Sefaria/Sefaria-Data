@@ -143,22 +143,15 @@ def daterange(start_date, end_date):
 
 def scrape():
     halakhot = []
-    # start_date = date(2020, 7, 22)
-    # end_date = date(2023, 4, 23)
-    start_date = date(2020, 10, 22)
-    end_date = date(2020, 10, 26)
+    start_date = date(2020, 7, 22)
+    end_date = date(2023, 4, 23)
 
     for single_date in daterange(start_date, end_date):
         date_string = single_date.strftime("%m/%d/%Y")
         src = selenium_firefox_get(f"https://www.chabad.org/dailystudy/rambam.asp?tdate={date_string}&rambamChapters=1")
         get_chapter(src, halakhot, date_string)
 
-    # with open('mishneh_torah_data.csv', 'w+') as csvfile:
-    #     headers = ['ref', 'text']
-    #     writer = csv.DictWriter(csvfile, fieldnames=headers)
-    #     writer.writerows(halakhot)
-
-    with open('order_of_prayers.csv', 'w+') as csvfile:
+    with open('mishneh_torah_data.csv', 'w+') as csvfile:
         headers = ['ref', 'text']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(halakhot)
