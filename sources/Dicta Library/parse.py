@@ -109,7 +109,7 @@ class DictaPage:
     def parse(self, root_dir, book_title):
         jin = self.__get_json_content(root_dir)
         text = self.__get_text(jin)
-        paragraphs = list(filter(lambda x: len(x) > 0 or True, text.split('\n')))
+        paragraphs = text.split('\n')
         index = self.__get_zero_based_index()
         parallels = self.__get_parallels(jin, book_title, index, paragraphs)
         return paragraphs, index, parallels
