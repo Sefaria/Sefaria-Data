@@ -151,7 +151,7 @@ def scrape():
         src = selenium_firefox_get(f"https://www.chabad.org/dailystudy/rambam.asp?tdate={date_string}&rambamChapters=1")
         get_chapter(src, halakhot, date_string)
 
-    with open('mishneh_torah_data.csv', 'w+') as csvfile:
+    with open('mishneh_torah_data_scraped.csv', 'w+') as csvfile:
         headers = ['ref', 'text']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(halakhot)
@@ -168,8 +168,4 @@ if __name__ == '__main__':
 # TODO
 # Put number map in a separate file?
 # Make into a class modifying the shared list with a run() function
-# Map the book names to Sefaria book names
 # Post processing - remove links and link to Sefaria internally?
-# Note discrepancies for Shmuel - Hagaddah, and Seder HaTefillah (Chabad has 4 sections instead of 5)
-
-# Run scrape just to get text for Order of Prayer
