@@ -10,11 +10,9 @@ class Formatting(Enum):
 
 
 class FootnoteType(Enum):
-    CITATION = 1 # 2nd column
-    INFINITY = 2
-    DIAMOND = 3
-    CIRCLE = 4
-    REFERENCE = 5 #footnote
+    CITATION = 1  # 2nd column
+    SYMBOL = 2
+    FOOTNOTE = 3
 
 
 class Word(object):
@@ -82,12 +80,6 @@ class Daf(object):
         self.paragraphs = []
 
 
-class WordFootnote(object):
-    def __init__(self, anchor, footnote):
-        self.anchor = anchor
-        self.footnote = footnote
-
-
 class Tikkun(object):
     def __init__(self, name):
         self.paragraphs = []
@@ -95,9 +87,12 @@ class Tikkun(object):
 
 
 class Footnote(object):
-    def __init__(self, footnote, footnote_type):
+    def __init__(self, anchor, footnote, footnote_type, symbol, formatting):
+        self.anchor = anchor
         self.footnote = footnote
         self.footnote_type = footnote_type
+        self.symbol = symbol
+        self.formatting = formatting
 
 
 class TikkuneiZohar(object):
