@@ -8,6 +8,9 @@ import re
 from sefaria.model import *
 
 
+# TODO - <p> to <br> remove
+# TODO - Revisit and refine validation without the <p>
+
 def setup_data():
     """
     This function reads the CSV from the scraping, and sets up a list of Chabad specific Rambam names,
@@ -138,18 +141,44 @@ def rename_refs_to_sefaria(mishneh_torah_list, name_map):
 
     return new_mt_list
 
+
+def flag_no_punc(mt_list):
+    new_list =[]
+    for halakha in mt_list:
+        if halakha['text'][-4:] != "</p>":
+            new_list.append({'ref': halakha['ref'],
+                             'text': halakha['text'],
+                             'flag': True})
+        else:
+            new_list.append({'ref': halakha['ref'],
+                             'text': halakha['text'],
+                             'flag': False})
+    return new_list
+
+
 def export_cleaned_data_to_csv(mt_list):
     """
     This function writes the cleaned data to a new CSV
     """
     with open('mishneh_torah_data_cleaned.csv', 'w+') as csvfile:
-        headers = ['ref', 'text']
+        headers = ['ref', 'text', 'flag']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(mt_list)
+
+
+def strip_p_for_br(mt_list):
+    for halakha in mt_list:
+        txt = halakha['text']
+        br_txt = re.sub(r"</p>\n<p>", "<br>", txt)
+        clean_txt = re.sub(r"<p>|</p>", "", br_txt) # remove remaining <p>
+        print(clean_txt)
+
 
 
 if __name__ == '__main__':
     chabad_book_names, mishneh_torah_list = setup_data()
     name_map = create_book_name_map(chabad_book_names)
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
-    export_cleaned_data_to_csv(mishneh_torah_list)
+    strip_p_for_br(mishneh_torah_list)
+    # mishneh_torah_list = flag_no_punc(mishneh_torah_list)
+    # export_cleaned_data_to_csv(mishneh_torah_list)
