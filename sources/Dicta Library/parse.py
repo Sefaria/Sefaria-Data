@@ -201,45 +201,6 @@ class DictaPage:
             **parallel_dict
         )
 
-    @staticmethod
-    def __create_parallel_object_DEPRECATED(book_title:str, page_index: int, paragraphs: List[str], parallel_dict: dict):
-        from bisect import bisect_right
-        import pylcs
-        base_text_match = parallel_dict['baseMatchedText']
-        parag_end_indexes = reduce(
-            lambda a, b: a + [len(b) + ((a[-1] + 1) if len(a) > 0 else 0)],
-            paragraphs, []
-        )
-        page_text = " ".join(paragraphs)
-        try:
-            base_index = page_text.index(base_text_match)
-        except ValueError:
-            res = pylcs.lcs_string_idx(base_text_match, page_text)
-            base_text_match = ''.join([page_text[i] for i in res if i != -1])
-            base_index = page_text.index(base_text_match)
-
-        start_seg_index = bisect_right(parag_end_indexes, base_index)
-        end_seg_index = bisect_right(parag_end_indexes, base_index + len(base_text_match) - 1)
-
-        # testing
-        segs_with_base_text = " ".join(paragraphs[start_seg_index: end_seg_index + 1])
-        assert base_text_match in segs_with_base_text
-        if start_seg_index < end_seg_index:
-            # move start forward
-            segs_wo_base_text = " ".join(paragraphs[start_seg_index+1: end_seg_index+1])
-            assert base_text_match not in segs_wo_base_text
-            # move end backward
-            segs_wo_base_text = " ".join(paragraphs[start_seg_index:end_seg_index])
-            assert base_text_match not in segs_wo_base_text
-
-        # base tref
-        seg_str = f"{start_seg_index+1}" if start_seg_index == end_seg_index else f"{start_seg_index+1}-{end_seg_index+1}"
-        base_tref = f"{book_title} {page_index+1}:{seg_str}"
-        return DictaParallel(
-            base_tref=base_tref,
-            **parallel_dict
-        )
-
 @dataclass
 class DictaBook:
     lib_path: str
