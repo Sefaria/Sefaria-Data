@@ -102,16 +102,15 @@ class DictaParallel:
 
     def serialize(self):
         base_text = self.baseMatchedText
-        best_comp = self.__best_comp()
-        comp_text = best_comp['compDisplayText']
-        comp_name = best_comp.get('compNameHe', best_comp.get('verseDispHe', ''))
-        if not comp_name:
-            print(best_comp)
-        return f"<b>{base_text[:1000]}</b><br><small>{comp_text[:1000]}<br>({comp_name})</small>"
+        sorted_comps = sorted(self.sources, key=lambda x: len(x.get('compMatchedText', '')), reverse=True)
+        sorted_comps = sorted_comps[:1]
+        return f"<b>{base_text[:1000]}</b><br>{'<br><br>'.join([self.__serialize_comp(comp) for comp in sorted_comps])}"
 
-    def __best_comp(self):
-        sorted_comps = sorted(self.sources, key=lambda x: len(x.get('compMatchedText', '')))
-        return sorted_comps[-1]
+    @staticmethod
+    def __serialize_comp(comp):
+        comp_text = comp['compDisplayText']
+        comp_name = comp.get('compNameHe', comp.get('verseDispHe', ''))
+        return f"""<small>{comp_text[:1000]}<br>({comp_name})</small>"""
 
 @dataclass
 class DictaPage:
