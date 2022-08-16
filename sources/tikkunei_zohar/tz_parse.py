@@ -1,7 +1,7 @@
 # from docx import Document
 from bs4 import BeautifulSoup
 from tz_base import *
-
+from tz_base import Daf
 
 class TzParser(object):
     def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
@@ -10,6 +10,7 @@ class TzParser(object):
 
         self.doc_rep = None
         self.elem_cursor = None
+        self.processed_elem_cursor = None
         self.word_cursor = None
         self.language = language
 
@@ -46,8 +47,11 @@ class TzParser(object):
             self.elem_cursor = self.move_cursor()
 
     def process_cursor(self):
-        print(self.elem_cursor)
-        if self.cursor_is_tikkun():
+        self.processed_elem_cursor = self.get_processed_elem()
+        #print(self.processed_elem_cursor['class'])
+        if self.cursor_is_daf():
+            self.daf = self.get_daf()
+        elif self.cursor_is_tikkun():
             self.process_tikkun()
         elif self.cursor_contains_words():
             self.word = self.get_next_word()
@@ -55,6 +59,14 @@ class TzParser(object):
                 self.word = self.get_next_word()
             self.word_cursor = None
 
+    def get_processed_elem(self):
+        pass
+
+    def cursor_is_daf(self):
+        pass
+
+    def get_daf(self):
+        pass
 
     def cursor_is_tikkun(self):
         pass
@@ -102,17 +114,23 @@ class HtmlTzParser(TzParser):
             cursor = cursor.next_sibling
         return cursor
 
+    def get_processed_elem(self):
+        """returns the elem if it is not just a container, otherwise, return useful element"""
+        if  "_idGenObjectLayout-1" in self.elem_cursor["class"]:
+            return self.elem_cursor.div
+        else:
+            return self.elem_cursor
+
+    def cursor_is_daf(self):
+        return "daf" in self.processed_elem_cursor["class"]
+
+    def get_daf(self):
+        daf = Daf(self.processed_elem_cursor.p.text)
+        self.dapim.append(daf)
+        return daf
 
     def get_next_word(self):
         return None
-        # word = None
-        # while not word:
-        #     while not self.cursor.name:
-        #         self.cursor = self.cursor.next_sibling
-        #         if self.cursor is None:
-        #             return None
-        #     word = self.process_cursor()
-
 
 parser = HtmlTzParser("vol1.html", 1)
 parser.read_file()
