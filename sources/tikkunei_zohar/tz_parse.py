@@ -13,6 +13,7 @@ class TzParser(object):
         self.processed_elem_cursor = None
         self.word_cursor = None
         self.language = language
+        self.tikkun_number = count(0)
 
         self.words = []
         self.lines = []
@@ -52,7 +53,7 @@ class TzParser(object):
         if self.cursor_is_daf():
             self.daf = self.get_daf()
         elif self.cursor_is_tikkun():
-            self.process_tikkun()
+            self.tikkun = self.get_tikkun()
         elif self.cursor_contains_words():
             self.word = self.get_next_word()
             while self.word:
@@ -71,7 +72,7 @@ class TzParser(object):
     def cursor_is_tikkun(self):
         pass
 
-    def process_tikkun(self):
+    def get_tikkun(self):
         pass
 
     def cursor_contains_words(self):
@@ -124,10 +125,30 @@ class HtmlTzParser(TzParser):
     def cursor_is_daf(self):
         return "daf" in self.processed_elem_cursor["class"]
 
+
     def get_daf(self):
         daf = Daf(self.processed_elem_cursor.p.text)
         self.dapim.append(daf)
         return daf
+
+    def cursor_is_tikkun(self):
+        return "chapter-number-title" in self.processed_elem_cursor["class"]
+
+    def add_tikkun_word_to_list(self, elems, arr):
+        for child in elems:
+            if isinstance(child, str):
+                arr.append(child)
+            elif not any (x in child.get('class', ['CharOverride-1']) for x in ['CharOverride-1', 'er---chapter-number-title', 'CharOverride-16']):
+                self.add_tikkun_word_to_list(child, arr)
+
+    def get_tikkun(self):
+        # TODO: further cleaning of tikkunim
+        res = []
+        self.add_tikkun_word_to_list(self.processed_elem_cursor.children, res)
+        title = (''.join(res))
+        tikkun = Tikkun(title, next(self.tikkun_number))
+        self.tikkunim.append(tikkun)
+        return tikkun
 
     def get_next_word(self):
         return None

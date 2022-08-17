@@ -81,9 +81,10 @@ class Daf(object):
 
 
 class Tikkun(object):
-    def __init__(self, name):
+    def __init__(self, name, number):
         self.paragraphs = []
         self.name = name
+        self.number = number
 
 
 class Footnote(object):
