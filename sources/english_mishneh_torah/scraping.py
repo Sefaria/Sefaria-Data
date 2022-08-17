@@ -68,6 +68,8 @@ number_map = {
     "Chapter 30": 30,
 }
 
+# TODO - fix 1.0 for Order of Prayers by incrementing each number here
+
 
 def selenium_firefox_get(url):
     profile = webdriver.FirefoxProfile()

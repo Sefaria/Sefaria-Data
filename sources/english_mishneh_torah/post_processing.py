@@ -10,12 +10,13 @@ import PIL
 from PIL import Image
 from io import BytesIO
 from base64 import b64decode, b64encode
+import statistics
 
 from sefaria.model import *
 
 
 # TODO - Hebrew length validation as well?
-# TODO - grab footnotes, base64 images
+# TODO - grab footnotes
 
 def convert_base_64_img(halakha):
     ref_name = halakha['ref'].lower()
@@ -42,6 +43,7 @@ def convert_base_64_img(halakha):
         new_tag = '<img src="data:image/{};base64,{}"></img>'.format('jpg', str(data)[2:-1])
         text = text.replace(tag, new_tag)
     return text
+
 
 def setup_data():
     """
@@ -84,7 +86,7 @@ def create_book_name_map(chabad_book_names):
         'Eruvin',
         'Rest on the Tenth of Tishrei',
         'Rest on a Holiday',
-        'Leavened and Unleaved Bread',
+        'Leavened and Unleavened Bread',
         'Shofar, Sukkah and Lulav',
         'Sheqel Dues',
         'Sanctification of the New Month',
@@ -106,7 +108,7 @@ def create_book_name_map(chabad_book_names):
         'Gifts to the Poor',
         'Heave Offerings',
         'Tithes',
-        'Second Tithes and Fouth Year\'s Fruit',
+        'Second Tithes and Fourth Year\'s Fruit',
         'First Fruits and other Gifts to Priests Outside the Sanctuary',
         'Sabbatical Year and the Jubilee',
         'The Chosen Temple',
@@ -147,7 +149,7 @@ def create_book_name_map(chabad_book_names):
         'Creditor and Debtor',
         'Plaintiff and Defendant',
         'Inheritances',
-        'The Sanhedrin and the Penalties within their Jursidiction',
+        'The Sanhedrin and the Penalties within their Jurisdiction',
         'Testimony',
         'Rebels',
         'Mourning',
@@ -200,7 +202,7 @@ def export_cleaned_data_to_csv(mt_list):
     This function writes the cleaned data to a new CSV
     """
     with open('mishneh_torah_data_cleaned.csv', 'w+') as csvfile:
-        headers = ['ref', 'text', 'flag']
+        headers = ['ref', 'text', 'flag', 'msg']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(mt_list)
 
@@ -230,6 +232,46 @@ def img_convert(mt_list):
     return new_mt_list
 
 
+# Hebrew length validation
+def generate_stats(mt_list):
+    ratio_list = []
+    ratio_aggregate = 0
+
+    for halakha in mt_list:
+
+        en_text = halakha['text']
+        hebrew_text = Ref(f"Mishneh Torah, {halakha['ref']}").text('he').text
+
+        ratio_he_to_en = len(hebrew_text) / len(en_text)
+        ratio_aggregate += ratio_he_to_en
+        ratio_list.append(ratio_he_to_en)
+
+    mean_of_ratios = ratio_aggregate / (len(mt_list))
+    stdev = statistics.stdev(ratio_list)
+    return mean_of_ratios, stdev
+
+def stats_flag(mt_list):
+    new_list = []
+    mean, stdev = generate_stats(mt_list)
+    for halakha in mt_list:
+        en_text = halakha['text']
+        hebrew_text = Ref(f"Mishneh Torah, {halakha['ref']}").text('he').text
+
+        cur_ratio = len(hebrew_text)/len(en_text)
+        two_sd_above = mean + (2*stdev)
+        two_sd_below = mean - (2*stdev)
+
+        if cur_ratio > two_sd_above or cur_ratio < two_sd_below:
+            flag = True
+            msg = "Not within 2 stdev"
+        else:
+            flag = False
+            msg = ""
+
+        new_list.append({'ref': halakha['ref'], 'text': halakha['text'], 'flag': flag, 'msg': msg})
+    return new_list
+
+
 
 if __name__ == '__main__':
     chabad_book_names, mishneh_torah_list = setup_data()
@@ -238,4 +280,5 @@ if __name__ == '__main__':
     mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
     mishneh_torah_list = flag_no_punc(mishneh_torah_list)
     mishneh_torah_list = img_convert(mishneh_torah_list)
+    mishneh_torah_list = stats_flag(mishneh_torah_list)
     export_cleaned_data_to_csv(mishneh_torah_list)
