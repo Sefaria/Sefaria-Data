@@ -4,12 +4,44 @@ django.setup()
 
 import csv
 import re
+import requests
+from bs4 import BeautifulSoup
+import PIL
+from PIL import Image
+from io import BytesIO
+from base64 import b64decode, b64encode
 
 from sefaria.model import *
 
 
-# TODO - <p> to <br> remove
-# TODO - Revisit and refine validation without the <p>
+# TODO - Hebrew length validation as well?
+# TODO - grab footnotes, base64 images
+
+def convert_base_64_img(halakha):
+    ref_name = halakha['ref'].lower()
+    ref_name = re.sub(" ", "", ref_name)
+    ref_name = re.sub("\.", "_", ref_name)
+    filename = f"{ref_name}_img.jpg"
+    text = halakha['text']
+    tags = re.findall("<img.*?>", text)
+    for tag in tags:
+        url = re.findall(r"src=\"(.*?)\"", tag)[0]
+        response = requests.get(url)
+        img = Image.open(BytesIO(response.content))
+        orig_height = img.size[1]
+        orig_width = img.size[0]
+        if orig_width > 550:
+            percent = 550 / float(orig_width)
+            height = int(float(orig_height) * float(percent))
+            img = img.resize((550, height), PIL.Image.ANTIALIAS)
+        img = img.save(f"images/{filename}")
+        file = open("./images/{}".format(filename), 'rb')
+        data = file.read()
+        file.close()
+        data = b64encode(data)
+        new_tag = '<img src="data:image/{};base64,{}"></img>'.format('jpg', str(data)[2:-1])
+        text = text.replace(tag, new_tag)
+    return text
 
 def setup_data():
     """
@@ -29,6 +61,7 @@ def setup_data():
             if book not in chabad_book_names:
                 chabad_book_names.append(book)
     return chabad_book_names, mishneh_torah_list
+
 
 def create_book_name_map(chabad_book_names):
     """
@@ -127,6 +160,7 @@ def create_book_name_map(chabad_book_names):
         name_map[chabad_book_names[i]] = sefaria_book_names[i]
     return name_map
 
+
 def rename_refs_to_sefaria(mishneh_torah_list, name_map):
     """
     This function massages the Chabad Refs into Sefaria refs for the data list/dictionary
@@ -143,16 +177,21 @@ def rename_refs_to_sefaria(mishneh_torah_list, name_map):
 
 
 def flag_no_punc(mt_list):
-    new_list =[]
+    count = 0
+    new_list = []
     for halakha in mt_list:
-        if halakha['text'][-4:] != "</p>":
+        # clean extra whitespace
+        text = halakha['text'].strip()
+        if text[-1] not in [".", "?", "!", ";", "\'", "\"", ">", "”"]:
+            count += 1
             new_list.append({'ref': halakha['ref'],
-                             'text': halakha['text'],
+                             'text': text,
                              'flag': True})
         else:
             new_list.append({'ref': halakha['ref'],
-                             'text': halakha['text'],
+                             'text': text,
                              'flag': False})
+    print(f"{count} flagged of {len(new_list)}")
     return new_list
 
 
@@ -167,11 +206,28 @@ def export_cleaned_data_to_csv(mt_list):
 
 
 def strip_p_for_br(mt_list):
+    new_list = []
     for halakha in mt_list:
         txt = halakha['text']
         br_txt = re.sub(r"</p>\n<p>", "<br>", txt)
-        clean_txt = re.sub(r"<p>|</p>", "", br_txt) # remove remaining <p>
-        print(clean_txt)
+        clean_txt = re.sub(r"<p>|</p>", "", br_txt)  # remove remaining <p>
+        new_list.append({'ref': halakha['ref'], 'text': clean_txt})
+    return new_list
+
+
+def img_convert(mt_list):
+    new_mt_list = []
+    for halakha in mt_list:
+        cur_dict = {}
+        if 'img' in halakha['text']:
+            img_txt = convert_base_64_img(halakha)
+            cur_dict['ref'] = halakha['ref']
+            cur_dict['text'] = img_txt
+        else:
+            cur_dict['ref'] = halakha['ref']
+            cur_dict['text'] = halakha['text']
+        new_mt_list.append(cur_dict)
+    return new_mt_list
 
 
 
@@ -179,6 +235,7 @@ if __name__ == '__main__':
     chabad_book_names, mishneh_torah_list = setup_data()
     name_map = create_book_name_map(chabad_book_names)
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
-    strip_p_for_br(mishneh_torah_list)
-    # mishneh_torah_list = flag_no_punc(mishneh_torah_list)
-    # export_cleaned_data_to_csv(mishneh_torah_list)
+    mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
+    mishneh_torah_list = flag_no_punc(mishneh_torah_list)
+    mishneh_torah_list = img_convert(mishneh_torah_list)
+    export_cleaned_data_to_csv(mishneh_torah_list)
