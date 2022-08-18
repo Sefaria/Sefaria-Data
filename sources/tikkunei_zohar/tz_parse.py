@@ -208,7 +208,8 @@ class HtmlTzParser(TzParser):
         #try:
             if isinstance(elem, str):  # add words
                 # new phrase
-                if not self.append_to_previous:
+                if not self.append_to_previous or elem[0].isspace():
+                    self.append_to_previous = False
                     self.phrase = Phrase(formatting, self.line, self.paragraph, self.daf, self.tikkun)
                     self.phrases.append(self.phrase)
                 for i, word in enumerate(elem.split()):
@@ -260,4 +261,5 @@ class HtmlTzParser(TzParser):
 parser = HtmlTzParser("vol1.html", 1)
 parser.read_file()
 print([word.text for word in parser.words])
+
 
