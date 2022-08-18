@@ -2,24 +2,24 @@ from enum import Enum
 from itertools import count
 from collections import OrderedDict
 
-
 class Formatting(Enum):
     BOLD = 1
     ITALICS = 2
-    FADED = 3
+    BOLD_ITALICS = 3
+    FADED = 4
 
 
-class FootnoteType(Enum):
-    CITATION = 1  # 2nd column
-    SYMBOL = 2
-    FOOTNOTE = 3
+# class FootnoteType(Enum):
+#     CITATION = 1  # 2nd column
+#     SYMBOL = 2
+#     FOOTNOTE = 3
 
 
 class Word(object):
     """Word in the Solomon Tikkunei Zohar"""
     ids = count(0)
 
-    def __init__(self, text, phrase, line, paragraph, daf, tikkun, anchored_comments):
+    def __init__(self, text, phrase, line, paragraph, daf, tikkun, anchored_comments=[]):
         self.id = next(self.ids)
         self.text = text
         self.phrase = phrase
@@ -29,12 +29,15 @@ class Word(object):
         self.tikkun = tikkun
         self.anchored_comments = anchored_comments
 
+    def add_to_word(self, str):
+        self.text += str
+
 
 class Phrase(object):
     """1 or more words or phrases formatted a particular way"""
 
     def __init__(self, formatting, line, paragraph, daf, tikkun):
-        self.words_or_phrases = []
+        self.words = []
         self.line = line
         self.paragraph = paragraph
         self.daf = daf
@@ -64,10 +67,11 @@ class Line(object):
 
 class Paragraph(object):
     """Multiple lines grouped together"""
-    def __init__(self, tikkun, daf):
+    def __init__(self, tikkun, daf, paragraph_number):
         self.lines = []
         self.tikkun = tikkun
         self.page = daf
+        self.paragraph_number = paragraph_number
 
     def add_line(self, line):
         self.lines.append(line)
@@ -88,7 +92,7 @@ class Tikkun(object):
 
 
 class Footnote(object):
-    def __init__(self, anchor, footnote, footnote_type, symbol, formatting):
+    def __init__(self, footnote, footnote_type, symbol, formatting, anchor=None):
         self.anchor = anchor
         self.footnote = footnote
         self.footnote_type = footnote_type

@@ -1,7 +1,6 @@
 # from docx import Document
 from bs4 import BeautifulSoup
 from tz_base import *
-from tz_base import Daf
 
 class TzParser(object):
     def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
@@ -13,15 +12,19 @@ class TzParser(object):
         self.processed_elem_cursor = None
         self.word_cursor = None
         self.language = language
+
         self.tikkun_number = count(0)
+        self.paragraph_number = count(0)
 
         self.words = []
+        self.phrases = []
         self.lines = []
         self.paragraphs = []
         self.dapim = []
         self.tikkunim = []
 
         self.word = None
+        self.phrase = None
         self.line = None
         self.paragraph = None
         self.daf = starting_daf if starting_daf else None
@@ -54,6 +57,8 @@ class TzParser(object):
             self.daf = self.get_daf()
         elif self.cursor_is_tikkun():
             self.tikkun = self.get_tikkun()
+        elif self.cursor_is_paragraph():
+            self.process_paragraph()
         elif self.cursor_contains_words():
             self.word = self.get_next_word()
             while self.word:
@@ -75,6 +80,12 @@ class TzParser(object):
     def get_tikkun(self):
         pass
 
+    def cursor_is_paragraph(self):
+        pass
+
+    def process_paragraph(self):
+        pass
+
     def cursor_contains_words(self):
         pass
 
@@ -91,8 +102,22 @@ class TzParser(object):
 
 
 class HtmlTzParser(TzParser):
+    FORMATTING_CLASSES = {
+        "it-text": Formatting.ITALICS,
+        "it-text---side-notes": Formatting.ITALICS,
+        "grey-text": Formatting.FADED,
+        "bd-it-text": Formatting.BOLD_ITALICS,
+        "bd-it-text---side-notes": Formatting.BOLD_ITALICS,
+        "bd": Formatting.BOLD
+    }
+
+    # APPEND_TO_WORD = [
+    #     "dot-italic"
+    # ]
+
     def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
         TzParser.__init__(self, filename, volume, language, starting_tikkun, starting_daf)
+        self.append_to_previous = False
 
     def get_document_representation(self, contents):
         return BeautifulSoup(contents, 'html.parser')
@@ -125,7 +150,6 @@ class HtmlTzParser(TzParser):
     def cursor_is_daf(self):
         return "daf" in self.processed_elem_cursor["class"]
 
-
     def get_daf(self):
         daf = Daf(self.processed_elem_cursor.p.text)
         self.dapim.append(daf)
@@ -150,9 +174,55 @@ class HtmlTzParser(TzParser):
         self.tikkunim.append(tikkun)
         return tikkun
 
+    # def cursor_is_footnote(self):
+    #     return self.processed_elem_cursor["class"] in ["books"]
+    #
+    # def get_footnotes(self):
+    #     return self.processed_elem_cursor["class"] in ["books"]
+
+    def cursor_is_paragraph(self):
+        return self.processed_elem_cursor.name == 'p' and self.processed_elem_cursor['class']
+
+    def process_paragraph_elem(self, elem, paragraph, formatting=None):
+        if isinstance(elem, str):  # add words
+            # new phrase
+            if not self.append_to_previous:
+                self.phrase = Phrase(formatting, self.line, self.paragraph, self.daf, self.tikkun)
+                self.phrases.append(self.phrase)
+            for i, word in enumerate(elem.split()):
+                if i == 0 and self.append_to_previous:
+                    self.word.add_to_word(word)
+                else:
+                    self.word = Word(word, self.phrase, self.line, self.paragraph, self.daf, self.tikkun)
+                    self.words.append(self.word)
+            self.append_to_previous = not elem[-1].isspace()
+        elif elem.name == 'span' and any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']):
+            for child in elem.children:
+                format_class = [x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0]
+                self.process_paragraph_elem(child, paragraph, format_class)
+        elif elem.name == 'br':
+            self.line = Line(self.paragraph, self.daf, self.tikkun)
+            self.lines.append(self.line)
+            self.append_to_previous = False
+        # elif #citation
+        #     pass
+        # new line
+
+    def process_paragraph(self):
+        print([a for a in self.processed_elem_cursor.children])
+        self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
+        self.paragraphs.append(self.paragraph)
+        self.line = Line(self.paragraph, self.daf, self.tikkun)
+        self.lines.append(self.line)
+        self.append_to_previous = False
+        for child in self.processed_elem_cursor.children:
+            self.process_paragraph_elem(child, self.paragraph)
+
     def get_next_word(self):
         return None
 
+
 parser = HtmlTzParser("vol1.html", 1)
 parser.read_file()
+print([word.text for word in parser.words])
 
