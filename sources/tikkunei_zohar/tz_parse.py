@@ -2,6 +2,8 @@
 from bs4 import BeautifulSoup
 from tz_base import *
 
+import logging
+
 class TzParser(object):
     def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
         self.file = filename
@@ -102,13 +104,31 @@ class TzParser(object):
 
 
 class HtmlTzParser(TzParser):
+    FOOTNOTES = {
+        "CharOverride-1": True,
+        "CharOverride-2": True,
+        "CharOverride-3": True,
+        "CharOverride-4": True,
+        "CharOverride-5": True,
+        "CharOverride-6": True,
+        "CharOverride-7": True,
+        "CharOverride-8": True,
+        "CharOverride-10": True,
+        "stars": FootnoteType.STAR,
+        "infinity": FootnoteType.INFINITY,
+        "triangle": FootnoteType.TRIANGLE
+    }
+
     FORMATTING_CLASSES = {
         "it-text": Formatting.ITALICS,
-        "it-text---side-notes": Formatting.ITALICS,
         "grey-text": Formatting.FADED,
         "bd-it-text": Formatting.BOLD_ITALICS,
-        "bd-it-text---side-notes": Formatting.BOLD_ITALICS,
         "bd": Formatting.BOLD
+    }
+
+    SIDENOTE_CLASSES = {
+        "it-text---side-notes": Formatting.ITALICS,
+        "bd-it-text---side-notes": Formatting.BOLD_ITALICS,
     }
 
     # APPEND_TO_WORD = [
@@ -184,32 +204,46 @@ class HtmlTzParser(TzParser):
         return self.processed_elem_cursor.name == 'p' and self.processed_elem_cursor['class']
 
     def process_paragraph_elem(self, elem, paragraph, formatting=None):
-        if isinstance(elem, str):  # add words
-            # new phrase
-            if not self.append_to_previous:
-                self.phrase = Phrase(formatting, self.line, self.paragraph, self.daf, self.tikkun)
-                self.phrases.append(self.phrase)
-            for i, word in enumerate(elem.split()):
-                if i == 0 and self.append_to_previous:
-                    self.word.add_to_word(word)
-                else:
-                    self.word = Word(word, self.phrase, self.line, self.paragraph, self.daf, self.tikkun)
-                    self.words.append(self.word)
-            self.append_to_previous = not elem[-1].isspace()
-        elif elem.name == 'span' and any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']):
-            for child in elem.children:
-                format_class = [x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0]
-                self.process_paragraph_elem(child, paragraph, format_class)
-        elif elem.name == 'br':
-            self.line = Line(self.paragraph, self.daf, self.tikkun)
-            self.lines.append(self.line)
-            self.append_to_previous = False
+        #try:
+            if isinstance(elem, str):  # add words
+                # new phrase
+                if not self.append_to_previous:
+                    self.phrase = Phrase(formatting, self.line, self.paragraph, self.daf, self.tikkun)
+                    self.phrases.append(self.phrase)
+                for i, word in enumerate(elem.split()):
+                    if i == 0 and self.append_to_previous:
+                        self.word.add_to_word(word)
+                    else:
+                        self.word = Word(word, self.phrase, self.line, self.paragraph, self.daf, self.tikkun)
+                        self.words.append(self.word)
+                self.append_to_previous = not elem[-1].isspace()
+            elif elem.name == 'span' and (('id' in elem.attrs and 'endnote-'in elem['id']) or any(x in HtmlTzParser.FOOTNOTES for x in elem['class'])):
+                # TODO: Implement footnotes
+                pass
+            elif elem.name == 'span' and all(x not in HtmlTzParser.FOOTNOTES for x in elem['class']):
+                for child in elem.children:
+                    if 'grey-text' in elem['class'] and 'CharOverride-9' in elem['class']:
+                        format_class = None
+                    else:
+                        format_class = [x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0] if \
+                            any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']) else None
+                    # exception for gray-text override-now
+                    self.process_paragraph_elem(child, paragraph, format_class)
+            elif elem.name == 'br':
+                self.line = Line(self.paragraph, self.daf, self.tikkun)
+                self.lines.append(self.line)
+                self.append_to_previous = False
+            else:
+                # TODO: handle unhandled
+                pass
+        #except Exception as e:
+            #logging.error("Error for parsing element " + str(elem) + ". " + str(e))
         # elif #citation
         #     pass
         # new line
 
     def process_paragraph(self):
-        print([a for a in self.processed_elem_cursor.children])
+        # print([a for a in self.processed_elem_cursor.children])
         self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
         self.paragraphs.append(self.paragraph)
         self.line = Line(self.paragraph, self.daf, self.tikkun)

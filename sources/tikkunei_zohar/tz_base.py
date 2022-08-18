@@ -9,10 +9,13 @@ class Formatting(Enum):
     FADED = 4
 
 
-# class FootnoteType(Enum):
-#     CITATION = 1  # 2nd column
-#     SYMBOL = 2
-#     FOOTNOTE = 3
+class FootnoteType(Enum):
+    CITATION = 1  # 2nd column
+    SYMBOL = 2
+    FOOTNOTE = 3
+    INFINITY = 4
+    STAR = 5
+    TRIANGLE = 6
 
 
 class Word(object):
