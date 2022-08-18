@@ -68,8 +68,6 @@ number_map = {
     "Chapter 30": 30,
 }
 
-# TODO - fix 1.0 for Order of Prayers by incrementing each number here
-
 
 def selenium_firefox_get(url):
     profile = webdriver.FirefoxProfile()
@@ -112,10 +110,10 @@ def extract_book_chapter(soup, date_string):
     return book, num_chapter
 
 
-def scrape_text(soup, book, num_chapter, halakhot):
+def scrape_text(soup, book, num_chapter, halakhot, footnote_dict):
     text_array = soup.find_all(class_='co_verse')
 
-    if book == "Order of Prayers": # Since the format isn't exactly with halacha numbers, slightly different regexes
+    if book == "Order of Prayers":  # Since the format isn't exactly with halacha numbers, slightly different regexes
         num_patt = r"<span class=\"co_verse\" hideversenumber=\"true\" index=\"(\d*?)\">"
         txt_patt = r"<span class=\"co_verse\" hideversenumber=\"true\" index=\"\d*\">(.*?)</span>"
     else:
@@ -128,14 +126,17 @@ def scrape_text(soup, book, num_chapter, halakhot):
         num = num[0] if len(num) > 0 else None  # None in case of end / sikum etc
         txt = re.findall(txt_patt, halakha_str, re.DOTALL)
         txt = txt[0] if len(txt) > 0 else None
+
         if num and txt:
+            txt = insert_footnotes(txt, footnote_dict)
             halakhot.append({"ref": f"{book} {num_chapter}.{num}", "text": txt})
 
 
 def get_chapter(src, halakhot, date_string):
     soup = BeautifulSoup(src, 'html.parser')
     book, num_chapter = extract_book_chapter(soup, date_string)
-    scrape_text(soup, book, num_chapter, halakhot)
+    footnote_dict = get_footnotes(soup)
+    scrape_text(soup, book, num_chapter, halakhot, footnote_dict)
 
 
 def daterange(start_date, end_date):
@@ -153,13 +154,43 @@ def scrape():
         src = selenium_firefox_get(f"https://www.chabad.org/dailystudy/rambam.asp?tdate={date_string}&rambamChapters=1")
         get_chapter(src, halakhot, date_string)
 
-    with open('mishneh_torah_data_scraped.csv', 'w+') as csvfile:
+    with open('mishneh_torah_data_scraped_ftns.csv', 'w+') as csvfile:
         headers = ['ref', 'text']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(halakhot)
 
     print("Data Scraping complete")
     return halakhot
+
+
+# Gets footnotes for a given chapter
+# returns a dict with the key being the ID, and the value being a tuple of the footnote number and text
+# i.e. {'idNumber12345: (1, 'this is footnote one')'}
+def get_footnotes(soup):
+    footnote_dict = {}
+    capture = soup.find_all(class_="footnote")
+
+    for ftn in capture:
+        ftn = str(ftn)
+        id = re.findall(r"id=\"footnoteTR(.*?)\"", ftn)[0]
+        num = re.findall(r"\">(\d*?)\.</a>", ftn)[0]
+        ftn_text = re.findall(r"<div class=\"footnoteBody\">(.*?)</div>", ftn, re.DOTALL)[0]
+        ftn_text = ftn_text.strip()  # Leading and trailing \n, clear out
+        footnote_dict[id] = (num, ftn_text)
+    return footnote_dict
+
+
+# For the given halakha, insert the footnotes appropriately
+def insert_footnotes(txt, footnote_dict):
+    ftn_ids = re.findall(
+        r"<a class=\"footnote_ref\" href=\"javascript:doFootnote\('.*?'\);\" name=\"footnoteRef(.*?)\">\d*?</a>", txt)
+
+    for id in ftn_ids:
+        ftn_num, ftn_text = footnote_dict[id]
+        ftn_string = f"<sup>{ftn_num}</sup><i class=\"\"footnote\"\">{ftn_text}</i>"
+        patt = f"<a class=\"footnote_ref\" href=\"javascript:doFootnote\('.*?'\);\" name=\"footnoteRef{id}\">\d*?</a>"
+        txt = re.sub(patt, ftn_string, txt)
+    return txt
 
 
 # start_date = 7/22/2020
@@ -170,4 +201,3 @@ if __name__ == '__main__':
 # TODO
 # Put number map in a separate file?
 # Make into a class modifying the shared list with a run() function
-# Post processing - remove links and link to Sefaria internally?
