@@ -114,6 +114,7 @@ class HtmlTzParser(TzParser):
         "CharOverride-7": True,
         "CharOverride-8": True,
         "CharOverride-10": True,
+        "er": True,
         "stars": FootnoteType.STAR,
         "infinity": FootnoteType.INFINITY,
         "triangle": FootnoteType.TRIANGLE
