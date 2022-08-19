@@ -210,13 +210,14 @@ class HtmlTzParser(TzParser):
                 # new phrase
                 if not self.append_to_previous or elem[0].isspace():
                     self.append_to_previous = False
-                    self.phrase = Phrase(formatting, self.line, self.paragraph, self.daf, self.tikkun)
+                    self.phrase = self.line.add_new_phrase(formatting)
                     self.phrases.append(self.phrase)
                 for i, word in enumerate(elem.split()):
                     if i == 0 and self.append_to_previous:
                         self.word.add_to_word(word)
                     else:
-                        self.word = Word(word, self.phrase, self.line, self.paragraph, self.daf, self.tikkun)
+                        # self.word = Word(word, self.phrase, self.line, self.paragraph, self.daf, self.tikkun)
+                        self.word = self.phrase.add_new_word(word)
                         self.words.append(self.word)
                 self.append_to_previous = not elem[-1].isspace()
             elif elem.name == 'span' and (('id' in elem.attrs and 'endnote-'in elem['id']) or any(x in HtmlTzParser.FOOTNOTES for x in elem['class'])):
@@ -232,7 +233,7 @@ class HtmlTzParser(TzParser):
                     # exception for gray-text override-now
                     self.process_paragraph_elem(child, paragraph, format_class)
             elif elem.name == 'br':
-                self.line = Line(self.paragraph, self.daf, self.tikkun)
+                self.line = self.paragraph.add_new_line()
                 self.lines.append(self.line)
                 self.append_to_previous = False
             else:
@@ -248,7 +249,9 @@ class HtmlTzParser(TzParser):
         # print([a for a in self.processed_elem_cursor.children])
         self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
         self.paragraphs.append(self.paragraph)
-        self.line = Line(self.paragraph, self.daf, self.tikkun)
+        self.tikkun.paragraphs.append(self.paragraph)
+        self.daf.paragraphs.append(self.paragraph)
+        self.line = self.paragraph.add_new_line()
         self.lines.append(self.line)
         self.append_to_previous = False
         for child in self.processed_elem_cursor.children:

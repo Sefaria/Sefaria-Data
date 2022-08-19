@@ -47,9 +47,9 @@ class Phrase(object):
         self.tikkun = tikkun
         self.formatting = formatting
 
-    def add_new_word(self, text, anchored_comments):
-        new_word = Word(text, self, self.line, self.paragraph, self.daf, self.tikkun, anchored_comments)
-        self.words_or_phrases.append(new_word)
+    def add_new_word(self, text, anchored_comments=None):
+        new_word = Word(text, self.line, self.paragraph, self.daf, self.tikkun, anchored_comments)
+        self.words.append(new_word)
         return new_word
 
     def add_word_or_phrase(self, word_or_phrase):
@@ -64,20 +64,29 @@ class Line(object):
         self.daf = daf
         self.tikkun = tikkun
 
-    def add_phrase(self, phrase):
+    def add_new_phrase(self, formatting):
+        phrase = Phrase(formatting, self, self.paragraph, self.daf, self.tikkun)
         self.phrases.append(phrase)
-
+        self.paragraph.phrases.append(phrase)
+        self.daf.phrases.append(phrase)
+        self.tikkun.phrases.append(phrase)
+        return phrase
 
 class Paragraph(object):
     """Multiple lines grouped together"""
     def __init__(self, tikkun, daf, paragraph_number):
         self.lines = []
+        self.phrases = []
         self.tikkun = tikkun
-        self.page = daf
+        self.daf = daf
         self.paragraph_number = paragraph_number
 
-    def add_line(self, line):
+    def add_new_line(self):
+        line = Line(self, self.daf, self.tikkun)
         self.lines.append(line)
+        self.tikkun.lines.append(line)
+        self.daf.lines.append(line)
+        return line
 
 
 class Daf(object):
@@ -85,11 +94,14 @@ class Daf(object):
         self.name = name
         self.lines = []
         self.paragraphs = []
+        self.phrases = []
 
 
 class Tikkun(object):
     def __init__(self, name, number):
         self.paragraphs = []
+        self.lines = []
+        self.phrases = []
         self.name = name
         self.number = number
 
