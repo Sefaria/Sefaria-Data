@@ -157,10 +157,7 @@ def add_to_csv(row):
 
 def scrape():
     halakhot = []
-    # start_date = date(2020, 7, 22)
-    # start_date = date(2022, 7, 4) - Error, but worked second time
-    # start_date = date(2022, 12, 29) - Error, but worked third time
-    start_date = date(2022, 7, 24)
+    start_date = date(2020, 7, 22)
     end_date = date(2023, 4, 23)
 
     for single_date in daterange(start_date, end_date):
