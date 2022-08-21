@@ -69,6 +69,9 @@ number_map = {
 }
 
 
+# TODO - rewrite code in OOP way
+# Object variables - halakhot, footnote dict, soup etc
+
 def selenium_firefox_get(url):
     profile = webdriver.FirefoxProfile()
     profile.set_preference("javascript.enabled", False);
@@ -129,7 +132,8 @@ def scrape_text(soup, book, num_chapter, halakhot, footnote_dict):
 
         if num and txt:
             txt = insert_footnotes(txt, footnote_dict)
-            halakhot.append({"ref": f"{book} {num_chapter}.{num}", "text": txt})
+            # halakhot.append({"ref": f"{book} {num_chapter}.{num}", "text": txt})
+            add_to_csv([{"ref": f"{book} {num_chapter}.{num}", "text": txt}])
 
 
 def get_chapter(src, halakhot, date_string):
@@ -144,20 +148,34 @@ def daterange(start_date, end_date):
         yield start_date + timedelta(n)
 
 
+def add_to_csv(row):
+    with open('mishneh_torah_data_scraped_ftns.csv', 'a') as csvfile:
+        headers = ['ref', 'text']
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writerows(row)
+
+
 def scrape():
     halakhot = []
-    start_date = date(2020, 7, 22)
+    # start_date = date(2020, 7, 22)
+    # start_date = date(2022, 7, 4) - Error, but worked second time
+    # start_date = date(2022, 12, 29) - Error, but worked third time
+    start_date = date(2022, 7, 24)
     end_date = date(2023, 4, 23)
 
     for single_date in daterange(start_date, end_date):
         date_string = single_date.strftime("%m/%d/%Y")
-        src = selenium_firefox_get(f"https://www.chabad.org/dailystudy/rambam.asp?tdate={date_string}&rambamChapters=1")
-        get_chapter(src, halakhot, date_string)
 
-    with open('mishneh_torah_data_scraped_ftns.csv', 'w+') as csvfile:
-        headers = ['ref', 'text']
-        writer = csv.DictWriter(csvfile, fieldnames=headers)
-        writer.writerows(halakhot)
+        # Missing data
+        if date_string != '08/10/2022':
+            src = selenium_firefox_get(
+                f"https://www.chabad.org/dailystudy/rambam.asp?tdate={date_string}&rambamChapters=1")
+            get_chapter(src, halakhot, date_string)
+
+    # with open('mishneh_torah_data_scraped_ftns.csv', 'a') as csvfile:
+    #     headers = ['ref', 'text']
+    #     writer = csv.DictWriter(csvfile, fieldnames=headers)
+    #     writer.writerows(halakhot)
 
     print("Data Scraping complete")
     return halakhot
