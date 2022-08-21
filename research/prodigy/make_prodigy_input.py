@@ -112,7 +112,8 @@ def num_english_chars(s, perc=True):
     return num
 
 
-def make_prodigy_input_webpages(n):
+def make_prodigy_input_webpages(n, prev_tagged_refs=None):
+    prev_tagged_refs = prev_tagged_refs or []
     LOC = "/Users/nss/sefaria/datasets/webpages"
     walker = ProdigyInputWalker()
     nchosen = 0
@@ -127,6 +128,11 @@ def make_prodigy_input_webpages(n):
                     line = " ".join(re.split(r'\s+', line)).strip()
                     if iline == 0:
                         url = line
+                        print('hi', url)
+                        continue
+                    if url in prev_tagged_refs:
+                        print(url)
+                        nchosen -= 1
                         continue
                     if num_english_chars(line) > 0.5:
                         continue
@@ -210,10 +216,10 @@ if __name__ == "__main__":
     title_list = [
         "Ein HaTekhelet", "Shev Shmat'ta", "Havot Yair", "Responsa Chatam Sofer", "Netivot Olam", "Mei HaShiloach", "Pri Tzadik", "Sefer HeArukh"
     ]
-    prev_tagged_refs = get_prev_tagged_refs('gold_output_full')
+    prev_tagged_refs = get_prev_tagged_refs('webpages_output')
     # title_list = [i.title for i in IndexSet({"title": re.compile(r'Gilyon HaShas on')})]
     # print(title_list)
     #make_prodigy_input(title_list, [None]*len(title_list), ['en']*len(title_list), prev_tagged_refs)
-    make_prodigy_input_webpages(3000)
+    make_prodigy_input_webpages(3000, prev_tagged_refs)
     # combine_all_sentences_to_paragraphs()
-    # make_prodigy_input_sub_citation('yerushalmi_output2', 'yerushalmi_sub_citation_input2')
+    # make_prodigy_input_sub_citation('webpages_output', 'webpages_sub_citation_input2')

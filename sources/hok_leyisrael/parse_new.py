@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import django
@@ -5,7 +6,7 @@ django.setup()
 from sefaria.model import *
 from bs4 import BeautifulSoup, element as Element
 import re
-from sources.functions import getGematria, post_sheet
+from sources.functions import getGematria, post_sheet, inv_gematria
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from sefaria.utils.hebrew import strip_cantillation
 
@@ -140,6 +141,7 @@ class Section():
             start = start.all_segment_refs()[0].normal()
 
         matches = matcher.match([(' '.join(tokenizer(text_to_find)[-15:]), 'hok'), ref], return_obj=True)
+        matcher.reset()
         if not matches:
             # ad hoc!!!
             if ref == 'Zohar 3:271b-3:272b':
@@ -154,6 +156,13 @@ class Section():
                 end = '83a:8'
             elif ref == 'Avodah Zarah 2a-3a':
                 end = '5a:5'
+            elif ref == 'Zohar 1:106a-1:107a':
+                start = 'Zohar 1:106b:5'
+                end = '1:107a:3'
+            elif ref == 'Zohar 1:129a-1:130a':
+                end = '1:130a:1'
+            elif ref == 'Zohar 1:134a-1:135a':
+                end = '1:135a:1'
             else:
                 print('no match for end', self.day.i, text, ref)
                 return
@@ -177,7 +186,6 @@ class Section():
 
         self.segments.append({'ref': ref, 'text': text, 'type': 'davka text with ref'})
         self.append_source({'ref': ref, 'text': text, 'type': 'davka text with ref'})
-        matcher.reset()
 
     def check(self):
         # matcher = ParallelMatcher(lambda x: re.sub('[^ א-ת]', '', x).split(), verbose=False, all_to_all=False)
@@ -196,16 +204,27 @@ class Section():
     def append_source(self, segment):
         if segment['type'] == 'instructions':
             self.day.sources.append({'node': self.day.node,
-                                 'outsideBiText': {'he': f"<small>{segment['text']}</small>",
-                                                   'en': f"<small>{segment['text']}</small>"}})
+                                 'outsideText': f"<small>{segment['text']}</small>"})
             self.day.node += 1
         elif segment['type'] in ['text with ref', 'ref without text']:
             prev = self.day.sources[-1] if self.day.sources else None
-            if prev and 'ref' in prev.keys():
-                if Ref(segment['ref']).follows(Ref(prev['ref'])):
+            start = False
+            if self.day.i == 6 and 'Torah' in Ref(segment['ref']).index.categories:
+                alts = Ref(segment['ref']).index.alt_structs['Parasha']['nodes']
+                parasha = self.day.week.term.name
+                aliyot = [n['refs'] for n in alts if n['sharedTitle'] == parasha][0]
+                starts = [Ref(aliya).all_segment_refs()[0] for aliya in aliyot]
+                if Ref(segment['ref']) in starts:
+                    start = True
+            if prev and 'ref' in prev.keys() and not start:
+                if Ref(segment['ref']) == Ref(prev['ref']).next_segment_ref():
                     prev['ref'] = Ref(f"{Ref(prev['ref']).all_segment_refs()[0].normal()}-{segment['ref'].split()[-1]}").normal()
                     return
                 elif Ref(segment['ref']) == (Ref(prev['ref'])):
+                    return
+                elif set(Ref(prev['ref']).all_segment_refs()) & set(Ref(segment['ref']).all_segment_refs()):
+                    prev['ref'] = Ref(f"{Ref(prev['ref']).all_segment_refs()[0].normal()}-"
+                                      f"{Ref(segment['ref']).all_segment_refs()[-1].normal().split()[-1]}").normal()
                     return
             self.day.sources.append({'node': self.day.node,
                                  'ref': Ref(segment['ref']).normal()})
@@ -259,12 +278,16 @@ class Day():
         return self.week.days[self.i-1]
 
     def parse_tora(self):
+        self.sources.append({'node': self.node,
+                    'outsideText': '<h1><b>תורה</h1</b>'})
+        self.node += 1
         tora = Section('tora', self)
         if self.i == 0:
             term = Term().load({'scheme': 'Parasha', 'titles': {'$elemMatch': {'text': self.week.parasha}}})
             if not term:
                 term = Term().load(
                     {'scheme': 'Parasha', 'titles': {'$elemMatch': {'text': self.week.parasha.replace('י', '')}}})
+            self.week.term = term
             ref = term.ref
             tora.all_parasha_ref = ref
             tora.book = Ref(ref).book
@@ -279,10 +302,18 @@ class Day():
         #     return
         tora.parse_tanakh(self.tora)
         self.tora = tora
+        if len(self.sources) == 1: #in friday it can be that there is no tora
+            self.sources.pop(0)
+            self.node = 1
 
     def parse_navi(self):
         if not self.navi:
             return
+        hname, ename = ('הפטרה', 'Haftarah') if self.i == 6 else ('נביאים', 'Prophets')
+        self.sources.append({'node': self.node,
+                    'outsideText': f'<h1><b>{hname}</h1</b>'})
+        self.node += 1
+
         navi = Section('navi', self)
         reg = 'הפטרת (?:[^-]*)- (.*(?![^ ]*$)) (.*)' if self.i == 6 else '^נביאים - ([^-]*)- פרק (.*)'
         br = False
@@ -312,6 +343,10 @@ class Day():
     def parse_ketuvim(self):
         if not self.ketuvim:
             return
+        self.sources.append({'node': self.node,
+                    'outsideText': '<h1><b>כתובים</h1</b>'})
+        self.node += 1
+
         ketuvim = Section('ketuvim', self)
         reg = '^כתובים - ([^-]*)- פרק (.*)'
         for element in self.ketuvim:
@@ -329,6 +364,10 @@ class Day():
     def parse_mishnah(self):
         if not self.mishnah:
             return
+        self.sources.append({'node': self.node,
+                    'outsideText': '<h1><b>משנה</h1</b>'})
+        self.node += 1
+
         mishnah = Section('mishnah', self)
         ref =re.sub('[^Bא-ת]', '', str(self.mishnah[0])).replace('B', ' ').replace('מסכת ', '')
         mishnah.append_source({'type': 'ref without text', 'ref': Ref(ref).normal()})
@@ -337,6 +376,9 @@ class Day():
     def parse_gemara(self):
         if not self.talmud:
             return
+        self.sources.append({'node': self.node,
+                    'outsideText': '<h1><b>גמרא</h1</b>'})
+        self.node += 1
         talmud = Section('talmud', self)
         ref = re.sub('[^\'Bא-ת]', '', str(self.talmud[0])).replace('B', ' ').replace('גמרא ', '').replace("''", '"').replace('ט"ל', 'לט')
         ref = re.sub('^מציעא', 'בבא מציעא', ref)
@@ -347,6 +389,10 @@ class Day():
     def parse_zohar(self):
         if not self.zohar:
             return
+        self.sources.append({'node': self.node,
+                    'outsideText': '<h1><b>זוהר</h1</b>'})
+        self.node += 1
+
         zohar = Section('zohar', self)
         ref = str(self.zohar[0]).replace('אחריBדף', 'אחריBמותBדף')
         if 'זוהרBחדש' in ref:
@@ -363,11 +409,26 @@ class Day():
                 print('problem with ref', self.i, parasha, page)
             zohar.ref = page
         zohar.parse_paged(self.zohar, 0.7)
+        targum = ''
+        for e in self.zohar:
+            if e.name == 'span' and 'style' in e.attrs and e['style'] in ['color:RGB(206,99,34); font-size:20px; font-family:David;']:
+                targum = e.text.split('תרגום הזוהר')[1]
+                targum = ' '.join(targum.split())
+        if not targum:
+            print('no targum')
+        else:
+            self.sources.append({'node': self.node,
+                                 'outsideText': targum})
+            self.node += 1
         self.zohar = zohar
 
     def parse_halakha(self):
         if not self.halakha:
             return
+        self.sources.append({'node': self.node,
+                    'outsideText': '<h1><b>הלכה פסוקה</h1</b>'})
+        self.node += 1
+
         text = ''
         for element in self.halakha:
             if element.name == 'span' and 'style' in element.attrs and element['style'] in ["font-size:26px;", "font-size:98%;"]:
@@ -398,35 +459,115 @@ class Day():
         matcher = ParallelMatcher(tokenizer, verbose=False, all_to_all=False, min_words_in_match=5, min_distance_between_matches=0,
                                   only_match_first=True, ngram_size=5, max_words_between=7, both_sides_have_min_words=True)
         matches = matcher.match([(text, 'hok'), ref], return_obj=True)
-        matches = [m for m in matches if m.score > -0.4]
+        newmatches = [m for m in matches if m.score > -0.4]
+        time.sleep(5)
+        matcher.reset()
+        matches = newmatches if newmatches else [m for m in matches if m.score > -1.5]
         refs = [m.a.ref for m in matches] + [m.b.ref for m in matches]
         refs = [r for r in refs if r.normal() != 'Berakhot 58a']
         refs = unite_refs(refs)
-        print(self.i)
+        if len(refs) > 1:
+            for ref in refs:
+                if all(r.follows(ref) or r == ref for r in refs):
+                    refs = [ref]
+                    break
         if len(refs) != 1:
             # for m in matches:
             #     print(m.a.ref, m.b.ref, m.score)
+            print(self.i)
             print(refs, ref, text)
             with open('log.txt', 'a', encoding='utf-8') as fp:
                 fp.write(f'{refs}\n{ref}\n{text}\n')
-        time.sleep(5)
-        matcher.reset()
 
-        # self.day.sources.append({'node': self.day.node,
-        #                          'ref': refs[0].normal(),
-        #                         'text': ' '.join(text.split())})
-        # self.day.node += 1
+        text = ' '.join(text.split())
+        text = re.sub('(?:^| )(.\.) ', r'</div><div><b>\1 </b>', text)
+        text = re.sub('^</div>', '', text) + '</div>'
+        self.sources.append({'node': self.node,
+                                 'ref': refs[0].normal(),
+                                'text': text})
+        self.node += 1
 
     def parse_musar(self):
-        pass
+        if not self.musar:
+            return
+        self.sources.append({'node': self.node,
+                    'outsideText': '<h1><b>מוסר</h1</b>'})
+        self.node += 1
+
+        text = ''
+        for element in self.musar:
+            if element.name == 'span' and 'style' in element.attrs and element['style'] in ["font-size:26px;", "font-size:98%;", "font-size:97%;"]:
+                text = element.text
+                break
+        if not text:
+            print(self.i, 'not finding text for  musar')
+            return
+        ref, text = text.split('\n')
+        text = ' '.join(text.split())
+        ref = re.sub("מ?(ס'|ספרי?) חסידים", 'ספר חסידים', ref).replace("''", '"').strip()
+        ref = ref.replace('מספר', 'ספר')
+        context_ref = ''
+        if 'שערי תשובה' in ref:
+            context_ref = 'שערי תשובה'
+            pass
+        elif 'מרגניתא' in ref:
+            context_ref = 'Reshit Chokhmah, Gate of Fear 12:29-40'
+        elif 'ספר הישר' in ref:
+            ref = 'Sefer HaYashar 17:2-3'
+        elif 'ספר חסידים' in ref:
+            try:
+                ref = Ref(ref).normal()
+            except:
+                ref = Ref(f'ספר חסידים {ref.split()[3]}-{ref.split()[-1]}')
+        elif any(b in ref for b in ['שערי קדושה', "מהזה''ק", 'מזהר']):
+            if ref.startswith('מ'):
+                ref = ref[1:]
+            if 'שערי קדושה' in ref:
+                context_ref = ref.replace('ספר', '').replace(' ח"', ' חלק ').replace('קדושה', 'קדושה,').replace('שער ', '').replace(' ש"', ' ')
+                try:
+                    Ref(context_ref)
+                except:
+                    context_ref = 'Shaarei Kedusha'
+            else:
+                if ref == '''זהר הק' ח"א דף ר"א ע"ב בלה"ק''':
+                    ref = 'Zohar 1:201b'
+        else:
+            text = f'<div><strong><span style="color: #999999;">{ref}</span></strong></div><div>{text}</div>'
+            ref = ''
+        if context_ref:
+            matcher = ParallelMatcher(tokenizer, verbose=False, all_to_all=False, min_words_in_match=5,
+                                      min_distance_between_matches=0,
+                                      only_match_first=True, ngram_size=5, max_words_between=7,
+                                      both_sides_have_min_words=True)
+            matches = matcher.match([(text, 'hok'), context_ref], return_obj=True)
+            time.sleep(5)
+            matcher.reset()
+            matches = [m for m in matches if m.score > -0.8]
+            if len(matches) == 0:
+                print(self.i)
+                print([(m.a.ref, m.b.ref) for m in matches], ref, context_ref, text)
+                with open('log.txt', 'a', encoding='utf-8') as fp:
+                    fp.write(f'{[(m.a.ref, m.b.ref) for m in matches]}\n{ref}\n{context_ref}\n{text}\n')
+            else:
+                ref = max(matches, key=lambda x: x.score).b.ref
+        if ref:
+            if type(ref) != str:
+                ref = ref.normal()
+            self.sources.append({'node': self.node,
+                                    'ref': ref,
+                                    'text': text})
+        else:
+            self.sources.append({'node': self.node,
+                    'outsideText': text})
+        self.node += 1
 
     def parse_all(self):
-        # self.parse_tora()
-        # self.parse_navi()
-        # self.parse_ketuvim()
-        # self.parse_mishnah()
-        # self.parse_gemara()
-        # self.parse_zohar()
+        self.parse_tora()
+        self.parse_navi()
+        self.parse_ketuvim()
+        self.parse_mishnah()
+        self.parse_gemara()
+        self.parse_zohar()
         self.parse_halakha()
         self.parse_musar()
 
@@ -435,18 +576,61 @@ class Day():
         days = ['יום ' + d for d in days]
         days[5] = days[5].replace('יום', 'ליל')
         self.sheet['title'] = f'חק לישראל - {self.week.parasha} {days[self.i]}'
+        self.sheet['tags'] = [self.week.parasha]
         for source in self.sources:
             if 'ref' in source.keys() and 'text' not in source.keys():
-                source['text'] = {'he': ''.join([f"<div>{r.text('he').text}</div>" for r in Ref(source['ref']).all_segment_refs()]),
-                                  'en': ''.join([f"<div>{r.text('en').text}</div>" for r in Ref(source['ref']).all_segment_refs()])}
+                he = en = ''
+                for i, r in enumerate(Ref(source['ref']).all_segment_refs(), 1):
+                    targum = ''
+                    en_text = r.text('en').text
+                    if r.book in library.get_indexes_in_category('Tanakh'):
+                        en_text = r.text('en', 'The Koren Jerusalem Bible').text
+                        perekpasuk = re.sub('["\'״׳]', '', r.he_normal().split()[-1])
+                        perek, pasuk = perekpasuk.split(':')
+                        if i == 1 or pasuk == 'א':
+                            l = f'{perek} (<small>{pasuk}</small>) '
+                            i = f'{getGematria(perek)} ({(getGematria(pasuk))}) '
+                        else:
+                            l = f'(<small>{pasuk}</small>) '
+                            i = f'({(getGematria(pasuk))}) '
+                        if r.book in library.get_indexes_in_category('Torah'):
+                            targum = '</div><div><small>' + Ref(f'Onkelos {r.normal()}').text('he').text + '</small>'
+                        elif r.book in library.get_indexes_in_category('Prophets'):
+                            if self.i != 6:
+                                targum = '</div><div><small>' + Ref(f'Targum Jonathan on {r.normal()}').text('he').text + '</small>'
+                        else:
+                            targum = '</div><div><small>' + Ref(f'Aramaic Targum to {r.normal()}').text('he').text + '</small>'
+                    elif 'Mishnah' in source['ref']:
+                        if i > 10 and i % 10:
+                            l = inv_gematria[i//10*10] + inv_gematria[i%10] + '. '
+                        else:
+                            l = inv_gematria[i] + '. '
+                    else:
+                        l, i = '', ''
+                    he += f"<div>{l}{r.text('he').text.replace('<br>', ' ')}{targum}</div>"
+                    en += f"<div>{i}. {en_text.replace('<br>', ' ')}</div>"
+                    if r.book in library.get_indexes_in_category('Prophets') and self.i == 6:
+                        he = he.replace('</div><div>', ' ')
+                        en = en.replace('</div><div>', ' ')
+                source['text'] = {'he': he, 'en': en}
                 source['heRef'] = Ref(source['ref']).he_normal()
             elif 'ref' in source.keys() and 'text' in source.keys():
+                if not Ref(source['ref']).text('he').text:
+                    try:
+                        if Ref(source['ref'].replace(':', '-')).text('he').text:
+                            source['ref'] = source['ref'].replace(':', '-')
+                        else:
+                            raise Exception
+                    except:
+                        print('no text in ref:', source['ref'])
+                        with open('log.txt', 'a', encoding='utf-8') as fp:
+                            fp.writelines([f'no text in ref: {source["ref"]}'])
                 if Ref(source['ref']).text('en').text:
                     source['text'] = {'he': source['text'],
                                       'en': ''.join([f"<div>{r.text('en').text}</div>" for r in Ref(source['ref']).all_segment_refs()])}
                 else:
                     source['text'] = {'he': source['text']}
-                    source['text']['en'] = source['text']['he']
+                    source['text']['en'] = ''
 
                 source['heRef'] = Ref(source['ref']).he_normal()
 
@@ -534,6 +718,8 @@ if __name__ == '__main__':
         week.parse_days()
         for day in week.days:
             day.make_sheet()
+            with open(f'jsons/{file.split(".")[0]}-{day.i}.json', 'w') as fp:
+                json.dump(day.sheet, fp)
             #print(post_sheet(day.sheet, server=server)['id'])
 
         # try:
