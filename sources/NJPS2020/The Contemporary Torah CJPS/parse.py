@@ -20,10 +20,11 @@ def check_str(v, pos='ending'):
                 return True
     return False
 
-
+places = {}
 p_styles = set()
 other_tags = set()
 for f in os.listdir("."):
+    place = False
     if not f.endswith("usx"):
         continue
     lines = ""
@@ -48,9 +49,18 @@ for f in os.listdir("."):
                         if isinstance(v, NavigableString) and len(v.strip()) > 0:
                             if prev_was_lord and check_str(v, "start"):
                                 text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
+                            if v.startswith("s ") or v == "s" or (v.startswith('s') and len(v) == 2 and re.search("[a-z]{2}", v) is None):
+                                text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
+                                place = True
                             text_dict[curr_ch][curr_seg] += v.strip()
                             prev_was_lord = False
                         elif v.name == "verse" and "sid" in v.attrs:
+                            if place:
+                                m = re.findall("<sup>.{1}</sup><sup>.{1}</sup>", text_dict[curr_ch][curr_seg])
+                                changed = len(m) > 0
+                                for x in m:
+                                    text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace(x, "<sup>*</sup>", 1)
+                                places[f"{f.name[:-4]} {curr_ch}:{curr_seg}"] = text_dict[curr_ch][curr_seg]
                             segment = v.attrs["number"]
                             ref = v.attrs["sid"].split()[-1]
                             ref_sec, ref_seg = ref.split(":")
@@ -65,6 +75,7 @@ for f in os.listdir("."):
                                 text_dict[curr_ch] = {}
                             if curr_seg not in text_dict[curr_ch]:
                                 text_dict[curr_ch][curr_seg] = ""
+                            place = False
                         elif v.name == "verse":
                             ref = v.attrs["eid"].split()[-1]
                             ref_sec, ref_seg = ref.split(":")
@@ -79,12 +90,12 @@ for f in os.listdir("."):
                                 if isinstance(ft, Tag):
                                     for x in ft.find_all("char", {"style": "tl"}):
                                         x.replace_with("<i>"+x.text+"</i>")
-                                        print(f"{f.name[:-4]} {curr_ch}:{curr_seg}")
+                                        place = True
                                 if isinstance(ft, NavigableString):
                                     if len(ft.strip()) > 0:
                                         ft_txt += ft
                                 elif ft.attrs["style"] == "tl":
-                                    print(f"{f.name[:-4]} {curr_ch}:{curr_seg}")
+                                    place = True
                                     ft_txt += "<i>{}</i>".format(ft.text)
                                 elif ft.attrs["style"] == 'fr':
                                     ft_ref = ft.text.replace(".", ":").strip()
@@ -99,18 +110,24 @@ for f in os.listdir("."):
                                 elif ft.attrs["style"] == "fv":
                                     ft_txt += "<b>{}</b> ".format(ft.text.strip())
                             text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
-                            text_dict[curr_ch][curr_seg] += "<sup>{}</sup><i class='footnote'>{}</i> ".format(caller, ft_txt)
+                            text_dict[curr_ch][curr_seg] += "<sup>*</sup><i class='footnote'>{}</i> ".format(ft_txt)
                         elif v.name == "char":
                             other_tags.add(v.name)
                             if not check_str(text_dict[curr_ch][curr_seg], "ending"):
                                 text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip() + " "
                             if v.attrs.get("style", "") == "tl":
-                                print(f"{f.name[:-4]} {curr_ch}:{curr_seg}")
+                                place = True
                                 text_dict[curr_ch][curr_seg] += "<i>"+v.text.strip()+"</i> "
                             else:
                                 text_dict[curr_ch][curr_seg] += v.text.strip() + " "
                             prev_was_lord = True
                     text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace("  ", " ")
+                    if place:
+                        m = re.findall("<sup>.{1}</sup><sup>.{1}</sup>", text_dict[curr_ch][curr_seg])
+                        changed = len(m) > 0
+                        for x in m:
+                            text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace(x, "<sup>*</sup>", 1)
+                        places[f"{f.name[:-4]} {curr_ch}:{curr_seg}"] = text_dict[curr_ch][curr_seg]
 
 
     for ch in text_dict:
@@ -156,5 +173,28 @@ for f in os.listdir("."):
         "versionSource": "https://www.sefaria.org",
         "text": text_dict
     }
-    post_text(title, send_text, server="https://germantalmud.cauldron.sefaria.org")
+    #post_text(title, send_text, server="https://germantalmud.cauldron.sefaria.org")
+
+vtitle = "The Contemporary Torah, Jewish Publication Society, 2006"
+for i in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
+    refs = library.get_index(i).all_segment_refs()
+    for ref in refs:
+        tc = TextChunk(ref, lang='en', vtitle=vtitle)
+        soup = BeautifulSoup(tc.text)
+        m = re.findall("<sup>.{1}</sup><sup>.{1}</sup>", tc.text)
+        changed = len(m) > 0
+        for x in m:
+            tc.text = tc.text.replace(x, "<sup>*</sup>", 1)
+        send_text = {
+            "language": "en", "versionTitle": vtitle, "text": tc.text, "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH002529489/NLI"
+        }
+        if changed:
+            if ref.normal() not in places:
+                places[ref.normal()] = tc.text
+
+with open("cjps issues.csv", 'w') as f:
+    writer = csv.writer(f)
+    writer.writerow(["Ref", "Text"])
+    for ref, comm in places.items():
+        writer.writerow([ref, comm])
 

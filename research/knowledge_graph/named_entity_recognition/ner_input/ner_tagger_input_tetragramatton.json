@@ -1,0 +1,27 @@
+{
+    "namedEntities": [
+        {
+            "namedEntityFile": "/Users/stevenkaplan/Sefaria-Data/research/knowledge_graph/named_entity_recognition/external_named_entities/sperling_named_entities.json"
+        },
+        {
+            "id": "the-tetragrammaton",
+            "idIsSlug": false,
+            "manualTitles": [{
+                "text": "Y<small>HWH</small>",
+                "lang": "en"
+            }]
+        }
+    ],
+    "corpus": [
+        {
+            "title": "Torah",
+            "type": "category",
+            "versions": [
+                {
+                    "language": "en",
+                    "versionTitle": "The Five Books of Moses, by Everett Fox. New York, Schocken Books, 1995"
+                }
+            ]
+        }
+    ]
+}

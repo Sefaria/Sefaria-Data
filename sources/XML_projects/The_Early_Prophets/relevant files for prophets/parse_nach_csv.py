@@ -17,7 +17,7 @@ def dher3(s):
     return dher(s).split("…")[-1].strip()
 
 new_rows = []
-with open("The Early Prophets.csv", 'r') as f:
+with open("The Early Prophets with Essays.csv", 'r') as f:
     curr_ref = ""
     for row in csv.reader(f):
         if re.search("^\d+:?\d* ", row[1]):# and row[0].rsplit(".")[0] in refs:
@@ -159,7 +159,7 @@ with open("titles for translation prophets.csv", 'w') as translation_f:
                 subpart = subpart.strip()
                 subessays[title][subtitle].append(subpart)
 
-json.dump(subessays, open("subessays_full_prohets.json", 'w'))
+json.dump(subessays, open("subessays_full_prophets.json", 'w'))
 vtitle = ""
 for invalid_ref in invalid_refs:
     title, ref = invalid_ref

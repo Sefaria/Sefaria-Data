@@ -463,6 +463,8 @@ class PartialMesorahMatch:
 
 
 def default_calculate_score(words_a, words_b):
+    if len(words_a) > 500:
+        return 0
     best_match = get_maximum_dh(words_a, words_b, min_dh_len=len(words_b)-1, max_dh_len=len(words_b))
     length_factor = len(words_b)
     if best_match:
@@ -796,7 +798,7 @@ class ParallelMatcher:
                                 already_matched_dict[i_matched_word] += [dead.b_start]
                             try:
                                 matches += [dead.finalize()]
-                            except AssertionError:
+                            except (AssertionError, InputError):
                                 pass
                     else:
                         # still could be good
@@ -811,7 +813,7 @@ class ParallelMatcher:
                     self.ght.put_already_started((dead.b_start, dead.a_start))
                     try:
                         matches += [dead.finalize()]
-                    except AssertionError:
+                    except (AssertionError, InputError):
                         pass
 
         return matches

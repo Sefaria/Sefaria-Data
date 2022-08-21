@@ -48,7 +48,7 @@ subessays = new_sub_essays
 root = SchemaNode()
 essay_heb = "מאמר"
 comment_heb = "הערה"
-root.add_primary_titles("The Early Prophets, by Everett Fox", "מהדורת אברט פוקס")
+root.add_primary_titles("The Early Prophets, by Everett Fox", "נביאים ראשונים, מהדורת אברט פוקס")
 for book in ["Joshua", "Judges", "Samuel", "Kings"]:
     book_node = SchemaNode()
     book_node.add_primary_titles(book, get_he_book(book))
