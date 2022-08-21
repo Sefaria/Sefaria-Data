@@ -14,7 +14,7 @@ import statistics
 
 from sefaria.model import *
 
-# TODO - grab footnotes
+# TODO - links reformat and get rid of <a> tags, clean up extra quotes by footnotes?
 
 def convert_base_64_img(halakha):
     ref_name = halakha['ref'].lower()
@@ -50,7 +50,7 @@ def setup_data():
     """
     chabad_book_names = []
     mishneh_torah_list = []
-    with open('mishneh_torah_data_scraped.csv', newline='') as csvfile:
+    with open('mishneh_torah_data_scraped_ftns.csv', newline='') as csvfile:
         r = csv.reader(csvfile, delimiter=',')
         next(r, None)
         for row in r:
