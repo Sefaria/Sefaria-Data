@@ -186,8 +186,6 @@ def flag_no_punc(mt_list):
     count = 0
     new_list = []
     for halakha in mt_list:
-        # clean extra whitespace
-        text = halakha['text'].strip()
         if text[-1] not in [".", "?", "!", ";", "\'", "\"", ">", "”"]:
             count += 1
             new_list.append({'ref': halakha['ref'],
@@ -206,7 +204,7 @@ def export_cleaned_data_to_csv(mt_list):
     This function writes the cleaned data to a new CSV
     """
     with open('mishneh_torah_data_cleaned.csv', 'w+') as csvfile:
-        headers = ['ref', 'text', 'flag', 'msg']
+        headers = ['ref', 'text']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(mt_list)
 
@@ -215,6 +213,7 @@ def strip_p_for_br(mt_list):
     new_list = []
     for halakha in mt_list:
         txt = halakha['text']
+        txt = txt.strip()
         br_txt = re.sub(r"</p>\n<p>", "<br>", txt)
         clean_txt = re.sub(r"<p>|</p>", "", br_txt)  # remove remaining <p>
         new_list.append({'ref': halakha['ref'], 'text': clean_txt})
@@ -315,8 +314,6 @@ if __name__ == '__main__':
     name_map = create_book_name_map(chabad_book_names)
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
     mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
-    mishneh_torah_list = flag_no_punc(mishneh_torah_list)
     mishneh_torah_list = img_convert(mishneh_torah_list)
-    mishneh_torah_list = stats_flag(mishneh_torah_list)
     mishneh_torah_list = html_clean_up(mishneh_torah_list)
     export_cleaned_data_to_csv(mishneh_torah_list)

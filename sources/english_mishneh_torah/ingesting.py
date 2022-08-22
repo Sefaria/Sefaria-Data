@@ -8,30 +8,30 @@ from sefaria.model import *
 from sefaria.tracker import modify_bulk_text
 
 
-# TODO - double check this code based on final CSV format
 def create_mappings():
     mappings = defaultdict(dict)
-    with open('mishneh_torah_data_FINAL.csv', newline='') as csvfile:
+    with open('mishneh_torah_data_cleaned.csv', newline='') as csvfile:
         mt_csv = csv.DictReader(csvfile)
         for row in mt_csv:
-            mappings[Ref(row['ref']).index.title][row['ref']] = row['text']
+            mt_ref = f"Mishneh Torah, {row['ref']}"
+            mappings[Ref(mt_ref).index.title][mt_ref] = row['text']
     return mappings
 
 
 def create_version_from_scratch(book):
-    cur_version = VersionSet({'title': f'{book}', # todo - add
-                              'versionTitle': ''}) # todo - add
+    cur_version = VersionSet({'title': f'{book}',
+                              'versionTitle': 'Mishneh Torah, trans. by Eliyahu Touger. Jerusalem, Moznaim Pub. c1986-c2007'})
     if cur_version.count() > 0:
         cur_version.delete()
-    version = Version({"versionTitle": "", # todo - add
-                       "versionSource": "", # todo - add
-                       "title": f"", # todo - add
+    version = Version({"versionTitle": "Mishneh Torah, trans. by Eliyahu Touger. Jerusalem, Moznaim Pub. c1986-c2007",
+                       "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH001020101/NLI",
+                       "title": f"{book}",
                        "chapter": [],
-                       # TODO - check the following flags
                        "language": "en",
                        "digitizedBySefaria": True,
-                       "license": "Public Domain",
-                       "status": "locked"
+                       "license": "CC-BY-NC",
+                       "status": "",
+                       "versionNote": "© Published and Copyright by Moznaim Publications.<br>Must obtain written permission from Moznaim Publications for any commercial use. Any use must cite Copyright by Moznaim Publications."
                        })
     return version
 
