@@ -301,12 +301,12 @@ def html_clean_up(mt_list):
             patt = f"<a href=.*?>{re_link}<\/a>"
             txt = re.sub(patt, clean_link, txt)
 
-        # # Add the appropriate superscript class
-        # sups = re.findall(r"<sup>(.*?)</sup><i class=\"footnote\">", txt)
-        # for sup in sups:
-        #     patt = f"<sup>{sup}</sup><i class=\"footnote\">"
-        #     replacement = f"<sup class=\"footnote-marker\">{sup}</sup><i class=\"footnote\">"
-        #     txt = re.sub(patt, replacement, txt)
+        # Add the appropriate superscript class
+        sups = re.findall(r"<sup>(.*?)</sup><i class=\"footnote\">", txt)
+        for sup in sups:
+            patt = f"<sup>{sup}</sup><i class=\"footnote\">"
+            replacement = f"<sup class=\"footnote-marker\">{sup}</sup><i class=\"footnote\">"
+            txt = re.sub(patt, replacement, txt)
 
         new_list.append({'ref': halakha['ref'], 'text': txt})
     return new_list
