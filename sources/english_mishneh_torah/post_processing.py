@@ -14,7 +14,7 @@ import statistics
 
 from sefaria.model import *
 
-# TODO - links reformat and get rid of <a> tags, clean up extra quotes by footnotes?
+# TODO - Line 60 manually fix footnote issue (i.e. manually put in footnotes
 
 def convert_base_64_img(halakha):
     ref_name = halakha['ref'].lower()
@@ -244,7 +244,6 @@ def generate_stats(mt_list):
     ratio_aggregate = 0
 
     for halakha in mt_list:
-
         en_text = halakha['text']
         hebrew_text = Ref(f"Mishneh Torah, {halakha['ref']}").text('he').text
 
@@ -256,6 +255,7 @@ def generate_stats(mt_list):
     stdev = statistics.stdev(ratio_list)
     return mean_of_ratios, stdev
 
+
 def stats_flag(mt_list):
     new_list = []
     mean, stdev = generate_stats(mt_list)
@@ -263,9 +263,9 @@ def stats_flag(mt_list):
         en_text = halakha['text']
         hebrew_text = Ref(f"Mishneh Torah, {halakha['ref']}").text('he').text
 
-        cur_ratio = len(hebrew_text)/len(en_text)
-        two_sd_above = mean + (2*stdev)
-        two_sd_below = mean - (2*stdev)
+        cur_ratio = len(hebrew_text) / len(en_text)
+        two_sd_above = mean + (2 * stdev)
+        two_sd_below = mean - (2 * stdev)
 
         if cur_ratio > two_sd_above or cur_ratio < two_sd_below:
             flag = True
@@ -278,6 +278,39 @@ def stats_flag(mt_list):
     return new_list
 
 
+def html_clean_up(mt_list):
+    new_list = []
+    for halakha in mt_list:
+        txt = halakha['text']
+
+        # Remove number of quotes from footnote
+        if "footnote" in txt:
+            txt = re.sub("\"\"", "\"", txt)
+
+        # Massage links to text references into Sefaria form
+        links = re.findall(r"<a href=.*?>(.*?)<\/a>", txt)
+        for link in links:
+
+            # Add escape characters to links data for matching
+            if ")" in link or "(" in link:
+                re_link = re.sub(r"\)", "\\)", link)
+                re_link = re.sub(r"\(", "\\(", re_link)
+            else:
+                re_link = link
+            clean_link = re.sub(r"[^A-Za-z :0-9]", " ", link)
+            patt = f"<a href=.*?>{re_link}<\/a>"
+            txt = re.sub(patt, clean_link, txt)
+
+        # # Add the appropriate superscript class
+        # sups = re.findall(r"<sup>(.*?)</sup><i class=\"footnote\">", txt)
+        # for sup in sups:
+        #     patt = f"<sup>{sup}</sup><i class=\"footnote\">"
+        #     replacement = f"<sup class=\"footnote-marker\">{sup}</sup><i class=\"footnote\">"
+        #     txt = re.sub(patt, replacement, txt)
+
+        new_list.append({'ref': halakha['ref'], 'text': txt})
+    return new_list
+
 
 if __name__ == '__main__':
     chabad_book_names, mishneh_torah_list = setup_data()
@@ -286,5 +319,6 @@ if __name__ == '__main__':
     mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
     mishneh_torah_list = flag_no_punc(mishneh_torah_list)
     mishneh_torah_list = img_convert(mishneh_torah_list)
-    mishneh_torah_list = stats_flag(mishneh_torah_list)
+    # mishneh_torah_list = stats_flag(mishneh_torah_list)
+    mishneh_torah_list = html_clean_up(mishneh_torah_list)
     export_cleaned_data_to_csv(mishneh_torah_list)
