@@ -52,7 +52,6 @@ def setup_data():
     mishneh_torah_list = []
     with open('mishneh_torah_data_scraped_ftns.csv', newline='') as csvfile:
         r = csv.reader(csvfile, delimiter=',')
-        next(r, None)
         for row in r:
             book_ref = row[0]
 
@@ -318,6 +317,6 @@ if __name__ == '__main__':
     mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
     mishneh_torah_list = flag_no_punc(mishneh_torah_list)
     mishneh_torah_list = img_convert(mishneh_torah_list)
-    # mishneh_torah_list = stats_flag(mishneh_torah_list)
+    mishneh_torah_list = stats_flag(mishneh_torah_list)
     mishneh_torah_list = html_clean_up(mishneh_torah_list)
     export_cleaned_data_to_csv(mishneh_torah_list)
