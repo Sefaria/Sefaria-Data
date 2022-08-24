@@ -204,24 +204,26 @@ class HtmlTzParser(TzParser):
     def cursor_is_paragraph(self):
         return self.processed_elem_cursor.name == 'p' and self.processed_elem_cursor['class']
 
+    def process_words(self, elem, formatting):
+        """Process words or partial words and add to existing or new Word"""
+        if not self.append_to_previous or elem[0].isspace():  # new phrase
+            self.append_to_previous = False
+            self.phrase = self.line.add_new_phrase(formatting)
+            self.phrases.append(self.phrase)
+        for i, word in enumerate(elem.split()):
+            if i == 0 and self.append_to_previous:
+                self.word.add_to_word(word)
+            else:
+                self.word = self.phrase.add_new_word(word)
+                self.words.append(self.word)
+            self.append_to_previous = not elem[-1].isspace()
+
     def process_paragraph_elem(self, elem, paragraph, formatting=None):
-        #try:
-            if isinstance(elem, str):  # add words
-                # new phrase
-                if not self.append_to_previous or elem[0].isspace():
-                    self.append_to_previous = False
-                    self.phrase = self.line.add_new_phrase(formatting)
-                    self.phrases.append(self.phrase)
-                for i, word in enumerate(elem.split()):
-                    if i == 0 and self.append_to_previous:
-                        self.word.add_to_word(word)
-                    else:
-                        # self.word = Word(word, self.phrase, self.line, self.paragraph, self.daf, self.tikkun)
-                        self.word = self.phrase.add_new_word(word)
-                        self.words.append(self.word)
-                self.append_to_previous = not elem[-1].isspace()
-            elif elem.name == 'span' and (('id' in elem.attrs and 'endnote-'in elem['id']) or any(x in HtmlTzParser.FOOTNOTES for x in elem['class'])):
-                # TODO: Implement footnotes
+        try:
+            if isinstance(elem, str):
+                self.process_words(elem, formatting)
+            elif elem.name == 'span' and 'id' in elem.attrs and 'endnote-'in elem['id']:
+                # TODO: figure out where these endnotes are
                 pass
             elif elem.name == 'span' and all(x not in HtmlTzParser.FOOTNOTES for x in elem['class']):
                 for child in elem.children:
