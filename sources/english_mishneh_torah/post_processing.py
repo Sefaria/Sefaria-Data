@@ -164,6 +164,8 @@ def create_book_name_map(chabad_book_names):
     name_map = {}
     for i in range(len(chabad_book_names)):
         name_map[chabad_book_names[i]] = sefaria_book_names[i]
+        if chabad_book_names[i] == "Rotzeach uShmirat Nefesh":
+            print(sefaria_book_names[i])
     return name_map
 
 
