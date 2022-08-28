@@ -288,11 +288,3 @@ if __name__ == '__main__':
     dicta.create_and_post_parallels_commentary(args.server, post=True)
 
 # https://dicta-library.cauldron.sefaria.org
-
-"""
-TODO get rid of empty paragraphs but make sure start chars are correct
-TODO see if we can get citations working
-TODO add commentary markers
-
-data.nikudResults[token.nikudID].options[0].w
-"""
