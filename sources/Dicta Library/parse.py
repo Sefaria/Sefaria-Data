@@ -119,12 +119,13 @@ class DictaPage:
     fileName: str
     nakdanResponseFile: str
 
-    def parse(self, root_dir, book_title, with_nikkud=False):
+    def parse(self, root_dir, book_title, with_nikud=False):
         jin = self.__get_json_content(root_dir)
         tokens = self.__get_tokens(jin)
         index = self.__get_zero_based_index()
         parallels = self.__get_parallels(jin)
-        paragraphs, token2seg, parallel_id2token, parallel_id2_data_order = self.serialize(tokens)
+        nikud = self.__get_nikud(jin)
+        paragraphs, token2seg, parallel_id2token, parallel_id2_data_order = self.serialize(tokens, nikud, with_nikud)
         self.__add_link_info_to_parallels(parallels, token2seg, parallel_id2token, parallel_id2_data_order, book_title, index)
         return paragraphs, index, parallels
 
@@ -155,7 +156,7 @@ class DictaPage:
             parallel.base_tref = f"{book_title} {page_index+1}:{iseg}"
 
     @staticmethod
-    def serialize(tokens) -> Tuple[List[str], Dict[int, int], Dict[int, int], Dict[int, int]]:
+    def serialize(tokens, nikud, with_nikud=False) -> Tuple[List[str], Dict[int, int], Dict[int, int], Dict[int, int]]:
         """
         Serialize data into list of strings which represents a section in the DB
         :param tokens: token dicts
@@ -182,7 +183,8 @@ class DictaPage:
                 parallel_data_order += 1
                 text += marker
             parallel_ids_seen |= unseen_parallel_ids
-            text += token['str']
+            token_str = nikud[token['nikudID']] if (with_nikud and 'nikudID' in token) else token['str']
+            text += token_str
         return text.split('\n'), token2seg, parallel_id2token, parallel_id2_data_order
 
     def __get_zero_based_index(self):
@@ -204,6 +206,10 @@ class DictaPage:
         parallels = filter(lambda x: x and x['tool'] == 'parallels', jin['data']['postProcessedSources'])
         # TODO relying on existence of 'baseStartToken' which doesn't exist in 'citation's for some reason
         return [DictaParallel(**parallel_dict) for parallel_dict in parallels]
+
+    @staticmethod
+    def __get_nikud(jin: dict):
+        return [x['options'][0]['w'] for x in jin['data']['nikudResults']]
 
 
 @dataclass
@@ -251,7 +257,7 @@ class DictaBook:
         parsed_pages = []
         all_parallels = []
         for page in tqdm(self.pages, desc=self.fileName):
-            paragraphs, index, parallels = page.parse(self._root_path, self.index['title'], with_nikkud=True)
+            paragraphs, index, parallels = page.parse(self._root_path, self.index['title'], with_nikud=True)
             all_parallels += [list(parallels)]
             while len(parsed_pages) < index:
                 parsed_pages += [[]]
