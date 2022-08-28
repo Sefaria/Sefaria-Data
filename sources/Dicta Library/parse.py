@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Tuple
 import django, argparse, json, zipfile, re
 django.setup()
 from functools import reduce, partial
@@ -61,6 +61,7 @@ class DictaLibraryManager:
         parallels_text = []
         for ipage, page_parallels in enumerate(self.parallels):
             parallels_text += [[]]
+            page_parallels.sort(key=lambda x: x.dataOrder)
             for iparallel, parallel in enumerate(page_parallels):
                 parallels_text[-1] += [parallel.serialize()]
                 parallel_tref = f'{index["title"]} {ipage+1}:{iparallel+1}'
@@ -89,7 +90,6 @@ class DictaLibraryManager:
 
 @dataclass
 class DictaParallel:
-    base_tref: str
     baseTextLength: int
     baseStartChar: int
     baseMatchedText: str
@@ -99,6 +99,7 @@ class DictaParallel:
     baseEndToken: int = None
     dataOrder: int = None
     dataLabel: str = None
+    base_tref: str = None
 
     def serialize(self):
         base_text = self.baseMatchedText
@@ -118,38 +119,71 @@ class DictaPage:
     fileName: str
     nakdanResponseFile: str
 
-    def parse(self, root_dir, book_title):
+    def parse(self, root_dir, book_title, with_nikkud=False):
         jin = self.__get_json_content(root_dir)
-        text = self.__get_text(jin)
-        paragraphs = text.split('\n')
+        tokens = self.__get_tokens(jin)
         index = self.__get_zero_based_index()
-        parallels = self.__get_parallels(jin, book_title, index, paragraphs)
-        paragraphs = self.__add_parallel_markers_to_text(paragraphs, parallels)
+        parallels = self.__get_parallels(jin)
+        paragraphs, token2seg, parallel_id2token, parallel_id2_data_order = self.serialize(tokens)
+        self.__add_link_info_to_parallels(parallels, token2seg, parallel_id2token, parallel_id2_data_order, book_title, index)
         return paragraphs, index, parallels
 
-    def __add_parallel_markers_to_text(self, paragraphs: List[str], parallels: List[DictaParallel]) -> str:
-        from bisect import bisect_right
-        parallels.sort(key=lambda x: x.baseStartChar)
-        parag_end_indexes = reduce(
-            lambda a, b: a + [len(b) + ((a[-1] + 1) if len(a) > 0 else 0)],
-            paragraphs, []
-        )
-        char_offset_by_paragraph = defaultdict(int)
-        for ipar, par in enumerate(parallels):
-            seg_index = bisect_right(parag_end_indexes, par.baseStartChar)
-            data_order = ipar + 1
-            data_label = data_order  # TODO for now
-            marker = f"""<i data-commentator="{DICTA_PARALLELS_INDEX_NAME}" data-label="{data_label}" data-order="{data_order}"></i>"""
-            temp_text = paragraphs[seg_index]
-            seg_offset = (parag_end_indexes[seg_index-1] + 1) if seg_index > 0 else 0
-            temp_start = par.baseStartChar + char_offset_by_paragraph[seg_index] - seg_offset
-            temp_text_left = temp_text[temp_start:temp_start + min(len(par.baseMatchedText), len(temp_text) - temp_start)]
-            assert temp_text_left == par.baseMatchedText[:len(temp_text_left)]
-            paragraphs[seg_index] = f"{temp_text[:temp_start]}{marker}{temp_text[temp_start:]}"
-            char_offset_by_paragraph[seg_index] += len(marker)
-            par.dataOrder = data_order
-            par.dataLabel = data_label
-        return paragraphs
+    @staticmethod
+    def __add_link_info_to_parallels(parallels, token2seg, parallel_id2token: dict, parallel_id2_data_order, book_title, page_index):
+        # HACK: try to fix missing parallel IDs
+        new_parallel_id2token = {}
+        new_parallel_id2data_order = {}
+        parallel_ids = sorted(parallel_id2token.keys())
+        prev_pid = -1
+        for pid in parallel_ids:
+            new_pid = (prev_pid + 1) if (pid > prev_pid + 1) else pid
+            new_parallel_id2token[new_pid] = parallel_id2token[pid]
+            new_parallel_id2data_order[new_pid] = parallel_id2_data_order[pid]
+            prev_pid = new_pid
+        parallel_id2token = new_parallel_id2token
+        parallel_id2_data_order = new_parallel_id2data_order
+        # END HACK
+
+        for parallel_id, parallel in enumerate(parallels):
+            data_order = parallel_id2_data_order[parallel_id]
+            itoken = parallel_id2token[parallel_id]
+            iseg = token2seg[itoken]
+
+            # modify parallel
+            parallel.dataOrder = data_order
+            parallel.dataLabel = str(data_order)
+            parallel.base_tref = f"{book_title} {page_index+1}:{iseg}"
+
+    @staticmethod
+    def serialize(tokens) -> Tuple[List[str], Dict[int, int], Dict[int, int], Dict[int, int]]:
+        """
+        Serialize data into list of strings which represents a section in the DB
+        :param tokens: token dicts
+        :return:
+        """
+        text = ""
+        parallel_ids_seen = set()
+        token2seg = {}
+        parallel_id2token = {}
+        parallel_id2_data_order = {}
+        curr_seg = 1
+        parallel_data_order = 1
+        for itoken, token in enumerate(tokens):
+            # parallel markers
+            token2seg[itoken] = curr_seg
+            if token['str'] == '\n': curr_seg += 1
+            curr_parallel_ids = set(token.get('sourcesPostProcessedIDs', []))
+            unseen_parallel_ids = curr_parallel_ids - parallel_ids_seen
+            for new_parallel_id in unseen_parallel_ids:
+                # parallel start
+                parallel_id2_data_order[new_parallel_id] = parallel_data_order
+                parallel_id2token[new_parallel_id] = itoken
+                marker = f"""<i data-commentator="{DICTA_PARALLELS_INDEX_NAME}" data-label="{parallel_data_order}" data-order="{parallel_data_order}"></i>"""
+                parallel_data_order += 1
+                text += marker
+            parallel_ids_seen |= unseen_parallel_ids
+            text += token['str']
+        return text.split('\n'), token2seg, parallel_id2token, parallel_id2_data_order
 
     def __get_zero_based_index(self):
         m = re.search(r'\d+$', self.displayName)
@@ -162,43 +196,15 @@ class DictaPage:
                 return json.load(fin)
 
     @staticmethod
-    def __get_text(jin):
-        return reduce(lambda a, b: a + b['str'], jin['tokens'], "")
+    def __get_tokens(jin):
+        return jin['tokens']
 
     @staticmethod
-    def __get_parallels(jin: dict, book_title: str, page_index: int, paragraphs: List[str]) -> List[DictaParallel]:
+    def __get_parallels(jin: dict) -> List[DictaParallel]:
         parallels = filter(lambda x: x and x['tool'] == 'parallels', jin['data']['postProcessedSources'])
-        return list(map(partial(DictaPage.__create_parallel_object, book_title, page_index, paragraphs), parallels))
+        # TODO relying on existence of 'baseStartToken' which doesn't exist in 'citation's for some reason
+        return [DictaParallel(**parallel_dict) for parallel_dict in parallels]
 
-    @staticmethod
-    def __create_parallel_object(book_title:str, page_index: int, paragraphs: List[str], parallel_dict: dict):
-        from bisect import bisect_right
-        base_text_match = parallel_dict['baseMatchedText']
-        parag_end_indexes = reduce(
-            lambda a, b: a + [len(b) + ((a[-1] + 1) if len(a) > 0 else 0)],
-            paragraphs, []
-        )
-        start_seg_index = bisect_right(parag_end_indexes, parallel_dict['baseStartChar'])
-        end_seg_index = bisect_right(parag_end_indexes, parallel_dict['baseStartChar'] + len(base_text_match))
-
-        # testing
-        segs_with_base_text = " ".join(paragraphs[start_seg_index: end_seg_index + 1])
-        assert base_text_match in segs_with_base_text
-        if start_seg_index < end_seg_index:
-            # move start forward
-            segs_wo_base_text = " ".join(paragraphs[start_seg_index+1: end_seg_index+1])
-            #assert base_text_match not in segs_wo_base_text
-            # move end backward
-            segs_wo_base_text = " ".join(paragraphs[start_seg_index:end_seg_index])
-            #assert base_text_match not in segs_wo_base_text
-
-        # base tref
-        seg_str = f"{start_seg_index+1}" if start_seg_index == end_seg_index else f"{start_seg_index+1}-{end_seg_index+1}"
-        base_tref = f"{book_title} {page_index+1}:{seg_str}"
-        return DictaParallel(
-            base_tref=base_tref,
-            **parallel_dict
-        )
 
 @dataclass
 class DictaBook:
@@ -245,7 +251,7 @@ class DictaBook:
         parsed_pages = []
         all_parallels = []
         for page in tqdm(self.pages, desc=self.fileName):
-            paragraphs, index, parallels = page.parse(self._root_path, self.index['title'])
+            paragraphs, index, parallels = page.parse(self._root_path, self.index['title'], with_nikkud=True)
             all_parallels += [list(parallels)]
             while len(parsed_pages) < index:
                 parsed_pages += [[]]
@@ -281,4 +287,6 @@ if __name__ == '__main__':
 TODO get rid of empty paragraphs but make sure start chars are correct
 TODO see if we can get citations working
 TODO add commentary markers
+
+data.nikudResults[token.nikudID].options[0].w
 """
