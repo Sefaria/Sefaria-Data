@@ -17,93 +17,73 @@ def dher3(s):
     return dher(s).split("…")[-1].strip()
 
 
-
-books = ["Joshua", "Judges", "I Samuel", "Ii Samuel", "I Kings", "Ii Kings"]
+book = -1
+books = ["Joshua", "Judges", "I Samuel", "II Samuel", "I Kings", "II Kings"]
 with open("The Early Prophets Just Translation.csv", 'r') as f:
 
     # if new chapter, dont add anything until we get to "\d .*?".  then we check to see if it has <bold> tags to decide if it's a footnote
     # all the while, we
     reader = csv.reader(f)
     text = defaultdict(dict)
-
-    book = 0
-    ch = 0
-    ftnote_ch = 0
     ftnotes = defaultdict(dict)
-    ftnotes_bool = False
-    lines = list(reader)
-    prev_ftnote_verse = 0
-    prev_verse = 0
-    for r, row in enumerate(lines):
+    for r, row in enumerate(reader):
         ref, comm = row
-        while book < len(books) and books[book] not in ref:
+        if re.search("^Chapter \d+. ", comm):
+            text_parsing = False
+            ftnotes_parsing = False
+        elif re.search("^\d+:?\d* <b>.*?</b>", comm):
+            ftnotes_parsing = True
+            text_parsing = False
+        elif comm.find("__") == 0:
+            ftnotes_parsing = True
+            text_parsing = False
+            continue
+        elif re.search("^\d+:?\d* ", comm):
+            text_parsing = True
+            ftnotes_parsing = False
+
+        if re.search("^1:1 ", comm) and text_parsing:
             book += 1
             ch = 0
-            parsing = False
-            ftnote_ch = 0
-        if comm.replace("_", "").strip() == "":
-            continue
+            text_parsing = True
+            ftnotes_parsing = False
+            ftnotes_ch = 0
+            text[books[book]] = {}
+            ftnotes[books[book]] = {}
 
-        prev_ftnotes_bool = ftnotes_bool
-        if re.search("^\d+-\d+", comm) is not None:
-            print(comm)
-        ftnotes_bool = bool(re.search("^\d+[:.]{1}\S+ .*?<b>", comm)) or bool(re.search("^\d+ .*?<b>", comm))
+        if text_parsing:
+            ch_w_verse = re.search("^(\d+):(\d+) (.*)", comm)
+            v_only = re.search("^(\d+) (.*)", comm)
+            if ch_w_verse:
+                ch = ch_w_verse.group(1)
+                text[books[book]][ch] = {}
+                v = ch_w_verse.group(2)
+                curr_comm = ch_w_verse.group(3)
+            elif v_only:
+                v = v_only.group(1)
+                curr_comm = v_only.group(2)
+            v = int(v)
+            text[books[book]][ch][v] = curr_comm
+        elif ftnotes_parsing:
+            ch_w_verse = re.search("^(\d+):(\d+) (.*)", comm)
+            v_only = re.search("^(\d+) (.*)", comm)
+            if ch_w_verse:
+                ftnotes_ch = ch_w_verse.group(1)
+                ftnotes[books[book]][ftnotes_ch] = {}
+                ftnotes_v = ch_w_verse.group(2)
+                curr_comm = ch_w_verse.group(3)
+            elif v_only:
+                ftnotes_v = v_only.group(1)
+                curr_comm = v_only.group(2)
+            ftnotes_v = int(ftnotes_v)
+            if ftnotes_v not in ftnotes[books[book]][ftnotes_ch]:
+                ftnotes[books[book]][ftnotes_ch][ftnotes_v] = []
+            dhs = re.findall("<b>.*?</b> .*?", curr_comm)
+            comms = re.split("<b>.*?</b> ", curr_comm)[1:]
+            assert len(dhs) == len(comms)
+            for x, y in zip(dhs, comms):
+                ftnotes[books[book]][ftnotes_ch][ftnotes_v].append(x+y)
 
-        if ref.split()[-1].split(".")[-1] == '1':
-            parsing = False
-
-        if re.search("^\d+[:.]{1}\S+ ", comm):
-            parsing = True
-            m = re.search("^(\d+)[:.]{1}(\S+) ", comm)
-            verse = m.group(2)
-            while not verse.isdigit():
-                verse = verse[:-1]
-            verse = int(verse)
-            comm = comm.replace(m.group(0), "", 1).strip()
-            if ftnotes_bool:
-                ftnote_ch = int(m.group(1))
-            else:
-                ch = int(m.group(1))
-
-            which_ch = ftnote_ch if ftnotes_bool else ch
-
-
-            if not ftnotes_bool:
-                if ch not in text[books[book]]:
-                    text[books[book]][which_ch] = []
-                assert len(text[books[book]][which_ch]) == int(verse)-1
-                verse -= len(text[books[book]][which_ch])
-                while verse > 1:
-                    text[books[book]][which_ch].append("")
-                    verse -= 1
-                text[books[book]][which_ch].append(comm)
-            else:
-                if ch not in ftnotes[books[book]]:
-                    ftnotes[books[book]][which_ch] = {}
-                comms = ["<b>"+c for c in comm.split("<b>")[1:]]
-                ftnotes[books[book]][which_ch][int(verse)] = comms
-                prev_ftnote_verse = int(verse)
-        elif re.search("^\d+ ", comm) and ch >= 1:
-            parsing = True
-            verse = re.search("^(\d+) ", comm).group(1)
-            if prev_ftnote_verse > int(verse) and ftnotes_bool:
-                raise Exception
-            comm = comm.replace(verse, "").strip()
-            if not ftnotes_bool:
-                text[books[book]][ch].append(comm)
-                assert len(text[books[book]][ch]) == int(verse)
-            else:
-                comms = ["<b>" + c for c in comm.split("<b>")[1:]] if ftnotes_bool else [comm]
-                ftnotes[books[book]][ftnote_ch][int(verse)] = comms
-                prev_ftnote_verse = int(verse)
-        elif ch >= 1 and parsing:
-            if prev_ftnotes_bool:
-                comms = ["<b>" + c for c in comm.split("<b>")[1:]] if ftnotes_bool else [comm]
-                for comm in comms:
-                    # ftnotes[books[book]][ftnote_ch][prev_ftnote_verse][-1] += "\n" + comm
-                    ftnotes[books[book]][ftnote_ch][prev_ftnote_verse].append(comm)
-            else:
-                text[books[book]][ch][-1] += "\n" + comm
 
 
 bad_results = []
@@ -123,8 +103,9 @@ for book in books:
             diff = len(Ref(f"{our_book} {ch}").all_segment_refs()) - len(text[book][ch])
             if diff != 0:
                 print(f"{diff} more verses: {our_book} {ch}")
+            text[book][ch] = convertDictToArray(text[book][ch])
             for p, pasuk in enumerate(text[book][ch]):
-                if p+1 in ftnotes[book][ch]:
+                if ch in ftnotes[book] and p+1 in ftnotes[book][ch]:
                     orig = text[book][ch][p]
                     base_words = bleach.clean(text[book][ch][p], tags=[], strip=True).replace("\n", "\n ").replace(":", "").replace("[", "").replace("]", "").replace(",", "").replace(".", "").replace(";", "")
                     base_words = base_words.split()
@@ -141,9 +122,7 @@ for book in books:
                     text[book][ch][p] = text[book][ch][p].split()
                     curr = 0
                     for i, x in enumerate(results["matches"]):
-
                         ellipsis = [el.strip() for el in re.search("<b>(.*?)</b>", ftnotes[book][ch][p + 1][i]).group(1).split("…")]
-
                         ellipsis_or_not_found = False
                         if x == (-1, -1):
                             j = i
@@ -189,8 +168,6 @@ for book in books:
                 writer.writerow([f"{book} {ch}:{p+1}", pasuk])
 
 for book in text:
-    if book in ["Joshua", "Judges", "I Samuel", "II Samuel"]:
-        continue
     text[book] = convertDictToArray(text[book])
     send_text = {
         "language": "en",
@@ -203,3 +180,97 @@ for book in text:
 
 for x in not_found:
     print(x)
+
+
+
+
+
+
+
+
+
+    #
+    #
+    #
+    #
+    # book = 0
+    # ch = 0
+    # ftnote_ch = 0
+    # ftnotes = defaultdict(dict)
+    # ftnotes_bool = False
+    # lines = list(reader)
+    # prev_ftnote_verse = 0
+    # prev_verse = 0
+    # for r, row in enumerate(lines):
+    #     ref, comm = row
+    #     while book < len(books) and books[book] not in ref:
+    #         book += 1
+    #         ch = 0
+    #         parsing = False
+    #         ftnote_ch = 0
+    #         text[book] = {}
+    #     if comm.replace("_", "").strip() == "":
+    #         continue
+    #
+    #     prev_ftnotes_bool = ftnotes_bool
+    #     if re.search("^\d+-\d+", comm) is not None:
+    #         print(comm)
+    #     ftnotes_bool = bool(re.search("^\d+[:.]{1}\S+ .*?<b>", comm)) or bool(re.search("^\d+ .*?<b>", comm))
+    #
+    #     if ref.split()[-1].split(".")[-1] == '1':
+    #         parsing = False
+    #
+    #     if re.search("^\d+[:.]{1}\S+ ", comm):
+    #         parsing = True
+    #         m = re.search("^(\d+)[:.]{1}(\S+) ", comm)
+    #         verse = m.group(2)
+    #         while not verse.isdigit():
+    #             verse = verse[:-1]
+    #         verse = int(verse)
+    #         comm = comm.replace(m.group(0), "", 1).strip()
+    #         if ftnotes_bool:
+    #             ftnote_ch = int(m.group(1))
+    #         else:
+    #             ch = int(m.group(1))
+    #
+    #         which_ch = ftnote_ch if ftnotes_bool else ch
+    #
+    #
+    #         if not ftnotes_bool:
+    #             if ch not in text[books[book]]:
+    #                 text[books[book]][which_ch] = []
+    #             assert len(text[books[book]][which_ch]) == int(verse)-1
+    #             verse -= len(text[books[book]][which_ch])
+    #             while verse > 1:
+    #                 text[books[book]][which_ch].append("")
+    #                 verse -= 1
+    #             text[books[book]][which_ch].append(comm)
+    #         else:
+    #             if ch not in ftnotes[books[book]]:
+    #                 ftnotes[books[book]][which_ch] = {}
+    #             comms = ["<b>"+c for c in comm.split("<b>")[1:]]
+    #             ftnotes[books[book]][which_ch][int(verse)] = comms
+    #             prev_ftnote_verse = int(verse)
+    #     elif re.search("^\d+ ", comm) and ch >= 1:
+    #         parsing = True
+    #         verse = re.search("^(\d+) ", comm).group(1)
+    #         if prev_ftnote_verse > int(verse) and ftnotes_bool:
+    #             raise Exception
+    #         comm = comm.replace(verse, "").strip()
+    #         if not ftnotes_bool:
+    #             text[books[book]][ch].append(comm)
+    #             assert len(text[books[book]][ch]) == int(verse)
+    #         else:
+    #             comms = ["<b>" + c for c in comm.split("<b>")[1:]] if ftnotes_bool else [comm]
+    #             ftnotes[books[book]][ftnote_ch][int(verse)] = comms
+    #             prev_ftnote_verse = int(verse)
+    #     elif ch >= 1 and parsing:
+    #         if prev_ftnotes_bool:
+    #             comms = ["<b>" + c for c in comm.split("<b>")[1:]] if ftnotes_bool else [comm]
+    #             for comm in comms:
+    #                 # ftnotes[books[book]][ftnote_ch][prev_ftnote_verse][-1] += "\n" + comm
+    #                 ftnotes[books[book]][ftnote_ch][prev_ftnote_verse].append(comm)
+    #         else:
+    #             text[books[book]][ch][-1] += "\n" + comm
+    #
+    #

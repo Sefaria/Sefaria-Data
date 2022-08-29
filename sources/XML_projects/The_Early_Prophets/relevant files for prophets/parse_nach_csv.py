@@ -17,7 +17,7 @@ def dher3(s):
     return dher(s).split("…")[-1].strip()
 
 new_rows = []
-with open("The Early Prophets.csv", 'r') as f:
+with open("The Early Prophets with Essays.csv", 'r') as f:
     curr_ref = ""
     for row in csv.reader(f):
         if re.search("^\d+:?\d* ", row[1]):# and row[0].rsplit(".")[0] in refs:
@@ -72,7 +72,7 @@ found_essay = None
 actual_text = {}
 for k in new_text:
     for book in ["Joshua", "Judges", "I Samuel", "II Samuel", "I Kings", "II Kings"]:
-        if re.search(f"The Early Prophets, {book}, \d+:\d+", k):
+        if re.search(f"The Early Prophets, {book}, \d+", k):
             actual_text[book] = []
             start_ftnotes = False
             # parse mini essays and footnotes
@@ -104,7 +104,7 @@ for k in new_text:
                 #     ref = ref.replace("(", "("+book+" ")
                 #     ref = ref.replace('–', "-")
 
-                if 2 == 2:
+                if m:
                     try:
                         not_found = True
                         for essay in essay_refs.keys():
@@ -136,8 +136,6 @@ with open("titles for translation prophets.csv", 'w') as translation_f:
         if node:
              root.append(node)
         node = SchemaNode()
-        for torah_book in torah_books:
-            title = title.replace(torah_book, "")
         node.add_primary_titles(title, "")
         translation_writer.writerow([title, ""])
         ref = ref.normal()
@@ -161,7 +159,7 @@ with open("titles for translation prophets.csv", 'w') as translation_f:
                 subpart = subpart.strip()
                 subessays[title][subtitle].append(subpart)
 
-json.dump(subessays, open("subessays_full_prohets.json", 'w'))
+json.dump(subessays, open("subessays_full_prophets.json", 'w'))
 vtitle = ""
 for invalid_ref in invalid_refs:
     title, ref = invalid_ref
