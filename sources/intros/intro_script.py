@@ -10,6 +10,10 @@ from sefaria.helper.schema import convert_simple_index_to_complex, convert_jagge
 from sources.functions import add_term
 
 
+# Todo
+# Handle position
+# Handle Legends of the Jews
+
 def create_intro(en_title, he_title):
     intro = JaggedArrayNode()
     intro.add_structure(["Paragraph"])
@@ -64,6 +68,8 @@ def create_index_dict():
 
 def run(index_dict):
     for node_title in index_dict:
+        print(node_title)
+        print(index_dict[node_title])
 
         seen = False
 
@@ -78,8 +84,8 @@ def run(index_dict):
         if len(index_dict[node_title]) > 1:  # Multiple indices for the children
             print("Converting children from JA to schema nodes")
             seen = True
-            for child in node.children:
-                child_tref = str(child)
+            for item in index_dict[node_title]:
+                child_tref = item['Parent Ref']
                 print(f"Adding intro to {child_tref}")
                 convert_children_to_schema_nodes(child_tref)
                 create_intro_complex_text(child_tref, en_title, he_title)
