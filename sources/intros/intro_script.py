@@ -10,9 +10,16 @@ from sefaria.helper.schema import convert_simple_index_to_complex, convert_jagge
 from sources.functions import add_term
 
 
+
 # Todo
-# Handle position
+# Handle position - throwing the issue
 # Handle Legends of the Jews
+
+
+# TODO
+# Add this to schema and import
+# def insert_second_child(new_node, parent_node):
+#     return attach_branch(new_node, parent_node, 1)
 
 def create_intro(en_title, he_title):
     intro = JaggedArrayNode()
@@ -26,10 +33,13 @@ def create_intro(en_title, he_title):
     return intro
 
 
-def create_intro_complex_text(tref, en_title, he_title):
+def create_intro_complex_text(tref, en_title, he_title, pos):
     node = Ref(tref).index_node
     intro = create_intro(en_title, he_title)
-    insert_first_child(intro, node)
+    if pos == 2:
+        insert_second_child(intro, node)
+    else: # if 1 or no position specified
+        insert_first_child(intro, node)
 
 
 def convert_children_to_schema_nodes(tref):
@@ -47,15 +57,6 @@ def create_index_dict():
         for row in german_mishnah_csv:
             parent_tref = row['Parent Ref']
 
-            if row["Intro Address Types"] or row["Intro Section Names"] or row["Intro Position"]:
-                print("Error: Contains a specific address, section or position type")
-                print(f"ref: {parent_tref}, "
-                      f"addr_types: {row['Intro Address Types']}, "
-                      f"sec_names: {row['Intro Section Names']}, "
-                      f"intro_pos: {row['Intro Position']}")
-                # TODO - figure out how to use Intro position to get it right
-                # raise Exception()
-
             i = library.get_index(parent_tref)
             idx_title = re.findall(r"Index: (.*)", str(i))[0]
 
@@ -68,8 +69,6 @@ def create_index_dict():
 
 def run(index_dict):
     for node_title in index_dict:
-        print(node_title)
-        print(index_dict[node_title])
 
         seen = False
 
@@ -80,27 +79,23 @@ def run(index_dict):
         row = index_dict[node_title]
         en_title = row[0]['Intro English Title']
         he_title = row[0]['Intro Hebrew Title']
+        pos = row[0]['Intro Position']
 
-        if len(index_dict[node_title]) > 1:  # Multiple indices for the children
-            print("Converting children from JA to schema nodes")
+        if len(row) > 1:  # Multiple indices for the children
             seen = True
+
             for item in index_dict[node_title]:
                 child_tref = item['Parent Ref']
-                print(f"Adding intro to {child_tref}")
                 convert_children_to_schema_nodes(child_tref)
-                create_intro_complex_text(child_tref, en_title, he_title)
+                create_intro_complex_text(child_tref, en_title, he_title, pos)
 
         elif isinstance(node, JaggedArrayNode):  # Simple index
             if not node.parent and not node.children:
                 seen = True
-                print("Converting simple index to complex")
-                print(en_title)
                 convert_simple_index_to_complex(library.get_index(node_title))
                 create_intro_complex_text(node_title, en_title, he_title)
         else:  # Schema node (BY case)
             seen = True
-            print("Adding intro to an existing schema node")
-            print(f"for {node_title}")
             i = library.get_index(node_title)
             intro = create_intro(en_title, he_title)
             insert_first_child(intro, i.nodes)
