@@ -160,7 +160,3 @@ def save_html_file(src, date):
 # end date = 4/22/2023
 if __name__ == '__main__':
     scrape()
-
-# TODO
-# Put number map in a separate file?
-# Make into a class modifying the shared list with a run() function
