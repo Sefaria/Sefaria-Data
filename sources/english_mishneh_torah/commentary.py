@@ -30,10 +30,10 @@ def get_chapter(file):
     capture = get_ref_metadata(file)
     regex_tuple = re.findall(r">(.*) - (.*)<", capture)[0]
     en_chapter = regex_tuple[1]
-    # NOTE: Skipping Haggadah text for now
     if en_chapter == "Text of the Haggadah":
-        pass
-    num_chapter = number_map[en_chapter]
+        num_chapter = 1
+    else:
+        num_chapter = number_map[en_chapter]
     return num_chapter
 
 
@@ -53,39 +53,53 @@ def get_halakha_number(file):
 def make_ref(book, chapter, halakha):
     return f"{book} {chapter}.{halakha}"
 
+
 def extract_dibbur_hamatchil(txt):
-    #Note: some have one ending hyphen, some have two
-    dhm = re.findall(r"^(.*?) -</b>", txt)
-    if not dhm:
-        dhm = re.findall(r"^(.*?) --</b>", txt)
-    return dhm
+    dhm = re.findall(r"^(.*?)</b>", txt)
+    return dhm[0]
+
 
 def extract_commentary_body(txt):
-    comm = re.findall(r"</b>(.*?)</p>", txt)
-    if not comm:
-        print(txt)
-    return comm
+    comm = re.findall(r"</b>(.*)</p>", txt, re.DOTALL)
+    return comm[0]
 
 
-html_dir = './html'
-count = 0
-for chapter_file in os.listdir(html_dir):
-    f = os.path.join(html_dir, chapter_file)
-    if os.path.isfile(f):
-        with open(f, 'r') as file:
-            cur_file = file.read()
-            commentary = get_commentary(cur_file)
-            if commentary:
-                chapter = get_chapter(cur_file)
-                book = get_book(cur_file)
-                for com in commentary:
-                    str_com = str(com)
-                    num = get_halakha_number(str_com)
-                    ref = make_ref(book, chapter, num)
-                    comm_list = re.findall(r"<p><b>(.*?)<p><b>", str_com, re.DOTALL)
-                    for comment in comm_list:
-                        # print(comment)
-                        # print("")
-                        dhm = extract_dibbur_hamatchil(comment)
-                        commentary_body = extract_commentary_body(comment)
-                        # print(f"{ref}, {dhm}, {commentary_body}")
+def scrape_commentary():
+    html_dir = './html'
+    footnote_dict_list = []
+    for chapter_file in os.listdir(html_dir):
+        f = os.path.join(html_dir, chapter_file)
+        if os.path.isfile(f):
+            with open(f, 'r') as file:
+                cur_file = file.read()
+                commentary = get_commentary(cur_file)
+                if commentary:
+                    chapter = get_chapter(cur_file)
+                    book = get_book(cur_file)
+                    for com in commentary:
+                        str_com = str(com)
+                        num = get_halakha_number(str_com)
+                        ref = make_ref(book, chapter, num)
+                        print(f"Scraping commentary for {ref}")
+                        comm_list = re.findall(r"<p><b>(.*?)<p><b>", str_com, re.DOTALL)
+                        for comment in comm_list:
+                            dhm = extract_dibbur_hamatchil(comment)
+                            commentary_body = extract_commentary_body(comment)
+                            footnote_dict_list.append(
+                                {'ref': ref, 'dibbur_hamatchil': dhm, 'commentary_body': commentary_body})
+    return footnote_dict_list
+
+
+def export_cleaned_data_to_csv(list):
+    """
+    This function writes the data to a new CSV
+    """
+    with open('commentary.csv', 'w+') as csvfile:
+        headers = ['ref', 'dibbur_hamatchil', 'commentary_body']
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writerows(list)
+
+
+if __name__ == '__main__':
+    commentary_list = scrape_commentary()
+    export_cleaned_data_to_csv(commentary_list)
