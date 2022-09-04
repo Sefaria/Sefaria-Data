@@ -169,10 +169,13 @@ def scrape():
                 f"https://www.chabad.org/dailystudy/rambam.asp?tdate={date_string}&rambamChapters=1")
             get_chapter(src, halakhot, date_string)
 
-    # with open('mishneh_torah_data_scraped_ftns.csv', 'a') as csvfile:
-    #     headers = ['ref', 'text']
-    #     writer = csv.DictWriter(csvfile, fieldnames=headers)
-    #     writer.writerows(halakhot)
+            # Uncomment below if you want to save each HTML file
+            # save_html_file(src, single_date)
+
+    with open('mishneh_torah_data_scraped_ftns.csv', 'a') as csvfile:
+        headers = ['ref', 'text']
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writerows(halakhot)
 
     print("Data Scraping complete")
     return halakhot
@@ -206,6 +209,13 @@ def insert_footnotes(txt, footnote_dict):
         patt = f"<a class=\"footnote_ref\" href=\"javascript:doFootnote\('.*?'\);\" name=\"footnoteRef{id}\">\d*?</a>"
         txt = re.sub(patt, ftn_string, txt)
     return txt
+
+
+def save_html_file(src, date):
+    file_name = f"html/{date}-rambam-html.txt"
+    print(f"Writing {file_name}")
+    with open(file_name, 'w+') as file:
+        file.write(src)
 
 
 # start_date = 7/22/2020
