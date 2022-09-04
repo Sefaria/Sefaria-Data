@@ -14,6 +14,7 @@ from base64 import b64decode, b64encode
 import statistics
 
 from sefaria.model import *
+from utilities import create_book_name_map, sefaria_book_names
 
 
 def convert_base_64_img(halakha):
@@ -67,106 +68,6 @@ def setup_data():
             if book not in chabad_book_names:
                 chabad_book_names.append(book)
     return chabad_book_names, mishneh_torah_list
-
-
-def create_book_name_map(chabad_book_names):
-    """
-    This function creates a map between the Chabad Rambam names to the Sefaria Rambam names
-    """
-    sefaria_book_names = [
-        'Foundations of the Torah',
-        'Human Dispositions',
-        'Torah Study',
-        'Foreign Worship and Customs of the Nations',
-        'Repentance',
-        'Reading the Shema',
-        'Prayer and the Priestly Blessing',
-        'Tefillin, Mezuzah and the Torah Scroll',
-        'Fringes',
-        'Blessings',
-        'Circumcision',
-        'The Order of Prayer',
-        'Sabbath',
-        'Eruvin',
-        'Rest on the Tenth of Tishrei',
-        'Rest on a Holiday',
-        'Leavened and Unleavened Bread',
-        'Shofar, Sukkah and Lulav',
-        'Sheqel Dues',
-        'Sanctification of the New Month',
-        'Fasts',
-        'Scroll of Esther and Hanukkah',
-        'Marriage',
-        'Divorce',
-        'Levirate Marriage and Release',
-        'Virgin Maiden',
-        'Woman Suspected of Infidelity',
-        'Forbidden Intercourse',
-        'Forbidden Foods',
-        'Ritual Slaughter',
-        'Oaths',
-        'Vows',
-        'Nazariteship',
-        'Appraisals and Devoted Property',
-        'Diverse Species',
-        'Gifts to the Poor',
-        'Heave Offerings',
-        'Tithes',
-        'Second Tithes and Fourth Year\'s Fruit',
-        'First Fruits and other Gifts to Priests Outside the Sanctuary',
-        'Sabbatical Year and the Jubilee',
-        'The Chosen Temple',
-        'Vessels of the Sanctuary and Those who Serve Therein',
-        'Admission into the Sanctuary',
-        'Things Forbidden on the Altar',
-        'Sacrificial Procedure',
-        'Daily Offerings and Additional Offerings',
-        'Sacrifices Rendered Unfit',
-        'Service on the Day of Atonement',
-        'Trespass',
-        'Paschal Offering',
-        'Festival Offering',
-        'Firstlings',
-        'Offerings for Unintentional Transgressions',
-        'Offerings for Those with Incomplete Atonement',
-        'Substitution',
-        'Defilement by a Corpse',
-        'Red Heifer',
-        'Defilement by Leprosy',
-        'Those Who Defile Bed or Seat',
-        'Other Sources of Defilement',
-        'Defilement of Foods',
-        'Vessels',
-        'Immersion Pools',
-        'Damages to Property',
-        'Theft',
-        'Robbery and Lost Property',
-        'One Who Injures a Person or Property',
-        'Murderer and the Preservation of Life',
-        'Sales',
-        'Ownerless Property and Gifts',
-        'Neighbors',
-        'Agents and Partners',
-        'Slaves',
-        'Hiring',
-        'Borrowing and Deposit',
-        'Creditor and Debtor',
-        'Plaintiff and Defendant',
-        'Inheritances',
-        'The Sanhedrin and the Penalties within their Jurisdiction',
-        'Testimony',
-        'Rebels',
-        'Mourning',
-        'Kings and Wars'
-    ]
-
-    # Confirmed that book names aligned, creating map
-    name_map = {}
-    for i in range(len(chabad_book_names)):
-        name_map[chabad_book_names[i]] = sefaria_book_names[i]
-        if chabad_book_names[i] == "Rotzeach uShmirat Nefesh":
-            print(sefaria_book_names[i])
-    return name_map
 
 
 def rename_refs_to_sefaria(mishneh_torah_list, name_map):
@@ -313,7 +214,7 @@ def html_clean_up(mt_list):
 
 if __name__ == '__main__':
     chabad_book_names, mishneh_torah_list = setup_data()
-    name_map = create_book_name_map(chabad_book_names)
+    name_map = create_book_name_map(chabad_book_names, sefaria_book_names)
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
     mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
     mishneh_torah_list = img_convert(mishneh_torah_list)
