@@ -1,4 +1,4 @@
-
+import csv
 
 number_map = {
     "Chapter One": 1,
@@ -160,3 +160,12 @@ def create_book_name_map(chabad_book_names, sefaria_book_names):
     for i in range(len(chabad_book_names)):
         name_map[chabad_book_names[i]] = sefaria_book_names[i]
     return name_map
+
+def export_data_to_csv(list, file_name, headers_list):
+    """
+    This function writes the data to a new CSV
+    """
+    with open(f"{file_name}.csv", 'w+') as csvfile:
+        headers = headers_list
+        writer = csv.DictWriter(csvfile, fieldnames=headers)
+        writer.writerows(list)
