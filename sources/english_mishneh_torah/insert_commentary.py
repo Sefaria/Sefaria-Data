@@ -1,5 +1,23 @@
 import csv
 import re
+from sefaria.helper.normalization import RegexNormalizer
+from utilities import sefaria_book_names, chabad_book_names, create_book_name_map, export_data_to_csv
+
+map = create_book_name_map(chabad_book_names, sefaria_book_names)
+
+
+def create_chabad_ref(sefaria_ref):
+    book_name_capture = re.findall(r"(.*) \d+.", sefaria_ref)
+    sef_book_name = book_name_capture[0]
+    chabad_book_name = ""
+
+    for chabad_key in map:
+        if map[chabad_key] == sef_book_name:
+            chabad_book_name = chabad_key
+
+    num_ref = re.findall(r"(\d+)\.", sefaria_ref)
+    chapter_num = num_ref[0]
+    return f"{chabad_book_name} - Chapter {chapter_num}"
 
 
 def clean_dibbur_hamatchil(text):
@@ -30,6 +48,12 @@ def clean_dhm_links(text):
     return text
 
 
+def insert_footnote(insertion_index, halakha_text, commentary_text):
+    footnote = f"<sup class=\"footnote-marker\">1</sup><i class=\"footnote\">{commentary_text}</i>"
+    added_footnote = halakha_text[:insertion_index]+footnote+halakha_text[insertion_index:]
+    return added_footnote
+
+
 # Ingest cleaned MT as a dict
 mt_dict = {}
 with open('mishneh_torah_data_cleaned.csv', newline='') as csvfile:
@@ -39,37 +63,66 @@ with open('mishneh_torah_data_cleaned.csv', newline='') as csvfile:
         mt_dict[ref] = row[1]
 
 count = 0
+manual_comms = []
+inserted_comms = []
 with open('commentary.csv', newline='') as csvfile:
     r = csv.reader(csvfile, delimiter=',')
     for row in r:
+
+        former_ref = ref
         ref = row[0]
+
+        # skip first row
+        if ref == "Blessings 4.6":
+            inserted_text = ""
+
+        if former_ref != ref:
+            # text complete, append and reset
+            inserted_comms.append({
+                'ref': former_ref,
+                'text': inserted_text
+            })
+
+            # reset the text
+            inserted_text = ""
+
+
+        chabad_ref = create_chabad_ref(ref)
         dhm = clean_dibbur_hamatchil(row[1])
         dhm = clean_dhm_links(dhm)
         com_txt = row[2]
-        body_text = mt_dict[ref]
-        # print(ref, mt_dict[ref])
-        # print(ref, dhm, txt)
+        body_text = mt_dict[ref] if inserted_text == "" else inserted_text
+
         if dhm in body_text:
             insert_footnote_index = body_text.index(dhm) + len(dhm)
 
         if dhm not in body_text:
-            # If so, why is the shofar not sounded? Because of a decree [of the Sages] lest a person take it in his hands and carry it to a colleague so that the latter can blow for him
-            body_no_html_punct = remove_all_html_punct(body_text)
-            if dhm in body_no_html_punct:
-                insert_footnote_index = body_no_html_punct.index(dhm) + len(dhm) - 1
-                if body_text[insert_footnote_index:insert_footnote_index + 4] == '</i>':
-                    insert_footnote_index = insert_footnote_index + 4
-                if body_text[insert_footnote_index:insert_footnote_index + 3] == '<br>':
-                    insert_footnote_index = insert_footnote_index + 3
-            dhm_no_html = remove_all_html_punct(dhm)
-            if dhm_no_html in body_no_html_punct:
-                insert_footnote_index = body_no_html_punct.index(dhm_no_html) + len(dhm_no_html) - 1
-                if body_text[insert_footnote_index:insert_footnote_index + 4] == '</i>':
-                    insert_footnote_index = insert_footnote_index + 4
+            non_alphabetic_normalizer = RegexNormalizer("[,\.?'\":;!@#$%^&*\[\]{}()\s-]|<.*?>", '')
+            normalized_dhm = non_alphabetic_normalizer.normalize(dhm)
+            normalized_body_text = non_alphabetic_normalizer.normalize(body_text)
 
-            else:
+            norm_dhm_idx_start = normalized_body_text.find(normalized_dhm)
+            if norm_dhm_idx_start == -1:
+                manual_comms.append({
+                    'sefaria_ref': ref,
+                    'chabad_ref': chabad_ref,
+                    'halakha_text': body_text,
+                    'dibbur_hamatchil': dhm,
+                    'commentary': com_txt
+                })
                 count += 1
-                print(f"flagging {ref}, not dhm perfect match")
-                print(f"dhm: {dhm}, text: {mt_dict[ref]}")
-                print()
-    print(f"{count} not perfect matches")
+            else:
+                norm_dhm_range = (norm_dhm_idx_start, norm_dhm_idx_start + len(normalized_dhm))
+
+                mapping = non_alphabetic_normalizer.get_mapping_after_normalization(body_text)
+                orig_range = \
+                non_alphabetic_normalizer.convert_normalized_indices_to_unnormalized_indices([norm_dhm_range], mapping)[
+                    0]
+                insert_footnote_index = orig_range[-1] + 1
+
+        # Insert the footnote at the right index.
+        inserted_text = insert_footnote(insert_footnote_index, body_text, com_txt)
+
+    export_data_to_csv(manual_comms, "manual_commentaries",
+                       headers_list=['sefaria_ref', 'chabad_ref', 'halakha_text', 'dibbur_hamatchil', 'commentary'])
+    export_data_to_csv(inserted_comms, "inserted_commentaries", headers_list=['ref', 'text'])
