@@ -14,7 +14,7 @@ from base64 import b64decode, b64encode
 import statistics
 
 from sefaria.model import *
-from utilities import create_book_name_map, sefaria_book_names
+from utilities import create_book_name_map, sefaria_book_names, export_data_to_csv
 
 
 def convert_base_64_img(halakha):
@@ -178,7 +178,28 @@ def stats_flag(mt_list):
     return new_list
 
 
-def html_clean_up(mt_list):
+def generate_html_report(text, unique_html_tags, unique_html_tag_dict_list):
+    tags = re.findall(r"<(.*?)>", txt)
+    for each_tag in tags:
+        tag_name = re.findall(r"^(.*?)\s", each_tag)
+        if tag_name:
+            if tag_name[0] not in unique_html_tags:
+                unique_html_tags[tag_name[0]] = 1
+
+                # Save each first occurrence for report
+                unique_html_tag_dict_list.append({
+                    'tag': tag_name[0],
+                    'example_ref': halakha['ref'],
+                    'example_text': txt
+                })
+
+            else:
+                unique_html_tags[tag_name[0]] += 1
+
+
+def html_clean_up(mt_list, generate_report=False):
+    unique_html_tags = {}
+    unique_html_tag_dict_list = []
     new_list = []
     for halakha in mt_list:
         txt = halakha['text']
@@ -208,7 +229,15 @@ def html_clean_up(mt_list):
             replacement = f"<sup class=\"footnote-marker\">{sup}</sup><i class=\"footnote\">"
             txt = re.sub(patt, replacement, txt)
 
+        if generate_report:
+            generate_html_report(txt, unique_html_tags, unique_html_tag_dict_list)
+
         new_list.append({'ref': halakha['ref'], 'text': txt})
+
+    if generate_report:
+        export_data_to_csv(unique_html_tag_dict_list, 'html_report', headers_list=['tag', 'example_ref', 'example_text'])
+        print(unique_html_tags)
+
     return new_list
 
 
