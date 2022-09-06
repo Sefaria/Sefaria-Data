@@ -1,6 +1,12 @@
+import django
+
+django.setup()
+
 import csv
 import re
 from sefaria.helper.normalization import RegexNormalizer
+
+from sefaria.model import *
 from utilities import sefaria_book_names, chabad_book_names, create_book_name_map, export_data_to_csv
 
 map = create_book_name_map(chabad_book_names, sefaria_book_names)
@@ -32,7 +38,9 @@ def remove_all_html_punct(text):
     return cleaned
 
 
-def clean_dhm_links(text):
+def clean_html(text):
+
+    # Convert links
     links = re.findall(r"<a href=.*?>(.*?)<\/a>", text)
     for link in links:
 
@@ -45,6 +53,7 @@ def clean_dhm_links(text):
         clean_link = re.sub(r"[^A-Za-z :0-9]", " ", link)
         patt = f"<a href=.*?>{re_link}<\/a>"
         text = re.sub(patt, clean_link, text)
+
     return text
 
 
@@ -89,8 +98,8 @@ with open('commentary.csv', newline='') as csvfile:
 
         chabad_ref = create_chabad_ref(ref)
         dhm = clean_dibbur_hamatchil(row[1])
-        dhm = clean_dhm_links(dhm)
-        com_txt = row[2]
+        dhm = clean_html(dhm)
+        com_txt = clean_html(row[2])
         body_text = mt_dict[ref] if inserted_text == "" else inserted_text
 
         if dhm in body_text:
