@@ -12,9 +12,10 @@ from PIL import Image
 from io import BytesIO
 from base64 import b64decode, b64encode
 import statistics
+import bleach
 
 from sefaria.model import *
-from utilities import create_book_name_map, sefaria_book_names, export_data_to_csv
+from utilities import create_book_name_map, sefaria_book_names, export_data_to_csv, ALLOWED_TAGS, ALLOWED_ATTRS
 
 
 def convert_base_64_img(halakha):
@@ -197,10 +198,12 @@ def generate_html_report(text, unique_html_tags, unique_html_tag_dict_list):
                 unique_html_tags[tag_name[0]] += 1
 
 
-def html_clean_up(mt_list, generate_report=False):
+def html_clean_up(mt_list, generate_html_report=False, generate_br_report=False):
     unique_html_tags = {}
     unique_html_tag_dict_list = []
+    br_report_list = []
     new_list = []
+    count=0
     for halakha in mt_list:
         txt = halakha['text']
 
@@ -229,15 +232,28 @@ def html_clean_up(mt_list, generate_report=False):
             replacement = f"<sup class=\"footnote-marker\">{sup}</sup><i class=\"footnote\">"
             txt = re.sub(patt, replacement, txt)
 
-        if generate_report:
+        if generate_html_report:
             generate_html_report(txt, unique_html_tags, unique_html_tag_dict_list)
+
+        txt = bleach.clean(txt,
+                           tags=ALLOWED_TAGS,
+                           attributes=ALLOWED_ATTRS,
+                           strip=True)
+
+        if generate_br_report:
+            is_odd_br = re.search(r"[^?.:!]<br>", txt)
+            if is_odd_br:
+                count+=1
+                br_report_list.append({'ref': halakha['ref'], 'text': txt})
 
         new_list.append({'ref': halakha['ref'], 'text': txt})
 
-    if generate_report:
-        export_data_to_csv(unique_html_tag_dict_list, 'html_report', headers_list=['tag', 'example_ref', 'example_text'])
+    if generate_html_report:
+        export_data_to_csv(unique_html_tag_dict_list, 'html_report',
+                           headers_list=['tag', 'example_ref', 'example_text'])
         print(unique_html_tags)
-
+    if generate_br_report:
+        export_data_to_csv(br_report_list, 'br_tag_report', headers_list=['ref', 'text'])
     return new_list
 
 
@@ -247,5 +263,5 @@ if __name__ == '__main__':
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
     mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
     mishneh_torah_list = img_convert(mishneh_torah_list)
-    mishneh_torah_list = html_clean_up(mishneh_torah_list)
+    mishneh_torah_list = html_clean_up(mishneh_torah_list, generate_html_report=False, generate_br_report=True)
     export_cleaned_data_to_csv(mishneh_torah_list)

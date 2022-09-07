@@ -1,4 +1,12 @@
 import csv
+ALLOWED_TAGS = ("i", "b", "br", "u", "strong", "em", "big", "small", "img", "sup", "sub", "span", "a")
+ALLOWED_ATTRS = {
+            'sup': ['class'],
+            'span': ['class', 'dir'],
+            'i': ['data-overlay', 'data-value', 'data-commentator', 'data-order', 'class', 'data-label', 'dir'],
+            'img': lambda name, value: name == 'src' and value.startswith("data:image/"),
+            'a': ['dir', 'class', 'href', 'data-ref', "data-ven", "data-vhe"],
+        }
 
 number_map = {
     "Chapter One": 1,

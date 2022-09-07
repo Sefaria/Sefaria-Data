@@ -4,10 +4,11 @@ django.setup()
 
 import csv
 import re
+import bleach
 from sefaria.helper.normalization import RegexNormalizer
 
 from sefaria.model import *
-from utilities import sefaria_book_names, chabad_book_names, create_book_name_map, export_data_to_csv
+from utilities import sefaria_book_names, chabad_book_names, create_book_name_map, export_data_to_csv, ALLOWED_ATTRS, ALLOWED_TAGS
 
 map = create_book_name_map(chabad_book_names, sefaria_book_names)
 
@@ -53,6 +54,11 @@ def clean_html(text):
         clean_link = re.sub(r"[^A-Za-z :0-9]", " ", link)
         patt = f"<a href=.*?>{re_link}<\/a>"
         text = re.sub(patt, clean_link, text)
+
+    text = bleach.clean(text,
+                     tags=ALLOWED_TAGS,
+                     attributes=ALLOWED_ATTRS,
+                     strip=True)
 
     return text
 
@@ -135,3 +141,8 @@ with open('commentary.csv', newline='') as csvfile:
     export_data_to_csv(manual_comms, "manual_commentaries",
                        headers_list=['sefaria_ref', 'chabad_ref', 'halakha_text', 'dibbur_hamatchil', 'commentary'])
     export_data_to_csv(inserted_comms, "inserted_commentaries", headers_list=['ref', 'text'])
+
+
+# TODO in PP and here
+# Bleach text for tags we don't want
+# Report for </p><p> preceded by either a comma, or an alphabetic char
