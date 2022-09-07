@@ -249,11 +249,11 @@ def html_clean_up(mt_list, generate_html_report=False, generate_br_report=False)
         new_list.append({'ref': halakha['ref'], 'text': txt})
 
     if generate_html_report:
-        export_data_to_csv(unique_html_tag_dict_list, 'html_report',
+        export_data_to_csv(unique_html_tag_dict_list, 'qa_reports/html_report',
                            headers_list=['tag', 'example_ref', 'example_text'])
         print(unique_html_tags)
     if generate_br_report:
-        export_data_to_csv(br_report_list, 'br_tag_report', headers_list=['ref', 'text'])
+        export_data_to_csv(br_report_list, 'qa_reports/br_tag_report', headers_list=['ref', 'text'])
     return new_list
 
 
@@ -263,5 +263,5 @@ if __name__ == '__main__':
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
     mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
     mishneh_torah_list = img_convert(mishneh_torah_list)
-    mishneh_torah_list = html_clean_up(mishneh_torah_list, generate_html_report=False, generate_br_report=True)
+    mishneh_torah_list = html_clean_up(mishneh_torah_list)
     export_cleaned_data_to_csv(mishneh_torah_list)
