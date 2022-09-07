@@ -1,0 +1,20 @@
+import django
+django.setup()
+from sefaria.model import *
+from utilities import sefaria_book_names
+
+if __name__ == '__main__':
+    for book in sefaria_book_names:
+        index = library.get_index(f"Mishneh Torah, {book}")
+        en_version_title = "Mishneh Torah, trans. by Eliyahu Touger. Jerusalem, Moznaim Pub. c1986-c2007"
+        he_version_title = "Torat Emet 363"
+        for section_ref in index.all_section_refs():
+            en_text = section_ref.text("en", vtitle=en_version_title).text
+            he_text = section_ref.text("he", vtitle=he_version_title).text
+
+            # filter empty segments
+            en_text = list(filter(lambda x: len(x) > 0, en_text))
+            he_text = list(filter(lambda x: len(x) > 0, he_text))
+
+            if len(en_text) != len(he_text):
+                print(f"{section_ref.normal()} has non-equal he and en: he: {len(he_text)}, en: {len(en_text)}")
