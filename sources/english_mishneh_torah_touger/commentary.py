@@ -55,13 +55,18 @@ def make_ref(book, chapter, halakha):
 
 
 def extract_dibbur_hamatchil(txt):
-    dhm = re.findall(r"^(.*?)</b>", txt)
+    dhm = re.findall(r"^(.*?)</b>", txt, re.DOTALL)
     return dhm[0]
 
 
 def extract_commentary_body(txt):
-    comm = re.findall(r"</b>(.*)</p>", txt, re.DOTALL)
-    return comm[0]
+    index_start = txt.find('</b>')
+    index_start = index_start + len('</b>')
+    comm_text = txt[index_start:]
+    end_scrape = comm_text.find('</co:rambam_commentary>')
+    if end_scrape > 0:
+        return comm_text[:end_scrape]
+    return txt[index_start:]
 
 
 def scrape_commentary():
@@ -81,7 +86,9 @@ def scrape_commentary():
                         num = get_halakha_number(str_com)
                         ref = make_ref(book, chapter, num)
                         print(f"Scraping commentary for {ref}")
-                        comm_list = re.findall(r"<p><b>(.*?)<p><b>", str_com, re.DOTALL)
+                        comm_list = re.split(r"<b>", str_com, re.DOTALL)
+                        comm_list=comm_list[1:]
+                        # print(comm_list)
                         for comment in comm_list:
                             dhm = extract_dibbur_hamatchil(comment)
                             commentary_body = extract_commentary_body(comment)
