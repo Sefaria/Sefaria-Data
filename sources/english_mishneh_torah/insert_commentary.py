@@ -13,6 +13,8 @@ from utilities import sefaria_book_names, chabad_book_names, create_book_name_ma
 map = create_book_name_map(chabad_book_names, sefaria_book_names)
 
 
+# TODO - move inserted text into cleaned final data set
+
 def create_chabad_ref(sefaria_ref):
     book_name_capture = re.findall(r"(.*) \d+.", sefaria_ref)
     sef_book_name = book_name_capture[0]
@@ -138,11 +140,7 @@ with open('commentary.csv', newline='') as csvfile:
         # Insert the footnote at the right index.
         inserted_text = insert_footnote(insert_footnote_index, body_text, com_txt)
 
-    export_data_to_csv(manual_comms, "manual_commentaries",
+    export_data_to_csv(manual_comms, "qa_reports/manual_commentaries",
                        headers_list=['sefaria_ref', 'chabad_ref', 'halakha_text', 'dibbur_hamatchil', 'commentary'])
-    export_data_to_csv(inserted_comms, "inserted_commentaries", headers_list=['ref', 'text'])
+    export_data_to_csv(inserted_comms, "qa_reports/inserted_commentaries", headers_list=['ref', 'text'])
 
-
-# TODO in PP and here
-# Bleach text for tags we don't want
-# Report for </p><p> preceded by either a comma, or an alphabetic char
