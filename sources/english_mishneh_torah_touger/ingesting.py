@@ -6,6 +6,7 @@ import csv
 from collections import defaultdict
 from sefaria.model import *
 from sefaria.tracker import modify_bulk_text
+from utilities import add_chabad_book_names_alt_titles
 
 
 def create_mappings():
@@ -48,5 +49,7 @@ def upload_text(mappings):
 
 
 if __name__ == '__main__':
+    # Uncomment and run line below if first time through
+    # add_chabad_book_names_alt_titles()
     map = create_mappings()
     upload_text(map)
