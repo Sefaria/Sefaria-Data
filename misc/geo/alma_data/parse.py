@@ -1,4 +1,7 @@
 import django, re, csv, json
+
+import sefaria.system.exceptions
+
 django.setup()
 from sefaria.model import *
 
@@ -233,6 +236,8 @@ def save_place_to_topic(existing_topic, en_title, he_title, geo, wikidata, pleia
     except Exception as e:
         print(e)
 
+    return t.slug
+
 
 def check_places():
     places_in_db = Topic().load({"slug": 'places'}).topics_by_link_type_recursively()
@@ -245,7 +250,7 @@ def check_places():
         }
     }).save()
 
-
+    he2slug_map = {}
     place_names =[
         name["text"] for place in places_in_db for name in place.titles
     ]
@@ -270,17 +275,23 @@ def check_places():
                 ts = TopicSet.load_by_title(row[1])
                 for t in ts:
                     if(t.has_types({'places'})):
-                        save_place_to_topic(t, row[0], row[1], geo, row[4], row[5])
+                        slug = save_place_to_topic(t, row[0], row[1], geo, row[4], row[5])
+                        he2slug_map[row[1]] = slug
 
             else:
-                save_place_to_topic(None, row[0], row[1], geo, row[4], row[5])
+                slug = save_place_to_topic(None, row[0], row[1], geo, row[4], row[5])
+                he2slug_map[row[1]] = slug
+    return he2slug_map
+
 
 def find_potential_matches(raw_ref, headword, place):
     potential_matches = []
     headword_re = "[\u0591-\u05C7]*".join([letter for letter in headword])
 
-    ref = Ref(raw_ref)
-
+    try:
+        ref = Ref(raw_ref)
+    except:
+        return potential_matches
 
     if ref.is_book_level():
         return potential_matches
@@ -308,7 +319,8 @@ def find_potential_matches(raw_ref, headword, place):
 
     return potential_matches
 
-def create_geo_ref_topic_links():
+
+def create_geo_ref_topic_links(he2slug_map):
 
     with open('place_topic_links (copy).csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -318,7 +330,6 @@ def create_geo_ref_topic_links():
         no_match_refs = []
         potential_false_positives = []
         expected_good_matches = []
-
 
         for row in csv_reader:
             ref, headword, place = row
@@ -335,31 +346,29 @@ def create_geo_ref_topic_links():
                 expected_good_matches.append(potential_matches[0])
                 print(f'{potential_matches}: {headword}')
 
-                ts = TopicSet.load_by_title(place)
-                for t in ts:
-                    if(t.has_types({'places'})):
-                        mention_link = {
-                            "toTopic": t.slug,
-                            "linkType": "mention",
-                            "dataSource": "alma",
-                            "class": "refTopic",
-                            "is_sheet": False,
-                            "ref": potential_matches[0][0],
-                            "expandedRefs": [potential_matches[0][0]],
-                            "charLevelData": {
-                                "startChar": potential_matches[0][2],
-                                "endChar": potential_matches[0][3],
-                                "versionTitle": Ref(potential_matches[0][0]).text(lang='he').version().versionTitle,
-                                "language": 'he',
-                                "text": potential_matches[0][4]
-                            },
-                            "generatedBy": "geo-script-import"
-                        }
-                        try:
-                            RefTopicLink(mention_link).save()
+                slug = he2slug_map[place]
+                mention_link = {
+                    "toTopic": slug,
+                    "linkType": "mention",
+                    "dataSource": "alma",
+                    "class": "refTopic",
+                    "is_sheet": False,
+                    "ref": potential_matches[0][0],
+                    "expandedRefs": [potential_matches[0][0]],
+                    "charLevelData": {
+                        "startChar": potential_matches[0][2],
+                        "endChar": potential_matches[0][3],
+                        "versionTitle": Ref(potential_matches[0][0]).text(lang='he').version().versionTitle,
+                        "language": 'he',
+                        "text": potential_matches[0][4]
+                    },
+                    "generatedBy": "geo-script-import"
+                }
+                try:
+                    RefTopicLink(mention_link).save()
 
-                        except Exception as e:
-                            print(e)
+                except sefaria.system.exceptions.DuplicateRecordError as e:
+                    print(e)
 
     write_csv("no_match_refs.csv", no_match_refs)
     write_csv("expected_good_matches.csv", expected_good_matches)
@@ -370,8 +379,8 @@ def create_geo_ref_topic_links():
     print(len(no_match_refs))
 
 
-check_places()
-#create_geo_ref_topic_links()
+he2slug_map = check_places()
+create_geo_ref_topic_links(he2slug_map)
 
 
 
