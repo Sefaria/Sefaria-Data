@@ -87,13 +87,9 @@ def scrape_commentary():
                         ref = make_ref(book, chapter, num)
                         print(f"Scraping commentary for {ref}")
                         comm_list = re.split(r"<b>", str_com, re.DOTALL)
-                        comm_list=comm_list[1:]
-                        # print(comm_list)
-                        for comment in comm_list:
-                            dhm = extract_dibbur_hamatchil(comment)
-                            commentary_body = extract_commentary_body(comment)
-                            footnote_dict_list.append(
-                                {'ref': ref, 'dibbur_hamatchil': dhm, 'commentary_body': commentary_body})
+                        comm_list = comm_list[1:]
+                        footnote_dict_list.append(
+                            {'ref': ref, 'commentary': comm_list})
     return footnote_dict_list
 
 
@@ -102,7 +98,7 @@ def export_cleaned_data_to_csv(list):
     This function writes the data to a new CSV
     """
     with open('commentary.csv', 'w+') as csvfile:
-        headers = ['ref', 'dibbur_hamatchil', 'commentary_body']
+        headers = ['ref', 'commentary']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(list)
 
