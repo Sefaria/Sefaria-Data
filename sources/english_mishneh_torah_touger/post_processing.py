@@ -179,7 +179,7 @@ def stats_flag(mt_list):
     return new_list
 
 
-def generate_html_report(text, unique_html_tags, unique_html_tag_dict_list):
+def generate_html_report(txt, unique_html_tags, unique_html_tag_dict_list):
     tags = re.findall(r"<(.*?)>", txt)
     for each_tag in tags:
         tag_name = re.findall(r"^(.*?)\s", each_tag)
@@ -210,6 +210,10 @@ def html_clean_up(mt_list, generate_html_report=False, generate_br_report=False)
         # Remove number of quotes from footnote
         if "footnote" in txt:
             txt = re.sub("\"\"", "\"", txt)
+
+        txt = re.sub(r"\r\n", "<br>", txt)
+        txt = re.sub(r"\n", "<br>", txt)
+        txt = txt.strip()
 
         # Massage links to text references into Sefaria form
         links = re.findall(r"<a href=.*?>(.*?)<\/a>", txt)
