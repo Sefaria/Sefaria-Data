@@ -24,5 +24,8 @@ if __name__ == '__main__':
             en_text = list(filter(lambda x: len(x) > 0, en_text))
             he_text = list(filter(lambda x: len(x) > 0, he_text))
 
+            if book == 'Leavened and Unleavened Bread':
+                print(f"{section_ref.normal()} counts: he: {len(he_text)}, en: {len(en_text)}")
+
             if len(en_text) != len(he_text):
                 print(f"{section_ref.normal()} has non-equal he and en: he: {len(he_text)}, en: {len(en_text)}")
