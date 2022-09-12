@@ -33,7 +33,7 @@ def create_version_from_scratch(book):
                        "license": "CC-BY-NC",
                        "status": "locked",
                        "versionNote": "© Published and Copyright by Moznaim Publications.<br>Must obtain written permission from Moznaim Publications for any commercial use. Any use must cite Copyright by Moznaim Publications.",
-                       "purchaseInformationImage": "https://cdn.shopify.com/s/files/1/2568/1506/products/p-8116-3468-5_750x.jpg?v=1511385198",
+                       "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/touger-mishneh-torah-purchase-img.png",
                        "purchaseInformationURL": "https://moznaim.com/products/mishneh-torah-rambam"
 
                        })
