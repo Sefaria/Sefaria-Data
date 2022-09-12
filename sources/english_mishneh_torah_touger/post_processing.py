@@ -179,7 +179,7 @@ def stats_flag(mt_list):
     return new_list
 
 
-def generate_html_report(txt, unique_html_tags, unique_html_tag_dict_list):
+def generate_html_report(txt, halakha, unique_html_tags, unique_html_tag_dict_list):
     tags = re.findall(r"<(.*?)>", txt)
     for each_tag in tags:
         tag_name = re.findall(r"^(.*?)\s", each_tag)
@@ -198,7 +198,7 @@ def generate_html_report(txt, unique_html_tags, unique_html_tag_dict_list):
                 unique_html_tags[tag_name[0]] += 1
 
 
-def html_clean_up(mt_list, generate_html_report=False, generate_br_report=False):
+def html_clean_up(mt_list, html_report=False, generate_br_report=False):
     unique_html_tags = {}
     unique_html_tag_dict_list = []
     br_report_list = []
@@ -236,13 +236,14 @@ def html_clean_up(mt_list, generate_html_report=False, generate_br_report=False)
             replacement = f"<sup class=\"footnote-marker\">{sup}</sup><i class=\"footnote\">"
             txt = re.sub(patt, replacement, txt)
 
-        if generate_html_report:
-            generate_html_report(txt, unique_html_tags, unique_html_tag_dict_list)
 
         txt = bleach.clean(txt,
                            tags=ALLOWED_TAGS,
                            attributes=ALLOWED_ATTRS,
                            strip=True)
+
+        if html_report:
+            generate_html_report(txt, halakha, unique_html_tags, unique_html_tag_dict_list)
 
         if generate_br_report:
             is_odd_br = re.search(r"[^?.:!]<br>", txt)
@@ -252,7 +253,7 @@ def html_clean_up(mt_list, generate_html_report=False, generate_br_report=False)
 
         new_list.append({'ref': halakha['ref'], 'text': txt})
 
-    if generate_html_report:
+    if html_report:
         export_data_to_csv(unique_html_tag_dict_list, 'qa_reports/html_report',
                            headers_list=['tag', 'example_ref', 'example_text'])
         print(unique_html_tags)
@@ -267,5 +268,5 @@ if __name__ == '__main__':
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
     mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
     mishneh_torah_list = img_convert(mishneh_torah_list)
-    mishneh_torah_list = html_clean_up(mishneh_torah_list)
+    mishneh_torah_list = html_clean_up(mishneh_torah_list, html_report=True)
     export_cleaned_data_to_csv(mishneh_torah_list)
