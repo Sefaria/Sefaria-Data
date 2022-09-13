@@ -224,7 +224,7 @@ class HtmlTzParser(TzParser):
             if i == 0 and (self.append_to_previous or re.match(r'[?.\].,:!]+$', str(elem_word))):  # ending punctuation
                 self.word.add_to_word(elem_word)
             elif re.match(r'[?.\[\].,:!]*‘[?.\[\].,:!]*$', str(elem_word)): # punctuation with backtaick
-                if re.match(r'[?.\[\].,:!]*‘[?.\[\].,:!]*$', str(elem_word)) and self.paragraph.inside_quotes:
+                if re.match(r'[?.\[\].,:!]*‘[?.\[\].,:!]*$', str(elem_word)) and len(self.paragraph.quoted_cursor) > 0:   # self.paragraph.inside_quotes:
                     self.word.add_to_word(elem_word)
                 else:
                     self.word = self.phrase.add_new_word(elem_word)
@@ -268,15 +268,35 @@ class HtmlTzParser(TzParser):
                         self.paragraph.add_new_quoted()
                         self.paragraph.add_to_quoted_if_in_quotes(self.word)
                     else:
-                        if not self.paragraph.inside_quotes:
-                            print(elem_word)
+                        if self.file == 'vol1.html' and self.has_vol_1_exceptions(elem_word):
+                            pass
+                        else:
+                            if len(self.paragraph.quoted_cursor) == 0: #assume typo? # need to fix this see "and who raises her to her place"
+                                self.paragraph.add_new_quoted()
+                                self.paragraph.add_to_quoted_if_in_quotes(self.word)
+                            else:
+                                self.paragraph.commit_quoted()
+                        # if len(self.paragraph.quoted_cursor) == 0:  # self.paragraph.inside_quotes:
+                        #     print(elem_word)
                         #print(str(elem_word))
-                        self.paragraph.commit_quoted()
+
                 # if it's start
                 # if it's end
                 # if it's both
 
         self.append_to_previous = not elem[-1].isspace()
+
+    def has_vol_1_exceptions(self, elem_word):
+        if len(self.paragraphs) == 33 and len(self.paragraph.words) == 24:  # specific exception for typo
+            return True
+        elif '-’A' in elem_word:
+            return True
+        elif elem_word == '’ezer':
+            return True
+        elif elem_word == 'te-ru’ah':
+            return True
+        else:
+            return False
 
     def process_footnote_material(self, elem):
         pass

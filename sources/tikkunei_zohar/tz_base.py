@@ -111,8 +111,8 @@ class Paragraph(object):
         self.footnotes = []
         self.quoted = []
         self.words = []
-        self.quoted_cursor = None
-        self.inside_quotes = False
+        self.quoted_cursor = []
+        # self.inside_quotes = False
         self.enter_quotes_on_next_word = False
         self.exit_quotes_on_next_word = False
         self.tikkun = tikkun
@@ -127,31 +127,34 @@ class Paragraph(object):
         return line
 
     def add_new_quoted(self):
-        self.quoted_cursor = Quoted(self, self.daf, self.tikkun)
-        self.inside_quotes = True
+        self.quoted_cursor.append(Quoted(self, self.daf, self.tikkun))
+        # self.inside_quotes = True
         # self.enter_quotes_on_next_word = True
 
     def commit_quoted(self):
-        self.quoted.append(self.quoted_cursor)
-        self.inside_quotes = False
-        if self.quoted_cursor is None:
+        if len(self.quoted_cursor) == 0:
             print("End Quote Only")
         else:
-            print([word.text for word in self.quoted_cursor.words])
+            print([word.text for word in self.quoted_cursor[-1].words])
+            self.quoted.append(self.quoted_cursor[-1])
+        # self.inside_quotes = False
+            self.quoted_cursor.pop()
+
         # self.exit_quotes_on_next_word = True
 
     def add_to_quoted_if_in_quotes(self, word):
-        if self.inside_quotes:
-            self.quoted_cursor.add_word(word)
+        # if len(self.quoted_cursor) > 0:
+        for quote in self.quoted_cursor:
+            quote.add_word(word)
 
-    def add_to_quoted_if_necessary(self, word):
-        if self.inside_quotes or self.enter_quotes_on_next_word:
-            self.quoted_cursor.add_word(word)
-            self.inside_quotes = True
-            self.enter_quotes_on_next_word = False
-        if self.exit_quotes_on_next_word:
-            self.inside_quotes = False
-            self.exit_quotes_on_next_word = False
+    # def add_to_quoted_if_necessary(self, word):
+    #     if self.inside_quotes or self.enter_quotes_on_next_word:
+    #         self.quoted_cursor[-1].add_word(word)
+    #         self.inside_quotes = True
+    #         self.enter_quotes_on_next_word = False
+    #     if self.exit_quotes_on_next_word:
+    #         self.inside_quotes = False
+    #         self.exit_quotes_on_next_word = False
 
 
 
