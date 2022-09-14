@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import re
 import csv
 import os
-from utilities import number_map, chabad_book_names, sefaria_book_names, create_book_name_map
+from mt_utilities import number_map, chabad_book_names, sefaria_book_names, create_book_name_map
 
 book_name_map = create_book_name_map(chabad_book_names, sefaria_book_names)
 

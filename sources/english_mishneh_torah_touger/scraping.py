@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from bs4 import BeautifulSoup
 import re
 import csv
-from utilities import number_map
+from mt_utilities import number_map
 
 
 # TODO - rewrite code in OOP way

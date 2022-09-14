@@ -2,7 +2,7 @@ import django
 
 django.setup()
 from sefaria.model import *
-from utilities import sefaria_book_names
+from mt_utilities import sefaria_book_names
 
 if __name__ == '__main__':
     alt_version_books = ['Reading the Shema',

@@ -6,7 +6,7 @@ import csv
 from collections import defaultdict
 from sefaria.model import *
 from sefaria.tracker import modify_bulk_text
-from utilities import add_chabad_book_names_alt_titles
+from mt_utilities import add_chabad_book_names_alt_titles
 
 
 def create_mappings():

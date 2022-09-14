@@ -15,7 +15,7 @@ import statistics
 import bleach
 
 from sefaria.model import *
-from utilities import create_book_name_map, sefaria_book_names, export_data_to_csv, ALLOWED_TAGS, ALLOWED_ATTRS
+from mt_utilities import create_book_name_map, sefaria_book_names, export_data_to_csv, ALLOWED_TAGS, ALLOWED_ATTRS
 
 
 def convert_base_64_img(halakha):
