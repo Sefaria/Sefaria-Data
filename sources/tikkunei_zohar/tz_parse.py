@@ -1,4 +1,4 @@
-# from docx import Document
+from docx import Document
 from bs4 import BeautifulSoup
 from tz_base import *
 import re
@@ -42,12 +42,10 @@ class TzParser(object):
         self.title = None
 
     def read_file(self):
-        with open(self.file, 'r') as f:
-            contents = f.read()
-            self.doc_rep = self.get_document_representation(contents)
-            self.parse_contents()
+        self.doc_rep = self.get_document_representation()
+        self.parse_contents()
 
-    def get_document_representation(self, contents):
+    def get_document_representation(self):
         """Returns abstracted representation of doc"""
         pass
 
@@ -110,6 +108,17 @@ class TzParser(object):
         pass
 
 
+class DocsTzParser(TzParser):
+    def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
+        TzParser.__init__(self, filename, volume, language, starting_tikkun, starting_daf)
+        #self.append_to_previous = False
+
+    def get_document_representation(self, file):
+        return Document(self.file)
+
+    def parse_contents(self):
+        pass
+
 class HtmlTzParser(TzParser):
     FOOTNOTES = {
         "CharOverride-1": True,
@@ -149,8 +158,10 @@ class HtmlTzParser(TzParser):
         self.append_to_previous = False
         self.continue_phrase = False
 
-    def get_document_representation(self, contents):
-        return BeautifulSoup(contents, 'html.parser')
+    def get_document_representation(self):
+        with open(self.file, 'r') as file:
+            contents = file.read()
+            return BeautifulSoup(contents, 'html.parser')
 
     def get_title(self):
         return self.doc_rep.title.getText()
@@ -272,8 +283,9 @@ class HtmlTzParser(TzParser):
                             pass
                         else:
                             if len(self.paragraph.quoted_cursor) == 0: #assume typo? # need to fix this see "and who raises her to her place"
-                                self.paragraph.add_new_quoted()
-                                self.paragraph.add_to_quoted_if_in_quotes(self.word)
+                                print(self.word.text)
+                                # self.paragraph.add_new_quoted()
+                                # self.paragraph.add_to_quoted_if_in_quotes(self.word)
                             else:
                                 self.paragraph.commit_quoted()
                         # if len(self.paragraph.quoted_cursor) == 0:  # self.paragraph.inside_quotes:
@@ -352,13 +364,17 @@ class HtmlTzParser(TzParser):
     def get_next_word(self):
         return None
 
+#
+# parser2 = DocsTzParser("vol3.docx", 3)
+# parser2.read_file()
+# print(parser2.doc_rep)
 
 parser = HtmlTzParser("vol1.html", 1)
 parser.read_file()
-for line in parser.lines:
-    for phrase in line.phrases:
-        if any(['‘' in word.text for word in phrase.words]):
-            print([word.text for word in phrase.words])
+# for line in parser.lines:
+#     for phrase in line.phrases:
+#         if any(['‘' in word.text for word in phrase.words]):
+#             print([word.text for word in phrase.words])
     # for quoted in line.quoted:
     #     print([word.text for word in quoted.words])
 # for phrase in parser.phrases:

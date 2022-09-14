@@ -134,8 +134,9 @@ class Paragraph(object):
     def commit_quoted(self):
         if len(self.quoted_cursor) == 0:
             print("End Quote Only")
+            print(self.words[-1].text)
         else:
-            print([word.text for word in self.quoted_cursor[-1].words])
+            # print([word.text for word in self.quoted_cursor[-1].words])
             self.quoted.append(self.quoted_cursor[-1])
         # self.inside_quotes = False
             self.quoted_cursor.pop()
