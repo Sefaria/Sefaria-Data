@@ -1,4 +1,5 @@
 import csv
+from sefaria.model import *
 
 ALLOWED_TAGS = ("i", "b", "br", "u", "strong", "em", "big", "small", "img", "sup", "sub", "span", "a")
 ALLOWED_ATTRS = {
