@@ -36,16 +36,18 @@ if __name__ == '__main__':
 
     books = get_touger_books()
 
-    # For all books update version notes with sponsorship
+    # For all books update version notes with sponsorship and short title
     sponsorship_message_version_notes = """
     <i>Dedicated in memory of Irving Montak, z"l</i><br><br>© Published and Copyright by Moznaim Publications.<br>Must obtain written permission from Moznaim Publications for any commercial use. Any use must cite Copyright by Moznaim Publications. Released into the commons with a CC-BY-NC license.
     """
     for book in books:
         version_query = {'title': f'{book.title}',
-                         'versionTitle': 'Mishneh Torah, trans. by Eliyahu Touger. Jerusalem, Moznaim Pub. c1986-c2007'}
+                         'versionTitle': 'Mishneh Torah, trans. by Eliyahu Touger. Jerusalem, Moznaim Pub. c1986-c2007',
+                         "shortVersionTitle": "Trans. by Eliyahu Touger, Moznaim Publishing"}
         version_flags = {"versionNotes": sponsorship_message_version_notes}
         Version().update(version_query, version_flags)
-        print(f"Sponsorship message changed for {book.title}")
+        print(f"Flags updated for {book.title}")
+
 
     # Specific updates for Eruvin, Transmission of Oral Law, Positive Mitzvot and Negative Mitzvot:
     for book in ['Mishneh Torah, Eruvin', 'Mishneh Torah, Positive Mitzvot', 'Mishneh Torah, Negative Mitzvot', 'Mishneh Torah, Transmission of the Oral Law']:
