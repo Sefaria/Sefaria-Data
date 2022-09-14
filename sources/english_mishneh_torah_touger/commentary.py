@@ -89,7 +89,7 @@ def scrape_commentary():
                         comm_list = re.split(r"<b>", str_com, re.DOTALL)
                         comm_list = comm_list[1:]
                         footnote_dict_list.append(
-                            {'ref': ref, 'commentary': "|".join(comm_list)})
+                            {'ref': ref, 'commentary': comm_list})
     return footnote_dict_list
 
 
