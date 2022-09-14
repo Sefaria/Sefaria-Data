@@ -56,4 +56,3 @@ if __name__ == '__main__':
     # add_chabad_book_names_alt_titles()
     map = create_mappings()
     upload_text(map)
-    
