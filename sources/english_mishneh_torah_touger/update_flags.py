@@ -6,7 +6,7 @@ import csv
 from collections import defaultdict
 from sefaria.model import *
 from sefaria.tracker import modify_bulk_text
-from utilities import add_chabad_book_names_alt_titles
+from mt_utilities import add_chabad_book_names_alt_titles
 
 
 def get_priority(book):
@@ -41,13 +41,14 @@ if __name__ == '__main__':
     <i>Dedicated in memory of Irving Montak, z"l</i><br><br>© Published and Copyright by Moznaim Publications.<br>Must obtain written permission from Moznaim Publications for any commercial use. Any use must cite Copyright by Moznaim Publications. Released into the commons with a CC-BY-NC license.
     """
     for book in books:
-        version_query = {'title': f'{book}',
+        version_query = {'title': f'{book.title}',
                          'versionTitle': 'Mishneh Torah, trans. by Eliyahu Touger. Jerusalem, Moznaim Pub. c1986-c2007'}
         version_flags = {"versionNotes": sponsorship_message_version_notes}
         Version().update(version_query, version_flags)
+        print(f"Sponsorship message changed for {book.title}")
 
-    # Specific updates for Eruvin, Positive Mitzvot and Negative Mitzvot:
-    for book in ['Mishneh Torah, Eruvin', 'Mishneh Torah, Positive Mitzvot', 'Mishneh Torah, Negative Mitzvot']:
+    # Specific updates for Eruvin, Transmission of Oral Law, Positive Mitzvot and Negative Mitzvot:
+    for book in ['Mishneh Torah, Eruvin', 'Mishneh Torah, Positive Mitzvot', 'Mishneh Torah, Negative Mitzvot', 'Mishneh Torah, Transmission of the Oral Law']:
         touger_priority = get_priority(book)
         version_query = {'title': f'{book}',
                          'versionTitle': 'Mishneh Torah, trans. by Eliyahu Touger. Jerusalem, Moznaim Pub. c1986-c2007'}
