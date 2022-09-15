@@ -38,6 +38,7 @@ class TzParser(object):
         self.paragraph = None
         self.daf = starting_daf if starting_daf else None
         self.tikkun = starting_tikkun if starting_tikkun else None
+        self.append_to_previous = False
 
         self.title = None
 
@@ -66,11 +67,21 @@ class TzParser(object):
             self.tikkun = self.get_tikkun()
         elif self.cursor_is_paragraph():
             self.process_paragraph()
-        elif self.cursor_contains_words():
-            self.word = self.get_next_word()
-            while self.word:
-                self.word = self.get_next_word()
-            self.word_cursor = None
+        elif self.cursor_contains_words():  # this is not used for HtmlParser
+            self.process_words()
+            # self.word = self.get_next_word()
+            # while self.word:
+            #     self.word = self.get_next_word()
+            # self.word_cursor = None
+
+    def create_new_paragraph(self):
+        self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
+        self.paragraphs.append(self.paragraph)
+        self.tikkun.paragraphs.append(self.paragraph)
+        self.daf.paragraphs.append(self.paragraph)
+        self.line = self.paragraph.add_new_line()
+        self.lines.append(self.line)
+        self.append_to_previous = False
 
     def get_processed_elem(self):
         pass
@@ -112,7 +123,7 @@ class DocsTzParser(TzParser):
     def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
         TzParser.__init__(self, filename, volume, language, starting_tikkun, starting_daf)
         self.paragraph_index = 0
-        #self.append_to_previous = False
+        self.parsing_footnote  = False
 
     def get_document_representation(self):
         return Document(self.file)
@@ -136,7 +147,9 @@ class DocsTzParser(TzParser):
         return re.match(r'\[[0-9]+[ab]\]', self.processed_elem_cursor.text) is not None
 
     def get_daf(self):
-        return self.processed_elem_cursor.text
+        daf = Daf(self.processed_elem_cursor.text)
+        self.dapim.append(daf)
+        return daf
 
     def cursor_is_tikkun(self):
         return re.match(r'^\[?Tiqun', self.processed_elem_cursor.text) is not None
@@ -145,12 +158,73 @@ class DocsTzParser(TzParser):
         # print(self.processed_elem_cursor.text)
         tikkun = Tikkun(self.processed_elem_cursor.text, next(self.tikkun_number))
         for run in self.processed_elem_cursor.runs:
-            if run.text == '' and  run.element.style == 'EndnoteReference':
+            if run.text == '' and run.element.style == 'EndnoteReference':
                 tikkun.words.append(Word("ENDNOTE_REFERENCE", None, None, self.daf, tikkun, None))
             else:
                 tikkun.words.append(Word(run.text, None, None, self.daf, tikkun, None))
         print([word.text for word in tikkun.words])
-        return self.processed_elem_cursor.text # TODO: handle tikkun footnotes
+        return tikkun # TODO: handle tikkun footnotes
+
+    def cursor_is_paragraph(self):
+        return self.processed_elem_cursor.text.strip() == '' and self.processed_elem_cursor.style.name == 'Normal'
+
+    def process_paragraph(self):
+        if not self.paragraph or len(self.paragraph.words) > 0:
+            self.create_new_paragraph()
+    # def cursor_contains_words(self):
+    #     if paragraph.text
+
+    def cursor_contains_words(self):
+        return True  # catchall????
+
+    def process_words(self):
+        for run in self.processed_elem_cursor.runs:
+            if len(run.text) > 0 and run.text[0] == ' ':
+                self.append_to_previous = False
+            # if run.style == Normal??
+            # for i, elem_word in enumerate(run.text.split(' ')):
+            # else process footnote?
+            # append to previous?????
+            if not self.append_to_previous:
+                self.phrase = self.line.add_new_phrase(None) # TODO: get style/formatting!!
+            for i, elem_word in enumerate(run.text.split(' ')):
+                if '{' in elem_word or '}' in elem_word or '\n' in elem_word:
+                    for char in elem_word:
+                        self.process_word(char)
+                elif run.text == '':
+                    # parse w/ beautiful soup
+                    print(run.element.style)
+                elif run.text == ' ':
+                    self.append_to_previous = False
+                else:
+                    self.process_word(elem_word)
+            # print(run.text)
+            if len(run.text) > 0 and run.text[-1] != ' ':
+                self.append_to_previous = True
+            else:
+                self.append_to_previous = False
+
+    def process_word(self, word):
+        if word == '{':
+            self.parsing_footnote = True
+            self.append_to_previous = False
+        elif word == '}':
+            self.parsing_footnote = False
+            self.append_to_previous = False
+        elif word == '\n':
+            self.line = self.paragraph.add_new_line()
+            self.lines.append(self.line)
+            self.append_to_previous = False
+            self.append_to_previous = False
+
+        else:
+            if self.append_to_previous:
+                self.word.add_to_word(word)
+                self.append_to_previous = False
+            else:
+                self.word = self.phrase.add_new_word(word)
+                self.words.append(self.word)
+            print(self.word.text)
 
 class HtmlTzParser(TzParser):
     FOOTNOTES = {
@@ -188,7 +262,6 @@ class HtmlTzParser(TzParser):
 
     def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
         TzParser.__init__(self, filename, volume, language, starting_tikkun, starting_daf)
-        self.append_to_previous = False
         self.continue_phrase = False
 
     def get_document_representation(self):
@@ -386,13 +459,7 @@ class HtmlTzParser(TzParser):
 
     def process_paragraph(self):
         # print([a for a in self.processed_elem_cursor.children])
-        self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
-        self.paragraphs.append(self.paragraph)
-        self.tikkun.paragraphs.append(self.paragraph)
-        self.daf.paragraphs.append(self.paragraph)
-        self.line = self.paragraph.add_new_line()
-        self.lines.append(self.line)
-        self.append_to_previous = False
+        self.create_new_paragraph()
         for child in self.processed_elem_cursor.children:
             self.process_paragraph_elem(child, self.paragraph)
 
