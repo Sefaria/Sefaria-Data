@@ -111,13 +111,25 @@ class TzParser(object):
 class DocsTzParser(TzParser):
     def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
         TzParser.__init__(self, filename, volume, language, starting_tikkun, starting_daf)
+        self.paragraph_index = 0
         #self.append_to_previous = False
 
-    def get_document_representation(self, file):
+    def get_document_representation(self):
         return Document(self.file)
 
-    def parse_contents(self):
-        pass
+    def get_title(self):
+        return self.file
+
+    def move_cursor(self):
+        if self.paragraph_index < len(self.doc_rep.paragraphs):
+            cursor = self.doc_rep.paragraphs[self.paragraph_index]
+            self.paragraph_index += 1
+            print(cursor.text)
+            return cursor
+        else:
+            return None
+
+
 
 class HtmlTzParser(TzParser):
     FOOTNOTES = {
@@ -365,12 +377,12 @@ class HtmlTzParser(TzParser):
         return None
 
 #
-# parser2 = DocsTzParser("vol3.docx", 3)
-# parser2.read_file()
-# print(parser2.doc_rep)
+parser2 = DocsTzParser("vol3.docx", 3)
+parser2.read_file()
+print(parser2.doc_rep)
 
-parser = HtmlTzParser("vol1.html", 1)
-parser.read_file()
+# parser = HtmlTzParser("vol1.html", 1)
+# parser.read_file()
 # for line in parser.lines:
 #     for phrase in line.phrases:
 #         if any(['‘' in word.text for word in phrase.words]):
