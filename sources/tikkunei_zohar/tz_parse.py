@@ -124,12 +124,33 @@ class DocsTzParser(TzParser):
         if self.paragraph_index < len(self.doc_rep.paragraphs):
             cursor = self.doc_rep.paragraphs[self.paragraph_index]
             self.paragraph_index += 1
-            print(cursor.text)
+            # print(cursor.text)
             return cursor
         else:
             return None
 
+    def get_processed_elem(self):
+        return self.elem_cursor
 
+    def cursor_is_daf(self):
+        return re.match(r'\[[0-9]+[ab]\]', self.processed_elem_cursor.text) is not None
+
+    def get_daf(self):
+        return self.processed_elem_cursor.text
+
+    def cursor_is_tikkun(self):
+        return re.match(r'^\[?Tiqun', self.processed_elem_cursor.text) is not None
+
+    def get_tikkun(self):
+        # print(self.processed_elem_cursor.text)
+        tikkun = Tikkun(self.processed_elem_cursor.text, next(self.tikkun_number))
+        for run in self.processed_elem_cursor.runs:
+            if run.text == '' and  run.element.style == 'EndnoteReference':
+                tikkun.words.append(Word("ENDNOTE_REFERENCE", None, None, self.daf, tikkun, None))
+            else:
+                tikkun.words.append(Word(run.text, None, None, self.daf, tikkun, None))
+        print([word.text for word in tikkun.words])
+        return self.processed_elem_cursor.text # TODO: handle tikkun footnotes
 
 class HtmlTzParser(TzParser):
     FOOTNOTES = {
@@ -224,6 +245,8 @@ class HtmlTzParser(TzParser):
         self.add_tikkun_word_to_list(self.processed_elem_cursor.children, res)
         title = (''.join(res))
         tikkun = Tikkun(title, next(self.tikkun_number))
+        for text in res:
+            tikkun.words.append(Word(text, None, None, self.daf, tikkun, None))
         self.tikkunim.append(tikkun)
         return tikkun
 
@@ -291,7 +314,7 @@ class HtmlTzParser(TzParser):
                         self.paragraph.add_new_quoted()
                         self.paragraph.add_to_quoted_if_in_quotes(self.word)
                     else:
-                        if self.file == 'vol1.html' and self.has_vol_1_exceptions(elem_word):
+                        if self.file == 'vol2.html' and self.has_vol_1_exceptions(elem_word):
                             pass
                         else:
                             if len(self.paragraph.quoted_cursor) == 0: #assume typo? # need to fix this see "and who raises her to her place"
@@ -379,9 +402,9 @@ class HtmlTzParser(TzParser):
 #
 parser2 = DocsTzParser("vol3.docx", 3)
 parser2.read_file()
-print(parser2.doc_rep)
+# print(parser2.doc_rep)
 
-# parser = HtmlTzParser("vol1.html", 1)
+# parser = HtmlTzParser("vol2.html", 1)
 # parser.read_file()
 # for line in parser.lines:
 #     for phrase in line.phrases:

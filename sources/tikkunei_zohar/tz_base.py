@@ -170,6 +170,7 @@ class Daf(object):
 
 class Tikkun(object):
     def __init__(self, name, number):
+        self.words = []
         self.paragraphs = []
         self.lines = []
         self.phrases = []
