@@ -185,8 +185,18 @@ class DocsTzParser(TzParser):
             # for i, elem_word in enumerate(run.text.split(' ')):
             # else process footnote?
             # append to previous?????
-            if not self.append_to_previous:
-                self.phrase = self.line.add_new_phrase(None) # TODO: get style/formatting!!
+            if not self.append_to_previous or len(self.line.phrases) == 0:  # new phrase for run
+                if run.bold and run.italic:
+                    formatting = Formatting.BOLD_ITALICS
+                elif run.bold:
+                    formatting = Formatting.BOLD
+                elif run.italic:
+                    formatting = Formatting.ITALICS
+                elif run.font.color.rgb is not None:
+                    formatting = Formatting.FADED
+                else:
+                    formatting = None
+                self.phrase = self.line.add_new_phrase(formatting)
             if run.text == ' ':
                 self.append_to_previous = False
             else:
@@ -227,7 +237,7 @@ class DocsTzParser(TzParser):
             else:
                 self.word = self.phrase.add_new_word(word)
                 self.words.append(self.word)
-            print(self.word.text)
+            #print(self.word.text)
 
 class HtmlTzParser(TzParser):
     FOOTNOTES = {
@@ -472,14 +482,18 @@ class HtmlTzParser(TzParser):
 #
 parser2 = DocsTzParser("vol3.docx", 3)
 parser2.read_file()
+
 # print(parser2.doc_rep)
 
 # parser = HtmlTzParser("vol2.html", 1)
 # parser.read_file()
-# for line in parser.lines:
-#     for phrase in line.phrases:
-#         if any(['‘' in word.text for word in phrase.words]):
-#             print([word.text for word in phrase.words])
+for line in parser2.lines:
+    print("---")
+    for phrase in line.phrases:
+        #if any(['‘' in word.text for word in phrase.words]):
+            print(phrase.formatting)
+            print([word.text for word in phrase.words])
+
     # for quoted in line.quoted:
     #     print([word.text for word in quoted.words])
 # for phrase in parser.phrases:
