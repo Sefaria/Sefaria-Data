@@ -52,11 +52,12 @@ class Phrase(object):
         self.tikkun = tikkun
         self.formatting = formatting
 
-    def add_new_word(self, text, footnotes=None):
+    def add_new_word(self, text, footnotes=[]):
         new_word = Word(text, self.line, self.paragraph, self.daf, self.tikkun, footnotes)
         self.words.append(new_word)
         self.line.words.append(new_word)
         self.paragraph.words.append(new_word)
+        # new_word.text)
         return new_word
 
     def add_word_or_phrase(self, word_or_phrase):
@@ -88,12 +89,13 @@ class Quoted(object):
 
 class Line(object):
     """Ordered phrases"""
-    def __init__(self, paragraph, daf, tikkun):
+    def __init__(self, paragraph, daf, tikkun, line_number):
         self.phrases = []
         self.paragraph = paragraph
         self.daf = daf
         self.words = []
         self.tikkun = tikkun
+        self.line_number = line_number
 
     def add_new_phrase(self, formatting):
         phrase = Phrase(formatting, self, self.paragraph, self.daf, self.tikkun)
@@ -118,9 +120,10 @@ class Paragraph(object):
         self.tikkun = tikkun
         self.daf = daf
         self.paragraph_number = paragraph_number
+        self.line_number = count(0)
 
     def add_new_line(self):
-        line = Line(self, self.daf, self.tikkun)
+        line = Line(self, self.daf, self.tikkun, next(self.line_number))
         self.lines.append(line)
         self.tikkun.lines.append(line)
         self.daf.lines.append(line)
@@ -180,9 +183,9 @@ class Tikkun(object):
 
 
 class Footnote(object):
-    def __init__(self, footnote_type, formatting, anchor=None, footnote=None):
+    def __init__(self, footnote_type, formatting, anchor=None, text=''):
         self.anchor = anchor
-        self.footnote = footnote
+        self.text = text
         self.footnote_type = footnote_type
         self.formatting = formatting
 

@@ -2,6 +2,7 @@ from docx import Document
 from bs4 import BeautifulSoup
 from tz_base import *
 import re
+import csv
 
 import logging
 
@@ -39,6 +40,8 @@ class TzParser(object):
         self.daf = starting_daf if starting_daf else None
         self.tikkun = starting_tikkun if starting_tikkun else None
         self.append_to_previous = False
+        # self.current_footnote_text = None
+        self.current_footnote = None
 
         self.title = None
 
@@ -66,7 +69,8 @@ class TzParser(object):
         elif self.cursor_is_tikkun():
             self.tikkun = self.get_tikkun()
         elif self.cursor_is_paragraph():
-            self.process_paragraph()
+            if self.tikkun:
+                self.process_paragraph()
         elif self.cursor_contains_words():  # this is not used for HtmlParser
             self.process_words()
             # self.word = self.get_next_word()
@@ -159,7 +163,7 @@ class DocsTzParser(TzParser):
         tikkun = Tikkun(self.processed_elem_cursor.text, next(self.tikkun_number))
         for run in self.processed_elem_cursor.runs:
             if run.text == '' and run.element.style == 'EndnoteReference':
-                tikkun.words.append(Word("ENDNOTE_REFERENCE", None, None, self.daf, tikkun, None))
+                tikkun.words.append(Word("[ENDNOTE_REFERENCE]", None, None, self.daf, tikkun, None))
             else:
                 tikkun.words.append(Word(run.text, None, None, self.daf, tikkun, None))
         print([word.text for word in tikkun.words])
@@ -177,8 +181,25 @@ class DocsTzParser(TzParser):
     def cursor_contains_words(self):
         return True  # catchall????
 
+    @staticmethod
+    def get_formatting(run):
+        if run.bold and run.italic:
+            formatting = Formatting.BOLD_ITALICS
+        elif run.bold:
+            formatting = Formatting.BOLD
+        elif run.italic:
+            formatting = Formatting.ITALICS
+        elif run.font.color.rgb is not None:
+            formatting = Formatting.FADED
+        else:
+            formatting = None
+        return formatting
+
     def process_words(self):
         for run in self.processed_elem_cursor.runs:
+            if self.parsing_footnote:
+                for char in run.text:
+                    self.process_word(char, True, run)
             if len(run.text) > 0 and run.text[0] == ' ':
                 self.append_to_previous = False
             # if run.style == Normal??
@@ -186,17 +207,13 @@ class DocsTzParser(TzParser):
             # else process footnote?
             # append to previous?????
             if not self.append_to_previous or len(self.line.phrases) == 0:  # new phrase for run
-                if run.bold and run.italic:
-                    formatting = Formatting.BOLD_ITALICS
-                elif run.bold:
-                    formatting = Formatting.BOLD
-                elif run.italic:
-                    formatting = Formatting.ITALICS
-                elif run.font.color.rgb is not None:
-                    formatting = Formatting.FADED
-                else:
-                    formatting = None
+                formatting = DocsTzParser.get_formatting(run)
                 self.phrase = self.line.add_new_phrase(formatting)
+                self.phrases.append(self.phrase)
+            if self.current_footnote and self.phrase.formatting and not self.parsing_footnote:
+                self.current_footnote.anchor = self.phrase
+                self.phrase.footnotes.append(self.current_footnote)
+                self.current_footnote = None
             if run.text == ' ':
                 self.append_to_previous = False
             else:
@@ -205,7 +222,7 @@ class DocsTzParser(TzParser):
                         self.append_to_previous = False
                     if '{' in elem_word or '}' in elem_word or '\n' in elem_word:
                         for char in elem_word:
-                            self.process_word(char)
+                            self.process_word(char, True)
                     elif elem_word == '':
                         # parse w/ beautiful soup
                         pass
@@ -217,10 +234,11 @@ class DocsTzParser(TzParser):
                         else:
                             self.append_to_previous = False
 
-    def process_word(self, word):
+    def process_word(self, word, char=False, run=None):
         if word == '{':
             self.parsing_footnote = True
             self.append_to_previous = False
+            self.current_footnote = Footnote(FootnoteType.CITATION, None)
         elif word == '}':
             self.parsing_footnote = False
             self.append_to_previous = False
@@ -228,15 +246,31 @@ class DocsTzParser(TzParser):
             self.line = self.paragraph.add_new_line()
             self.lines.append(self.line)
             self.append_to_previous = False
-            self.append_to_previous = False
 
         else:
-            if self.append_to_previous:
-                self.word.add_to_word(word)
+            if self.parsing_footnote:
+                if char: #why
+                    self.current_footnote.text += word
+                    self.current_footnote.formatting = DocsTzParser.get_formatting(run) if run else \
+                        self.current_footnote.formatting
+            elif self.append_to_previous:
+                if self.parsing_footnote:
+                    self.current_footnote.text += word
+                else:
+                    self.word.add_to_word(word)
                 # self.append_to_previous = False
             else:
-                self.word = self.phrase.add_new_word(word)
-                self.words.append(self.word)
+                if self.parsing_footnote:
+                    self.current_footnote.text += " "
+                    self.current_footnote.text += word
+                else:
+                    self.word = self.phrase.add_new_word(word)
+                    self.word.footnotes = []
+                    self.words.append(self.word)
+                if self.current_footnote and not self.parsing_footnote:
+                    self.current_footnote.anchor = self.word
+                    self.word.footnotes.append(self.current_footnote)
+                    self.current_footnote = None
             #print(self.word.text)
 
 class HtmlTzParser(TzParser):
@@ -360,6 +394,7 @@ class HtmlTzParser(TzParser):
                     self.word.add_to_word(elem_word)
                 else:
                     self.word = self.phrase.add_new_word(elem_word)
+                    self.word.footnotes = []
                     self.paragraph.add_to_quoted_if_in_quotes(self.word)
                     self.words.append(self.word)
                 # elif self.line.inside_quotes:
@@ -369,6 +404,7 @@ class HtmlTzParser(TzParser):
                 #     self.line.add_to_quoted_if_necessary(self.word)
             else:
                 self.word = self.phrase.add_new_word(elem_word)
+                self.word.footnotes = []
                 self.words.append(self.word)
                 self.paragraph.add_to_quoted_if_in_quotes(self.word)
             #self.line.add_to_quoted_if_necessary(self.word)
@@ -404,7 +440,8 @@ class HtmlTzParser(TzParser):
                             pass
                         else:
                             if len(self.paragraph.quoted_cursor) == 0: #assume typo? # need to fix this see "and who raises her to her place"
-                                print(self.word.text)
+                                pass
+                                # print(self.word.text)
                                 # self.paragraph.add_new_quoted()
                                 # self.paragraph.add_to_quoted_if_in_quotes(self.word)
                             else:
@@ -480,19 +517,19 @@ class HtmlTzParser(TzParser):
         return None
 
 #
-parser2 = DocsTzParser("vol3.docx", 3)
-parser2.read_file()
+# parser2 = DocsTzParser("vol3.docx", 3)
+# parser2.read_file()
 
 # print(parser2.doc_rep)
 
 # parser = HtmlTzParser("vol2.html", 1)
 # parser.read_file()
-for line in parser2.lines:
-    print("---")
-    for phrase in line.phrases:
-        #if any(['‘' in word.text for word in phrase.words]):
-            print(phrase.formatting)
-            print([word.text for word in phrase.words])
+# for line in parser2.lines:
+#     print("---")
+#     for phrase in line.phrases:
+#         #if any(['‘' in word.text for word in phrase.words]):
+#             print(phrase.formatting)
+#             print([word.text for word in phrase.words])
 
     # for quoted in line.quoted:
     #     print([word.text for word in quoted.words])
@@ -526,3 +563,39 @@ for line in parser2.lines:
 #     # if it's start
 #     # if it's end
 #     # if it's both
+
+
+# parsers = [HtmlTzParser("vol2.html", 2), DocsTzParser("vol3.docx", 3), DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
+parsers = [DocsTzParser("vol4.docx", 4)]
+for parser in parsers:
+    parser.read_file()
+    with open(f'tz_en_vol{parser.volume}.csv', 'w+') as tz_en:
+        fieldnames = ["tikkun", "daf", "paragraph", "line", "phrase", "formatting", "footnotes"]
+        csv_writer = csv.DictWriter(tz_en, fieldnames)
+        csv_writer.writeheader()
+        for phrase in parser.phrases:
+            footnotes = []
+            for word in phrase.words:
+                for footnote in word.footnotes:
+                    if type(footnote.anchor) is Word:
+                        anchor = footnote.anchor.text
+                    else: # Phrase
+                        anchor = ' '.join([word.text for word in footnote.anchor.words])
+                    footnotes.append(f"{footnote.footnote_type}/{footnote.formatting}[{anchor}]:{footnote.text}")
+            for footnote in phrase.footnotes:
+                anchor = ' '.join([word.text for word in footnote.anchor.words])
+                footnotes.append(f"{footnote.footnote_type}/{footnote.formatting}[{anchor}]:{footnote.text}")
+            row = {
+                "tikkun": ' '.join([word.text for word in phrase.tikkun.words if word.text is not ' ']),
+                "daf": phrase.daf.name,
+                "paragraph": phrase.paragraph.paragraph_number,
+                "line": phrase.line.line_number,
+                "phrase": ' '.join([word.text for word in phrase.words]),
+                "formatting": phrase.formatting,
+                "footnotes": ';'.join(footnotes)
+            }
+            csv_writer.writerow(row)
+
+    with open(f'tz_en_vol{parser.volume}_quotes.csv', "w+") as tz_en_quotes:
+        fieldnames = ["tikkun", "daf", "paragraph", "line", "quotes", "formatting", "comments"]
+        csv_writer = csv.DictWriter(tz_en_quotes, fieldnames)
