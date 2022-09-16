@@ -200,39 +200,40 @@ class DocsTzParser(TzParser):
             if self.parsing_footnote:
                 for char in run.text:
                     self.process_word(char, True, run)
-            if len(run.text) > 0 and run.text[0] == ' ':
-                self.append_to_previous = False
-            # if run.style == Normal??
-            # for i, elem_word in enumerate(run.text.split(' ')):
-            # else process footnote?
-            # append to previous?????
-            if not self.append_to_previous or len(self.line.phrases) == 0:  # new phrase for run
-                formatting = DocsTzParser.get_formatting(run)
-                self.phrase = self.line.add_new_phrase(formatting)
-                self.phrases.append(self.phrase)
-            if self.current_footnote and self.phrase.formatting and not self.parsing_footnote:
-                self.current_footnote.anchor = self.phrase
-                self.phrase.footnotes.append(self.current_footnote)
-                self.current_footnote = None
-            if run.text == ' ':
-                self.append_to_previous = False
             else:
-                for i, elem_word in enumerate(run.text.split(' ')):
-                    if i > 0:
-                        self.append_to_previous = False
-                    if '{' in elem_word or '}' in elem_word or '\n' in elem_word:
-                        for char in elem_word:
-                            self.process_word(char, True)
-                    elif elem_word == '':
-                        # parse w/ beautiful soup
-                        pass
-                    else:
-                        self.process_word(elem_word)
-                # print(run.text)
-                        if len(run.text) > 0 and run.text[-1] != ' ':
-                            self.append_to_previous = True
-                        else:
+                if len(run.text) > 0 and run.text[0] == ' ':
+                    self.append_to_previous = False
+                # if run.style == Normal??
+                # for i, elem_word in enumerate(run.text.split(' ')):
+                # else process footnote?
+                # append to previous?????
+                if not self.append_to_previous or len(self.line.phrases) == 0:  # new phrase for run
+                    formatting = DocsTzParser.get_formatting(run)
+                    self.phrase = self.line.add_new_phrase(formatting)
+                    self.phrases.append(self.phrase)
+                if self.current_footnote and self.phrase.formatting and not self.parsing_footnote:
+                    self.current_footnote.anchor = self.phrase
+                    self.phrase.footnotes.append(self.current_footnote)
+                    self.current_footnote = None
+                if run.text == ' ':
+                    self.append_to_previous = False
+                else:
+                    for i, elem_word in enumerate(run.text.split(' ')):
+                        if i > 0:
                             self.append_to_previous = False
+                        if '{' in elem_word or '}' in elem_word or '\n' in elem_word or '‹' in elem_word or '›' in elem_word:
+                            for char in elem_word:
+                                self.process_word(char, True)
+                        elif elem_word == '':
+                            # parse w/ beautiful soup
+                            pass
+                        else:
+                            self.process_word(elem_word)
+                    # print(run.text)
+                            if len(run.text) > 0 and run.text[-1] != ' ':
+                                self.append_to_previous = True
+                            else:
+                                self.append_to_previous = False
 
     def process_word(self, word, char=False, run=None):
         if word == '{':
@@ -242,6 +243,16 @@ class DocsTzParser(TzParser):
         elif word == '}':
             self.parsing_footnote = False
             self.append_to_previous = False
+        elif word == '‹':
+            self.parsing_footnote = True
+            self.append_to_previous = False
+            self.current_footnote = Footnote(FootnoteType.SYMBOL, None)  # TODO: Get specific type from BS
+        elif word == '›':
+            self.parsing_footnote = False
+            if self.current_footnote:  # TODO: handle errors
+                self.current_footnote.anchor = self.word
+                self.word.footnotes.append(self.current_footnote)
+                self.current_footnote = None
         elif word == '\n':
             self.line = self.paragraph.add_new_line()
             self.lines.append(self.line)
