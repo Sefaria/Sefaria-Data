@@ -196,6 +196,8 @@ class DocsTzParser(TzParser):
         return formatting
 
     def process_words(self):
+        if self.line is None:
+            self.create_new_paragraph()
         for run in self.processed_elem_cursor.runs:
             if self.parsing_footnote:
                 for char in run.text:
@@ -576,9 +578,12 @@ class HtmlTzParser(TzParser):
 #     # if it's both
 
 
-# parsers = [HtmlTzParser("vol2.html", 2), DocsTzParser("vol3.docx", 3), DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
-parsers = [DocsTzParser("vol4.docx", 4)]
-for parser in parsers:
+parsers = [HtmlTzParser("vol2.html", 2), DocsTzParser("vol3.docx", 3), DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
+# parsers = [DocsTzParser("vol4.docx", 4)]
+# parsers = [DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
+for i, parser in enumerate(parsers):
+    if i > 0:
+        parser.tikkun = parsers[i-1].tikkun
     parser.read_file()
     with open(f'tz_en_vol{parser.volume}.csv', 'w+') as tz_en:
         fieldnames = ["tikkun", "daf", "paragraph", "line", "phrase", "formatting", "footnotes"]
