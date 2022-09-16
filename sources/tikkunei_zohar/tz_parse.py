@@ -187,22 +187,25 @@ class DocsTzParser(TzParser):
             # append to previous?????
             if not self.append_to_previous:
                 self.phrase = self.line.add_new_phrase(None) # TODO: get style/formatting!!
-            for i, elem_word in enumerate(run.text.split(' ')):
-                if '{' in elem_word or '}' in elem_word or '\n' in elem_word:
-                    for char in elem_word:
-                        self.process_word(char)
-                elif run.text == '':
-                    # parse w/ beautiful soup
-                    print(run.element.style)
-                elif run.text == ' ':
-                    self.append_to_previous = False
-                else:
-                    self.process_word(elem_word)
-            # print(run.text)
-            if len(run.text) > 0 and run.text[-1] != ' ':
-                self.append_to_previous = True
-            else:
+            if run.text == ' ':
                 self.append_to_previous = False
+            else:
+                for i, elem_word in enumerate(run.text.split(' ')):
+                    if i > 0:
+                        self.append_to_previous = False
+                    if '{' in elem_word or '}' in elem_word or '\n' in elem_word:
+                        for char in elem_word:
+                            self.process_word(char)
+                    elif elem_word == '':
+                        # parse w/ beautiful soup
+                        pass
+                    else:
+                        self.process_word(elem_word)
+                # print(run.text)
+                        if len(run.text) > 0 and run.text[-1] != ' ':
+                            self.append_to_previous = True
+                        else:
+                            self.append_to_previous = False
 
     def process_word(self, word):
         if word == '{':
@@ -220,7 +223,7 @@ class DocsTzParser(TzParser):
         else:
             if self.append_to_previous:
                 self.word.add_to_word(word)
-                self.append_to_previous = False
+                # self.append_to_previous = False
             else:
                 self.word = self.phrase.add_new_word(word)
                 self.words.append(self.word)
