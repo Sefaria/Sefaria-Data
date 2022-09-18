@@ -262,11 +262,24 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
     return new_list
 
 
+def generate_img_report(mt_list):
+    img_report = []
+    for halakha in mt_list:
+        ref = halakha['ref']
+        txt = halakha['text']
+        if '<img' in txt:
+            img_report.append({'ref': ref, 'text': txt})
+    export_data_to_csv(img_report, 'qa_reports/img_report', ['ref', 'text'])
+
+
+
+
 if __name__ == '__main__':
     chabad_book_names, mishneh_torah_list = setup_data()
     name_map = create_book_name_map(chabad_book_names, sefaria_book_names)
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
     mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
     mishneh_torah_list = img_convert(mishneh_torah_list)
-    mishneh_torah_list = html_clean_up(mishneh_torah_list, html_report=True)
-    export_cleaned_data_to_csv(mishneh_torah_list)
+    mishneh_torah_list = html_clean_up(mishneh_torah_list)
+    generate_img_report(mishneh_torah_list)
+    # export_cleaned_data_to_csv(mishneh_torah_list)
