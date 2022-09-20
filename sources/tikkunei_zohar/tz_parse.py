@@ -40,8 +40,8 @@ class TzParser(object):
         self.daf = starting_daf if starting_daf else None
         self.tikkun = starting_tikkun if starting_tikkun else None
         self.append_to_previous = False
-        # self.current_footnote_text = None
         self.current_footnote = None
+        self.parsing_footnote = False
 
         self.title = None
 
@@ -127,7 +127,6 @@ class DocsTzParser(TzParser):
     def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
         TzParser.__init__(self, filename, volume, language, starting_tikkun, starting_daf)
         self.paragraph_index = 0
-        self.parsing_footnote  = False
 
     def get_document_representation(self):
         return Document(self.file)
@@ -273,7 +272,7 @@ class DocsTzParser(TzParser):
                     self.word.add_to_word(word)
                 # self.append_to_previous = False
             else:
-                if self.parsing_footnote:
+                if self.parsing_footnote:  # delete? this won't ever get hit
                     self.current_footnote.text += " "
                     self.current_footnote.text += word
                 else:
@@ -289,7 +288,7 @@ class DocsTzParser(TzParser):
 class HtmlTzParser(TzParser):
     FOOTNOTES = {
         "CharOverride-1": True,
-        "CharOverride-2": True,
+        "CharOverride-2": FootnoteType.CITATION,
         "CharOverride-3": True,
         "CharOverride-4": True,
         "CharOverride-5": True,
@@ -398,6 +397,10 @@ class HtmlTzParser(TzParser):
             self.append_to_previous = False
             self.phrase = self.line.add_new_phrase(formatting)
             self.phrases.append(self.phrase)
+            if self.current_footnote:
+                self.current_footnote.anchor = self.phrase
+                self.phrase.footnotes.append(self.current_footnote)
+                self.current_footnote = None
         self.continue_phrase = False
         for i, elem_word in enumerate(elem.split()):
             if i == 0 and (self.append_to_previous or re.match(r'[?.\].,:!]+$', str(elem_word))):  # ending punctuation
@@ -482,7 +485,48 @@ class HtmlTzParser(TzParser):
             return False
 
     def process_footnote_material(self, elem):
-        pass
+        if not self.parsing_footnote:  # open a footnote
+            if "stars" in elem['class']:
+                footnote_type = HtmlTzParser.FOOTNOTES["stars"]
+            elif "infinity" in elem['class']:
+                footnote_type = HtmlTzParser.FOOTNOTES["infinity"]
+            elif "triangle" in elem['class']:
+                footnote_type = HtmlTzParser.FOOTNOTES["triangle"]
+            elif "CharOverride-2" in elem['class']:
+                footnote_type = HtmlTzParser.FOOTNOTES["CharOverride-2"]
+            else:
+                footnote_type = FootnoteType.SYMBOL
+            format_class = [x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0] if \
+                any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']) else None
+            self.current_footnote = Footnote(footnote_type, format_class)
+        for letter in elem.text:
+            self.process_footnote_text(letter)
+            # if footnote_type is not HtmlTzParser.FOOTNOTES["CharOverride-2"]:  # not a book
+            #     pass
+            # else:
+            #     self.current_footnote = Footnote(FootnoteType.CITATION, None)
+            # if elem.text != "‹":
+            #     print(elem.text)
+
+    def process_footnote_text(self, letter): # only run this if inside footnote
+        if letter == '{':
+            self.parsing_footnote = True
+            self.append_to_previous = False
+        elif letter == '}':
+            self.parsing_footnote = False
+            self.append_to_previous = False
+        elif letter == '‹':
+            self.parsing_footnote = True
+            self.append_to_previous = False
+            self.current_footnote = Footnote(FootnoteType.SYMBOL, None)  # TODO: Get specific type from BS
+        elif letter == '›':
+            self.parsing_footnote = False
+            if self.current_footnote:  # TODO: handle errors
+                self.current_footnote.anchor = self.word
+                self.word.footnotes.append(self.current_footnote)
+                self.current_footnote = None
+        else:
+            self.current_footnote.text += letter
 
     def process_paragraph_elem(self, elem, paragraph, formatting=None):
         #try:
@@ -492,9 +536,8 @@ class HtmlTzParser(TzParser):
                 # TODO: figure out where these endnotes are
                 pass
             elif elem.name == 'span' and any(x in HtmlTzParser.FOOTNOTES for x in elem['class']):  # Footnotes
-                #footnote_type = [x in elem['class'] if x in HtmlTzParser.FOOTNOTES]
-                #self.word.add_new_footnote(elem)
-                pass
+                # footnote_type = [x for x in elem['class'] if x in HtmlTzParser.FOOTNOTES]
+                self.process_footnote_material(elem)
 
             elif elem.name == 'span' and all(x not in HtmlTzParser.FOOTNOTES for x in elem['class']):  # Formatted text
                 for child in elem.children:  # exception for gray-text override-9
