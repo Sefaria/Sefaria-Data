@@ -10,11 +10,14 @@ import json
 import re
 import csv
 import requests
-
+from tqdm import tqdm
 from urllib.parse import urlencode
 
 from pyproj import Transformer
+from sefaria.helper.normalization import NormalizerComposer
+from research.knowledge_graph.named_entity_recognition.ner_tagger import NaiveNamedEntityRecognizer, CorpusSegment, NormalizerTools
 
+normalizer = NormalizerComposer(step_keys=["br-tag", "itag", "unidecode", "cantillation", "maqaf", "double-space"])
 
 # cities.json, regions.json, rivers.json
 f = open('cities.json')
@@ -285,8 +288,16 @@ def check_places():
 
 
 def find_potential_matches(raw_ref, headword, place):
+    replacements = [("ירושלם", "ירושלים")]
+    title_strs = [headword]
+    for curr, new in replacements:
+        alt_title = headword.replace(curr, new)
+        if alt_title == headword: continue
+        title_strs += [alt_title]
+    named_entity = Topic({"slug": "blah", "titles": [{"lang": "he", "primary": True, "text": title} for title in title_strs]})
+    ner = NaiveNamedEntityRecognizer([named_entity], normalizer, langSpecificParams={"he": {"prefixRegex": "(?:וכד|לכד|ובד|וד|בד|בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|מד|כד|דב|אד|לד|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד|א(?!מר))??"}})
+    ner.fit()
     potential_matches = []
-    headword_re = "[\u0591-\u05C7]*".join([letter for letter in headword])
 
     try:
         ref = Ref(raw_ref)
@@ -299,19 +310,12 @@ def find_potential_matches(raw_ref, headword, place):
     expanded_refs = ref.all_segment_refs()
 
     for r in expanded_refs:
-        # print(r)
-        text = r.text(lang='he').text
-        # print(text)
-        # print(headword)
-
-        # print(headword_re)
-
-        # headword_re = ['q'.join(letter) for letter in headword]
-        # print(headword_re)
-
-        match = re.search(headword_re, text)
-        if match:
-            potential_matches.append([r.normal(), place, match.span()[0], match.span()[1], match.group(0)])
+        text_chunk = r.text(lang='he')
+        orig_text = text_chunk.text
+        corpus_segment = CorpusSegment(False, orig_text, 'he', 'default', r)
+        mentions = ner.predict_segment(corpus_segment)
+        for mention in mentions:
+            potential_matches.append([r.normal(), place, mention.start, mention.end, mention.mention])
 
     if len(potential_matches) == 0:
         trimmed_ref = " ".join(str(x) for x in raw_ref.split(' ')[:-1])
@@ -331,9 +335,8 @@ def create_geo_ref_topic_links(he2slug_map):
         potential_false_positives = []
         expected_good_matches = []
 
-        for row in csv_reader:
+        for row in tqdm(list(csv_reader)):
             ref, headword, place = row
-
             potential_matches = find_potential_matches(ref, headword, place)
 
             if len(potential_matches) == 0:
@@ -344,7 +347,7 @@ def create_geo_ref_topic_links(he2slug_map):
 
             else:
                 expected_good_matches.append(potential_matches[0])
-                print(f'{potential_matches}: {headword}')
+                # print(f'{potential_matches}: {headword}')
 
                 slug = he2slug_map[place]
                 mention_link = {
@@ -368,7 +371,8 @@ def create_geo_ref_topic_links(he2slug_map):
                     RefTopicLink(mention_link).save()
 
                 except sefaria.system.exceptions.DuplicateRecordError as e:
-                    print(e)
+                    pass
+                    # print(e)
 
     write_csv("no_match_refs.csv", no_match_refs)
     write_csv("expected_good_matches.csv", expected_good_matches)
@@ -379,8 +383,9 @@ def create_geo_ref_topic_links(he2slug_map):
     print(len(no_match_refs))
 
 
-he2slug_map = check_places()
-create_geo_ref_topic_links(he2slug_map)
+if __name__ == '__main__':
+    he2slug_map = check_places()
+    create_geo_ref_topic_links(he2slug_map)
 
 
 
