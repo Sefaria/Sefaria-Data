@@ -343,7 +343,7 @@ def create_geo_ref_topic_links(he2slug_map):
                 no_match_refs.append(row)
 
             elif len(potential_matches) > 1:
-                potential_false_positives.append(row)
+                potential_false_positives += potential_matches
 
             else:
                 expected_good_matches.append(potential_matches[0])
