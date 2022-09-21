@@ -54,8 +54,7 @@ if __name__ == '__main__':
                     y['t'] = re.sub(r'\\[xu]\d*', '', y['t']).replace('\\', '').replace('&amp;', '&').replace('&gt;', '>').replace('&lt;', '<')
             word = [' '.join([y['t'] for y in x]) for x in word]
             all_words = ''.join(word)
-            if (re.search(r'[^A-Za-z …\.,\<\>\(\)\[\]\+\d\?\!&:;\-\'’׳"\|\*‖–§—†√=\\ḤÈîöüäâé]', all_words) #double cross in arramaic
-                    and word[1:] != word[:-1]):
+            if re.search(r'[^A-Za-z …\.,\<\>\(\)\[\]\+\d\?\!&:;\-\'’׳"\|\*‖–§—‡†√=\\ḤÈîöüäâé]', all_words):
                 if better == 2:
                     word[2] = re.sub('(י)-(הוה)', r'\1\2', word[2])
                 subs = [split_by_block(x, heb_block, '()[]$') if x else [] for x in word]
@@ -89,7 +88,7 @@ if __name__ == '__main__':
 
             else:
                 newdata.append(word)
-
+        print(' '.join([x[1] for x in newdata]))
         if better_balance != 0:
             hub_dict[file.split('.')[0]]['no_heb_balance'] = True
             print('no hebrew balance')
