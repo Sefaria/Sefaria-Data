@@ -14,10 +14,10 @@ for row in data:
             tags[i] = tag
             i += 1
 
-with open('html tags.json', 'w') as fp:
+with open('html tags new.json', 'w') as fp:
     json.dump(tags, fp)
 
-with open('problems3.csv', 'w', newline='', encoding='utf-8') as fp:
+with open('problems wo html new.csv', 'w', newline='', encoding='utf-8') as fp:
     w = csv.DictWriter(fp,
                        fieldnames=['id', 'text', 'al hatorah text', 'al hatorah link', 'biblehub text', 'biblehub link',
                                    'problems'])

@@ -155,11 +155,13 @@ for book in text:
 for book in text:
     send_text = {
         "language": "en",
-        "versionTitle": "Piekarski Tosafot4",
+        "versionTitle": "Piekarski Tosafot (remaining dappim)",
         "versionSource": "https://www.sefaria.org",
         "text": ""
     }
     for daf in text[book]:
-        for ref in text[book][daf]:
-            send_text["text"] = text[book][daf][ref]
-            post_text(ref.normal(), send_text, server="http://localhost:8000")
+        if 29 == int(daf[:-1]):
+            for ref in text[book][daf]:
+                ref_str = ref.normal() if isinstance(ref, Ref) else ref
+                send_text["text"] = text[book][daf][ref]
+                post_text(ref_str, send_text, server="http://localhost:8000")

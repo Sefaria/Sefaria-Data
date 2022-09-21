@@ -94,13 +94,19 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
 
-def selenium_get_url(driver_path, url, driver_options=None):
+def selenium_get_url(driver_path, url, name=None, driver_options=None):
+    if name and os.path.exists("{}.html".format(name)):
+        data = open("{}.html".format(name))
+        return data
     if driver_options is None:
         driver_options = Options()
         driver_options.add_argument("--headless")
     driver = webdriver.Chrome(driver_path, chrome_options=driver_options)
     driver.get(url)
     pageSource = driver.page_source
+    if name:
+        with open("{}.html".format(name), 'w') as f:
+            f.write(pageSource)
     return pageSource
 
 def create_intro():
@@ -447,12 +453,12 @@ def convertDictToArray(dict, empty=[]):
             array.append(dict[key])
             count += 1
         else:
-            diff = key - count
+            diff = int(key) - count
             while(diff > 0):
                 array.append(empty)
                 diff -= 1
             array.append(dict[key])
-            count = key + 1
+            count = int(key) + 1
     return array
 
 
