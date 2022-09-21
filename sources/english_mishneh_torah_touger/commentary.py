@@ -4,14 +4,25 @@
 #  CSV:  ref, dibur hamatchil, commentary
 # Use the CSV to insert commentary as footnotes for each halacha,
 # renumber footnotes for the chapter accordingly.
+import django
+
+django.setup()
+
 from bs4 import BeautifulSoup
+import bleach
+import json
 import re
 import csv
 import os
-from mt_utilities import number_map, chabad_book_names, sefaria_book_names, create_book_name_map
+from mt_utilities import number_map, chabad_book_names, \
+    sefaria_book_names, create_book_name_map, export_data_to_csv, ALLOWED_ATTRS, ALLOWED_TAGS
 
 book_name_map = create_book_name_map(chabad_book_names, sefaria_book_names)
 
+def save_json_as_txt(commentary_dict):
+    with open('commentary_data.py', 'w+') as com_file:
+        com_file.write(json.dumps(commentary_dict))
+        print('File saved')
 
 def get_commentary(file):
     soup = BeautifulSoup(file, 'html.parser')
@@ -68,10 +79,43 @@ def extract_commentary_body(txt):
         return comm_text[:end_scrape]
     return txt[index_start:]
 
+def html_clean(comm_list):
+    clean_comm_list = []
+    for comm in comm_list:
+        clean_comment = bleach.clean(comm,
+                                     tags=ALLOWED_TAGS,
+                                     attributes=ALLOWED_ATTRS,
+                                     strip=True)
+        clean_comment = re.sub(r"\r\n", "<br>", clean_comment)
+        clean_comment = re.sub(r"\n", "<br>", clean_comment)
+        clean_comment = re.sub(r"<br><br>", "", clean_comment)
+        clean_comment = re.sub(r"<br><br><br>", "", clean_comment)
+        clean_comment = re.sub(r"<br><br><br><br>", "", clean_comment)
+        clean_comment = clean_comment.strip()
 
-def scrape_commentary():
+        # Massage links to text references into Sefaria form
+        links = re.findall(r"<a href=.*?>(.*?)<\/a>", clean_comment)
+        for link in links:
+
+            # Add escape characters to links data for matching
+            if ")" in link or "(" in link:
+                re_link = re.sub(r"\)", "\\)", link)
+                re_link = re.sub(r"\(", "\\(", re_link)
+            else:
+                re_link = link
+            clean_link = re.sub(r"[^A-Za-z :0-9]", " ", link)
+            patt = f"<a href=.*?>{re_link}<\/a>"
+            clean_comment = re.sub(patt, clean_link, clean_comment)
+
+        clean_comm_list.append(clean_comment)
+    clean_comm_list = clean_comm_list[1:]
+    return clean_comm_list
+
+
+def scrape_commentary(json_mode=False):
     html_dir = './html'
     footnote_dict_list = []
+    footnote_dict = {}
     for chapter_file in os.listdir(html_dir):
         f = os.path.join(html_dir, chapter_file)
         if os.path.isfile(f):
@@ -87,22 +131,21 @@ def scrape_commentary():
                         ref = make_ref(book, chapter, num)
                         print(f"Scraping commentary for {ref}")
                         comm_list = re.split(r"<b>", str_com, re.DOTALL)
-                        comm_list = comm_list[1:]
-                        footnote_dict_list.append(
-                            {'ref': ref, 'commentary': comm_list})
+                        # Clean each out for "bad" html
+                        comm_list = html_clean(comm_list)
+                        if json_mode:
+                            footnote_dict[ref] = comm_list
+                        else:
+                            footnote_dict_list.append(
+                                {'ref': ref, 'commentary': comm_list})
+    if json_mode:
+        save_json_as_txt(footnote_dict)
+        return footnote_dict
+
+    export_data_to_csv(commentary_list, 'commentary', ['ref', 'commentary'])
     return footnote_dict_list
 
 
-def export_cleaned_data_to_csv(list):
-    """
-    This function writes the data to a new CSV
-    """
-    with open('commentary.csv', 'w+') as csvfile:
-        headers = ['ref', 'commentary']
-        writer = csv.DictWriter(csvfile, fieldnames=headers)
-        writer.writerows(list)
-
-
 if __name__ == '__main__':
-    commentary_list = scrape_commentary()
-    export_cleaned_data_to_csv(commentary_list)
+    commentary_list = scrape_commentary(json_mode=True)
+
