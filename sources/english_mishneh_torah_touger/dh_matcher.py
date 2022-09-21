@@ -34,6 +34,58 @@ def extract_comment_body(txt, count):
     return cb[0]
 
 
+def insert_successes(base_words, successful_insertion_list, ref, dh_serials):
+    text_with_comments = " ".join(base_words)
+    successful_insertion_list.append(
+        {
+            'ref': ref,
+            'text_with_comments': text_with_comments,
+            'dh_inserted_serials': dh_serials
+        }
+    )
+
+
+def comment_clean(text):
+    comment_body = text.strip("-")
+    if comment_body[-4:] == "<br>":
+        comment_body = comment_body[:-4]
+    comment_body = comment_body.strip()
+    return comment_body
+
+
+def join_manual_with_footnote_text():
+    success_text_map = {}
+    for halakha in successful_insertion_list:
+        ref = halakha['ref']
+        txt = halakha['text_with_comments']
+        success_text_map[ref] = txt
+
+    placed_html_manual_list = []
+    for comment in manual_list:
+        ref = comment['ref']
+        m_text = ""
+        if ref in success_text_map:
+            m_text = success_text_map[ref]
+        else:
+            m_text = comment['text']  # keep original
+
+        placed_html_manual_list.append({
+            'ref': ref,
+            'text': m_text,
+            'dh_serial': comment['dh_serial'],
+            'unplaced_dh': comment['unplaced_dh'],
+            'unplaced_comment': comment['unplaced_comment']
+        })
+    return placed_html_manual_list
+
+
+def generate_report(count, manual_list, success_count, successful_insertion_list, placed_html_manual_list):
+    print(f"{count} can't extract comment body")
+    print(f"{len(manual_list)} on manual list, can't find dhm")
+    print(f"{success_count} individual comments successfully placed in {len(successful_insertion_list)} refs")
+    print(f"{len(placed_html_manual_list)} on NEW manual list")
+
+
 successful_insertion_list = []
 manual_list = []
 mt_dict = {}
@@ -76,9 +128,6 @@ for ref in commentary_dict:
                              rashi_skips=2,
                              overall=3)
 
-    # if ref == 'Blessings 1.1':
-    #     for i in range(len(results['matches'])):
-    #         print(f"indices: {results['matches'][i]}, match_text: {results['match_text'][i]}")
 
     # Report outstanding errors
     if (-1, -1) in results['matches']:
@@ -94,11 +143,9 @@ for ref in commentary_dict:
         for i in range(len(tuples)):
             dh = extract_dibbur_hamatchil(comment_list[i])
             comment_body = extract_comment_body(comment_list[i], count)
-            comment_body = comment_body.strip("- ")
-            comment_body = comment_body.strip("<br>")
-            comment_body = comment_body.strip()
+            comment_body = comment_clean(comment_body)
 
-            if tuples[i] == (-1, -1):  # error
+            if tuples[i] == (-1, -1):  # error and not last
                 manual_list.append({
                     'ref': ref,
                     'text': mt_dict[ref],
@@ -106,6 +153,9 @@ for ref in commentary_dict:
                     'unplaced_dh': dh,
                     'unplaced_comment': comment_body
                 })
+                if i == len(tuples) - 1:  # also is last
+                    insert_successes(base_words, successful_insertion_list, ref, dh_serials)
+
             else:  # Found
                 end_idx_for_comment = tuples[i][-1]
                 insertion_idx = (end_idx_for_comment + 1) + num_insertions
@@ -118,15 +168,9 @@ for ref in commentary_dict:
 
                 # Last time through, append
                 if i == len(tuples) - 1:
-                    text_with_comments = " ".join(base_words)
-                    successful_insertion_list.append(
-                        {
-                            'ref': ref,
-                            'text_with_comments': text_with_comments,
-                            'dh_inserted_serials': dh_serials
-                        }
-                    )
+                    insert_successes(base_words, successful_insertion_list, ref, dh_serials)
 
+    # On full success cases
     else:
         tuples = results['matches']
         num_insertions = 0
@@ -139,9 +183,7 @@ for ref in commentary_dict:
         for i in range(len(tuples)):
             dh = extract_dibbur_hamatchil(comment_list[i])
             comment_body = extract_comment_body(comment_list[i], count)
-            comment_body = comment_body.strip("- ")
-            comment_body = comment_body.strip("<br>")
-            comment_body = comment_body.strip()
+            comment_body = comment_clean(comment_body)
 
             end_idx_for_comment = tuples[i][-1]
             insertion_idx = (end_idx_for_comment + 1) + num_insertions
@@ -152,49 +194,19 @@ for ref in commentary_dict:
 
             # Last time through, append
             if i == len(tuples) - 1:
-                text_with_comments = " ".join(base_words)
-                successful_insertion_list.append(
-                    {
-                        'ref': ref,
-                        'text_with_comments': text_with_comments,
-                        'dh_inserted_serials': dh_serials
-                    }
-                )
-for halakha in successful_insertion_list:
-    if halakha['ref'] == 'Blessings 1.1':
-        print(halakha['text_with_comments'])
+                insert_successes(base_words, successful_insertion_list, ref, dh_serials)
 
+# for halakha in successful_insertion_list:
+#     if halakha['ref'] == 'Blessings 1.1':
+#         print(halakha['text_with_comments'])
 
-print(f"{count} can't extract comment body")
-print(f"{len(manual_list)} on manual list, can't find dhm")
-print(f"{success_count} individual comments successfully placed in {len(successful_insertion_list)} refs")
 
 # If place markers exist, replace the text in manual
-success_text_map = {}
-for halakha in successful_insertion_list:
-    ref = halakha['ref']
-    txt = halakha['text_with_comments']
-    success_text_map[ref] = txt
+placed_html_manual_list = join_manual_with_footnote_text()
 
-placed_html_manual_list = []
-for comment in manual_list:
-    ref = comment['ref']
-    m_text = ""
-    if ref in success_text_map:
-        m_text = success_text_map[ref]
-    else:
-        m_text = comment['text']  # keep original
+generate_report(count, manual_list, success_count, successful_insertion_list, placed_html_manual_list)
 
-    placed_html_manual_list.append({
-        'ref': ref,
-        'text': m_text,
-        'dh_serial': comment['dh_serial'],
-        'unplaced_dh': comment['unplaced_dh'],
-        'unplaced_comment': comment['unplaced_comment']
-    })
-
-
-
-print(f"{len(placed_html_manual_list)} on NEW manual list")
-export_data_to_csv(placed_html_manual_list, 'qa_reports/manual_commentaries', ['ref', 'text', 'dh_serial', 'unplaced_dh', 'unplaced_comment'])
-export_data_to_csv(successful_insertion_list, 'qa_reports/inserted_commentaries', ['ref', 'text_with_comments', 'dh_inserted_serials'])
+export_data_to_csv(placed_html_manual_list, 'qa_reports/manual_commentaries',
+                   ['ref', 'text', 'dh_serial', 'unplaced_dh', 'unplaced_comment'])
+export_data_to_csv(successful_insertion_list, 'qa_reports/inserted_commentaries',
+                   ['ref', 'text_with_comments', 'dh_inserted_serials'])
