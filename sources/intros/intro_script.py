@@ -3,7 +3,6 @@ import django
 django.setup()
 
 import csv
-import re
 from sefaria.model import *
 from sefaria.helper.schema import convert_simple_index_to_complex, convert_jagged_array_to_schema_with_default, \
     insert_first_child, attach_branch
@@ -12,11 +11,9 @@ from sources.functions import add_term
 
 # Todo
 # Issues -
-# 1. Noda bYhudah is out of order
-# 2. MDLY is missing second intro
 # Handle Legends of the Jews
 
-
+# Uncomment on first run
 add_term("An Introduction by the Author's Son", 'הקדמת בן המחבר')
 
 
@@ -62,6 +59,7 @@ def separate_row_data(row):
     en_title = row[0]['Intro English Title']
     he_title = row[0]['Intro Hebrew Title']
     pos = row[0]['Intro Position']
+    pos = int(pos) if pos != '' else ''
     double_intros = row[0]['double_intros']
     return en_title, he_title, pos, double_intros
 
@@ -132,6 +130,7 @@ def run(index_dict):
                     tref = item['Parent Ref']
                     en_title = item['Intro English Title']
                     he_title = item['Intro Hebrew Title']
+                    pos = int(item['Intro Position'])
                     create_intro_complex_text(tref, en_title, he_title, pos)
             # Add the single introduction if only one
             else:
