@@ -11,13 +11,11 @@ from sources.functions import add_term
 
 
 # Todo
-# Clear up code
+# Issues -
+# 1. Noda bYhudah is out of order
+# 2. MDLY is missing second intro
 # Handle Legends of the Jews
-# It seems to be failing on Noda B'Yehuda
 
-
-# TODO
-# Add this to schema and import
 
 add_term("An Introduction by the Author's Son", 'הקדמת בן המחבר')
 
@@ -57,9 +55,7 @@ def convert_children_to_schema_nodes(tref):
 
 
 def check_if_double_intro(row):
-    if row["Intro Position"]:
-        return True
-    return False
+    return row["Intro Position"] != ""
 
 
 def separate_row_data(row):
@@ -91,13 +87,13 @@ def create_index_dict():
         for row in german_mishnah_csv:
 
             # Copy row to new dict for modifying purposes
-            flagged_row = row
+            flagged_row = row.copy()
 
             # Check if it's one of the 'double introduction' rows
             is_double_intro = check_if_double_intro(flagged_row)
 
             # Set flags accordingly
-            flagged_row['double_intros'] = True if is_double_intro else False
+            flagged_row['double_intros'] = is_double_intro
 
             # Append to the index dictionary by Book Title (key)
             idx_title = Ref(row['Parent Ref']).index.title
