@@ -18,6 +18,10 @@ from sources.functions import add_term
 
 # TODO
 # Add this to schema and import
+
+add_term("An Introduction by the Author's Son", 'הקדמת בן המחבר')
+
+
 def insert_second_child(new_node, parent_node):
     return attach_branch(new_node, parent_node, 1)
 
@@ -75,7 +79,8 @@ def handle_node_with_hakdamot_for_each_child(index_dict, node_title, en_title, h
 
 def handle_simple_index(node, node_title, en_title, he_title):
     if not node.parent and not node.children:
-        convert_simple_index_to_complex(Ref(node_title).index.title)
+        index_title = Ref(node_title).index.title
+        convert_simple_index_to_complex(library.get_index(index_title))
         create_intro_complex_text(node_title, en_title, he_title)
 
 
@@ -100,7 +105,7 @@ def create_index_dict():
                 index_dict[idx_title].append(flagged_row)
             else:
                 index_dict[idx_title] = [flagged_row]
-
+    # print(index_dict)
     return index_dict
 
 
