@@ -11,9 +11,9 @@ from sources.functions import add_term
 
 
 # Todo
-# Handle position - throwing the issue
+# Clear up code
 # Handle Legends of the Jews
-# It seems to be failing on Maggid Devarav L'Yakov as well, but working for all of the other texts... work through 2 intro cases
+# It seems to be failing on Noda B'Yehuda
 
 
 # TODO
@@ -44,97 +44,97 @@ def create_intro_complex_text(tref, en_title, he_title, pos=None):
 
 
 def convert_children_to_schema_nodes(tref):
-    i = library.get_index(tref)
+    book_title = Ref(tref).index.title
+    i = library.get_index(book_title)
     # Convert to Schema nodes
     for ja_node in i.nodes.children:
         if isinstance(ja_node, JaggedArrayNode):
             convert_jagged_array_to_schema_with_default(ja_node)
 
 
+def check_if_double_intro(row):
+    if row["Intro Position"]:
+        return True
+    return False
+
+
+def separate_row_data(row):
+    en_title = row[0]['Intro English Title']
+    he_title = row[0]['Intro Hebrew Title']
+    pos = row[0]['Intro Position']
+    double_intros = row[0]['double_intros']
+    return en_title, he_title, pos, double_intros
+
+
+def handle_node_with_hakdamot_for_each_child(index_dict, node_title, en_title, he_title, pos):
+    for item in index_dict[node_title]:
+        child_tref = item['Parent Ref']
+        convert_children_to_schema_nodes(child_tref)
+        create_intro_complex_text(child_tref, en_title, he_title, pos)
+
+
+def handle_simple_index(node, node_title, en_title, he_title):
+    if not node.parent and not node.children:
+        convert_simple_index_to_complex(Ref(node_title).index.title)
+        create_intro_complex_text(node_title, en_title, he_title)
+
+
 def create_index_dict():
     with open('intros_08_09_2022.csv', newline='') as csvfile:
         german_mishnah_csv = csv.DictReader(csvfile)
         index_dict = {}
-        former_parent_tref = None
-        new_row = {}
         for row in german_mishnah_csv:
 
-            # If first row
-            if not former_parent_tref:
-                former_parent_tref = row['Parent Ref']
+            # Copy row to new dict for modifying purposes
+            flagged_row = row
 
-            is_double_intro = False
-            parent_tref = row['Parent Ref']
+            # Check if it's one of the 'double introduction' rows
+            is_double_intro = check_if_double_intro(flagged_row)
 
-            if parent_tref == former_parent_tref:
-                new_row = row
-                new_row['two_intros'] = True
-                is_double_intro = True
+            # Set flags accordingly
+            flagged_row['double_intros'] = True if is_double_intro else False
 
-            i = library.get_index(parent_tref)
-            idx_title = re.findall(r"Index: (.*)", str(i))[0]
-
+            # Append to the index dictionary by Book Title (key)
+            idx_title = Ref(row['Parent Ref']).index.title
             if idx_title in index_dict:
-                if former_parent_tref != parent_tref:
-                    index_dict[idx_title].append(row)
-                else:
-                    index_dict[idx_title].append(new_row)
+                index_dict[idx_title].append(flagged_row)
             else:
-                if is_double_intro:
-                    index_dict[idx_title] = [new_row]
-                else:
-                    index_dict[idx_title] = [row]
-    print(index_dict)
+                index_dict[idx_title] = [flagged_row]
+
     return index_dict
 
 
 def run(index_dict):
     for node_title in index_dict:
 
-        seen = False
-
-        two_intros = False
-
         node = Ref(node_title).index_node
 
         print(f"Attempting to handle {node_title}")
 
         row = index_dict[node_title]
-        en_title = row[0]['Intro English Title']
-        he_title = row[0]['Intro Hebrew Title']
-        pos = row[0]['Intro Position']
+        en_title, he_title, pos, double_intros = separate_row_data(row)
 
-        if 'two_intros' in row[0]:
-            two_intros = True
+        # A node where each child has its own hakdamah (i.e. Hakdama to Bereshit, Hakdama to Shemot)
+        # and those children need to be converted from JA Nodes to Schema nodes
+        if len(row) > 1 and not double_intros:
+            handle_node_with_hakdamot_for_each_child(index_dict, node_title, en_title, he_title, pos)
 
-
-        if len(row) > 1 and not two_intros:  # Multiple indices for the children
-            seen = True
-
-            for item in index_dict[node_title]:
-                child_tref = item['Parent Ref']
-                convert_children_to_schema_nodes(child_tref)
-                create_intro_complex_text(child_tref, en_title, he_title, pos)
-
+        # Converting a simple index to a complex one, before adding the intro
         elif isinstance(node, JaggedArrayNode):  # Simple index
-            if not node.parent and not node.children:
-                seen = True
-                convert_simple_index_to_complex(library.get_index(node_title))
-                create_intro_complex_text(node_title, en_title, he_title)
+            handle_simple_index(node, node_title, en_title, he_title)
+
+        # The node already exists as a schema node
         else:  # Schema node (BY case)
-            if len(row) > 1 and two_intros:
-                seen = True
+            # Add multiple introductions if necessary
+            if double_intros:
                 for item in index_dict[node_title]:
                     tref = item['Parent Ref']
                     en_title = item['Intro English Title']
                     he_title = item['Intro Hebrew Title']
                     create_intro_complex_text(tref, en_title, he_title, pos)
+            # Add the single introduction if only one
             else:
-                seen = True
                 create_intro_complex_text(node_title, en_title, he_title, pos)
-
-        if not seen:
-            print(f"ERROR: {node_title} was not addressed by this script")
 
 
 if __name__ == '__main__':
