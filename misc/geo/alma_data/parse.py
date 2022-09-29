@@ -287,13 +287,12 @@ def check_places():
     return he2slug_map
 
 
-def find_potential_matches(raw_ref, headword, place):
-    replacements = [("ירושלם", "ירושלים")]
+def find_potential_matches(raw_ref, headword, place, aliases, use_aliases=False):
     title_strs = [headword]
-    for curr, new in replacements:
-        alt_title = headword.replace(curr, new)
-        if alt_title == headword: continue
-        title_strs += [alt_title]
+    if use_aliases:
+        place_aliases = aliases.get(place, None)
+        if place_aliases is not None:
+            title_strs += place_aliases
     named_entity = Topic({"slug": "blah", "titles": [{"lang": "he", "primary": True, "text": title} for title in title_strs]})
     ner = NaiveNamedEntityRecognizer([named_entity], normalizer, langSpecificParams={"he": {"prefixRegex": "(?:וכד|לכד|ובד|וד|בד|בכ|וב|וה|וכ|ול|ומ|וש|כב|ככ|כל|כמ|כש|מד|כד|דב|אד|לד|לכ|מב|מה|מכ|מל|מש|שב|שה|שכ|של|שמ|ב|כ|ל|מ|ש|ה|ו|ד|א(?!מר))??"}})
     ner.fit()
@@ -302,10 +301,10 @@ def find_potential_matches(raw_ref, headword, place):
     try:
         ref = Ref(raw_ref)
     except:
-        return potential_matches
+        return potential_matches, use_aliases
 
     if ref.is_book_level():
-        return potential_matches
+        return potential_matches, use_aliases
 
     expanded_refs = ref.all_segment_refs()
 
@@ -318,13 +317,19 @@ def find_potential_matches(raw_ref, headword, place):
             potential_matches.append([r.normal(), place, mention.start, mention.end, mention.mention])
 
     if len(potential_matches) == 0:
-        trimmed_ref = " ".join(str(x) for x in raw_ref.split(' ')[:-1])
-        potential_matches = find_potential_matches(trimmed_ref, headword, place)
+        if use_aliases:
+            trimmed_ref = " ".join(str(x) for x in raw_ref.split(' ')[:-1])
+            potential_matches, _ = find_potential_matches(trimmed_ref, headword, place, aliases, use_aliases=True)
+        else:
+            potential_matches, _ = find_potential_matches(raw_ref, headword, place, aliases, use_aliases=True)
 
-    return potential_matches
+    return potential_matches, use_aliases
 
 
 def create_geo_ref_topic_links(he2slug_map):
+    with open('aliases.json', 'r') as fin:
+        jin = json.load(fin)
+        aliases = {x['name']: x['aliases'] for x in jin}
 
     with open('place_topic_links (copy).csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -334,14 +339,16 @@ def create_geo_ref_topic_links(he2slug_map):
         no_match_refs = []
         potential_false_positives = []
         expected_good_matches = []
+        used_alias_matches = []
 
         for row in tqdm(list(csv_reader)):
             ref, headword, place = row
-            potential_matches = find_potential_matches(ref, headword, place)
+            potential_matches, used_aliases = find_potential_matches(ref, headword, place, aliases)
 
             if len(potential_matches) == 0:
                 no_match_refs.append(row)
-
+            elif used_aliases:
+                used_alias_matches += potential_matches
             elif len(potential_matches) > 1:
                 potential_false_positives += potential_matches
 
@@ -377,10 +384,12 @@ def create_geo_ref_topic_links(he2slug_map):
     write_csv("no_match_refs.csv", no_match_refs)
     write_csv("expected_good_matches.csv", expected_good_matches)
     write_csv("potential_false_positives.csv", potential_false_positives)
+    write_csv("used_alias_matches.csv", used_alias_matches)
 
     print(len(expected_good_matches))
     print(len(potential_false_positives))
     print(len(no_match_refs))
+    print(len(used_alias_matches))
 
 
 if __name__ == '__main__':
