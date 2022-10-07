@@ -33,6 +33,12 @@ class TzParser(object):
         self.tikkunim = []
         self.quoted = []
 
+        self.he_words = []
+        self.he_lines = []
+        self.he_paragraphs = []
+        self.he_dapim = []
+        self.he_tikkunim = []
+
         self.word = None
         self.phrase = None
         self.line = None
@@ -56,10 +62,18 @@ class TzParser(object):
     def parse_contents(self):
         """Parse the document"""
         self.title = self.get_title()
+        # if self.language == "hebrew":
+        #     self.parse_hebrew_contents()
+        # else:  # parse english
         self.elem_cursor = self.move_cursor()
         while self.elem_cursor:
             self.process_cursor()
             self.elem_cursor = self.move_cursor()
+        if self.language == "bi":
+            self.parse_hebrew_contents()
+
+    def parse_hebrew_contents(self):
+        pass
 
     def process_cursor(self):
         self.processed_elem_cursor = self.get_processed_elem()
@@ -333,11 +347,11 @@ class HtmlTzParser(TzParser):
 
     def move_cursor(self):
         """Return the next element at the line level"""
-        if not self.elem_cursor:
-            if self.language == "english":
-                cursor = self.doc_rep.find_all("div", class_="_idGenObjectStyleOverride-1")[0].contents[0]
-                if cursor.name:
-                    return cursor
+        if not self. elem_cursor:
+            # if self.language == "english":
+            cursor = self.doc_rep.find_all("div", class_="_idGenObjectStyleOverride-1")[0].contents[0]
+            if cursor.name:
+                return cursor
         else:
             cursor = self.elem_cursor
         # augment
@@ -410,7 +424,7 @@ class HtmlTzParser(TzParser):
                     self.word.add_to_word(elem_word)
                 else:
                     self.word = self.phrase.add_new_word(elem_word)
-                    self.word.footnotes = []
+                    # self.word.footnotes = []
                     self.paragraph.add_to_quoted_if_in_quotes(self.word)
                     self.words.append(self.word)
                 # elif self.line.inside_quotes:
@@ -420,7 +434,7 @@ class HtmlTzParser(TzParser):
                 #     self.line.add_to_quoted_if_necessary(self.word)
             else:
                 self.word = self.phrase.add_new_word(elem_word)
-                self.word.footnotes = []
+                # self.word.footnotes = []
                 self.words.append(self.word)
                 self.paragraph.add_to_quoted_if_in_quotes(self.word)
             #self.line.add_to_quoted_if_necessary(self.word)
@@ -572,6 +586,34 @@ class HtmlTzParser(TzParser):
     def get_next_word(self):
         return None
 
+    def parse_hebrew_contents(self):
+        hebrew = self.doc_rep.find(id="_idContainer2165")
+        print("hello")
+        types = {}
+        daf_index = 0
+        tikkun_index = 0
+        paragraph_index = 0
+
+        for child in hebrew.children:
+            if isinstance(child, str):
+                pass
+            if child.name == 'div' and 'daf-hebrew' in child.attrs['class']:  # daf
+                self.daf = self.dapim[daf_index]
+                daf = child.find_next('p').text
+                self.daf.he_name = daf
+                daf_index +=1
+            elif child.name == 'p' and 'chapter-number-title-Hebrew' in child.attrs['class']:
+                self.tikkun = self.tikkunim[tikkun_index]
+                self.tikkun.he_name = "".join([str(content) for content in child.contents])
+            elif child.name == 'p' and 'verse-Hebrew' in child.attrs['class']:
+                if paragraph_index < len(self.paragraphs):
+                    self.paragraph = self.paragraphs[paragraph_index]
+                else:
+                    self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
+                    self.paragraphs.append(self.paragraph)
+                self.paragraph.he_words = ''.join([str(content) for content in child.contents])
+                paragraph_index += 1
+
 #
 # parser2 = DocsTzParser("vol3.docx", 3)
 # parser2.read_file()
@@ -620,41 +662,51 @@ class HtmlTzParser(TzParser):
 #     # if it's end
 #     # if it's both
 
+def run_parse(self):
+    parsers = [HtmlTzParser("vol2.html", 2, language="bi")]
+    # parsers = [HtmlTzParser("vol2.html", 2), DocsTzParser("vol3.docx", 3), DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
+    # parsers = [DocsTzParser("vol4.docx", 4)]
+    # parsers = [DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
+    for i, parser in enumerate(parsers):
+        if i > 0:
+            parser.tikkun = parsers[i-1].tikkun
+        parser.read_file()
+        with open(f'tz_en_vol{parser.volume}.csv', 'w+') as tz_en:
+            fieldnames = ["tikkun", "daf", "paragraph", "he", "line", "phrase", "formatting", "footnotes"]
+            csv_writer = csv.DictWriter(tz_en, fieldnames)
+            csv_writer.writeheader()
+            for paragraph in parser.paragraphs:
+                if len(paragraph.phrases) == 0:
+                    row = {
+                        "tikkun": ' '.join([word.text for word in paragraph.tikkun.words if word.text is not ' ']),
+                        "daf": phrase.daf.name,
+                        "he": paragraph.he_words
+                    }
+                else:
+                    for phrase in paragraph.phrases:
+                        footnotes = []
+                        for word in phrase.words:
+                            for footnote in word.footnotes:
+                                if type(footnote.anchor) is Word:
+                                    anchor = footnote.anchor.text
+                                else: # Phrase
+                                    anchor = ' '.join([word.text for word in footnote.anchor.words])
+                                footnotes.append(f"{footnote.footnote_type}/{footnote.formatting}[{anchor}]:{footnote.text}")
+                        for footnote in phrase.footnotes:
+                            anchor = ' '.join([word.text for word in footnote.anchor.words])
+                            footnotes.append(f"{footnote.footnote_type}/{footnote.formatting}[{anchor}]:{footnote.text}")
+                        row = {
+                            "tikkun": ' '.join([word.text for word in phrase.tikkun.words if word.text is not ' ']),
+                            "daf": phrase.daf.name,
+                            "paragraph": phrase.paragraph.paragraph_number,
+                            "he": phrase.paragraph.he_words,
+                            "line": phrase.line.line_number,
+                            "phrase": ' '.join([word.text for word in phrase.words]),
+                            "formatting": phrase.formatting,
+                            "footnotes": ';'.join(footnotes)
+                        }
+                        csv_writer.writerow(row)
 
-parsers = [HtmlTzParser("vol2.html", 2), DocsTzParser("vol3.docx", 3), DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
-# parsers = [DocsTzParser("vol4.docx", 4)]
-# parsers = [DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
-for i, parser in enumerate(parsers):
-    if i > 0:
-        parser.tikkun = parsers[i-1].tikkun
-    parser.read_file()
-    with open(f'tz_en_vol{parser.volume}.csv', 'w+') as tz_en:
-        fieldnames = ["tikkun", "daf", "paragraph", "line", "phrase", "formatting", "footnotes"]
-        csv_writer = csv.DictWriter(tz_en, fieldnames)
-        csv_writer.writeheader()
-        for phrase in parser.phrases:
-            footnotes = []
-            for word in phrase.words:
-                for footnote in word.footnotes:
-                    if type(footnote.anchor) is Word:
-                        anchor = footnote.anchor.text
-                    else: # Phrase
-                        anchor = ' '.join([word.text for word in footnote.anchor.words])
-                    footnotes.append(f"{footnote.footnote_type}/{footnote.formatting}[{anchor}]:{footnote.text}")
-            for footnote in phrase.footnotes:
-                anchor = ' '.join([word.text for word in footnote.anchor.words])
-                footnotes.append(f"{footnote.footnote_type}/{footnote.formatting}[{anchor}]:{footnote.text}")
-            row = {
-                "tikkun": ' '.join([word.text for word in phrase.tikkun.words if word.text is not ' ']),
-                "daf": phrase.daf.name,
-                "paragraph": phrase.paragraph.paragraph_number,
-                "line": phrase.line.line_number,
-                "phrase": ' '.join([word.text for word in phrase.words]),
-                "formatting": phrase.formatting,
-                "footnotes": ';'.join(footnotes)
-            }
-            csv_writer.writerow(row)
-
-    with open(f'tz_en_vol{parser.volume}_quotes.csv', "w+") as tz_en_quotes:
-        fieldnames = ["tikkun", "daf", "paragraph", "line", "quotes", "formatting", "comments"]
-        csv_writer = csv.DictWriter(tz_en_quotes, fieldnames)
+        with open(f'tz_en_vol{parser.volume}_quotes.csv', "w+") as tz_en_quotes:
+            fieldnames = ["tikkun", "daf", "paragraph", "line", "he", "quotes", "formatting", "comments"]
+            csv_writer = csv.DictWriter(tz_en_quotes, fieldnames)

@@ -30,7 +30,7 @@ class Word(object):
         self.paragraph = paragraph
         self.daf = daf
         self.tikkun = tikkun
-        self.footnotes = footnotes
+        self.footnotes = []
 
     def add_to_word(self, str):
         self.text += str
@@ -105,6 +105,7 @@ class Line(object):
         self.tikkun.phrases.append(phrase)
         return phrase
 
+
 class Paragraph(object):
     """Multiple lines grouped together"""
     def __init__(self, tikkun, daf, paragraph_number):
@@ -113,6 +114,7 @@ class Paragraph(object):
         self.footnotes = []
         self.quoted = []
         self.words = []
+        self.he_words = None
         self.quoted_cursor = []
         # self.inside_quotes = False
         self.enter_quotes_on_next_word = False
@@ -165,6 +167,7 @@ class Paragraph(object):
 class Daf(object):
     def __init__(self, name):
         self.name = name
+        self.he_name = None
         self.lines = []
         self.paragraphs = []
         self.phrases = []
@@ -175,6 +178,7 @@ class Tikkun(object):
     def __init__(self, name, number):
         self.words = []
         self.paragraphs = []
+        self.he_name = None
         self.lines = []
         self.phrases = []
         self.footnotes = []
