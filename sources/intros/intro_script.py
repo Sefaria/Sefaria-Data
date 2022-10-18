@@ -13,8 +13,8 @@ from sources.functions import add_term
 # Issues -
 # Handle Legends of the Jews
 
-# Uncomment on first run
-add_term("An Introduction by the Author's Son", 'הקדמת בן המחבר')
+# Run this first, pointing at the required server
+# add_term("An Introduction by the Author's Son", 'הקדמת בן המחבר', server="https://hakdamot.cauldron.sefaria.org")
 
 
 def insert_second_child(new_node, parent_node):
@@ -138,5 +138,5 @@ def run(index_dict):
 
 
 if __name__ == '__main__':
-    idx_dict = create_index_dict()
-    run(idx_dict)
+    # idx_dict = create_index_dict()
+    # run(idx_dict)
