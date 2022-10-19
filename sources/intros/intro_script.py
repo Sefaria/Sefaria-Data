@@ -6,14 +6,11 @@ import csv
 from sefaria.model import *
 from sefaria.helper.schema import convert_simple_index_to_complex, convert_jagged_array_to_schema_with_default, \
     insert_first_child, attach_branch
-# from sources.functions import add_term
+from sources.functions import add_term
 
 
-# Todo
-# Issues -
-# Handle Legends of the Jews
 
-# Run this first, pointing at the required server
+# Uncomment on first run - Run this first, pointing at the required server
 # add_term("An Introduction by the Author's Son", 'הקדמת בן המחבר', server="")
 
 
