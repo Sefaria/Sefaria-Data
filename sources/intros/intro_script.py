@@ -14,7 +14,7 @@ from sefaria.helper.schema import convert_simple_index_to_complex, convert_jagge
 # Handle Legends of the Jews
 
 # Run this first, pointing at the required server
-# add_term("An Introduction by the Author's Son", 'הקדמת בן המחבר', server="https://hakdamot.cauldron.sefaria.org")
+# add_term("An Introduction by the Author's Son", 'הקדמת בן המחבר', server="")
 
 
 def insert_second_child(new_node, parent_node):
