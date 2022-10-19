@@ -93,7 +93,7 @@ class TzParser(object):
             # self.word_cursor = None
 
     def create_new_paragraph(self):
-        self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
+        self.paragraph = Paragraph(self.tikkun, self.daf, next(self.daf.paragraph_number))
         self.paragraphs.append(self.paragraph)
         self.tikkun.paragraphs.append(self.paragraph)
         self.daf.paragraphs.append(self.paragraph)
