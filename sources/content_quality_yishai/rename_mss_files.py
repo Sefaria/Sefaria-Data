@@ -42,19 +42,19 @@ def rename(bucket_name, filename, reg, off, pages=True):
 
 if __name__ == '__main__':
     bucket_name = 'manuscripts.sefaria.org'
-    # off = 8
-    # for n in range(23,2,-1):
-    #     page = section_to_daf(n)
-    #     reg = r'\d{1,3}[ab]'
-    #     filename = f'vilna-romm/Nazir_{page}.jpg'
-    #     rename(bucket_name, filename, reg, off)
-    #     filename = f'vilna-romm/Nazir_{page}_thumbnail.jpg'
-    #     rename(bucket_name, filename, reg, off)
     off = 2
-    for n in range(17, 10, -1):
-        page = str(n).zfill(4)
-        reg = '\d{4}'
-        filename = f'bomberg/masekhet_13_{page}.jpg'
-        rename(bucket_name, filename, reg, off, pages=False)
-        filename = f'bomberg/masekhet_13_{page}_thumbnail.jpg'
-        rename(bucket_name, filename, reg, off, pages=False)
+    for n in range(224,2,-1):
+        page = section_to_daf(n)
+        reg = r'\d{1,3}[ab]'
+        filename = f'vilna-romm/Ketubot_{page}.jpg'
+        rename(bucket_name, filename, reg, off)
+        filename = f'vilna-romm/Ketubot_{page}_thumbnail.jpg'
+        rename(bucket_name, filename, reg, off)
+    # off = 2
+    # for n in range(17, 10, -1):
+    #     page = str(n).zfill(4)
+    #     reg = '\d{4}'
+    #     filename = f'bomberg/masekhet_13_{page}.jpg'
+    #     rename(bucket_name, filename, reg, off, pages=False)
+    #     filename = f'bomberg/masekhet_13_{page}_thumbnail.jpg'
+    #     rename(bucket_name, filename, reg, off, pages=False)

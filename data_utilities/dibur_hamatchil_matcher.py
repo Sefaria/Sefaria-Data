@@ -308,7 +308,7 @@ class MatchMatrix(object):
                                               or len(comment_indexes_skipped) + len(new_daf_indexes_skipped) >= self.overall_word_skip_threshold,
                                           mismatch_threshold_hit)
         if not mismatch_threshold_hit and next_comment_index < self.comment_len and next_base_index < self.daf_len:
-            results += self._explore_path((next_comment_index, next_base_index),
+              results += self._explore_path((next_comment_index, next_base_index),
                                           daf_start_index,
                                           comment_indexes_skipped,
                                           daf_indexes_skipped,
@@ -1012,7 +1012,7 @@ def GetAllMatches(curDaf, curRashi, startBound, endBound,
     return allMatches
 
 
-def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), min_dh_len=1, max_dh_len=None, word_threshold=0.27, char_threshold=0.2):
+def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), min_dh_len=1, max_dh_len=None, word_threshold=0.27, char_threshold=0.2, lang='en'):
     '''
     This function's strength is that it doesn't need a DH tokonizer/ or DH words to search for. It searches for them (from the beginning of the comment text) to find the best option of DH to fit the base text. and returns a match obj (if found)
     :param base_text:
@@ -1049,12 +1049,12 @@ def get_maximum_dh(base_text, comment, tokenizer=lambda x: re.split(r'\s+',x), m
 
 
     InitializeHashTables()
-    curDaf = GemaraDaf(base_word_list, [])
+    curDaf = GemaraDaf(base_word_list, [], lang=lang)
 
     best_dh_start = 0
     best_match = None
     for i in range(min_dh_len, max_dh_len+1):
-        curRashi = RashiUnit(' '.join(comment_word_list[best_dh_start:best_dh_start+i]),comment,0)
+        curRashi = RashiUnit(' '.join(comment_word_list[best_dh_start:best_dh_start+i]),comment,0, lang=lang)
         matches = GetAllMatches(curDaf,curRashi,0,len(base_word_list)-1,word_threshold,char_threshold)
         if len(matches) > 0:
             temp_best_match = min(matches, key=lambda x: x.score)
@@ -1610,9 +1610,9 @@ def set_ranges(results, base_text):
 
 def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
               with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=None, place_all=False,
-              create_ranges=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he", max_overlap_percent=0.7):
+              create_ranges=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he", max_overlap_percent=0.7, chunks_list=False):
     """
-    base_text: TextChunk
+    base_text: TextChunk (for list of TextChunks set chunks_list to True)
     comments: TextChunk or list of comment strings
     base_tokenizer: f(string)->list(string)
     prev_matched_results: [(start,end)] list of start/end indexes found in a previous iteration of match_text
@@ -1633,6 +1633,7 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     overall: int, max number of overall skips, in both base and commentary
     lang: language of text you are matching. either "he" or "en"
     max_overlap_percent: float between 0 and 1. after matching, the top match is score based on how many words overlap with other matches. if the top match exceeds `max_overlap_percent`, we will consider swapping it for a lower match that is within a score of 10. set to 1 to avoid this logic.
+    chunks_list: for assigning base_text list of TextChunks. use when the base text is not one continuous TextChunk
 
     :returns: dict
     {"matches": list of base_refs. each element corresponds to each comment in comments,
@@ -1642,12 +1643,21 @@ def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh
     if with_abbrev_matches, dict also contains "abbrevs", list of AbbrevMatches
     if place_all, dict also contains "fixed", list of bools for each comment. True if comment originally didn't match, but later was matched b/c the comments around it were matched
     """
+    if not chunks_list:
+        bas_word_list = [w for seg in base_text.ja().flatten_to_array() for w in base_tokenizer(seg)]
+        bas_ind_list, bas_ref_list, total_len = base_text.text_index_map(base_tokenizer)
+    else:
+        bas_word_list = [w for chunk in base_text for seg in chunk.ja().flatten_to_array() for w in base_tokenizer(seg)]
+        bas_ind_list, bas_ref_list, total_len = [], [], 0
+        for chunk in base_text:
+            temp_ind_list, temp_ref_list, temp_total_len = chunk.text_index_map(base_tokenizer)
+            temp_ind_list = [x+total_len for x in temp_ind_list]
+            bas_ind_list += temp_ind_list
+            bas_ref_list += temp_ref_list
+            total_len += temp_total_len
 
-    bas_word_list = [w for seg in base_text.ja().flatten_to_array() for w in base_tokenizer(seg)]
     if len(bas_word_list) == 0:
         raise IndexError("No text in base_text after applying base_tokenizer()")
-    bas_ind_list,bas_ref_list,total_len = base_text.text_index_map(base_tokenizer)
-
 
     #get all non-empty segment refs for 'comments'
     if type(comments) == TextChunk:

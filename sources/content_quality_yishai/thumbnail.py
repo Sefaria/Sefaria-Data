@@ -11,12 +11,12 @@ def make_thumbnail(filename, extension='jpg'):
 if __name__ == '__main__':
     path = '/home/yishai/Downloads/mss/'
     import requests
-    for i in range(103,141):
+    for i in range(3,5):
         page = section_to_daf(i)
-        req = requests.get(f'https://manuscripts.sefaria.org/vilna-romm/Shabbat_{page}.jpg')
-        with open(f'{path}temp.jpg', 'wb') as fp:
-            fp.write(req.content)
-        with Image.open(f'{path}temp.jpg') as im:
+        # req = requests.get(f'https://manuscripts.sefaria.org/vilna-romm/Shabbat_{page}.jpg')
+        # with open(f'{path}temp.jpg', 'wb') as fp:
+        #     fp.write(req.content)
+        with Image.open(f'{path}Ketubot_{page}.jpg') as im:
             im.thumbnail((256, 278))
-            im.save(f'{path}Shabbat_{page}_thumbnail.jpg')
+            im.save(f'{path}Ketubot_{page}_thumbnail.jpg')
 

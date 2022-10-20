@@ -7,13 +7,12 @@ import time
 
 import os
 version = "all"
-SEFARIA_SERVER = "https://www.sefaria.org"
+SEFARIA_SERVER = "https://jmc.cauldron.sefaria.org"
 results = []
-indices = library.get_indexes_in_category("Tanakh")
-vtitle = "La Bible, Traduction Nouvelle, Samuel Cahen, 1831 [fr]"
+indices = ["Connecticut Ratification Debates", "Delaware Ratification Debates"]
 for m in indices:
      print(m)
-     cmd = """./run scripts/move_draft_text.py "{}" --noindex -v 'he:{}' -d '{}'""".format(m, vtitle, SEFARIA_SERVER)
+     cmd = """./run scripts/move_draft_text.py "{}" -k '{}' -d '{}'""".format(m,  API_KEY, SEFARIA_SERVER)
      results.append(os.popen(cmd).read())
-     time.sleep(5)
+     time.sleep(1)
 
