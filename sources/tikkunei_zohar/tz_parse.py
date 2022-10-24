@@ -499,7 +499,7 @@ class HtmlTzParser(TzParser):
             return False
 
     def process_footnote_material(self, elem):
-        if not self.parsing_footnote:  # open a footnote
+        if not self.parsing_footnote or self.current_footnote.footnote_type == FootnoteType.SYMBOL:  # open a footnote or symbol is useless
             if "stars" in elem['class']:
                 footnote_type = HtmlTzParser.FOOTNOTES["stars"]
             elif "infinity" in elem['class']:
@@ -512,7 +512,10 @@ class HtmlTzParser(TzParser):
                 footnote_type = FootnoteType.SYMBOL
             format_class = [x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0] if \
                 any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']) else None
-            self.current_footnote = Footnote(footnote_type, format_class)
+            if not self.parsing_footnote:
+                self.current_footnote = Footnote(footnote_type, format_class)
+            else:
+                self.current_footnote.footnote_type = footnote_type
         for letter in elem.text:
             self.process_footnote_text(letter)
             # if footnote_type is not HtmlTzParser.FOOTNOTES["CharOverride-2"]:  # not a book
@@ -662,7 +665,7 @@ class HtmlTzParser(TzParser):
 #     # if it's end
 #     # if it's both
 
-def run_parse(self):
+def run_parse():
     parsers = [HtmlTzParser("vol2.html", 2, language="bi")]
     # parsers = [HtmlTzParser("vol2.html", 2), DocsTzParser("vol3.docx", 3), DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
     # parsers = [DocsTzParser("vol4.docx", 4)]
@@ -710,3 +713,5 @@ def run_parse(self):
         with open(f'tz_en_vol{parser.volume}_quotes.csv', "w+") as tz_en_quotes:
             fieldnames = ["tikkun", "daf", "paragraph", "line", "he", "quotes", "formatting", "comments"]
             csv_writer = csv.DictWriter(tz_en_quotes, fieldnames)
+
+# run_parse()

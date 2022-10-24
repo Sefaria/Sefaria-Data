@@ -18,6 +18,16 @@ class FootnoteType(Enum):
     TRIANGLE = 6
 
 
+def get_symbol(footnote_type):
+    if footnote_type == FootnoteType.INFINITY:
+        return '∞'
+    # elif footnote_type == FootnoteType.STAR:
+    #     return
+    elif footnote_type == FootnoteType.TRIANGLE:
+        return '△'
+    else:
+        return None
+
 class Word(object):
     """Word in the Solomon Tikkunei Zohar"""
     ids = count(0)
@@ -39,6 +49,7 @@ class Word(object):
         footnote = Footnote(footnote_type, formatting, self, footnote)
         self.footnotes.append(footnote)
         return footnote
+
 
 class Phrase(object):
     """1 or more words formatted a particular way"""
@@ -153,6 +164,32 @@ class Paragraph(object):
         for quote in self.quoted_cursor:
             quote.add_word(word)
 
+    def get_words(self):
+        words = ''
+        for phrase in self.phrases:
+            # for word in phrase.words:
+            words_in_phrase = ''
+            for word in phrase.words:
+                if words_in_phrase != '':
+                    words_in_phrase += ' '
+                words_in_phrase += word.text
+                for footnote in word.footnotes:
+                    if type(footnote.anchor) is Word:
+                        anchor = footnote.anchor.text
+                    else:  # Phrase
+                        anchor = ' '.join([word.text for word in footnote.anchor.words])
+                    footnote_symbol = get_symbol(footnote.footnote_type)
+                    if footnote_symbol:
+                        words_in_phrase += '<sup>' + footnote_symbol + '</sup>' + '<i class="footnote"><b>' + anchor \
+                            + '</b>' + footnote.text + '</i>'
+            # words_in_phrase = ' '.join([word.text for word in phrase.words])
+            if words != '':
+                words += ' '
+            words += words_in_phrase
+        # for footnote in phrase.footnotes:
+
+        return words
+
     # def add_to_quoted_if_necessary(self, word):
     #     if self.inside_quotes or self.enter_quotes_on_next_word:
     #         self.quoted_cursor[-1].add_word(word)
@@ -172,6 +209,7 @@ class Daf(object):
         self.paragraphs = []
         self.phrases = []
         self.footnotes = []
+        self.paragraph_number = count(0)
 
 
 class Tikkun(object):
