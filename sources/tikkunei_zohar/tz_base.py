@@ -29,6 +29,27 @@ def get_symbol(footnote_type):
     else:
         return None
 
+
+def get_tag(formatting_type, opening_tag=True):
+    if not formatting_type:
+        return ''
+    elements = None
+    if formatting_type == Formatting.BOLD:
+        tags = ['b']
+    elif formatting_type == Formatting.FADED:
+        tags = ['span']
+        elements = 'style="background-color:powderblue"'
+    elif formatting_type == Formatting.ITALICS:
+        tags = ['i']
+    elif formatting_type == Formatting.BOLD_ITALICS:
+        tags = ['b', 'i']
+
+    tag_string = ''
+    for tag in tags:
+        tag_string += f'<{"/" if not opening_tag else ""}{tag}{" " + elements if elements and opening_tag else ""}>'
+    return tag_string
+
+
 def strip_symbol(to_strip): # TODO: move into HtmlParser if HTML based
     for symbol in ['∞', '', '']:
         to_strip = to_strip.replace(symbol, '')
@@ -174,26 +195,32 @@ class Paragraph(object):
 
     def get_words(self):
         words = ''
-        for phrase in self.phrases:
-            # for word in phrase.words:
-            words_in_phrase = ''
-            for word in phrase.words:
-                if words_in_phrase != '':
-                    words_in_phrase += ' '
-                words_in_phrase += word.text
-                for footnote in word.footnotes:
-                    if type(footnote.anchor) is Word:
-                        anchor = footnote.anchor.text
-                    else:  # Phrase
-                        anchor = ' '.join([word.text for word in footnote.anchor.words])
-                    footnote_symbol = get_symbol(footnote.footnote_type)
-                    if footnote_symbol:
-                        words_in_phrase += '<sup>' + footnote_symbol + '</sup>' + '<i class="footnote"><b>' \
-                                           + '</b>' + strip_symbol(footnote.text) + '</i>'
-            # words_in_phrase = ' '.join([word.text for word in phrase.words])
-            if words != '':
-                words += ' '
-            words += words_in_phrase
+        for line in self.lines:
+            for phrase in line.phrases:
+                # for word in phrase.words:
+                words_in_phrase = ''
+                for word in phrase.words:
+                    if words_in_phrase != '':
+                        words_in_phrase += ' '
+                    else:
+                        words_in_phrase += get_tag(phrase.formatting)
+                    words_in_phrase += word.text
+                    for footnote in word.footnotes:
+                        if type(footnote.anchor) is Word:
+                            anchor = footnote.anchor.text
+                        else:  # Phrase
+                            anchor = ' '.join([word.text for word in footnote.anchor.words])
+                        footnote_symbol = get_symbol(footnote.footnote_type)
+                        if footnote_symbol:
+                            words_in_phrase += '<sup>' + footnote_symbol + '</sup>' + '<i class="footnote"><b>' \
+                                               + '</b>' + strip_symbol(footnote.text) + '</i>'
+                words_in_phrase += get_tag(phrase.formatting, False)
+                # words_in_phrase = ' '.join([word.text for word in phrase.words])
+                if words != '':
+                    words += ' '
+                words += words_in_phrase
+            words += '<br>'
+        words.rstrip('<br>')
         # for footnote in phrase.footnotes:
 
         return words

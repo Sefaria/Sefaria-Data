@@ -510,7 +510,7 @@ class HtmlTzParser(TzParser):
                 footnote_type = HtmlTzParser.FOOTNOTES["CharOverride-2"]
             else:
                 footnote_type = FootnoteType.SYMBOL
-            format_class = [x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0] if \
+            format_class = HtmlTzParser.FORMATTING_CLASSES[[x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0]] if \
                 any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']) else None
             if not self.parsing_footnote:
                 self.current_footnote = Footnote(footnote_type, format_class)
@@ -561,7 +561,7 @@ class HtmlTzParser(TzParser):
                     if 'grey-text' in elem['class'] and 'CharOverride-9' in elem['class']:
                         format_class = None
                     else:
-                        format_class = [x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0] if \
+                        format_class = HtmlTzParser.FORMATTING_CLASSES[[x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0]] if \
                             any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']) else None
                     if len([x for x in elem['class'] if x in HtmlTzParser.APPEND_TO_WORD]) > 0:
                         self.continue_phrase = True
