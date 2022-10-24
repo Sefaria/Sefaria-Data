@@ -2,6 +2,7 @@ from enum import Enum
 from itertools import count
 from collections import OrderedDict
 
+
 class Formatting(Enum):
     BOLD = 1
     ITALICS = 2
@@ -21,12 +22,17 @@ class FootnoteType(Enum):
 def get_symbol(footnote_type):
     if footnote_type == FootnoteType.INFINITY:
         return '∞'
-    # elif footnote_type == FootnoteType.STAR:
-    #     return
+    elif footnote_type == FootnoteType.STAR:
+        return '☉'
     elif footnote_type == FootnoteType.TRIANGLE:
         return '△'
     else:
         return None
+
+def strip_symbol(to_strip): # TODO: move into HtmlParser if HTML based
+    for symbol in ['∞', '', '']:
+        to_strip = to_strip.replace(symbol, '')
+    return to_strip
 
 class Word(object):
     """Word in the Solomon Tikkunei Zohar"""
@@ -100,6 +106,7 @@ class Quoted(object):
 
 class Line(object):
     """Ordered phrases"""
+
     def __init__(self, paragraph, daf, tikkun, line_number):
         self.phrases = []
         self.paragraph = paragraph
@@ -119,6 +126,7 @@ class Line(object):
 
 class Paragraph(object):
     """Multiple lines grouped together"""
+
     def __init__(self, tikkun, daf, paragraph_number):
         self.lines = []
         self.phrases = []
@@ -154,7 +162,7 @@ class Paragraph(object):
         else:
             # print([word.text for word in self.quoted_cursor[-1].words])
             self.quoted.append(self.quoted_cursor[-1])
-        # self.inside_quotes = False
+            # self.inside_quotes = False
             self.quoted_cursor.pop()
 
         # self.exit_quotes_on_next_word = True
@@ -180,8 +188,8 @@ class Paragraph(object):
                         anchor = ' '.join([word.text for word in footnote.anchor.words])
                     footnote_symbol = get_symbol(footnote.footnote_type)
                     if footnote_symbol:
-                        words_in_phrase += '<sup>' + footnote_symbol + '</sup>' + '<i class="footnote"><b>' + anchor \
-                            + '</b>' + footnote.text + '</i>'
+                        words_in_phrase += '<sup>' + footnote_symbol + '</sup>' + '<i class="footnote"><b>' \
+                                           + '</b>' + strip_symbol(footnote.text) + '</i>'
             # words_in_phrase = ' '.join([word.text for word in phrase.words])
             if words != '':
                 words += ' '
@@ -198,7 +206,6 @@ class Paragraph(object):
     #     if self.exit_quotes_on_next_word:
     #         self.inside_quotes = False
     #         self.exit_quotes_on_next_word = False
-
 
 
 class Daf(object):
@@ -236,6 +243,5 @@ class TikkuneiZohar(object):
     def __init__(self):
         self.tikkunim = []
         self.dapim = []
-
 
 # do we need the
