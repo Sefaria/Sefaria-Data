@@ -589,9 +589,31 @@ class HtmlTzParser(TzParser):
     def get_next_word(self):
         return None
 
+    @staticmethod
+    def clean_he(hebrew_text):
+        if isinstance(hebrew_text, str):
+            return hebrew_text
+        else:
+            cleaned_hebrew_text = ''
+            for child in hebrew_text:
+                if isinstance(child, str):
+                    cleaned_hebrew_text += child
+                elif child.name == 'br':
+                    cleaned_hebrew_text += "</br>"
+                elif child.name == 'span':
+                    if 'hebrew-bd' in child.attrs['class']:
+                        child.name = 'b'
+                        child.attrs = {}
+                    else:
+                        print(str(child))
+                    cleaned_hebrew_text += str(child)
+                else:
+                    print(str(child))
+            return cleaned_hebrew_text
+
+
     def parse_hebrew_contents(self):
         hebrew = self.doc_rep.find(id="_idContainer2165")
-        print("hello")
         types = {}
         daf_index = 0
         tikkun_index = 0
@@ -611,10 +633,11 @@ class HtmlTzParser(TzParser):
             elif child.name == 'p' and 'verse-Hebrew' in child.attrs['class']:
                 if paragraph_index < len(self.paragraphs):
                     self.paragraph = self.paragraphs[paragraph_index]
-                else:
+                else:  # somehow misaligned??
                     self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
                     self.paragraphs.append(self.paragraph)
-                self.paragraph.he_words = ''.join([str(content) for content in child.contents])
+                self.paragraph.he_words = self.clean_he(child.contents)
+                    #''.join([str(content) for content in child.contents])
                 paragraph_index += 1
 
 #
