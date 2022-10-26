@@ -164,7 +164,9 @@ class DocsTzParser(TzParser):
         return re.match(r'\[[0-9]+[ab]\]', self.processed_elem_cursor.text) is not None
 
     def get_daf(self):
-        daf = Daf(self.processed_elem_cursor.text)
+        stripped_text = self.processed_elem_cursor.text.lstrip("[")
+        stripped_text = stripped_text.rstrip("]")
+        daf = Daf(stripped_text)
         self.dapim.append(daf)
         return daf
 
