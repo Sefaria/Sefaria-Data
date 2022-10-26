@@ -197,7 +197,7 @@ def run_commentary_insertion():
         html_words_dict = clean_html_base_words(base_words)
 
         # Two attempts with adjusted parameters to use the dibbur_hamatchil_matcher to find
-        # the correct dibburei hamatchil, return the tuples of the results
+        # the correct dibbur hamatchil, return the tuples of the results
         result_tuples = attempt_to_match(base_words, comment_list)
 
         # Put the HTML back into the words of the comment
