@@ -123,18 +123,17 @@ def get_base_words_with_html(html_words_dict, base_words):
 
 
 def setup_mt_dict():
-    # TODO - what is going on here with the regex?
     mt_dict = {}
     with open('mishneh_torah_data_cleaned.csv', newline='') as csvfile:
         r = csv.reader(csvfile, delimiter=',')
         br_patt = r"\.<br>"
         for row in r:
             ref = row[0]
-
-            if "<br>" in row[0]:
-                mt_dict = re.sub(br_patt, ". <br>", row[0])
+            text = row[1]
+            if "<br>" in text:
+                mt_dict[ref] = re.sub(br_patt, ". <br> ", text)
             else:
-                mt_dict[ref] = row[1]
+                mt_dict[ref] = text
     return mt_dict
 
 
