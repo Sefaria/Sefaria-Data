@@ -8,7 +8,7 @@ new_file = ""
 
 import os
 import csv
-files = [open('../../../Downloads/curr exodus jps.csv', 'r')]
+files = [open('Genesis - en - The Contemporary Torah, Jewish Publication Society, 2006.csv', 'r')]
 for new_file in files:
     # if "Moed" not in new_file or "Rosh" not in new_file:
     #     continue
