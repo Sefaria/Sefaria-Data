@@ -4,8 +4,6 @@ django.setup()
 
 import csv
 import re
-import bleach
-from sefaria.helper.normalization import RegexNormalizer
 from data_utilities.dibur_hamatchil_matcher import match_text
 from commentary_data import commentary_dict
 
@@ -16,33 +14,11 @@ from mt_utilities import sefaria_book_names, chabad_book_names, create_book_name
 name_map = create_book_name_map(chabad_book_names, sefaria_book_names)
 
 
-# TODO - Fix regexes... slightly off now that we bleach.cleaned
-
-
 def extract_dibbur_hamatchil(txt):
     dhm = re.findall(r"^(.*?) -", txt, re.DOTALL)
     if len(dhm) < 1:
         return ""
     return dhm[0]
-
-
-def extract_comment_body(txt, count):
-    cb = re.findall(r"^.*? [-—](.*)$", txt, re.DOTALL)
-    if len(cb) < 1:
-        count += 1
-        return txt
-    return cb[0]
-
-
-def insert_successes(base_words, successful_insertion_list, ref, dh_serials):
-    text_with_comments = " ".join(base_words)
-    successful_insertion_list.append(
-        {
-            'ref': ref,
-            'text_with_comments': text_with_comments,
-            'dh_inserted_serials': dh_serials
-        }
-    )
 
 
 def comment_clean(text):
@@ -53,7 +29,25 @@ def comment_clean(text):
     return comment_body
 
 
-def join_manual_with_footnote_text():
+def extract_comment_body(txt):
+    cb = re.findall(r"^.*? [-—](.*)$", txt, re.DOTALL)
+    if len(cb) < 1:
+        return comment_clean(txt)
+    return comment_clean(cb[0])
+
+
+def append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials):
+    text_with_comments = " ".join(base_words)
+    successful_insertion_list.append(
+        {
+            'ref': ref,
+            'text_with_comments': text_with_comments,
+            'dh_inserted_serials': dh_serials
+        }
+    )
+
+
+def join_manual_with_footnote_text(successful_insertion_list, manual_list):
     success_text_map = {}
     for halakha in successful_insertion_list:
         ref = halakha['ref']
@@ -79,30 +73,15 @@ def join_manual_with_footnote_text():
     return placed_html_manual_list
 
 
-def generate_report(count, manual_list, success_count, successful_insertion_list, placed_html_manual_list):
-    print(f"{count} can't extract comment body")
+def generate_report(manual_list, successful_insertion_list, placed_html_manual_list):
     print(f"{len(manual_list)} on manual list, can't find dhm")
-    print(f"{success_count} individual comments successfully placed in {len(successful_insertion_list)} refs")
+    print(f"Comments successfully placed in {len(successful_insertion_list)} refs")
     print(f"{len(placed_html_manual_list)} on NEW manual list")
 
 
-successful_insertion_list = []
-manual_list = []
-mt_dict = {}
-
-count = 0
-success_count = 0
-with open('mishneh_torah_data_cleaned.csv', newline='') as csvfile:
-    r = csv.reader(csvfile, delimiter=',')
-    for row in r:
-        ref = row[0]
-        mt_dict[ref] = row[1]
-
-for ref in commentary_dict:
+# TODO - add comments & tests to new functions from refactor
+def clean_html_base_words(base_words):
     html_words_dict = {}
-    comment_list = commentary_dict[ref]
-    base_words = mt_dict[ref].split(" ")
-
     for i in range(len(base_words)):
         cur_word = base_words[i]
         is_html_word = re.findall(r"<.*?>", cur_word)
@@ -112,7 +91,54 @@ for ref in commentary_dict:
 
         # Temp replace base word with something cleaned
         base_words[i] = re.sub(r"<.*?>", "", cur_word)
+    return html_words_dict
 
+
+def create_footnote(i, comment_body):
+    return f"<sup class=\"footnote-marker\">{i + 1}</sup><i class=\"footnote\">{comment_body}</i>"
+
+
+def get_insertion_index(tuples, i, num_insertions):
+    end_idx_for_comment = tuples[i][-1]
+    insertion_idx = (end_idx_for_comment + 1) + num_insertions
+    return insertion_idx
+
+
+def update_indices_upon_successful_match(dh_serials, num_insertions, i):
+    num_insertions += 1
+    dh_serials.append(i + 1)
+
+
+def insert_footnote_into_base_words(i, comment_body, dh_serials, num_insertions, base_words, tuples):
+    footnote = create_footnote(i, comment_body)
+    insertion_idx = get_insertion_index(tuples, i, num_insertions)
+    base_words.insert(insertion_idx, footnote)
+    update_indices_upon_successful_match(dh_serials, num_insertions, i)
+
+
+def get_base_words_with_html(html_words_dict, base_words):
+    for index in html_words_dict:
+        base_words[index] = html_words_dict[index]
+    return base_words
+
+
+def setup_mt_dict():
+    # TODO - what is going on here with the regex?
+    mt_dict = {}
+    with open('mishneh_torah_data_cleaned.csv', newline='') as csvfile:
+        r = csv.reader(csvfile, delimiter=',')
+        br_patt = r"\.<br>"
+        for row in r:
+            ref = row[0]
+
+            if "<br>" in row[0]:
+                mt_dict = re.sub(br_patt, ". <br>", row[0])
+            else:
+                mt_dict[ref] = row[1]
+    return mt_dict
+
+
+def attempt_to_match(base_words, comment_list):
     results = match_text(base_words,
                          comment_list,
                          dh_extract_method=extract_dibbur_hamatchil,
@@ -127,86 +153,72 @@ for ref in commentary_dict:
                              daf_skips=3,
                              rashi_skips=2,
                              overall=3)
+    return results['matches']
 
 
-    # Report outstanding errors
-    if (-1, -1) in results['matches']:
-        count += 1
-        tuples = results['matches']
+def append_to_manual_list(manual_list, ref, mt_dict, i, dh, comment_body):
+    manual_list.append({
+        'ref': ref,
+        'text': mt_dict[ref],
+        'dh_serial': i + 1,
+        'unplaced_dh': dh,
+        'unplaced_comment': comment_body
+    })
+
+
+def generate_stats_and_csvs(successful_insertion_list, manual_list):
+    # If place markers exist, replace the text in manual
+    placed_html_manual_list = join_manual_with_footnote_text(successful_insertion_list, manual_list)
+    generate_report(manual_list, successful_insertion_list, placed_html_manual_list)
+    export_data_to_csv(placed_html_manual_list, 'qa_reports/manual_commentaries_2',
+                       ['ref', 'text', 'dh_serial', 'unplaced_dh', 'unplaced_comment'])
+    export_data_to_csv(successful_insertion_list, 'qa_reports/inserted_commentaries_2',
+                       ['ref', 'text_with_comments', 'dh_inserted_serials'])
+
+
+# TODO - hunch, offset happening with the HTML index, split on space and .<
+# Todo - Pre-process text by adding a space before each <br>
+def run_commentary_insertion():
+    successful_insertion_list = []
+    manual_list = []
+
+    mt_dict = setup_mt_dict()
+
+    for ref in commentary_dict:
+
         num_insertions = 0
         dh_serials = []
 
-        # Replace back original HTML
-        for index in html_words_dict:
-            base_words[index] = html_words_dict[index]
+        # Retrieve the list of comments for this ref
+        comment_list = commentary_dict[ref]
 
-        for i in range(len(tuples)):
+        # Divide raw comment text into a list of words, and clean each word for HTML
+        base_words = mt_dict[ref].split(" ")
+        html_words_dict = clean_html_base_words(base_words)
+
+        # Two attempts with adjusted parameters to use the dibbur_hamatchil_matcher to find
+        # the correct dibburei hamatchil, return the tuples of the results
+        result_tuples = attempt_to_match(base_words, comment_list)
+
+        # Put the HTML back into the words of the comment
+        base_words = get_base_words_with_html(html_words_dict, base_words)
+
+        for i in range(len(result_tuples)):
             dh = extract_dibbur_hamatchil(comment_list[i])
-            comment_body = extract_comment_body(comment_list[i], count)
-            comment_body = comment_clean(comment_body)
+            comment_body = extract_comment_body(comment_list[i])
 
-            if tuples[i] == (-1, -1):  # error and not last
-                manual_list.append({
-                    'ref': ref,
-                    'text': mt_dict[ref],
-                    'dh_serial': i + 1,
-                    'unplaced_dh': dh,
-                    'unplaced_comment': comment_body
-                })
-                if i == len(tuples) - 1:  # also is last
-                    insert_successes(base_words, successful_insertion_list, ref, dh_serials)
+            if result_tuples[i] == (-1, -1):  # If it's an error
+                append_to_manual_list(manual_list, ref, mt_dict, i, dh, comment_body)
 
-            else:  # Found
-                end_idx_for_comment = tuples[i][-1]
-                insertion_idx = (end_idx_for_comment + 1) + num_insertions
+            else:  # If it's a match
+                insert_footnote_into_base_words(i, comment_body, dh_serials, num_insertions, base_words, result_tuples)
 
-                footnote = f"<sup class=\"footnote-marker\">{i + 1}</sup><i class=\"footnote\">{comment_body}</i>"
-                base_words.insert(insertion_idx, footnote)
-                num_insertions += 1
-                success_count += 1
-                dh_serials.append(i + 1)
+            # Last time through, append successes
+            if i == len(result_tuples) - 1:
+                append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials)
 
-                # Last time through, append
-                if i == len(tuples) - 1:
-                    insert_successes(base_words, successful_insertion_list, ref, dh_serials)
-
-    # On full success cases
-    else:
-        tuples = results['matches']
-        num_insertions = 0
-        dh_serials = []
-
-        # Replace back original HTML
-        for index in html_words_dict:
-            base_words[index] = html_words_dict[index]
-
-        for i in range(len(tuples)):
-            dh = extract_dibbur_hamatchil(comment_list[i])
-            comment_body = extract_comment_body(comment_list[i], count)
-            comment_body = comment_clean(comment_body)
-
-            end_idx_for_comment = tuples[i][-1]
-            insertion_idx = (end_idx_for_comment + 1) + num_insertions
-            footnote = f"<sup class=\"footnote-marker\">{i + 1}</sup><i class=\"footnote\">{comment_body}</i>"
-            base_words.insert(insertion_idx, footnote)
-            success_count += 1
-            dh_serials.append(i + 1)
-
-            # Last time through, append
-            if i == len(tuples) - 1:
-                insert_successes(base_words, successful_insertion_list, ref, dh_serials)
-
-# for halakha in successful_insertion_list:
-#     if halakha['ref'] == 'Blessings 1.1':
-#         print(halakha['text_with_comments'])
+    generate_stats_and_csvs(successful_insertion_list, manual_list)
 
 
-# If place markers exist, replace the text in manual
-placed_html_manual_list = join_manual_with_footnote_text()
-
-generate_report(count, manual_list, success_count, successful_insertion_list, placed_html_manual_list)
-
-export_data_to_csv(placed_html_manual_list, 'qa_reports/manual_commentaries',
-                   ['ref', 'text', 'dh_serial', 'unplaced_dh', 'unplaced_comment'])
-export_data_to_csv(successful_insertion_list, 'qa_reports/inserted_commentaries',
-                   ['ref', 'text_with_comments', 'dh_inserted_serials'])
+if __name__ == '__main__':
+    run_commentary_insertion()
