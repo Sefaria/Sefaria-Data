@@ -18,8 +18,12 @@ def test_create_footnote(i, footnote):
 
 
 @pytest.fixture()
-def insertion_index(i):
-    tuples = [(52, 62), (63, 71), (0, 6), (27, 36), (23, 34), (52, 62)]
+def tuples():
+    return [(52, 62), (63, 71), (0, 6), (27, 36), (23, 34), (52, 62)]
+
+
+@pytest.fixture()
+def insertion_index(i, tuples):
     num_insertions = 20
     end_idx_for_comment = tuples[i][-1]
     insertion_idx = (end_idx_for_comment + 1) + num_insertions
@@ -145,21 +149,25 @@ def success_expected_result(base_words, ref, dh_serials):
              'text_with_comments': " ".join(base_words),
              'dh_inserted_serials': dh_serials}]
 
+
 # Todo - failing because can't compare a function to an array, but makes no sense since the manual case is working
 def test_append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials, i, footnote):
     assert success_expected_result == append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials)
 
 
-
-# def insert_footnote_into_base_words(i, comment_body, dh_serials, num_insertions, base_words, tuples):
-#     footnote = create_footnote(i, comment_body)
-#     insertion_idx = get_insertion_index(tuples, i, num_insertions)
-#     base_words.insert(insertion_idx, footnote)
-#     update_indices_upon_successful_match(dh_serials, num_insertions, i)
+@pytest.fixture()
+def expected_base_words_footnote():
+    return ['Hello', 'there', 'my', 'name', 'is', 'Sefaria.<br>I', 'like', '<b>Jewish</b>', 'texts.',
+            '<sup class="footnote-marker">5</sup><i class="footnote">Sample comment</i>']
 
 
+def test_insert_footnote_into_base_words(i, sample_comment, dh_serials, num_insertions, base_words, tuples,
+                                         expected_base_words_footnote):
+    assert expected_base_words_footnote == insert_footnote_into_base_words(i, sample_comment, dh_serials,
+                                                                           num_insertions, base_words, tuples)
 
 # Skipping
 # attempt_to_match(base_words, comment_list):
 # setup_mt_dict()
 # generate_report_and_csvs()
+# todo - write a function for the main run?
