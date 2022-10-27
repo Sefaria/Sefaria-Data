@@ -116,6 +116,7 @@ def insert_footnote_into_base_words(i, comment_body, dh_serials, num_insertions,
     insertion_idx = get_insertion_index(tuples, i, num_insertions)
     base_words.insert(insertion_idx, footnote)
     update_indices_upon_successful_match(dh_serials, num_insertions, i)
+    return base_words
 
 
 def get_base_words_with_html(html_words_dict, base_words):
