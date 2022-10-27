@@ -45,6 +45,7 @@ def append_successes_to_list(base_words, successful_insertion_list, ref, dh_seri
             'dh_inserted_serials': dh_serials
         }
     )
+    return successful_insertion_list
 
 
 def join_manual_with_footnote_text(successful_insertion_list, manual_list):
@@ -107,6 +108,7 @@ def get_insertion_index(tuples, i, num_insertions):
 def update_indices_upon_successful_match(dh_serials, num_insertions, i):
     num_insertions += 1
     dh_serials.append(i + 1)
+    return num_insertions
 
 
 def insert_footnote_into_base_words(i, comment_body, dh_serials, num_insertions, base_words, tuples):
@@ -163,6 +165,7 @@ def append_to_manual_list(manual_list, ref, mt_dict, i, dh, comment_body):
         'unplaced_dh': dh,
         'unplaced_comment': comment_body
     })
+    return manual_list
 
 
 def generate_stats_and_csvs(successful_insertion_list, manual_list):
