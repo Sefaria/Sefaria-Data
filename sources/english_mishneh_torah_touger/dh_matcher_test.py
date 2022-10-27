@@ -3,36 +3,36 @@ from dh_matcher import *
 
 
 @pytest.fixture(autouse=True)
-def i():
+def sample_i_from_for_loop():
     return 4
 
 
 @pytest.fixture()
-def footnote(i):
+def footnote(sample_i_from_for_loop):
     comment_body = "ABCDE"
-    return f"<sup class=\"footnote-marker\">{i + 1}</sup><i class=\"footnote\">{comment_body}</i>"
+    return f"<sup class=\"footnote-marker\">{sample_i_from_for_loop + 1}</sup><i class=\"footnote\">{comment_body}</i>"
 
 
-def test_create_footnote(i, footnote):
-    assert footnote == create_footnote(i, "ABCDE")
+def test_create_footnote(sample_i_from_for_loop, footnote):
+    assert footnote == create_footnote(sample_i_from_for_loop, "ABCDE")
 
 
 @pytest.fixture()
-def tuples():
+def sample_matcher_tuples():
     return [(52, 62), (63, 71), (0, 6), (27, 36), (23, 34), (52, 62)]
 
 
 @pytest.fixture()
-def insertion_index(i, tuples):
+def insertion_index(sample_i_from_for_loop, sample_matcher_tuples):
     num_insertions = 20
-    end_idx_for_comment = tuples[i][-1]
+    end_idx_for_comment = sample_matcher_tuples[sample_i_from_for_loop][-1]
     insertion_idx = (end_idx_for_comment + 1) + num_insertions
     return insertion_idx
 
 
-def test_get_insertion_index(i, insertion_index):
+def test_get_insertion_index(sample_i_from_for_loop, insertion_index):
     assert insertion_index == get_insertion_index(tuples=[(52, 62), (63, 71), (0, 6), (27, 36), (23, 34), (52, 62)],
-                                                  i=i,
+                                                  i=sample_i_from_for_loop,
                                                   num_insertions=20)
 
 
@@ -68,9 +68,9 @@ def num_insertions():
 
 
 # Todo - Fix the num insertions issue here
-def test_update_indices_upon_successful_match(dh_serials, num_insertions, i):
-    incremented_num_insertions = update_indices_upon_successful_match(dh_serials, num_insertions, i)
-    assert (i + 1) in dh_serials
+def test_update_indices_upon_successful_match(dh_serials, num_insertions, sample_i_from_for_loop):
+    incremented_num_insertions = update_indices_upon_successful_match(dh_serials, num_insertions, sample_i_from_for_loop)
+    assert (sample_i_from_for_loop + 1) in dh_serials
     assert incremented_num_insertions == num_insertions + 1
 
 
@@ -124,18 +124,18 @@ def sample_comment():
 
 
 @pytest.fixture()
-def manual_expected_result(ref, mt_dict, sample_dh, sample_comment, i):
+def manual_expected_result(ref, mt_dict, sample_dh, sample_comment, sample_i_from_for_loop):
     return [{
         'ref': ref,
         'text': mt_dict[ref],
-        'dh_serial': i + 1,
+        'dh_serial': sample_i_from_for_loop + 1,
         'unplaced_dh': sample_dh,
         'unplaced_comment': sample_comment
     }]
 
 
-def test_append_to_manual_list(manual_list, ref, mt_dict, i, sample_dh, sample_comment, manual_expected_result):
-    assert manual_expected_result == append_to_manual_list(manual_list, ref, mt_dict, i, sample_dh, sample_comment)
+def test_append_to_manual_list(manual_list, ref, mt_dict, sample_i_from_for_loop, sample_dh, sample_comment, manual_expected_result):
+    assert manual_expected_result == append_to_manual_list(manual_list, ref, mt_dict, sample_i_from_for_loop, sample_dh, sample_comment)
 
 
 @pytest.fixture()
@@ -151,7 +151,7 @@ def success_expected_result(base_words, ref, dh_serials):
 
 
 # Todo - failing because can't compare a function to an array, but makes no sense since the manual case is working
-def test_append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials, i, footnote):
+def test_append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials, sample_i_from_for_loop, footnote):
     assert success_expected_result == append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials)
 
 
@@ -161,10 +161,11 @@ def expected_base_words_footnote():
             '<sup class="footnote-marker">5</sup><i class="footnote">Sample comment</i>']
 
 
-def test_insert_footnote_into_base_words(i, sample_comment, dh_serials, num_insertions, base_words, tuples,
+def test_insert_footnote_into_base_words(sample_i_from_for_loop, sample_comment, dh_serials, num_insertions, base_words,
+                                         sample_matcher_tuples,
                                          expected_base_words_footnote):
-    assert expected_base_words_footnote == insert_footnote_into_base_words(i, sample_comment, dh_serials,
-                                                                           num_insertions, base_words, tuples)
+    assert expected_base_words_footnote == insert_footnote_into_base_words(sample_i_from_for_loop, sample_comment, dh_serials,
+                                                                           num_insertions, base_words, sample_matcher_tuples)
 
 # Skipping
 # attempt_to_match(base_words, comment_list):
