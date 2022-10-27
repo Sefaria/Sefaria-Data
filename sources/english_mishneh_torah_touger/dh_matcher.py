@@ -38,6 +38,9 @@ def extract_comment_body(txt):
 
 def append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials):
     text_with_comments = " ".join(base_words)
+
+    # Fix the space-br-space issue
+    text_with_comments = re.sub(r" <br> ", "<br>", text_with_comments)
     successful_insertion_list.append(
         {
             'ref': ref,
@@ -102,6 +105,11 @@ def create_footnote(i, comment_body):
 def get_insertion_index(tuples, i, num_insertions):
     end_idx_for_comment = tuples[i][-1]
     insertion_idx = (end_idx_for_comment + 1) + num_insertions
+    # if tuples == [(0, 12), (13, 24), (26, 45), (46, 65)]:
+    #     print(f"i: {i}")
+    #     print(f"num_insertions: {num_insertions}")
+    #     print(f"end_idx_for_comment: {end_idx_for_comment}")
+    #     print(f"insertion_index: {insertion_idx}")
     return insertion_idx
 
 
@@ -127,13 +135,14 @@ def get_base_words_with_html(html_words_dict, base_words):
 
 def setup_mt_dict():
     mt_dict = {}
+    br_dict = {}
     with open('mishneh_torah_data_cleaned.csv', newline='') as csvfile:
         r = csv.reader(csvfile, delimiter=',')
         br_patt = r"\.<br>"
         for row in r:
             ref = row[0]
             text = row[1]
-            if "<br>" in text:
+            if ".<br>" in text:
                 mt_dict[ref] = re.sub(br_patt, ". <br> ", text)
             else:
                 mt_dict[ref] = text
@@ -213,12 +222,18 @@ def run_commentary_insertion(commentary_dict, mt_dict):
 
             else:  # If it's a match
                 insert_footnote_into_base_words(i, comment_body, dh_serials, num_insertions, base_words, result_tuples)
+                # bw = insert_footnote_into_base_words(i, comment_body, dh_serials, num_insertions, base_words, result_tuples)
+                num_insertions += 1
+                # if ref == "Blessings 1.3":
+                #     print(bw)
+                #     print(result_tuples)
+
 
             # Last time through, append successes
             if i == len(result_tuples) - 1:
                 append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials)
 
-    # generate_stats_and_csvs(successful_insertion_list, manual_list)
+    generate_stats_and_csvs(successful_insertion_list, manual_list)
     return successful_insertion_list
 
 
