@@ -181,11 +181,9 @@ def generate_stats_and_csvs(successful_insertion_list, manual_list):
 
 # TODO - hunch, offset happening with the HTML index, split on space and .<
 # Todo - Pre-process text by adding a space before each <br>
-def run_commentary_insertion():
+def run_commentary_insertion(commentary_dict, mt_dict):
     successful_insertion_list = []
     manual_list = []
-
-    mt_dict = setup_mt_dict()
 
     for ref in commentary_dict:
 
@@ -220,8 +218,10 @@ def run_commentary_insertion():
             if i == len(result_tuples) - 1:
                 append_successes_to_list(base_words, successful_insertion_list, ref, dh_serials)
 
-    generate_stats_and_csvs(successful_insertion_list, manual_list)
+    # generate_stats_and_csvs(successful_insertion_list, manual_list)
+    return successful_insertion_list
 
 
 if __name__ == '__main__':
-    run_commentary_insertion()
+    mt_dict = setup_mt_dict()
+    run_commentary_insertion(commentary_dict, mt_dict)
