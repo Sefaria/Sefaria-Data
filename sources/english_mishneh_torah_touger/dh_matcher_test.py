@@ -186,11 +186,11 @@ def mt_dict_blessings_1_3():
 
 @pytest.fixture()
 def expected_results_blessings_1_3():
-    return [{'ref': 'Blessings 1.3',
-             'text_with_comments': 'Just as we recite blessings for benefit which we derive from the world, <sup class="footnote-marker">1</sup><i class="footnote">as explained above,</i> we should also recite blessings for each mitzvah before we fulfill it. <sup class="footnote-marker">2</sup><i class="footnote">The laws governing the blessings recited over the performance of mitzvot are discussed in Chapter 11.</i> <br> Similarly, the Sages instituted many blessings as expressions of praise and thanks to God and as a means of petition<sup class="footnote-marker">3</sup><i class="footnote">See Chapter 10.</i>, so that we will always remember the Creator, even though we have not received any benefit or performed a mitzvah.<sup class="footnote-marker">4</sup><i class="footnote">By reciting blessings over the special events which occur to us, we become conscious of God\'s control of all aspects of our daily existence. We learn to appreciate Him, not only as the Creator who brought the world into being, but as the One who directs the functioning of our lives and the world around us.</i>',
-             'dh_inserted_serials': [1, 2, 3, 4]}]
+    return "Just as we recite blessings for benefit which we derive from the world, <sup class=""footnote-marker"">1</sup><i class=""footnote"">as explained above,</i> we should also recite blessings for each mitzvah before we fulfill it. <sup class=""footnote-marker"">2</sup><i class=""footnote"">The laws governing the blessings recited over the performance of mitzvot are discussed in Chapter 11.</i><br>Similarly, the Sages instituted many blessings as expressions of praise and thanks to God and as a means of petition, <sup class=""footnote-marker"">3</sup><i class=""footnote"">See Chapter 10.</i> so that we will always remember the Creator, even though we have not received any benefit or performed a mitzvah. <sup class=""footnote-marker"">4</sup><i class=""footnote"">By reciting blessings over the special events which occur to us, we become conscious of God's control of all aspects of our daily existence. We learn to appreciate Him, not only as the Creator who brought the world into being, but as the One who directs the functioning of our lives and the world around us.</i>"
 
 # Todo - check that the punctuation order is exactly correct in the dummy example
 class TestMainFunction(object):
     def test_main_function(self, commentary_dict_test, mt_dict_blessings_1_3, expected_results_blessings_1_3):
-        assert expected_results_blessings_1_3 == run_commentary_insertion(commentary_dict_test, mt_dict_blessings_1_3)
+        res = run_commentary_insertion(commentary_dict_test, mt_dict_blessings_1_3)
+        res = res[0]['text_with_comments']
+        assert expected_results_blessings_1_3 == res

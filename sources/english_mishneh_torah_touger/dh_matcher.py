@@ -83,7 +83,6 @@ def generate_report(manual_list, successful_insertion_list, placed_html_manual_l
     print(f"{len(placed_html_manual_list)} on NEW manual list")
 
 
-# TODO - add comments & tests to new functions from refactor
 def clean_html_base_words(base_words):
     html_words_dict = {}
     for i in range(len(base_words)):
@@ -105,11 +104,6 @@ def create_footnote(i, comment_body):
 def get_insertion_index(tuples, i, num_insertions):
     end_idx_for_comment = tuples[i][-1]
     insertion_idx = (end_idx_for_comment + 1) + num_insertions
-    # if tuples == [(0, 12), (13, 24), (26, 45), (46, 65)]:
-    #     print(f"i: {i}")
-    #     print(f"num_insertions: {num_insertions}")
-    #     print(f"end_idx_for_comment: {end_idx_for_comment}")
-    #     print(f"insertion_index: {insertion_idx}")
     return insertion_idx
 
 
@@ -135,7 +129,6 @@ def get_base_words_with_html(html_words_dict, base_words):
 
 def setup_mt_dict():
     mt_dict = {}
-    br_dict = {}
     with open('mishneh_torah_data_cleaned.csv', newline='') as csvfile:
         r = csv.reader(csvfile, delimiter=',')
         br_patt = r"\.<br>"
@@ -188,8 +181,6 @@ def generate_stats_and_csvs(successful_insertion_list, manual_list):
                        ['ref', 'text_with_comments', 'dh_inserted_serials'])
 
 
-# TODO - hunch, offset happening with the HTML index, split on space and .<
-# Todo - Pre-process text by adding a space before each <br>
 def run_commentary_insertion(commentary_dict, mt_dict):
     successful_insertion_list = []
     manual_list = []
@@ -222,11 +213,7 @@ def run_commentary_insertion(commentary_dict, mt_dict):
 
             else:  # If it's a match
                 insert_footnote_into_base_words(i, comment_body, dh_serials, num_insertions, base_words, result_tuples)
-                # bw = insert_footnote_into_base_words(i, comment_body, dh_serials, num_insertions, base_words, result_tuples)
                 num_insertions += 1
-                # if ref == "Blessings 1.3":
-                #     print(bw)
-                #     print(result_tuples)
 
 
             # Last time through, append successes
