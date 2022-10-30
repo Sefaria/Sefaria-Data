@@ -175,9 +175,9 @@ def generate_stats_and_csvs(successful_insertion_list, manual_list):
     # If place markers exist, replace the text in manual
     placed_html_manual_list = join_manual_with_footnote_text(successful_insertion_list, manual_list)
     generate_report(manual_list, successful_insertion_list, placed_html_manual_list)
-    export_data_to_csv(placed_html_manual_list, 'qa_reports/manual_commentaries_2',
+    export_data_to_csv(placed_html_manual_list, 'qa_reports/manual_commentaries',
                        ['ref', 'text', 'dh_serial', 'unplaced_dh', 'unplaced_comment'])
-    export_data_to_csv(successful_insertion_list, 'qa_reports/inserted_commentaries_2',
+    export_data_to_csv(successful_insertion_list, 'qa_reports/inserted_commentaries',
                        ['ref', 'text_with_comments', 'dh_inserted_serials'])
 
 
