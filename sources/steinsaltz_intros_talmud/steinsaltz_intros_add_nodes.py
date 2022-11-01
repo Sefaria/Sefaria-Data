@@ -5,6 +5,7 @@ django.setup()
 import csv
 from sefaria.model import *
 from sefaria.helper.schema import insert_last_child
+from sefaria.tracker import modify_bulk_text
 
 
 def latin_numeral_to_hebrew_numeral(latin_numeral):
@@ -172,11 +173,23 @@ def list_of_masechtot_to_db(nodes_list):
         insert_last_child(node, parent)
 
 
+def object_to_dict_of_refs(csv_parsed_object):
+    refs_dict = {}
+    for chapter in csv_parsed_object:
+        paragraph_num = 1
+        for paragraph in chapter["english_text"]:
+            ref = chapter["ref"] + " " + str(paragraph_num)
+            refs_dict[ref] = paragraph
+            paragraph_num += 1
+    return refs_dict
+
+
+
 if __name__ == '__main__':
     print("hello")
-    #index = library.get_index("Introductions to the Babylonian Talmud")
+    # index = library.get_index("Introductions to the Babylonian Talmud")
     # m = library._index_map
-    #print(index);
+    # print(index);
     parsed = parse_csv_to_object()
     nodes = get_list_of_masechtot_nodes(parsed, "Sanhedrin")
     list_of_masechtot_to_db(nodes)
