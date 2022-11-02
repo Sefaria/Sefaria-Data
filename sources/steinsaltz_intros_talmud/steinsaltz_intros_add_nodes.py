@@ -173,11 +173,17 @@ def list_of_masechtot_to_db(nodes_list):
         insert_last_child(node, parent)
 
 
-def object_to_dict_of_refs(csv_parsed_object):
+def object_to_dict_of_refs(csv_parsed_object, language):
     refs_dict = {}
+    text_language = ""
+    if language == "english":
+        text_language = "english_text"
+    if language == "hebrew":
+        text_language = "hebrew_text"
+
     for chapter in csv_parsed_object:
         paragraph_num = 1
-        for paragraph in chapter["english_text"]:
+        for paragraph in chapter[text_language]:
             ref = chapter["ref"] + " " + str(paragraph_num)
             refs_dict[ref] = paragraph
             paragraph_num += 1
@@ -190,7 +196,17 @@ if __name__ == '__main__':
     # index = library.get_index("Introductions to the Babylonian Talmud")
     # m = library._index_map
     # print(index);
-    parsed = parse_csv_to_object()
-    nodes = get_list_of_masechtot_nodes(parsed, "Sanhedrin")
-    list_of_masechtot_to_db(nodes)
-    print("finished updating db")
+
+
+    csv_object = parse_csv_to_object()
+    index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
+    #list_of_masechtot_to_db(index_nodes)
+
+    english_version = Version().load({"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - English"})
+    hebrew_version = Version().load({"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - Hebrew"})
+    version_text_map_english = object_to_dict_of_refs(csv_object, "english")
+    version_text_map_hebrew = object_to_dict_of_refs(csv_object, "hebrew")
+    #modify_bulk_text(171118, english_version, version_text_map_english)
+    print("finished updating index db")
+
+
