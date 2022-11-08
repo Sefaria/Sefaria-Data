@@ -174,6 +174,7 @@ def list_of_masechtot_to_db(nodes_list):
 
 
 def object_to_dict_of_refs(csv_parsed_object, language):
+
     refs_dict = {}
     text_language = ""
     if language == "english":
@@ -182,31 +183,63 @@ def object_to_dict_of_refs(csv_parsed_object, language):
         text_language = "hebrew_text"
 
     for chapter in csv_parsed_object:
-        paragraph_num = 1
-        for paragraph in chapter[text_language]:
-            ref = chapter["ref"] + " " + str(paragraph_num)
-            refs_dict[ref] = paragraph
-            paragraph_num += 1
+        #if(chapter["masechet"] == "Shabbat"):
+            paragraph_num = 1
+            for paragraph in chapter[text_language]:
+                ref = chapter["ref"] + " " + str(paragraph_num)
+                refs_dict[ref] = paragraph
+                ##refs_dict[ref] = ":)"
+                paragraph_num += 1
     return refs_dict
 
 
 
 if __name__ == '__main__':
+    superuser_id = 1
+
+
     print("hello")
-    # index = library.get_index("Introductions to the Babylonian Talmud")
+    index = library.get_index("Introductions to the Babylonian Talmud")
     # m = library._index_map
     # print(index);
 
 
     csv_object = parse_csv_to_object()
     index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
-    #list_of_masechtot_to_db(index_nodes)
+    list_of_masechtot_to_db(index_nodes)
+    print("finished updating index db")
+
 
     english_version = Version().load({"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - English"})
-    hebrew_version = Version().load({"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - Hebrew"})
+
+    chapter = index.nodes.create_skeleton()
+    hebrew_version = Version({"versionTitle": "William Davidson Edition - Hebrew",
+                       "versionSource": "'https://korenpub.com/collections/the-noe-edition-koren-talmud-bavli-1'",
+                       "title": "Introductions to the Babylonian Talmud",
+                       "chapter": chapter,
+                       "language": "he",
+                       "digitizedBySefaria": True,
+                       "license": "CC-BY-NC",
+                       "status": "locked"
+                       })
+
+    # hebrew_version = Version().load(
+    #     {"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - Hebrew"})
+
+
     version_text_map_english = object_to_dict_of_refs(csv_object, "english")
+    #print(version_text_map_english)
+
     version_text_map_hebrew = object_to_dict_of_refs(csv_object, "hebrew")
-    #modify_bulk_text(171118, english_version, version_text_map_english)
-    print("finished updating index db")
+    #print(version_text_map_hebrew)
+
+    # cur_version = VersionSet({'title': 'Introductions to the Babylonian Talmud',
+    #                           'versionTitle': "William Davidson Edition - Hebrew"})
+    # if cur_version.count() > 0:
+    #     cur_version.delete()
+
+    modify_bulk_text(superuser_id, english_version, version_text_map_english)
+    modify_bulk_text(superuser_id, hebrew_version, version_text_map_hebrew)
+    print("finished updating versions db")
 
 
