@@ -17,6 +17,7 @@ class TzParser(object):
         self.volume = volume
 
         self.doc_rep = None
+        self.doc_rep_he = None
         self.elem_cursor = None
         self.processed_elem_cursor = None
         self.word_cursor = None
@@ -53,10 +54,14 @@ class TzParser(object):
 
     def read_file(self):
         self.doc_rep = self.get_document_representation()
+        self.doc_rep_he = self.get_document_representation_he()
         self.parse_contents()
 
     def get_document_representation(self):
         """Returns abstracted representation of doc"""
+        pass
+
+    def get_document_representation_he(self):
         pass
 
     def parse_contents(self):
@@ -145,6 +150,10 @@ class DocsTzParser(TzParser):
     def get_document_representation(self):
         return Document(self.file)
 
+    def get_document_representation_he(self):
+        filename = self.file.replace('.docx', '_he.docx')
+        return Document(filename)
+
     def get_title(self):
         return self.file
 
@@ -161,10 +170,11 @@ class DocsTzParser(TzParser):
         return self.elem_cursor
 
     def cursor_is_daf(self):
-        return re.match(r'\[[0-9]+[ab]\]', self.processed_elem_cursor.text) is not None
+        return re.search(r'\[[0-9]+[ab]\]', self.processed_elem_cursor.text) is not None
 
     def get_daf(self):
-        stripped_text = self.processed_elem_cursor.text.lstrip("[")
+        stripped_text = self.processed_elem_cursor.text.strip()
+        stripped_text = stripped_text.lstrip("[")
         stripped_text = stripped_text.rstrip("]")
         daf = Daf(stripped_text)
         self.dapim.append(daf)
@@ -182,6 +192,7 @@ class DocsTzParser(TzParser):
             else:
                 tikkun.words.append(Word(run.text, None, None, self.daf, tikkun, None))
         print([word.text for word in tikkun.words])
+        self.tikkunim.append(tikkun)
         return tikkun # TODO: handle tikkun footnotes
 
     def cursor_is_paragraph(self):
@@ -209,6 +220,36 @@ class DocsTzParser(TzParser):
         else:
             formatting = None
         return formatting
+
+    def parse_hebrew_contents(self):
+        daf_index = 0
+        tikkun_index = 0
+        paragraph_index = 0
+        for paragraph in self.doc_rep_he.paragraphs: #daf
+            if re.search(r'[\u0590-\u05fe]{1,3}/[אב]', paragraph.text):
+                daf = re.search(r'[\u0590-\u05fe]{1,3}/[אב]', paragraph.text).group(0)
+                self.daf = self.dapim[daf_index]
+                self.daf.he_name = daf
+                print(self.daf.name)
+                print(self.daf.he_name)
+                daf_index += 1
+                paragraph_index = 0
+            elif re.match(r'תּקונא', paragraph.text) or re.match(r'תקונא', paragraph.text):
+                self.tikkun = self.tikkunim[tikkun_index]
+                self.tikkun.he_name = paragraph.text
+                tikkun_index +=1
+            elif paragraph.text != '':
+                if paragraph_index < len(self.daf.paragraphs):
+                    self.paragraph = self.daf.paragraphs[paragraph_index]
+                else:  # somehow misaligned??
+                    self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
+                    self.daf.paragraphs.append(self.paragraph)
+                self.paragraph.he_words = self.clean_he(paragraph.text)
+                paragraph_index += 1
+
+    @staticmethod
+    def clean_he(hebrew_text):
+        return hebrew_text.replace("\n", "</br>")
 
     def process_words(self):
         if self.line is None:
@@ -613,7 +654,6 @@ class HtmlTzParser(TzParser):
                     print(str(child))
             return cleaned_hebrew_text
 
-
     def parse_hebrew_contents(self):
         hebrew = self.doc_rep.find(id="_idContainer2165")
         types = {}
@@ -628,10 +668,11 @@ class HtmlTzParser(TzParser):
                 self.daf = self.dapim[daf_index]
                 daf = child.find_next('p').text
                 self.daf.he_name = daf
-                daf_index +=1
+                daf_index += 1
             elif child.name == 'p' and 'chapter-number-title-Hebrew' in child.attrs['class']:
                 self.tikkun = self.tikkunim[tikkun_index]
                 self.tikkun.he_name = "".join([str(content) for content in child.contents])
+                tikkun_index += 1
             elif child.name == 'p' and 'verse-Hebrew' in child.attrs['class']:
                 if paragraph_index < len(self.paragraphs):
                     self.paragraph = self.paragraphs[paragraph_index]
@@ -691,7 +732,8 @@ class HtmlTzParser(TzParser):
 #     # if it's both
 
 def run_parse():
-    parsers = [HtmlTzParser("vol2.html", 2, language="bi")]
+    # parsers = [HtmlTzParser("vol2.html", 2, language="bi")]
+    parsers = [DocsTzParser("vol3.docx", 3, language="bi")]
     # parsers = [HtmlTzParser("vol2.html", 2), DocsTzParser("vol3.docx", 3), DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
     # parsers = [DocsTzParser("vol4.docx", 4)]
     # parsers = [DocsTzParser("vol4.docx", 4), DocsTzParser("vol5.docx", 5)]
@@ -739,4 +781,4 @@ def run_parse():
             fieldnames = ["tikkun", "daf", "paragraph", "line", "he", "quotes", "formatting", "comments"]
             csv_writer = csv.DictWriter(tz_en_quotes, fieldnames)
 
-# run_parse()
+#run_parse()
