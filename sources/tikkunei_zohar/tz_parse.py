@@ -81,7 +81,7 @@ class TzParser(object):
         pass
 
     def process_cursor(self):
-        self.processed_elem_cursor = self.get_processed_elem()
+        self.processed_elem_cursor = self.get_processed_elem(self.elem_cursor)
         #print(self.processed_elem_cursor['class'])
         if self.cursor_is_daf():
             self.daf = self.get_daf()
@@ -166,8 +166,9 @@ class DocsTzParser(TzParser):
         else:
             return None
 
-    def get_processed_elem(self):
-        return self.elem_cursor
+    @staticmethod
+    def get_processed_elem(elem_cursor):
+        return elem_cursor
 
     def cursor_is_daf(self):
         return re.search(r'\[[0-9]+[ab]\]', self.processed_elem_cursor.text) is not None
@@ -390,7 +391,7 @@ class HtmlTzParser(TzParser):
 
     def move_cursor(self):
         """Return the next element at the line level"""
-        if not self. elem_cursor:
+        if not self.elem_cursor:
             # if self.language == "english":
             cursor = self.doc_rep.find_all("div", class_="_idGenObjectStyleOverride-1")[0].contents[0]
             if cursor.name:
@@ -403,12 +404,13 @@ class HtmlTzParser(TzParser):
             cursor = cursor.next_sibling
         return cursor
 
-    def get_processed_elem(self):
+    @staticmethod
+    def get_processed_elem(elem_cursor):
         """returns the elem if it is not just a container, otherwise, return useful element"""
-        if  "_idGenObjectLayout-1" in self.elem_cursor["class"]:
-            return self.elem_cursor.div
+        if "_idGenObjectLayout-1" in elem_cursor["class"]:
+            return elem_cursor.div
         else:
-            return self.elem_cursor
+            return elem_cursor
 
     def cursor_is_daf(self):
         return "daf" in self.processed_elem_cursor["class"]
@@ -661,7 +663,11 @@ class HtmlTzParser(TzParser):
         tikkun_index = 0
         paragraph_index = 0
 
-        for child in hebrew.children:
+        for raw_child in hebrew.children:
+            if isinstance(raw_child, str):
+                child = raw_child
+            else:
+                child = self.get_processed_elem(raw_child)
             if isinstance(child, str):
                 pass
             if child.name == 'div' and 'daf-hebrew' in child.attrs['class']:  # daf
@@ -669,16 +675,18 @@ class HtmlTzParser(TzParser):
                 daf = child.find_next('p').text
                 self.daf.he_name = daf
                 daf_index += 1
+                paragraph_index = 0
             elif child.name == 'p' and 'chapter-number-title-Hebrew' in child.attrs['class']:
                 self.tikkun = self.tikkunim[tikkun_index]
                 self.tikkun.he_name = "".join([str(content) for content in child.contents])
                 tikkun_index += 1
             elif child.name == 'p' and 'verse-Hebrew' in child.attrs['class']:
-                if paragraph_index < len(self.paragraphs):
-                    self.paragraph = self.paragraphs[paragraph_index]
+                # TODO: Debug misaligned verses
+                if paragraph_index < len(self.daf.paragraphs):
+                    self.paragraph = self.daf.paragraphs[paragraph_index]
                 else:  # somehow misaligned??
                     self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
-                    self.paragraphs.append(self.paragraph)
+                    self.daf.paragraphs.append(self.paragraph)
                 self.paragraph.he_words = self.clean_he(child.contents)
                     #''.join([str(content) for content in child.contents])
                 paragraph_index += 1

@@ -93,10 +93,10 @@ def get_index():
 
 
 def get_mappings():
-    # parsers = [HtmlTzParser("vol2.html", 2, language="bi")]
+    parsers = [HtmlTzParser("vol2.html", 2, language="bi")]
     # parsers = [DocsTzParser("vol3.docx", 3, language="bi")]
     #parsers = [HtmlTzParser("vol2.html", 2, language="bi"), DocsTzParser("vol3.docx", 3, language="bi"), DocsTzParser("vol4.docx", 4, language="bi"), DocsTzParser("vol5.docx", 5, language="bi")]
-    parsers = [DocsTzParser("vol4.docx", 4, language="bi"), DocsTzParser("vol5.docx", 5, language="bi")]
+    #parsers = [DocsTzParser("vol4.docx", 4, language="bi"), DocsTzParser("vol5.docx", 5, language="bi")]
 
     mappings = defaultdict()
     mappings['Tikkunei Zohar'] = {}
