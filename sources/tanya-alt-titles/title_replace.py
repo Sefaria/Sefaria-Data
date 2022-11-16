@@ -19,11 +19,11 @@ def tanya_title_replace_run():
     tanya_index = library.get_index("Tanya")
     tanya_nodes = tanya_index.nodes.children
     for node in tanya_nodes:
-        info = title_dict[str(node)]
-        new_en_title = info['new eng'] if not "" else None
-        retire_en_title = info['current eng'] if not "" else None
-        new_he_title = info['new heb'] if not "" else None
-        retire_he_title = info['current heb'] if not "" else None
+        info = title_dict[node.get_primary_title()]
+        new_en_title = info['new eng']
+        retire_en_title = info['current eng']
+        new_he_title = info['new heb']
+        retire_he_title = info['current heb']
 
         # Create a new primary title
         if new_en_title:
