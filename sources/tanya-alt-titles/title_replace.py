@@ -13,12 +13,13 @@ def tanya_title_replace_run():
     with open('title_refactor.csv') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            key = f"Tanya, {row['current eng']}"
+            key = f"{row['current eng']}"
             title_dict[key] = row
 
     tanya_index = library.get_index("Tanya")
     tanya_nodes = tanya_index.nodes.children
     for node in tanya_nodes:
+        print(node.get_primary_title())
         info = title_dict[node.get_primary_title()]
         new_en_title = info['new eng']
         retire_en_title = info['current eng']
