@@ -378,9 +378,33 @@ class HtmlTzParser(TzParser):
         'dot-roman',
     ]
 
-    def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
+    def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None, endnotes_doc=None):
         TzParser.__init__(self, filename, volume, language, starting_tikkun, starting_daf)
         self.continue_phrase = False
+        self.endnote_dict = self.get_endnote_dict(endnotes_doc)
+
+    def get_endnote_dict(self, endnotes_doc):
+        endnote_dict = {}
+        if endnotes_doc: # assumes endnotes are doc file
+            endnotes_doc_rep = Document(endnotes_doc)
+            prev_endnote = '1'
+            for paragraph in endnotes_doc_rep.paragraphs:
+                if not paragraph.text.strip() == '':
+                    if paragraph.text[0] == '0':
+                        endnote_dict['2'] = paragraph.text.lstrip('0')
+                    elif paragraph.text[0] == '1' and not paragraph.text[1].isnumeric():
+                        endnote_dict['1'] = paragraph.text.lstrip('1')
+                    else:
+                        endnote_number = re.match(r'[0-9]+', paragraph.text)
+                        if endnote_number:
+                            endnote_number = endnote_number[0]
+                            endnote_number_real = int(endnote_number) + 1
+                            endnote_dict[str(endnote_number_real)] = paragraph.text.lstrip(endnote_number)
+                            prev_endnote = str(endnote_number_real)
+                        else:
+                            endnote_dict[prev_endnote] += '</br>'
+                            endnote_dict[prev_endnote] += paragraph.text
+        return endnote_dict
 
     def get_document_representation(self):
         with open(self.file, 'r') as file:
