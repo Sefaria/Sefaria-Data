@@ -17,15 +17,18 @@ class FootnoteType(Enum):
     INFINITY = 4
     STAR = 5
     TRIANGLE = 6
+    ENDNOTE = 7
 
 
-def get_symbol(footnote_type):
-    if footnote_type == FootnoteType.INFINITY:
+def get_symbol(footnote):
+    if footnote.footnote_type == FootnoteType.INFINITY:
         return '∞'
-    elif footnote_type == FootnoteType.STAR:
+    elif footnote.footnote_type == FootnoteType.STAR:
         return '☉'
-    elif footnote_type == FootnoteType.TRIANGLE:
+    elif footnote.footnote_type == FootnoteType.TRIANGLE:
         return '△'
+    elif footnote.footnote_type == FootnoteType.FOOTNOTE:
+        return footnote.footnote_number
     else:
         return None
 
@@ -210,10 +213,13 @@ class Paragraph(object):
                             anchor = footnote.anchor.text
                         else:  # Phrase
                             anchor = ' '.join([word.text for word in footnote.anchor.words])
-                        footnote_symbol = get_symbol(footnote.footnote_type)
+                        footnote_symbol = get_symbol(footnote)
                         if footnote_symbol:
                             words_in_phrase += '<sup>' + footnote_symbol + '</sup>' + '<i class="footnote"><b>' \
                                                + '</b>' + strip_symbol(footnote.text) + '</i>'
+                        else:
+                            # TODO: handle other footnote types
+                            pass
                 words_in_phrase += get_tag(phrase.formatting, False)
                 # words_in_phrase = ' '.join([word.text for word in phrase.words])
                 if words != '':
@@ -263,6 +269,7 @@ class Footnote(object):
         self.anchor = anchor
         self.text = text
         self.footnote_type = footnote_type
+        self.footnote_number = None
         self.formatting = formatting
 
 

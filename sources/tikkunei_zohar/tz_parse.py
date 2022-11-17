@@ -345,16 +345,17 @@ class DocsTzParser(TzParser):
 
 class HtmlTzParser(TzParser):
     FOOTNOTES = {
-        "CharOverride-1": True,
+        "CharOverride-1": FootnoteType.SYMBOL,
         "CharOverride-2": FootnoteType.CITATION,
-        "CharOverride-3": True,
-        "CharOverride-4": True,
-        "CharOverride-5": True,
-        "CharOverride-6": True,
-        "CharOverride-7": True,
-        "CharOverride-8": True,
-        "CharOverride-10": True,
-        "er": True,
+        "CharOverride-3": FootnoteType.SYMBOL,
+        "CharOverride-4": FootnoteType.SYMBOL,
+        "CharOverride-5": FootnoteType.SYMBOL,
+        "CharOverride-6": FootnoteType.SYMBOL,
+        "CharOverride-7": FootnoteType.SYMBOL,
+        "CharOverride-8": FootnoteType.SYMBOL,
+        "CharOverride-10": FootnoteType.SYMBOL,
+        "FNR---verse-English": FootnoteType.FOOTNOTE,
+        "er": FootnoteType.ENDNOTE,
         "stars": FootnoteType.STAR,
         "infinity": FootnoteType.INFINITY,
         "triangle": FootnoteType.TRIANGLE
@@ -545,24 +546,44 @@ class HtmlTzParser(TzParser):
 
     def process_footnote_material(self, elem):
         if not self.parsing_footnote or self.current_footnote.footnote_type == FootnoteType.SYMBOL:  # open a footnote or symbol is useless
-            if "stars" in elem['class']:
-                footnote_type = HtmlTzParser.FOOTNOTES["stars"]
-            elif "infinity" in elem['class']:
-                footnote_type = HtmlTzParser.FOOTNOTES["infinity"]
-            elif "triangle" in elem['class']:
-                footnote_type = HtmlTzParser.FOOTNOTES["triangle"]
-            elif "CharOverride-2" in elem['class']:
-                footnote_type = HtmlTzParser.FOOTNOTES["CharOverride-2"]
-            else:
-                footnote_type = FootnoteType.SYMBOL
+            for footnote_type_class in HtmlTzParser.FOOTNOTES:
+                if footnote_type_class in elem['class']:
+                    footnote_type = HtmlTzParser.FOOTNOTES[footnote_type_class]
+                    break
+            # else:
+            #     footnote_type = FootnoteType.SYMBOL
+            #    print("unexpected footnote!")
+            # if "stars" in elem['class']:
+            #     footnote_type = HtmlTzParser.FOOTNOTES["stars"]
+            # elif "infinity" in elem['class']:
+            #     footnote_type = HtmlTzParser.FOOTNOTES["infinity"]
+            # elif "triangle" in elem['class']:
+            #     footnote_type = HtmlTzParser.FOOTNOTES["triangle"]
+            # elif "CharOverride-2" in elem['class']:
+            #     footnote_type = HtmlTzParser.FOOTNOTES["CharOverride-2"]
+            # elif "FNR---verse-English" in elem['class']:
+            #     footnote_type = HtmlTzParser.FOOTNOTES['FNR---verse-English']
+            # else:
+            #     footnote_type = FootnoteType.SYMBOL
             format_class = HtmlTzParser.FORMATTING_CLASSES[[x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0]] if \
                 any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']) else None
             if not self.parsing_footnote:
                 self.current_footnote = Footnote(footnote_type, format_class)
             else:
                 self.current_footnote.footnote_type = footnote_type
-        for letter in elem.text:
-            self.process_footnote_text(letter)
+        if self.current_footnote.footnote_type == HtmlTzParser.FOOTNOTES["FNR---verse-English"]:
+            footnote_id = elem.contents[0].get('id').replace('-backlink', '')
+            footnote_number = elem.text
+            footnote_text = self.doc_rep.find("span", {"id": footnote_id}).text.lstrip(footnote_number).strip()
+            self.current_footnote.anchor = self.word
+            self.current_footnote.text = footnote_text
+            self.current_footnote.footnote_number = footnote_number
+            self.word.footnotes.append(self.current_footnote)
+            self.current_footnote = None
+            self.parsing_footnote = False
+        else:
+            for letter in elem.text:
+                self.process_footnote_text(letter)
             # if footnote_type is not HtmlTzParser.FOOTNOTES["CharOverride-2"]:  # not a book
             #     pass
             # else:
@@ -597,7 +618,7 @@ class HtmlTzParser(TzParser):
             elif elem.name == 'span' and 'id' in elem.attrs and 'endnote-'in elem['id']:
                 # TODO: figure out where these endnotes are
                 pass
-            elif elem.name == 'span' and any(x in HtmlTzParser.FOOTNOTES for x in elem['class']):  # Footnotes
+            elif elem.name == 'span' and any(x in HtmlTzParser.FOOTNOTES for x in elem['class']):  # other Footnotes
                 # footnote_type = [x for x in elem['class'] if x in HtmlTzParser.FOOTNOTES]
                 self.process_footnote_material(elem)
 
@@ -671,6 +692,11 @@ class HtmlTzParser(TzParser):
             if isinstance(child, str):
                 pass
             if child.name == 'div' and 'daf-hebrew' in child.attrs['class']:  # daf
+                if paragraph_index < len(self.daf.paragraphs):
+                    print(paragraph_index)
+                    print(len(self.daf.paragraphs))
+                    print(self.daf.name)
+                    print("^paragraph_index, self.daf.paragraphs length, daf -- not enough hebrew")
                 self.daf = self.dapim[daf_index]
                 daf = child.find_next('p').text
                 self.daf.he_name = daf
@@ -681,12 +707,14 @@ class HtmlTzParser(TzParser):
                 self.tikkun.he_name = "".join([str(content) for content in child.contents])
                 tikkun_index += 1
             elif child.name == 'p' and 'verse-Hebrew' in child.attrs['class']:
-                # TODO: Debug misaligned verses
                 if paragraph_index < len(self.daf.paragraphs):
                     self.paragraph = self.daf.paragraphs[paragraph_index]
+                # TODO: Debug misaligned verses
                 else:  # somehow misaligned??
                     self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
                     self.daf.paragraphs.append(self.paragraph)
+                    print(self.daf.name)
+                    print("too much hebrew")
                 self.paragraph.he_words = self.clean_he(child.contents)
                     #''.join([str(content) for content in child.contents])
                 paragraph_index += 1
