@@ -27,7 +27,7 @@ def get_symbol(footnote):
         return '☉'
     elif footnote.footnote_type == FootnoteType.TRIANGLE:
         return '△'
-    elif footnote.footnote_type == FootnoteType.FOOTNOTE:
+    elif footnote.footnote_type in [FootnoteType.FOOTNOTE, FootnoteType.ENDNOTE]:
         return footnote.footnote_number
     else:
         return None

@@ -394,6 +394,8 @@ class HtmlTzParser(TzParser):
                         endnote_dict['2'] = paragraph.text.lstrip('0')
                     elif paragraph.text[0] == '1' and not paragraph.text[1].isnumeric():
                         endnote_dict['1'] = paragraph.text.lstrip('1')
+                    elif paragraph.text.startswith('96') and '97' not in endnote_dict:
+                        endnote_dict['97'] = paragraph.text.lstrip('96')
                     else:
                         endnote_number = re.match(r'[0-9]+', paragraph.text)
                         if endnote_number:
@@ -605,6 +607,17 @@ class HtmlTzParser(TzParser):
             self.word.footnotes.append(self.current_footnote)
             self.current_footnote = None
             self.parsing_footnote = False
+        elif self.current_footnote.footnote_type == HtmlTzParser.FOOTNOTES["er"]:  # endnote
+            endnote_number = elem.text.strip()
+            if endnote_number in self.endnote_dict:
+                self.current_footnote.text = self.endnote_dict[endnote_number]
+            else:
+                print('missing endnote ' + endnote_number)
+            self.current_footnote.anchor = self.word
+            self.current_footnote.footnote_number = endnote_number
+            self.word.footnotes.append(self.current_footnote)
+            self.current_footnote = None
+            self.parsing_footnote = False
         else:
             for letter in elem.text:
                 self.process_footnote_text(letter)
@@ -614,7 +627,7 @@ class HtmlTzParser(TzParser):
             #     self.current_footnote = Footnote(FootnoteType.CITATION, None)
             # if elem.text != "‹":
             #     print(elem.text)
-
+        # TODO: Handle endnotes and footnotes in tikkunim titles
     def process_footnote_text(self, letter): # only run this if inside footnote
         if letter == '{':
             self.parsing_footnote = True
