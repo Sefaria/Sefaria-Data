@@ -3,6 +3,7 @@ import django
 django.setup()
 
 from sefaria.model import *
+from sefaria.helper.schema import change_node_title
 import csv
 
 
@@ -28,9 +29,9 @@ def tanya_title_replace_run():
 
         # Create a new primary title
         if new_en_title:
-            node.add_title(new_en_title, "en", primary=True, replace_primary=True)
+            change_node_title(node, old_title=retire_en_title, lang="en", new_title=new_en_title)
         if new_he_title:
-            node.add_title(new_he_title, "he", primary=True, replace_primary=True)
+            change_node_title(node, old_title=retire_he_title, lang="he", new_title=new_he_title)
 
         # Make the current one an alt title
         if retire_en_title:
