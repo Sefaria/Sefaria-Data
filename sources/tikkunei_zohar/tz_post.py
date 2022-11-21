@@ -105,12 +105,16 @@ def get_mappings():
         if i > 0:
             parser.tikkun = parsers[i-1].tikkun
         parser.read_file()
+        links = []
         for paragraph in parser.paragraphs:
             ref = 'Tikkunei Zohar ' + paragraph.daf.name + ' ' + str(paragraph.paragraph_number+1)
             # ref = Ref('Tikkunei Zohar ' + paragraph.daf.name + ' ' + str(paragraph.paragraph_number+1))
             # print(ref)
             mappings['Tikkunei Zohar'][ref] = paragraph.get_words()
+            paragraph_links = paragraph.get_links()
+            links += paragraph_links
             mappings['Solomon Tikkunei Zohar Hebrew'][ref] = paragraph.he_words
+    mappings['links'] = links
 
     return mappings
 
@@ -184,6 +188,7 @@ def post_version():
     for item in map['Solomon Tikkunei Zohar Hebrew']:
         version = get_he_version_for_post(map, item)
         post_text(item, version, server=SEFARIA_SERVER, weak_network=True)
+    post_link(map['links'])
 
 
 def post_tz():

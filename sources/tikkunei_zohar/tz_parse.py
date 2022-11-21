@@ -49,6 +49,7 @@ class TzParser(object):
         self.append_to_previous = False
         self.current_footnote = None
         self.parsing_footnote = False
+        self.previous_citation = None
 
         self.title = None
 
@@ -346,7 +347,6 @@ class DocsTzParser(TzParser):
 class HtmlTzParser(TzParser):
     FOOTNOTES = {
         "CharOverride-1": FootnoteType.SYMBOL,
-        "CharOverride-2": FootnoteType.CITATION,
         "CharOverride-3": FootnoteType.SYMBOL,
         "CharOverride-4": FootnoteType.SYMBOL,
         "CharOverride-5": FootnoteType.SYMBOL,
@@ -358,7 +358,8 @@ class HtmlTzParser(TzParser):
         "er": FootnoteType.ENDNOTE,
         "stars": FootnoteType.STAR,
         "infinity": FootnoteType.INFINITY,
-        "triangle": FootnoteType.TRIANGLE
+        "triangle": FootnoteType.TRIANGLE,
+        "CharOverride-2": FootnoteType.SYMBOL,
     }
 
     FORMATTING_CLASSES = {
@@ -597,7 +598,7 @@ class HtmlTzParser(TzParser):
                 self.current_footnote = Footnote(footnote_type, format_class)
             else:
                 self.current_footnote.footnote_type = footnote_type
-        if self.current_footnote.footnote_type == HtmlTzParser.FOOTNOTES["FNR---verse-English"]:
+        if self.current_footnote.footnote_type == HtmlTzParser.FOOTNOTES["FNR---verse-English"]:  # footnotes
             footnote_id = elem.contents[0].get('id').replace('-backlink', '')
             footnote_number = elem.text
             footnote_text = self.doc_rep.find("span", {"id": footnote_id}).text.lstrip(footnote_number).strip()
@@ -632,7 +633,13 @@ class HtmlTzParser(TzParser):
         if letter == '{':
             self.parsing_footnote = True
             self.append_to_previous = False
-        elif letter == '}':
+            self.current_footnote.footnote_type = FootnoteType.CITATION
+        elif letter == '}': # end footnote
+            if self.current_footnote.text == 'ibid.':
+                self.current_footnote.text = self.previous_citation
+            elif self.current_footnote.footnote_type == FootnoteType.CITATION: # this will always be true so remove?
+                self.previous_citation = self.current_footnote.text
+            self.paragraph.footnotes.append(self.current_footnote)
             self.parsing_footnote = False
             self.append_to_previous = False
         elif letter == '‹':
