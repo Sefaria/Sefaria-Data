@@ -1,18 +1,26 @@
 import django
 django.setup()
 from sefaria.model import *
-indices = []
+
 import time
-
-
 import os
+
 version = "all"
-SEFARIA_SERVER = "https://jmc.cauldron.sefaria.org"
 results = []
-indices = ["Connecticut Ratification Debates", "Delaware Ratification Debates"]
+indices = []
+
+
+# Change the following according to your specific needs
+SEFARIA_SERVER = "https://www.sefaria.org"
+api_key = ""
+
+# Specify which indices you need, and which version.
+indices = library.get_indexes_in_category("Mishneh Torah")
+vtitle = "Mishneh Torah, trans. by Eliyahu Touger. Jerusalem, Moznaim Pub. c1986-c2007"
+
+
 for m in indices:
      print(m)
-     cmd = """./run scripts/move_draft_text.py "{}" -k '{}' -d '{}'""".format(m,  API_KEY, SEFARIA_SERVER)
+     cmd = f"./run scripts/move_draft_text.py '{m}' --noindex -v 'en:{vtitle}' -k '{api_key}' -d '{SEFARIA_SERVER}'"
      results.append(os.popen(cmd).read())
-     time.sleep(1)
-
+     time.sleep(5)
