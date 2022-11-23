@@ -7,7 +7,8 @@ from sefaria.tracker import modify_bulk_text
 
 if __name__ == '__main__':
 
-    superuser_id = 1
+
+    superuser_id = 171118
     ref_dict = {}
 
     #delete version if already exits:
@@ -17,7 +18,7 @@ if __name__ == '__main__':
         cur_version.delete()
 
 
-    #pase csv into fictionary of refs:
+    #parse csv into dictionary of refs:
     with open('kuzari_aligned.csv', newline='') as csvfile:
         r = csv.reader(csvfile, delimiter=',')
 
@@ -42,7 +43,7 @@ if __name__ == '__main__':
 
     chapter = index.nodes.create_skeleton()
     new_version = Version({"versionTitle": "Kuzari in Arabic, trans. Nabih Bashir, Al-Kamel Verlag, 2012 [ar]",
-                               "versionSource": "'https://korenpub.com/collections/the-noe-edition-koren-talmud-bavli-1'",
+                               "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH003427370/NLI",
                                "title": "Kuzari",
                                "chapter": chapter,
                                "language": "he",
@@ -50,10 +51,6 @@ if __name__ == '__main__':
                                "license": "CC-BY",
                                "status": "locked"
                                })
-
+#put in db
 modify_bulk_text(superuser_id, new_version, ref_dict)
 print("finished update")
-
-
-
-
