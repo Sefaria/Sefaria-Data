@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
 
     #pase csv into fictionary of refs:
-    with open('kuzari aligned.csv', newline='') as csvfile:
+    with open('kuzari_aligned.csv', newline='') as csvfile:
         r = csv.reader(csvfile, delimiter=',')
 
         title = ""
