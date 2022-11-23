@@ -6,6 +6,7 @@ from sefaria.model import *
 from sefaria.helper.schema import change_node_title
 import csv
 
+
 def tanya_title_replace_run():
     title_dict = {}
 
@@ -32,10 +33,10 @@ def tanya_title_replace_run():
                 child_title = child.get_primary_title()
                 print(child_title)
                 if child_title == "The Education of the Child":
-                    change_node_title(child, old_title="The Education of the Child", lang="en", new_title="Chinukh Katan")
+                    change_node_title(child, old_title="The Education of the Child", lang="en",
+                                      new_title="Chinukh Katan")
                     child.add_title("The Education of the Child", "en")
                 print(child.get_primary_title())
-
 
         # Create a new primary title
         if new_en_title:
@@ -50,6 +51,7 @@ def tanya_title_replace_run():
             node.add_title(retire_he_title, "he")
         print()
     tanya_index.save()
+
 
 
 if __name__ == '__main__':
