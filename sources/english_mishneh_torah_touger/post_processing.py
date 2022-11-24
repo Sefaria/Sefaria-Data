@@ -199,6 +199,7 @@ def generate_html_report(txt, halakha, unique_html_tags, unique_html_tag_dict_li
 
 
 def html_clean_up(mt_list, html_report=False, generate_br_report=False):
+    error_list = []
     unique_html_tags = {}
     unique_html_tag_dict_list = []
     br_report_list = []
@@ -218,6 +219,11 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
         # Massage links to text references into Sefaria form
         links = re.findall(r"<a href=.*?>(.*?)<\/a>", txt)
         for link in links:
+
+            count = links.count(link)
+
+            if count > 1:
+                error_list.append(f"{halakha['ref']} - \"{link}\" occurs {count} times in the text.")
 
             # Add escape characters to links data for matching
             if ")" in link or "(" in link:
@@ -259,6 +265,11 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
         print(unique_html_tags)
     if generate_br_report:
         export_data_to_csv(br_report_list, 'qa_reports/br_tag_report', headers_list=['ref', 'text'])
+
+    error_list = set(error_list)
+    print(f"TOTAL DUP LNK ERRORS: {len(error_list)}")
+    for e in error_list:
+        print(e)
     return new_list
 
 
@@ -278,8 +289,8 @@ if __name__ == '__main__':
     chabad_book_names, mishneh_torah_list = setup_data()
     name_map = create_book_name_map(chabad_book_names, sefaria_book_names)
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
-    mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
-    mishneh_torah_list = img_convert(mishneh_torah_list)
-    mishneh_torah_list = html_clean_up(mishneh_torah_list)
+    mishneh_torah_list = strip_p_for_br(mishneh_torah_list) # still good here
+    mishneh_torah_list = img_convert(mishneh_torah_list) # still good
+    mishneh_torah_list = html_clean_up(mishneh_torah_list) # Here w links
     generate_img_report(mishneh_torah_list)
     # export_cleaned_data_to_csv(mishneh_torah_list)
