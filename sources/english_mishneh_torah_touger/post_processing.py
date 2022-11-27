@@ -124,7 +124,7 @@ def strip_p_for_br(mt_list):
     return new_list
 
 
-def fix_unmatched_paren(clean_link, txt):
+def fix_unmatched_paren(clean_link, txt, ref):
     """
     Fixes unmatched parenthesis in the resulting text around text citations (error occurs due to regex nuance)
     :param: clean_link (the link cleaned from the regex
@@ -133,6 +133,7 @@ def fix_unmatched_paren(clean_link, txt):
     """
     is_unmatched_paren = txt.find(f"({clean_link}")
     if is_unmatched_paren != -1:
+        # print(f"\"{ref}\",")
         unmatched_str = f"({clean_link}"
         start_for_end_paren = len(unmatched_str)
         txt = txt[:is_unmatched_paren + start_for_end_paren - 1] + ")" + txt[is_unmatched_paren + start_for_end_paren:]
@@ -245,7 +246,7 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
             clean_link = re.sub(r"[^A-Za-z :0-9]", " ", link)
             patt = f"<a href=.*?>{re_link}<\/a>"
             txt = re.sub(patt, clean_link, txt, count=1)
-            txt = fix_unmatched_paren(clean_link, txt)
+            txt = fix_unmatched_paren(clean_link, txt, halakha['ref'])
 
         # Add the appropriate superscript class
         sups = re.findall(r"<sup>(.*?)</sup><i class=\"footnote\">", txt)
