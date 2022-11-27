@@ -277,10 +277,6 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
     if generate_br_report:
         export_data_to_csv(br_report_list, 'qa_reports/br_tag_report', headers_list=['ref', 'text'])
 
-    # TODO - remove
-    for i in new_list:
-        if i['ref'] == 'Leavened and Unleavened Bread 4.1':
-            print(i['text'])
     return new_list
 
 
