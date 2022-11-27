@@ -124,6 +124,21 @@ def strip_p_for_br(mt_list):
     return new_list
 
 
+def fix_unmatched_paren(clean_link, txt):
+    """
+    Fixes unmatched parenthesis in the resulting text around text citations (error occurs due to regex nuance)
+    :param: clean_link (the link cleaned from the regex
+    :param: txt (the text of the halakha)
+    :returns: txt - with parenthesis added
+    """
+    is_unmatched_paren = txt.find(f"({clean_link}")
+    if is_unmatched_paren != -1:
+        unmatched_str = f"({clean_link}"
+        start_for_end_paren = len(unmatched_str)
+        txt = txt[:is_unmatched_paren + start_for_end_paren - 1] + ")" + txt[is_unmatched_paren + start_for_end_paren:]
+    return txt
+
+
 def img_convert(mt_list):
     new_mt_list = []
     for halakha in mt_list:
@@ -203,7 +218,7 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
     unique_html_tag_dict_list = []
     br_report_list = []
     new_list = []
-    count=0
+    count = 0
     for halakha in mt_list:
         txt = halakha['text']
 
@@ -230,6 +245,7 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
             clean_link = re.sub(r"[^A-Za-z :0-9]", " ", link)
             patt = f"<a href=.*?>{re_link}<\/a>"
             txt = re.sub(patt, clean_link, txt, count=1)
+            txt = fix_unmatched_paren(clean_link, txt)
 
         # Add the appropriate superscript class
         sups = re.findall(r"<sup>(.*?)</sup><i class=\"footnote\">", txt)
@@ -237,7 +253,6 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
             patt = f"<sup>{sup}</sup><i class=\"footnote\">"
             replacement = f"<sup class=\"footnote-marker\">{sup}</sup><i class=\"footnote\">"
             txt = re.sub(patt, replacement, txt)
-
 
         txt = bleach.clean(txt,
                            tags=ALLOWED_TAGS,
@@ -250,7 +265,7 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
         if generate_br_report:
             is_odd_br = re.search(r"[^?.:!]<br>", txt)
             if is_odd_br:
-                count+=1
+                count += 1
                 br_report_list.append({'ref': halakha['ref'], 'text': txt})
 
         new_list.append({'ref': halakha['ref'], 'text': txt})
@@ -262,6 +277,10 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
     if generate_br_report:
         export_data_to_csv(br_report_list, 'qa_reports/br_tag_report', headers_list=['ref', 'text'])
 
+    # TODO - remove
+    for i in new_list:
+        if i['ref'] == 'Leavened and Unleavened Bread 4.1':
+            print(i['text'])
     return new_list
 
 
@@ -275,14 +294,12 @@ def generate_img_report(mt_list):
     export_data_to_csv(img_report, 'qa_reports/img_report', ['ref', 'text'])
 
 
-
-
 if __name__ == '__main__':
     chabad_book_names, mishneh_torah_list = setup_data()
     name_map = create_book_name_map(chabad_book_names, sefaria_book_names)
     mishneh_torah_list = rename_refs_to_sefaria(mishneh_torah_list, name_map)
-    mishneh_torah_list = strip_p_for_br(mishneh_torah_list) # still good here
-    mishneh_torah_list = img_convert(mishneh_torah_list) # still good
-    mishneh_torah_list = html_clean_up(mishneh_torah_list) # Here w links
+    mishneh_torah_list = strip_p_for_br(mishneh_torah_list)
+    mishneh_torah_list = img_convert(mishneh_torah_list)
+    mishneh_torah_list = html_clean_up(mishneh_torah_list)
     generate_img_report(mishneh_torah_list)
-    # export_cleaned_data_to_csv(mishneh_torah_list)
+    export_cleaned_data_to_csv(mishneh_torah_list)
