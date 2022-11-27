@@ -1,3 +1,5 @@
+# import json
+
 import django
 django.setup()
 
@@ -5,7 +7,9 @@ django.setup()
 import csv
 from sefaria.model import *
 from sefaria.helper.schema import insert_last_child
+from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
+from sefaria.system.database import db
 
 
 def latin_numeral_to_hebrew_numeral(latin_numeral):
@@ -167,9 +171,15 @@ def get_list_of_masechtot_nodes(list_of_masechtot, starting_masechet_name):
     return nodes_list
 
 def list_of_masechtot_to_db(nodes_list):
-    index = library.get_index("Introductions to the Babylonian Talmud")
-    parent = index.nodes
+
+    ####dangerous way to add new nodes:
+    # index = library.get_index("Introductions to the Babylonian Talmud")
+    # parent = index.nodes
+    # for node in nodes_list:
+    #     insert_last_child(node, parent)
     for node in nodes_list:
+        index = library.get_index("Introductions to the Babylonian Talmud")
+        parent = index.nodes
         insert_last_child(node, parent)
 
 
@@ -183,7 +193,6 @@ def object_to_dict_of_refs(csv_parsed_object, language):
         text_language = "hebrew_text"
 
     for chapter in csv_parsed_object:
-        #if(chapter["masechet"] == "Shabbat"):
             paragraph_num = 1
             for paragraph in chapter[text_language]:
                 ref = chapter["ref"] + " " + str(paragraph_num)
@@ -193,15 +202,34 @@ def object_to_dict_of_refs(csv_parsed_object, language):
     return refs_dict
 
 
-
+# m = library._index_map
+# index = library.get_index("Introductions to the Babylonian Talmud")
 if __name__ == '__main__':
-    superuser_id = 1
+    superuser_id = 171118
+    # with open("introductions_to_the_babylonian_talmud_index.json") as f:
+    #     new_index = json.load(f)
+    #
+    # db.index.insert_one(new_index)
 
+
+
+    cur_version = VersionSet({'title': 'Introductions to the Babylonian Talmud',
+                              'versionTitle': "William Davidson Edition - Hebrew"})
+    if cur_version.count() > 0:
+        cur_version.delete()
+
+    cur_version = VersionSet({'title': 'Introductions to the Babylonian Talmud',
+                              'versionTitle': "William Davidson Edition - English"})
+    if cur_version.count() > 0:
+        cur_version.delete()
+
+    # with open("introductions_to_the_babylonian_talmud_index.json") as f:
+    #     new_index = json.load(f)
+    #
+    # db.index.insert_one(new_index)
+    # index = library.get_index("Introductions to the Babylonian Talmud")
 
     print("hello")
-    index = library.get_index("Introductions to the Babylonian Talmud")
-    # m = library._index_map
-    # print(index);
 
 
     csv_object = parse_csv_to_object()
@@ -210,36 +238,53 @@ if __name__ == '__main__':
     print("finished updating index db")
 
 
-    english_version = Version().load({"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - English"})
+    #english_version = Version().load({"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - English"})
 
-    chapter = index.nodes.create_skeleton()
-    hebrew_version = Version({"versionTitle": "William Davidson Edition - Hebrew",
-                       "versionSource": "'https://korenpub.com/collections/the-noe-edition-koren-talmud-bavli-1'",
-                       "title": "Introductions to the Babylonian Talmud",
-                       "chapter": chapter,
-                       "language": "he",
-                       "digitizedBySefaria": True,
-                       "license": "CC-BY-NC",
-                       "status": "locked"
-                       })
+
+
 
     # hebrew_version = Version().load(
     #     {"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - Hebrew"})
 
 
+
+
+
+    index = library.get_index("Introductions to the Babylonian Talmud")
+
+    chapter = index.nodes.create_skeleton()
+    english_version = Version({"versionTitle": "William Davidson Edition - English",
+                               "versionSource": "'https://korenpub.com/collections/the-noe-edition-koren-talmud-bavli-1'",
+                               "title": "Introductions to the Babylonian Talmud",
+                               "chapter": chapter,
+                               "language": "en",
+                               "digitizedBySefaria": True,
+                               "license": "CC-BY-NC",
+                               "status": "locked"
+                               })
+
     version_text_map_english = object_to_dict_of_refs(csv_object, "english")
-    #print(version_text_map_english)
-
-    version_text_map_hebrew = object_to_dict_of_refs(csv_object, "hebrew")
-    #print(version_text_map_hebrew)
-
-    # cur_version = VersionSet({'title': 'Introductions to the Babylonian Talmud',
-    #                           'versionTitle': "William Davidson Edition - Hebrew"})
-    # if cur_version.count() > 0:
-    #     cur_version.delete()
-
     modify_bulk_text(superuser_id, english_version, version_text_map_english)
+
+    print("finished updating English version db")
+
+
+
+
+
+    index = library.get_index("Introductions to the Babylonian Talmud")
+    chapter = index.nodes.create_skeleton()
+    hebrew_version = Version({"versionTitle": "William Davidson Edition - Hebrew",
+                              "versionSource": "'https://korenpub.com/collections/the-noe-edition-koren-talmud-bavli-1'",
+                              "title": "Introductions to the Babylonian Talmud",
+                              "chapter": chapter,
+                              "language": "he",
+                              "digitizedBySefaria": True,
+                              "license": "CC-BY-NC",
+                              "status": "locked"
+                              })
+    version_text_map_hebrew = object_to_dict_of_refs(csv_object, "hebrew")
     modify_bulk_text(superuser_id, hebrew_version, version_text_map_hebrew)
-    print("finished updating versions db")
+    print("finished updating Hebrew version db")
 
 
