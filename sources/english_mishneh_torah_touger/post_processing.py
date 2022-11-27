@@ -199,7 +199,6 @@ def generate_html_report(txt, halakha, unique_html_tags, unique_html_tag_dict_li
 
 
 def html_clean_up(mt_list, html_report=False, generate_br_report=False):
-    error_list = []
     unique_html_tags = {}
     unique_html_tag_dict_list = []
     br_report_list = []
@@ -222,9 +221,6 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
 
             count = links.count(link)
 
-            if count > 1:
-                error_list.append(f"{halakha['ref']} - \"{link}\" occurs {count} times in the text.")
-
             # Add escape characters to links data for matching
             if ")" in link or "(" in link:
                 re_link = re.sub(r"\)", "\\)", link)
@@ -233,7 +229,7 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
                 re_link = link
             clean_link = re.sub(r"[^A-Za-z :0-9]", " ", link)
             patt = f"<a href=.*?>{re_link}<\/a>"
-            txt = re.sub(patt, clean_link, txt)
+            txt = re.sub(patt, clean_link, txt, count=1)
 
         # Add the appropriate superscript class
         sups = re.findall(r"<sup>(.*?)</sup><i class=\"footnote\">", txt)
@@ -266,10 +262,6 @@ def html_clean_up(mt_list, html_report=False, generate_br_report=False):
     if generate_br_report:
         export_data_to_csv(br_report_list, 'qa_reports/br_tag_report', headers_list=['ref', 'text'])
 
-    error_list = set(error_list)
-    print(f"TOTAL DUP LNK ERRORS: {len(error_list)}")
-    for e in error_list:
-        print(e)
     return new_list
 
 
