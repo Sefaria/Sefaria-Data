@@ -232,7 +232,8 @@ class Paragraph(object):
                             anchor = ' '.join([word.text for word in footnote.anchor.words])
                         footnote_symbol = get_symbol(footnote)
                         if footnote_symbol:
-                            words_in_phrase += '<sup>' + footnote_symbol + '</sup>' + '<i class="footnote"><b>' \
+                            words_in_phrase += '<sup class="footnote-marker">' + footnote_symbol + '</sup>' +\
+                                               '<i class="footnote"><b>' \
                                                + '</b>' + strip_symbol(footnote.text) + '</i>'
                         else:
                             # TODO: handle other footnote types
