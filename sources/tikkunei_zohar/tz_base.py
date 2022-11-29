@@ -2,6 +2,8 @@ from enum import Enum
 from itertools import count
 from collections import OrderedDict
 
+from sefaria.model import Ref
+
 
 class Formatting(Enum):
     BOLD = 1
@@ -29,6 +31,9 @@ def get_symbol(footnote):
         return '△'
     elif footnote.footnote_type in [FootnoteType.FOOTNOTE, FootnoteType.ENDNOTE]:
         return footnote.footnote_number
+    # elif footnote.footnote_type == FootnoteType.CITATION:
+    #     # post citation
+    #     return None
     else:
         return None
 
@@ -195,6 +200,18 @@ class Paragraph(object):
         # if len(self.quoted_cursor) > 0:
         for quote in self.quoted_cursor:
             quote.add_word(word)
+
+    def get_links(self):
+        links = []
+        for footnote in self.footnotes:
+            if footnote.footnote_type == FootnoteType.CITATION:
+                ref1 = 'Tikkunei Zohar ' + self.daf.name + ':' + str(self.paragraph_number + 1)
+                try:
+                    ref2 = Ref(footnote.text)
+                    links.append({"refs": [ref1, str(ref2)], "type": "Citation", "auto": True, "generated_by": "solomon_tz_parse_nm"})
+                except:
+                    print('failed to parse ref ' + footnote.text)
+        return links
 
     def get_words(self):
         words = ''
