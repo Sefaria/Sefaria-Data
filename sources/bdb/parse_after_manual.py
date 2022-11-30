@@ -244,6 +244,10 @@ def parse(hubd, lexicon_name):
         le.content['senses'][0]['definition'] = rtl(le.content['senses'][0]['definition'])
         le.content['senses'][0]['definition'] = double_links(le.content['senses'][0]['definition'])
         le.content['senses'][0]['definition'] = make_data_ref(le.content['senses'][0]['definition'])
+        try:
+            delattr(le, 'pre_headword')
+        except AttributeError:
+            pass
         le.save()
 
 if __name__ == '__main__':
