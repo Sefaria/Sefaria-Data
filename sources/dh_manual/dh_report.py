@@ -7,6 +7,8 @@ def make_report(path, fname):
     inds = IndexSet({'categories': {'$all': path}})
     report = []
     for ind in inds:
+        print(ind)
+        if ind.title == 'Meiri on Yoma': continue
         segs = 0
         links = 0
         for seg in ind.all_segment_refs():
@@ -25,4 +27,4 @@ def make_report(path, fname):
             w.writerow(r)
 
 if __name__ == '__main__':
-    make_report(['Talmud','Bavli','Rishonim on Talmud','Ritva'], 'Ritva')
+    make_report(['Talmud','Bavli','Rishonim on Talmud','Meiri'], 'Meiri')
