@@ -13,7 +13,8 @@ def calcDataValue(letters):
 def seg_to_ref(name, parasha, seg, prev_ref):
     if len(parasha) > 0:
         parasha = Term().load({"titles.text": parasha}).get_primary_title('en')
-    else:
+        prev_ref = ""
+    elif len(prev_ref) > 0:
         parasha = Ref(prev_ref).index_node.get_primary_title('en')
 
     if seg == "":
