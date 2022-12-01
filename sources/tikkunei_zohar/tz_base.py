@@ -27,6 +27,8 @@ def get_symbol(footnote):
         return '∞'
     elif footnote.footnote_type == FootnoteType.STAR:
         return '☉'
+    elif footnote.footnote_type == FootnoteType.DIAMONDS:
+        return '☼'
     elif footnote.footnote_type == FootnoteType.TRIANGLE:
         return '△'
     elif footnote.footnote_type in [FootnoteType.FOOTNOTE, FootnoteType.ENDNOTE]:

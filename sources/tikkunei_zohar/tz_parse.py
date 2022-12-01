@@ -356,7 +356,10 @@ class HtmlTzParser(TzParser):
         "CharOverride-10": FootnoteType.SYMBOL,
         "FNR---verse-English": FootnoteType.FOOTNOTE,
         "er": FootnoteType.ENDNOTE,
-        "stars": FootnoteType.STAR,
+        "stars":
+            {"\uF0A4": FootnoteType.STAR,
+             "": FootnoteType.DIAMONDS
+             },
         "infinity": FootnoteType.INFINITY,
         "triangle": FootnoteType.TRIANGLE,
         "CharOverride-2": FootnoteType.SYMBOL,
@@ -576,6 +579,13 @@ class HtmlTzParser(TzParser):
             for footnote_type_class in HtmlTzParser.FOOTNOTES:
                 if footnote_type_class in elem['class']:
                     footnote_type = HtmlTzParser.FOOTNOTES[footnote_type_class]
+                    if not isinstance(footnote_type, Enum):
+                        try:
+                            footnote_type = HtmlTzParser.FOOTNOTES[footnote_type_class][elem.get_text()]
+                        except KeyError as e:
+                            footnote_type = FootnoteType.DIAMONDS
+                            print('FootnoteType parsing anomaly detected: Daf ' + self.daf.name +
+                                  '. Paragraph: ' + str(self.paragraph.paragraph_number))
                     break
             # else:
             #     footnote_type = FootnoteType.SYMBOL
@@ -653,7 +663,8 @@ class HtmlTzParser(TzParser):
                 self.word.footnotes.append(self.current_footnote)
                 self.current_footnote = None
         else:
-            self.current_footnote.text += letter
+            if letter not in ["\uF0A4",""]:  # don't add gibberish
+                self.current_footnote.text += letter
 
     def process_paragraph_elem(self, elem, paragraph, formatting=None):
         #try:
