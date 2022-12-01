@@ -80,7 +80,11 @@ import django, json, srsly, csv
 from typing import Union, List
 from sefaria.utils.hebrew import strip_cantillation
 django.setup()
-import re2 as re
+try:
+    import re2 as re
+    re.set_fallback_notification(re.FALLBACK_WARNING)
+except ImportError:
+    import re
 import regex
 from typing import Dict
 from tqdm import tqdm
