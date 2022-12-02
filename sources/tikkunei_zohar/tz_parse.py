@@ -645,7 +645,7 @@ class HtmlTzParser(TzParser):
             self.append_to_previous = False
             self.current_footnote.footnote_type = FootnoteType.CITATION
         elif letter == '}': # end footnote
-            if self.current_footnote.text == 'ibid.':
+            if self.current_footnote.text == 'ibid.' or self.current_footnote.text == 'ibid':
                 self.current_footnote.text = self.previous_citation
             elif self.current_footnote.footnote_type == FootnoteType.CITATION: # this will always be true so remove?
                 self.previous_citation = self.current_footnote.text

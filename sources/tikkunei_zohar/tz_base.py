@@ -1,6 +1,7 @@
 from enum import Enum
 from itertools import count
 from collections import OrderedDict
+from docx2python import docx2python
 
 from sefaria.model import Ref
 
@@ -20,6 +21,7 @@ class FootnoteType(Enum):
     STAR = 5
     TRIANGLE = 6
     ENDNOTE = 7
+    DIAMONDS = 8  # second star
 
 
 def get_symbol(footnote):
@@ -188,8 +190,9 @@ class Paragraph(object):
 
     def commit_quoted(self):
         if len(self.quoted_cursor) == 0:
-            print("End Quote Only")
-            print(self.words[-1].text)
+            # print("End Quote Only")
+            # print(self.words[-1].text)
+            pass
         else:
             # print([word.text for word in self.quoted_cursor[-1].words])
             self.quoted.append(self.quoted_cursor[-1])
@@ -203,12 +206,30 @@ class Paragraph(object):
         for quote in self.quoted_cursor:
             quote.add_word(word)
 
+    ref_replace_dict = {
+        "Naḥ": "Nah",
+        "Naḥ.": "Nah",
+        "Ḥab": "Hab",
+        "Lev.": "Lev",
+        "Ez.": "Ezr",
+        "1 King.": "1 Kings",
+        "2 King.": "2 Kings",
+        "Jer.": "Jeremiah",
+        "Ez": "Ezra",
+    }
+
     def get_links(self):
         links = []
         for footnote in self.footnotes:
             if footnote.footnote_type == FootnoteType.CITATION:
                 ref1 = 'Tikkunei Zohar ' + self.daf.name + ':' + str(self.paragraph_number + 1)
                 try:
+                    for key, value in self.ref_replace_dict.items():
+                        if footnote.text.startswith(key):
+                            footnote.text = footnote.text.replace(key, value, 1)
+                            footnote.text.replace('see: ', '')
+                            footnote.text.replace('see ', '')
+                            break
                     ref2 = Ref(footnote.text)
                     links.append({"refs": [ref1, str(ref2)], "type": "Citation", "auto": True, "generated_by": "solomon_tz_parse_nm"})
                 except:
