@@ -1,12 +1,15 @@
-# import json
-
 import django
+
+django.setup()
+
+
+
 django.setup()
 
 # import statistics
 import csv
 from sefaria.model import *
-from sefaria.helper.schema import insert_last_child
+from sefaria.helper.schema import insert_last_child, reorder_children
 from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.system.database import db
@@ -14,66 +17,65 @@ from sefaria.system.database import db
 
 def latin_numeral_to_hebrew_numeral(latin_numeral):
     if latin_numeral == "I":
-        return("א'")
-    if latin_numeral ==  "II":
-        return("ב'")
-    if latin_numeral ==  "III":
-        return("ג'")
+        return ("א'")
+    if latin_numeral == "II":
+        return ("ב'")
+    if latin_numeral == "III":
+        return ("ג'")
     if latin_numeral == "IV":
-        return("ד'")
+        return ("ד'")
     if latin_numeral == "V":
-        return("ה'")
+        return ("ה'")
     if latin_numeral == "VI":
-        return("ו'")
+        return ("ו'")
     if latin_numeral == "VII":
-        return("ז'")
+        return ("ז'")
     if latin_numeral == "VIII":
-        return("ח'")
-    if latin_numeral ==  "IX":
-        return("ט'")
+        return ("ח'")
+    if latin_numeral == "IX":
+        return ("ט'")
     if latin_numeral == "X":
-        return("י'")
+        return ("י'")
     if latin_numeral == "XI":
-        return('י"א')
-    if latin_numeral ==  "XII":
-        return('י"ב')
-    if latin_numeral ==  "XIII":
-        return('י"ג')
+        return ('י"א')
+    if latin_numeral == "XII":
+        return ('י"ב')
+    if latin_numeral == "XIII":
+        return ('י"ג')
     if latin_numeral == "XIV":
-        return('י"ד')
+        return ('י"ד')
     if latin_numeral == "XV":
-        return('ט"ו')
+        return ('ט"ו')
     if latin_numeral == "XVI":
-        return('ט"ז')
+        return ('ט"ז')
     if latin_numeral == "XVII":
-        return('י"ז')
+        return ('י"ז')
     if latin_numeral == "XVIII":
-        return('י"ח')
-    if latin_numeral ==  "XIX":
-        return('י"ט')
+        return ('י"ח')
+    if latin_numeral == "XIX":
+        return ('י"ט')
     if latin_numeral == "XX":
-        return("כ'")
+        return ("כ'")
     if latin_numeral == "XXI":
-        return('כ"א')
+        return ('כ"א')
     if latin_numeral == "XXII":
-        return('כ"ב')
+        return ('כ"ב')
     if latin_numeral == "XXIII":
-        return('כ"ג')
+        return ('כ"ג')
     if latin_numeral == "XXIV":
-        return('כ"ד')
+        return ('כ"ד')
     if latin_numeral == "XXV":
-        return('כ"ה')
+        return ('כ"ה')
     if latin_numeral == "XXVI":
-        return('כ"ו')
+        return ('כ"ו')
     if latin_numeral == "XXVII":
-        return('כ"ז')
+        return ('כ"ז')
     if latin_numeral == "XXVIII":
-        return('כ"ח')
-    if latin_numeral ==  "XXIX":
-        return('כ"ט')
+        return ('כ"ח')
+    if latin_numeral == "XXIX":
+        return ('כ"ט')
     if latin_numeral == "XXX":
-        return("ל'")
-
+        return ("ל'")
 
 
 def translate_title_to_hebrew(title, masechet_hebrew):
@@ -97,16 +99,17 @@ def translate_title_to_hebrew(title, masechet_hebrew):
         hebrew_title += latin_numeral_to_hebrew_numeral(numeral)
         return hebrew_title
 
+
 def parse_csv_to_object():
     list_of_dicts = []
-    #structure:
+    # structure:
     [{'ref': ...,
-    'english_text': [],
-    'hebrew_text': [],
-    'masechet': ...,
-    'masechet_hebrew': ...,
-    'title': 'Introduction to Berakhot',
-    'title_hebrew': ''}]
+      'english_text': [],
+      'hebrew_text': [],
+      'masechet': ...,
+      'masechet_hebrew': ...,
+      'title': 'Introduction to Berakhot',
+      'title_hebrew': ''}]
     with open('introductions.csv', newline='') as csvfile:
         r = csv.reader(csvfile, delimiter=',')
 
@@ -144,18 +147,18 @@ def parse_csv_to_object():
 
     return (list_of_dicts)
 
+
 def get_list_of_masechtot_nodes(list_of_masechtot, starting_masechet_name):
 
     found_starting_masechet_flag = False
-    #index = library.get_index("Introductions to the Babylonian Talmud")
-    #parent = index.nodes
+    # index = library.get_index("Introductions to the Babylonian Talmud")
+    # parent = index.nodes
     nodes_list = []
     current_masechet = "no masechet yet"
     for segment_dict in list_of_masechtot:
-        if(segment_dict['masechet'] == starting_masechet_name) or found_starting_masechet_flag:
+        if (segment_dict['masechet'] == starting_masechet_name) or found_starting_masechet_flag:
             found_starting_masechet_flag = True
             if segment_dict['masechet'] != current_masechet:
-
                 masechet_node = SchemaNode()
                 masechet_node.key = segment_dict["masechet"]  # should be equal to primary title
                 masechet_node.add_primary_titles(segment_dict["masechet"], segment_dict["masechet_hebrew"])
@@ -167,8 +170,9 @@ def get_list_of_masechtot_nodes(list_of_masechtot, starting_masechet_name):
             if segment_dict['masechet'] != current_masechet:
                 nodes_list.append(masechet_node)
             current_masechet = segment_dict['masechet']
-            #insert_last_child(masechet_node, parent)
+            # insert_last_child(masechet_node, parent)
     return nodes_list
+
 
 def list_of_masechtot_to_db(nodes_list):
 
@@ -181,6 +185,7 @@ def list_of_masechtot_to_db(nodes_list):
         index = library.get_index("Introductions to the Babylonian Talmud")
         parent = index.nodes
         insert_last_child(node, parent)
+    print("finished updating index db")
 
 
 def object_to_dict_of_refs(csv_parsed_object, language):
@@ -193,63 +198,15 @@ def object_to_dict_of_refs(csv_parsed_object, language):
         text_language = "hebrew_text"
 
     for chapter in csv_parsed_object:
-            paragraph_num = 1
-            for paragraph in chapter[text_language]:
-                ref = chapter["ref"] + " " + str(paragraph_num)
-                refs_dict[ref] = paragraph
-                ##refs_dict[ref] = ":)"
-                paragraph_num += 1
+        paragraph_num = 1
+        for paragraph in chapter[text_language]:
+            ref = chapter["ref"] + " " + str(paragraph_num)
+            refs_dict[ref] = paragraph
+            ##refs_dict[ref] = ":)"
+            paragraph_num += 1
     return refs_dict
 
-
-# m = library._index_map
-# index = library.get_index("Introductions to the Babylonian Talmud")
-if __name__ == '__main__':
-    superuser_id = 171118
-    # with open("introductions_to_the_babylonian_talmud_index.json") as f:
-    #     new_index = json.load(f)
-    #
-    # db.index.insert_one(new_index)
-
-
-
-    cur_version = VersionSet({'title': 'Introductions to the Babylonian Talmud',
-                              'versionTitle': "William Davidson Edition - Hebrew"})
-    if cur_version.count() > 0:
-        cur_version.delete()
-
-    cur_version = VersionSet({'title': 'Introductions to the Babylonian Talmud',
-                              'versionTitle': "William Davidson Edition - English"})
-    if cur_version.count() > 0:
-        cur_version.delete()
-
-    # with open("introductions_to_the_babylonian_talmud_index.json") as f:
-    #     new_index = json.load(f)
-    #
-    # db.index.insert_one(new_index)
-    # index = library.get_index("Introductions to the Babylonian Talmud")
-
-    print("hello")
-
-
-    csv_object = parse_csv_to_object()
-    index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
-    list_of_masechtot_to_db(index_nodes)
-    print("finished updating index db")
-
-
-    #english_version = Version().load({"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - English"})
-
-
-
-
-    # hebrew_version = Version().load(
-    #     {"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - Hebrew"})
-
-
-
-
-
+def ingest_english_version():
     index = library.get_index("Introductions to the Babylonian Talmud")
 
     chapter = index.nodes.create_skeleton()
@@ -268,10 +225,7 @@ if __name__ == '__main__':
 
     print("finished updating English version db")
 
-
-
-
-
+def ingest_hebrew_version():
     index = library.get_index("Introductions to the Babylonian Talmud")
     chapter = index.nodes.create_skeleton()
     hebrew_version = Version({"versionTitle": "William Davidson Edition - Hebrew",
@@ -288,3 +242,63 @@ if __name__ == '__main__':
     print("finished updating Hebrew version db")
 
 
+def delete_all_existing_versions():
+    cur_version = VersionSet({'title': 'Introductions to the Babylonian Talmud',
+                              'versionTitle': "William Davidson Edition - Hebrew"})
+    if cur_version.count() > 0:
+        cur_version.delete()
+
+    cur_version = VersionSet({'title': 'Introductions to the Babylonian Talmud',
+                              'versionTitle': "William Davidson Edition - English"})
+    if cur_version.count() > 0:
+        cur_version.delete()
+
+
+def reorder_masechet_nodes():
+    masechtot_keys_ordered = ["Berakhot", "Shabbat", "Eruvin", "Pesachim", "Rosh Hashanah", "Yoma", "Sukkah", "Beitzah",
+                              "Taanit", "Megillah", "Moed Katan", "Chagigah",
+    "Yevamot", "Ketubot", "Nedarim", "Nazir", "Sotah", "Gittin", "Kiddushin",
+    "Bava Kamma", "Bava Metzia", "Bava Batra", "Sanhedrin", "Makkot", "Shevuot", "Avodah Zarah", "Horayot",
+    "Zevachim", "Menachot", "Chullin", "Bekhorot", "Arakhin", "Temurah", "Keritot", "Meilah", "Tamid", "Niddah"]
+    index = library.get_index("Introductions to the Babylonian Talmud")
+    reorder_children(index.nodes, masechtot_keys_ordered)
+    print("finished re-ordering")
+
+    # m = library._index_map
+    # index = library.get_index("Introductions to the Babylonian Talmud")
+
+    # english_version = Version().load({"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - English"})
+
+    # hebrew_version = Version().load(
+    #     {"title": "Introductions to the Babylonian Talmud", "versionTitle": "William Davidson Edition - Hebrew"})
+    # with open("introductions_to_the_babylonian_talmud_index.json") as f:
+    #     new_index = json.load(f)
+    #
+    # db.index.insert_one(new_index)
+    # index = library.get_index("Introductions to the Babylonian Talmud")
+
+if __name__ == '__main__':
+    print("hello world")
+
+    superuser_id = 171118
+
+    delete_all_existing_versions()
+
+
+    csv_object = parse_csv_to_object()
+    index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
+    list_of_masechtot_to_db(index_nodes)
+
+    ingest_english_version()
+    ingest_hebrew_version()
+    reorder_masechet_nodes()
+
+    link_creation_dict = {
+        'refs': ['Genesis 1:1', 'Genesis 2:1'],
+        'type': 'commentary',
+        'inline_reference': {
+            'data-commentator': "Child",
+            'data-order': 1
+        }}
+
+    link = Link(link_creation_dict).save()
