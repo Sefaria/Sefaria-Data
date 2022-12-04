@@ -763,6 +763,7 @@ def roman_to_int(input):
       raise TypeError("expected string, got %s" % type(input))
    input = input.upper()
    nums = ['M', 'D', 'C', 'L', 'X', 'V', 'I']
+   input = "".join([i for i in input if i in nums])
    ints = [1000, 500, 100, 50,  10,  5,   1]
    places = []
    for c in input:

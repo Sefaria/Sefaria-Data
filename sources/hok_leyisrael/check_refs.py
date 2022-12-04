@@ -8,7 +8,7 @@ django.setup()
 from sefaria.model import *
 
 problems = []
-with open('hok-ids.json') as fp:
+with open('ids.json') as fp:
     ids = json.load(fp)
 
 # for file in os.listdir('jsons'):
@@ -33,9 +33,9 @@ for id in ids:
         if len([s for s in sheet['sources'] if 'ref' in s.keys() and 'Torah' in Ref(s['ref']).index.categories]) > 1:
             p.append({'problem': 'more than one ref for torah', 'url': url})
         if len([s for s in sheet['sources'] if 'ref' in s.keys() and 'Prophets' in Ref(s['ref']).index.categories]) > 1:
-            print(222222)
+            p.append({'problem': 'more than one ref for neviim', 'url': url})
         if len([s for s in sheet['sources'] if 'ref' in s.keys() and 'Writings' in Ref(s['ref']).index.categories]) > 1:
-            print(3333333)
+            print(3333333, id)
     for source in sheet['sources']:
         if 'ref' not in source.keys() or \
                 ('Prophets' in Ref(source['ref']).index.categories and day != '6') or \
@@ -45,8 +45,9 @@ for id in ids:
         ref_text = len(re.sub('[^ א-ת]', '', Ref(source['ref']).text('he').as_string()))
         try:
             if not (0.9 < source_text / ref_text < 1.1):
-                p.append({'problem': f'for {source["ref"]}, sheet text has length of {source_text} but Sefaria\'s text has length of {ref_text}', 'url': f'{url}.{source["node"]}',
-                          'original': f'https://hok.cauldron.sefaria.org/{source["ref"]}'})
+                pass
+                # p.append({'problem': f'for {source["ref"]}, sheet text has length of {source_text} but Sefaria\'s text has length of {ref_text}', 'url': f'{url}.{source["node"]}',
+                #           'original': f'https://hok.cauldron.sefaria.org/{source["ref"]}'})
         except ZeroDivisionError:
             p.append({'problem': f'no text in ref {source["ref"]}', 'url': f'{url}.{source["node"]}', 'original': f'https://hok.cauldron.sefaria.org/{source["ref"]}'})
     if p:
