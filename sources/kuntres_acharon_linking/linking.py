@@ -3,12 +3,9 @@ import django
 django.setup()
 
 import re
-import csv
 from sefaria.model import *
 from sefaria.utils.hebrew import gematria
 
-
-# Todo - w a fresh DB, check why some links already exist? Is it handling multiple markers within the same segment (w/o overwriting)?
 
 def get_all_segments():
     all_text = []
@@ -50,7 +47,7 @@ def create_inline_ref_link(main_text_ref, ka_ref, data_order, save=True):
             print(e)
 
 
-def create_html_tags(ka_ref, data_order, data_label):
+def create_html_tags(data_order, data_label):
     """
     data-order: the order it appears in
     data-label: the gematria tag we want to use
@@ -61,6 +58,10 @@ def create_html_tags(ka_ref, data_order, data_label):
 def find_gematria_markers(text):
     KA_markers = re.findall(r"[^אבגדהוזחטיכלמנסעפצקרשת][<\(]{1,2}[אבגדהוזחטי]{1,2}[>\)]{1,2}[^אבגדהוזחטיכלמנסעפצקרשת]",
                             text)
+    # Special regex for KA markers at the beginning of halakha without a space preceding them
+    start_markers = re.findall(r"^[<\(]{1,2}[אבגדהוזחטי]{1,2}[>\)]{1,2}[^אבגדהוזחטיכלמנסעפצקרשת]",
+                            text)
+    KA_markers = KA_markers + start_markers
     return KA_markers
 
 
@@ -103,7 +104,7 @@ def update_text(tref, text):
 
 def match_link_html():
     all_text = get_all_segments()
-    html_csv_dict = []
+
     for text in all_text:
         if text['is_KA'] == False:
             cur_main_text = text['text']
@@ -114,8 +115,9 @@ def match_link_html():
             markers = find_gematria_markers(cur_main_text)
 
             # for each marker
-            for marker in markers:
-                # print(f"{marker}: {gematria(marker)}")
+            for i in range(0, len(markers)):
+                marker = markers[i]
+                is_last_marker_for_siman = False if i < len(markers)-1 else True
                 gematria_marker_value = gematria(marker)
                 data_label_cleaned = clean_marker(marker)
 
@@ -129,16 +131,19 @@ def match_link_html():
                 create_inline_ref_link(main_text_ref=cur_main_text_tref,
                                        ka_ref=ka_ref,
                                        data_order=gematria_marker_value,
-                                       save=True)  # Todo toggle this switch when ready
+                                       save=True)
 
                 # create HTML
-                html_tag = create_html_tags(ka_ref=ka_ref,
-                                            data_order=gematria_marker_value,
+                html_tag = create_html_tags(data_order=gematria_marker_value,
                                             data_label=data_label_cleaned)
 
                 # Insert HTML tag
                 main_text_with_html = cur_main_text.replace(marker, html_tag)
-                update_text(tref=cur_main_text_tref, text=main_text_with_html)
+
+                if is_last_marker_for_siman:
+                    update_text(tref=cur_main_text_tref, text=main_text_with_html)
+                else:
+                    cur_main_text = main_text_with_html
 
 
 if __name__ == '__main__':
