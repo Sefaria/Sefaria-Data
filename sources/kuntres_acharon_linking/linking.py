@@ -60,7 +60,7 @@ def find_gematria_markers(text):
                             text)
     # Special regex for KA markers at the beginning of halakha without a space preceding them
     start_markers = re.findall(r"^[<\(]{1,2}[אבגדהוזחטי]{1,2}[>\)]{1,2}[^אבגדהוזחטיכלמנסעפצקרשת]",
-                            text)
+                               text)
     KA_markers = KA_markers + start_markers
     return KA_markers
 
@@ -102,11 +102,40 @@ def update_text(tref, text):
     tc.save()
 
 
+def validate_sequence():
+    all_text = get_all_segments()
+    markers = []
+    for text in all_text:
+        if text['is_KA'] == False:
+            cur_main_text = text['text']
+            cur_main_text_tref = text['tref']
+            found_markers = re.findall(r"data-order=\"(.*?)\"></i>", cur_main_text)
+            if found_markers:
+                for m in found_markers:
+                    markers.append({'marker': int(m), 'tref': cur_main_text_tref})
+
+    prev_marker = markers[0]
+    prev_chelek = get_chelek(prev_marker['tref'])
+    prev_siman = get_siman(prev_marker['tref'], prev_chelek)
+    for i in range(1, len(markers)):
+        cur_marker = markers[i]
+        chelek = get_chelek(cur_marker['tref'])
+        siman = get_siman(cur_marker['tref'], chelek)
+
+        if prev_siman == siman and cur_marker['marker'] - prev_marker['marker'] > 1:
+            print(
+                f"ERROR: Marker difference greater than one between {prev_marker['tref']} (value of {prev_marker['marker']}) and {cur_marker['tref']} (value of {cur_marker['marker']})")
+
+        prev_marker = cur_marker
+        prev_chelek = chelek
+        prev_siman = siman
+
+
 def match_link_html():
     all_text = get_all_segments()
 
     for text in all_text:
-        if text['is_KA'] == False:
+        if not text['is_KA']:
             cur_main_text = text['text']
             cur_main_text_tref = text['tref']
             chelek = get_chelek(cur_main_text_tref)
@@ -117,7 +146,7 @@ def match_link_html():
             # for each marker
             for i in range(0, len(markers)):
                 marker = markers[i]
-                is_last_marker_for_siman = False if i < len(markers)-1 else True
+                is_last_marker_for_siman = False if i < len(markers) - 1 else True
                 gematria_marker_value = gematria(marker)
                 data_label_cleaned = clean_marker(marker)
 
@@ -148,3 +177,4 @@ def match_link_html():
 
 if __name__ == '__main__':
     match_link_html()
+    # validate_sequence()
