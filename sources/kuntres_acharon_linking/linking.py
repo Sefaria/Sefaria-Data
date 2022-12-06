@@ -144,7 +144,7 @@ def match_link_html():
             markers = find_gematria_markers(cur_main_text)
 
             # for each marker
-            for i in range(0, len(markers)):
+            for i in range(len(markers)):
                 marker = markers[i]
                 is_last_marker_for_siman = False if i < len(markers) - 1 else True
                 gematria_marker_value = gematria(marker)
