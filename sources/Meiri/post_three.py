@@ -17,19 +17,12 @@ def one_and_two(one, two):
     return [seg for el in list(one.values()) for seg in el]
 
 
-servers = ["https://ste.cauldron.sefaria.org", "https://ezradev.cauldron.sefaria.org", "http://sterling.sandbox.sefaria.org"]
-files = ["1.json", "2.json"]
-servers = [servers[1]]
 links = []
 import json
-
-with open("berakhot_links.json", 'r') as f:
-    links = json.load(f)
-post_link_in_steps(links, step=200, sleep_amt=10)
-
-# with open("1.json", 'r') as f:
-#      one_links = filter_tractates(json.load(f))
-# with open("2.json", 'r') as f:
-#     two_links = filter_tractates(json.load(f))
-# links = one_and_two(one_links, two_links)
+#
+# with open("all_links.json", 'r') as f:
+#     links = json.load(f)
 # post_link_in_steps(links, step=200, sleep_amt=10)
+
+links = [x for x in json.load(open("1.json", 'r'))+json.load(open("2.json", 'r'))+json.load(open("3.json", 'r')) if " on Yoma" in str(x["refs"])]
+post_link(links, server="https://www.sefaria.org")
