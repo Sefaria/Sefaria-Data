@@ -40,31 +40,35 @@ def get_ranged_links(lines, title):
     for l, line in enumerate(lines):
         dh, matched_ref, comm, seg = line
         seg = seg.replace(" ", "")
-        if len(matched_ref) == 0 or matched_ref != prev_matched_ref:
-            if start_ref and end_ref:
-                if already_posted:
-                    links.append({"refs": [Ref(start_ref).to(Ref(end_ref)).normal(), prev_matched_ref], "type": "Commentary",
-                              "generated_by": "likkutei_torah_torah_ohr_script", "auto": True, })
-            start_ref = None
-            segment_count[ref] += 1
-        elif len(matched_ref) > 0:
-            parasha = Ref(matched_ref).index_node.get_primary_title('en')
+        found_ref = matched_ref if len(matched_ref) > 0 else prev_matched_ref
+        if len(found_ref) > 0:
+            parasha = Ref(found_ref).index_node.get_primary_title('en')
             parts = seg.split(",")
             daf = 4 * (heb_string_to_int(parts[0]) - 1) + heb_string_to_int(parts[1])
             ref = f"{title}, {parasha} {daf}"
             segment_count[ref] += 1
-            end_ref = f"{ref}:{segment_count[ref]}"
-            if start_ref is None:
-                start_ref = end_ref
-        prev_parasha = parasha
-        prev_matched_ref = matched_ref
+            if already_posted and len(matched_ref) > 0:
+                link = {"refs": [f"{ref}:{segment_count[ref]}", found_ref], "type": "Commentary",
+                     "generated_by": "likkutei_torah_torah_ohr_script", "auto": True}
+                if link not in links:
+                    links.append(link)
+            prev_matched_ref = found_ref
+
+
     return links
 
 
 if __name__ == "__main__":
-    already_posted = True
+    already_posted = False
+
     root = SchemaNode()
     title = "Sources and References on Torah Ohr"
+    if not already_posted:
+        try:
+            library.get_index(title).delete()
+        except:
+            pass
+
     root.add_primary_titles(title, "מראי מקומות הערות וציונים לתורה אור")
 
     text = defaultdict(list)
@@ -76,7 +80,10 @@ if __name__ == "__main__":
 
     if already_posted:
         for link in ranged_links:
-            Link(link).save()
+            try:
+                Link(link).save()
+            except Exception as e:
+                print(e)
     for l, line in enumerate(lines):
         dh, matched_ref, comm, seg, logic_ref = line
         seg = seg.replace(" ", "")
@@ -100,13 +107,18 @@ if __name__ == "__main__":
     duplicates = set()
     parasha_ranges = defaultdict(list)
     send_text_dict = {}
+    prev_daf = 0
     for parasha in text:
+        first_seg = list(text[parasha].keys())[0]
+        parts = first_seg.split(",")
+        first_daf = 4 * (heb_string_to_int(parts[0]) - 1) + heb_string_to_int(parts[1])
         for seg in text[parasha]: # 1,1 = 1; 1,2 = 2; 2,1 = 5
             parts = seg.split(",")
             daf = 4*(heb_string_to_int(parts[0])-1) + heb_string_to_int(parts[1])
             print(daf)
-            ref = f"{title}, {parasha} {daf}"
-            parasha_ranges[parasha].append(ref)
+            ref = f"{title}, {parasha} {daf-first_daf+1}"
+            alt_ref = AddressFolio(0).toStr('en', daf)
+            parasha_ranges[parasha].append((ref, alt_ref))
             assert ref not in duplicates
             duplicates.add(ref)
             print(ref)
@@ -125,8 +137,9 @@ if __name__ == "__main__":
             node.add_primary_titles(en, he)
             node.add_structure(["Daf", "Paragraph"], address_types=["Folio", "Integer"])
             node.depth = 2
-            node.wholeRef = Ref(parasha_ranges[en][0]).to(Ref(parasha_ranges[en][-1])).normal()
+            node.wholeRef = Ref(parasha_ranges[en][0][0]).to(Ref(parasha_ranges[en][-1][0])).normal()
             node.refs = parasha_ranges[en]
+            node.startingAddress = parasha[en][0][1]
             nodes.append(node.serialize())
         curr_alt_struct["Daf"] = {"nodes": nodes}
         index_dict = {"title": title, "schema": root.serialize(), "categories": ["Chasidut", "Early Works"], 'alt_structs': curr_alt_struct,
