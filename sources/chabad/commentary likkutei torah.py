@@ -12,9 +12,9 @@ def calcDataValue(letters):
     return sum
 
 def get_next_parasha(title, parasha):
-    if title == "Torah Ohr" and parasha == "Vayakhel":
+    if title == "Likkutei Torah" and parasha == "Vayakhel":
         return Ref(f"{title}, Megillat Esther").all_segment_refs()
-    elif title == "Torah Ohr" and parasha == "Megillat Esther":
+    elif title == "Likkutei Torah" and parasha == "Megillat Esther":
         return []
     parshiyot = [x for x in TopicSet({"slug": {"$regex": "^parashat-"}}) if IntraTopicLink().load({"toTopic": "torah-portions", "fromTopic": x.slug})]
     parshiyot = sorted(parshiyot, key=lambda x: x.displayOrder)
@@ -167,7 +167,11 @@ def parse(f, title, curr_parasha="", curr_segment="", curr_dh="", text={}):
         if len(seg) > 0:
             curr_dh = ""
 
-        seg = seg_to_ref(title, parasha, seg, prev_ref)
+
+        temp = seg_to_ref(title, parasha, seg, prev_ref)
+        if len(seg) > 0:
+            seg_to_ref_dict[temp] = seg  # temp is ref, seg is dappim
+        seg = temp
         prev_ref = seg
 
         if len(parasha) > 0:
@@ -203,21 +207,22 @@ def tokenizer(x):
     return x.split()
 
 if __name__ == "__main__":
-    torah_ohr = {} # {"Introduction": {"1": {}}}
+    # torah_ohr = {} # {"Introduction": {"1": {}}}
     #
-    with open("Torah Ohr Commentary.csv", 'r') as to:
-        to_text, to_addenda = parse_to(to, "Torah Ohr", curr_parasha="Introduction", curr_segment="1", text=torah_ohr)
+    # with open("Likkutei Torah Commentary.csv", 'r') as to:
+    #     to_text, to_addenda = parse_to(to, "Likkutei Torah", curr_parasha="Introduction", curr_segment="1", text=torah_ohr)
+
 
     #ref_to_soup = defaultdict(str)
-    # with open("Likkutei Torah Commentary.csv", 'r') as lt:
-    #     lt_text, lt_addenda = parse(lt, "Likkutei Torah")
+    with open("Likkutei Torah Commentary.csv", 'r') as lt:
+        lt_text, lt_addenda = parse(lt, "Likkutei Torah")
 
 
     lines = {}
     for text, file in [(lt_text, "Likkutei Torah Main Text.csv")]:
-                  # (to_text, "Torah Ohr Main Text.csv"), (to_addenda, "Torah Ohr Addenda.csv")]:
+                  # (to_text, "Likkutei Torah Main Text.csv"), (to_addenda, "Likkutei Torah Addenda.csv")]:
         lines[file] = []
-        title = "Likkutei Torah" if "Likkutei" in file else "Torah Ohr"
+        title = "Likkutei Torah" if "Likkutei" in file else "Likkutei Torah"
         supplements = "," if "Main Text" in file else ", Supplements,"
         title += supplements
         if title.startswith("Torah Ohr"):
@@ -227,7 +232,7 @@ if __name__ == "__main__":
                 print(seg)
                 if seg == "":
                     continue
-                if "Torah Ohr, Vayetzei 1:9" in seg:
+                if "Likkutei Torah, Vayetzei 1:9" in seg:
                     start = True
                 if not start:
                     continue
@@ -259,31 +264,33 @@ if __name__ == "__main__":
                     continue
                 print(parasha)
                 term = Term().load({"titles.text": parasha})
-                parasha_ref = Ref(f"{title}, {term.get_primary_title('en')}")
-                tc = parasha_ref.text('he')
+                parasha_ref = Ref(f"{title} {term.get_primary_title('en')}")
                 last_ref = parasha_ref.all_segment_refs()[-1]
                 last_found = ""
                 dhs = []
-                for seg in tqdm(text[parasha]):
-                    dhs = list(text[parasha][seg].keys())
-                    results = match_ref(tc, dhs, dh_extract_method=dher, base_tokenizer=tokenizer)
-
-                    for dh, ref in list(zip(dhs, results["matches"])):
-                        ref = ref.normal() if ref else ""
-                        lines[file].append([parasha, ref, seg, dh])
-                        if ref != "":
-                            last_found = ref
+                for s, start in enumerate(tqdm(text[parasha])):
+                    dhs = list(text[parasha][start].keys())
+                    next_one = list(text[parasha].keys())[s+1] if s < len(text[parasha]) - 1 else last_ref.normal()
                     try:
-                        from_ref = Ref(last_found).next_segment_ref()
-                        to_ref = last_ref
-                        print(from_ref)
-                        print(to_ref)
-                        tc = from_ref.to(to_ref).text('he')
+                        relevant_ref = Ref(start).to(Ref(next_one))
+                        relevant_ref._ranged_refs = None
+                        tc = TextChunk(relevant_ref, lang='he')
+                    except Exception as e:
+                        print(start)
+                        continue
+                    try:
+                        results = match_ref(tc, dhs, dh_extract_method=dher, base_tokenizer=tokenizer)
+                        print(len([x for x in results["matches"] if x])/float(len(results["matches"])))
+                        for dh, ref in list(zip(dhs, results["matches"])):
+                            ref = ref.normal() if ref else ""
+                            lines[file].append([dh, ref, text[parasha][start][dh], seg_to_ref_dict[start]])
+                            if ref != "":
+                                last_found = ref
                     except Exception as e:
                         print(e)
-
+                        print(start)
+                        match_ref(tc, dhs, dh_extract_method=dher, base_tokenizer=tokenizer)
 
         with open(file, 'w') as f:
             writer = csv.writer(f)
             writer.writerows(lines[file])
-
