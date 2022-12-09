@@ -38,18 +38,17 @@ def get_zip_parashot_refs(ind_name, only_first_seg_comment=False):
     if 10 > len(ind.schema["nodes"]) >= 5:
         parasha_nodes = []
         books = True
-        for b in ind.schema["nodes"]:
-            parasha_nodes += b["nodes"]
+        parasha_nodes += [(b["key"], x) for b in ind.schema["nodes"] for x in b["nodes"]]
     else:
-        parasha_nodes = ind.schema["nodes"]
+        parasha_nodes = [(b["key"], b) for b in ind.schema["nodes"]]
         books = False
-    nodes = [node["key"] for node in parasha_nodes]
+    # nodes = [node_tuple[1]["key"] for node_tuple in parasha_nodes]
 
     peared = []
-    for node in nodes:
+    for node in parasha_nodes:
         try:
-            r_parasha = Ref(f"Parashat {node}")
-            r_comment = Ref(f"{ind_name}, {f'{r_parasha.book}, ' if books else ''}{node}")
+            r_parasha = Ref(f"Parashat {node[1]['key']}")
+            r_comment = Ref(f"{ind_name}, {f'{node[0]}, ' if books else ''}{node[1]['key']}")
         except:
             continue
         if only_first_seg_comment:
@@ -199,4 +198,3 @@ if __name__ == '__main__':
     # query = {"$and": [{"refs": {"$regex": "Degel Machaneh Ephraim.*"}}, {"generated_by": "yalkut_shimoni_linker"}]}
     query = {"$and": [{"refs": {"$regex": "Chiddushei HaRim on Torah.*"}}, {"type": "qutation"}]}
     tweek_and_post_links(query)
-

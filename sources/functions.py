@@ -761,11 +761,13 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
 
 @weak_connection
-def post_link(info, server=SEFARIA_SERVER, skip_lang_check=True, VERBOSE=True, method="POST", dump_json=False):
+def post_link(info, server=SEFARIA_SERVER, skip_lang_check=True, VERBOSE=True, method="POST", dump_json=False, override_preciselink=False):
     if dump_json:
         with open('links_dump.json', 'w') as fp:
             json.dump(info, fp)
     url = server+'/api/links/' if not skip_lang_check else server+"/api/links/?skip_lang_check=1"
+    if override_preciselink:
+        url += "&override_preciselink=1" if skip_lang_check else "?override_preciselink=1"
     result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method=method)
     if VERBOSE:
         print(result)

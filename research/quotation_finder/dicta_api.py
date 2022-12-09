@@ -185,7 +185,7 @@ def get_dicta_matches(base_refs, offline=None, mode=mode, onlyDH = False, thresh
     :param onlyDH:
     :param thresh:
     :param min_thresh:
-    :param priority_tanakh_chunk: oRef the their is strong reson to look for the best match there first ex: base_text: Ref('ילקוט שמעוני על התורה, חקת') priority_tanakh_chunk: Ref('פרשת חקת')
+    :param priority_tanakh_chunk: oRef the where is strong reason to look for the best match there first ex: base_text: Ref('ילקוט שמעוני על התורה, חקת') priority_tanakh_chunk: Ref('פרשת חקת')
     :param seg_split: a string that can be used to split a obviously splittable segment (ex: a perek of psalms use seg_split=':')
     :return: list (as long as the list of base_refs - segs) of matches
     """
@@ -196,7 +196,7 @@ def get_dicta_matches(base_refs, offline=None, mode=mode, onlyDH = False, thresh
     def get_dicta_matches_text(parsed_results):
         dh_res = [res for res in parsed_results if res['startIChar'] <= 10]  # todo: put this in it's own function
         for result in parsed_results:
-            # result['matches'] = [m for m in result['matches'] if m['mode'] == 'Tanakh' and m['score']>=min_thresh]  # use the same parameter name "Tanakh"
+            result['matches'] = [m for m in result['matches'] if m['mode'] == 'Tanakh' and m['score']>=min_thresh]  # use the same parameter name "Tanakh"
             result['matches'] = [m for m in result['matches'] if
                                  m['score'] >= min_thresh]  # use the same parameter name "Tanakh"
             if len(result['matches']) == 0:
@@ -217,7 +217,7 @@ def get_dicta_matches(base_refs, offline=None, mode=mode, onlyDH = False, thresh
                 else:
                     print(f'{pasuk_ref} has no text in it')
                     continue
-            if mode == 'tanakh':
+            if mode == 'tanakh': #and matched['mode'] == 'Tanakh':
                 matched_pasuk_start, matched_pasuk_end = wordLevel2charLevel(matched['verseiWords'], pasuk_ref,
                                                                      matched['matchedText'])
             else:
@@ -257,9 +257,9 @@ def get_dicta_matches(base_refs, offline=None, mode=mode, onlyDH = False, thresh
             # if mode != 'tanakh':
             #     link_option = [pasuk_ref, base_ref]
             link_options.append(link_option)
-            # if onlyDH:
-            #     return dh_link_options
-            # return link_options
+            if onlyDH:
+                return dh_link_options
+            return link_options
 
     for base_ref in base_refs:
         trivial_ref = None
@@ -274,6 +274,8 @@ def get_dicta_matches(base_refs, offline=None, mode=mode, onlyDH = False, thresh
 
             # base_text = strip_cantillation(bleach.clean(base_text, tags=[], strip=True), strip_vowels=True)
             # base_text = re.sub(f"{wrods_to_wipe}", "", base_text)
+            if onlyDH:
+                texts = texts[0:2]  # todo: write smarter code in the case that texts is less than len = 2
             response_jsons = [find_pesukim(base_text, thresh=thresh) for base_text in texts if base_text]
             # response_json["results"][0]["ijWordPairs"]
             parsed_results = [dicta_parse(response_json, min_thresh=min_thresh) for response_json in response_jsons]
@@ -460,8 +462,6 @@ def post_links_from_file(file_name, score=22, server=SEFARIA_SERVER):
             links_to_post.append(l)
     post_link(links_to_post, server=server)
 
-
-
 def bunch_refs_to_ranged_refs(links):
     # assuming all of one side is the same segment looking here at the other side
     ref_groups = []
@@ -514,7 +514,19 @@ def bunch_refs_to_ranged_refs(links):
                 output_links[i]['refs'][0] = take2
     return output_links
 
-def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority_tanakh_chunk=None, offline=None, mongopost=True, seg_split= None):
+def duplicate_refs(links):
+    refs = []
+    meshed_links = []
+    lslinks = list(links)
+    lslinks.sort(key=lambda l: l["score"], reverse=True)
+    d_refs = [(l["refs"],l) for l in lslinks]
+    for rf, l in d_refs:
+        if rf not in refs:
+            meshed_links.append(l)
+            refs.append(rf)
+    return meshed_links
+
+def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority_tanakh_chunk=None, offline=None, mongopost=True, seg_split= None, generated_by=""):
     tref = re.sub("%2C", ",", re.sub("_", " ", tref))
     oref = Ref(tref)
     base_refs = oref.all_segment_refs()
@@ -526,8 +538,10 @@ def dicta_links_from_ref(tref, post=False, onlyDH=False, min_thresh=22, priority
     if not link_options:
         print("no links found")
         return []
-    links, linkMatchs = zip(*[data_to_link(link_option, generated_by='quotation_finder_ranged', type=f'quotation_auto_{mode}') for link_option in link_options])
-    links = bunch_refs_to_ranged_refs(links)
+    links, linkMatchs = zip(*[data_to_link(link_option, generated_by=generated_by, type=f'quotation_auto_{mode}') for link_option in link_options])
+    if mode!='talmud':
+        links = bunch_refs_to_ranged_refs(links)
+    links = duplicate_refs(links)
     if not links:
         return links
     write_to_csv(links, linkMatchs, filename=f"dicta_{oref.book}")
@@ -589,7 +603,7 @@ def get_version_mapping(version: Version) -> dict:
 
 
 def mongo_post(links):
-    db_qf.siddur_quotations.insert_many(links)
+    db_qf.quotations.insert_many(links)
 
 
 def run_offline(title, cat, min_thresh=22, post=False, mongopost=True, priority_tanakh_chunk_type=None, priority_fallback=None, max_word_number=30, offline=True, seg_split=None):
@@ -605,18 +619,23 @@ def run_offline(title, cat, min_thresh=22, post=False, mongopost=True, priority_
     :return:
     """
     text_mapping = get_from_file(f"offline/text_mappings/{cat}/{title}.json")
-    dicta_results_mapping = get_from_file(f"dicta_answers/{cat}/{title}.json")
+    try:
+        dicta_results_mapping = get_from_file(f"dicta_answers/{cat}/{title}.json")
+    except FileNotFoundError:
+        dicta_results_mapping = None
     priority = trivial_priority(title, text_mapping, priority_tanakh_chunk_type)
     all_links = []
-    for r in text_mapping.keys():
-        if offline: # or dicta_results_mapping.get(r, None):
+    keys = text_mapping.keys() if text_mapping else [r.normal() for r in library.get_index(title).all_segment_refs()]
+    for r in keys:
+        # print(r)
+        if offline:  # or dicta_results_mapping.get(r, None):
             offline1 = [text_mapping, dicta_results_mapping]
         else:
             print(f'API call, ref {r}')
             offline1 = None
         if max_word_number and Ref(r).word_count() > max_word_number:
             continue
-        links = dicta_links_from_ref(f'{r}', post=post, min_thresh=min_thresh, offline=offline1, mongopost=mongopost, priority_tanakh_chunk=priority.get(r,  priority_fallback), seg_split=seg_split)
+        links = dicta_links_from_ref(f'{r}', post=post, min_thresh=min_thresh, offline=offline1, mongopost=mongopost, priority_tanakh_chunk=priority.get(r,  priority_fallback), seg_split=seg_split, generated_by=f"quotation_finder_{re.sub(' ', '_',title)}")
         if links:
             all_links.extend(links)
     if post:
@@ -646,7 +665,7 @@ def trivial_priority(title, text_mapping, priority_type="perek"):
                 priority[k] = orefs_list[0]
     elif priority_type == 'parasha':
         peared = get_zip_parashot_refs(title)
-        priority = dict([(r.normal(), item[1]) for item in peared if item[0] for r in item[0].all_segment_refs()])
+        priority = dict([(r.normal(), item[0]) for item in peared if item[0] for r in item[1].all_segment_refs()])
     else:
         try:
             r = Ref(priority_type)
@@ -675,7 +694,7 @@ def read_keep(key):
         if keep.get(key, None):
             print(keep.get(key, None))
 
-ls = library.get_index('Siddur Sefard').all_segment_refs()
+ls = library.get_index('Tanya').all_segment_refs()
 ls.reverse()
 run_all_night_list = ls
 # run_all_night_list = [Ref('Siddur Sefard, Torah Readings, Fast Day Mincha Haftara 2')]
@@ -700,9 +719,9 @@ def run_all_night(seg):
     # if ls and [l for l in ls if l.type=="quotation_auto_tanakh"]:
     #     return
     links = dicta_links_from_ref(seg.normal(), post=True, onlyDH=False, min_thresh=25, offline=None,
-                         mongopost=True, seg_split='[:.]')
+                         mongopost=True, seg_split='[:.;״]', generated_by="chabbad_qf")
     if not links:
-        db_qf.siddur_quotations.insert_one({"refs": seg.normal(), "type": f"Empty links {mode}"})
+        db_qf.chabbad_quotations.insert_one({"refs": seg.normal(), "type": f"Empty links {mode}"})
     # print("ran dicta_links")
 
 
@@ -788,11 +807,79 @@ if __name__ == '__main__':
     #     seg = seg.next_segment_ref()
         # if seg == Ref("Siddur Ashkenaz, Shabbat, Shabbat Evening, Kiddush 6"):
         #     break
-    dicta_links_from_ref('Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 34 1', post=True, onlyDH=False, min_thresh=33, priority_tanakh_chunk=None, offline=None,
-                         mongopost=True, seg_split=None)
+    # dicta_links_from_ref('Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 34 1', post=True, onlyDH=False, min_thresh=33, priority_tanakh_chunk=None, offline=None,
+    #                      mongopost=True, seg_split=None)
     # with get_context("spawn").Pool(1) as pool:
-    # # pool = multiprocessing.Pool(5)
+    #     pool = multiprocessing.Pool(5)
     #     pool.map(run_all_night, tqdm(run_all_night_list))
 
-    # dicta_links_from_ref('Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115:1', post=False, onlyDH=False, min_thresh=25, priority_tanakh_chunk=Ref('psalms'), offline=None,
-    #                      mongopost=True, seg_split='[:.]')
+    # **Likkutei Torah**
+    pairs = [(Ref('Exodus 13:17-17:16'), Ref('Likkutei Torah, Beshalach')),
+(Ref('Exodus 38:21-40:38'), Ref('Likkutei Torah, Pekudei')),
+(Ref('Leviticus 1:1-5:26'), Ref('Likkutei Torah, Vayikra')),
+(Ref('Leviticus 6:1-8:36'), Ref('Likkutei Torah, Tzav')),
+(Ref('Leviticus 9:1-11:47'), Ref('Likkutei Torah, Shmini')),
+(Ref('Leviticus 12:1-13:59'), Ref('Likkutei Torah, Tazria')),
+(Ref('Leviticus 14:1-15:33'), Ref('Likkutei Torah, Metzora')),
+(Ref('Leviticus 16:1-18:30'), Ref('Likkutei Torah, Achrei Mot')),
+(Ref('Leviticus 19:1-20:27'), Ref('Likkutei Torah, Kedoshim')),
+(Ref('Leviticus 21:1-24:23'), Ref('Likkutei Torah, Emor')),
+(Ref('Leviticus 25:1-26:2'), Ref('Likkutei Torah, Behar')),
+(Ref('Leviticus 26:3-27:34'), Ref('Likkutei Torah, Bechukotai')),
+(Ref('Numbers 1:1-4:20'), Ref('Likkutei Torah, Bamidbar')),
+(Ref('Numbers 4:21-7:89'), Ref('Likkutei Torah, Nasso')),
+(Ref('Numbers 8:1-12:16'), Ref("Likkutei Torah, Beha'alotcha")),
+(Ref('Numbers 13:1-15:41'), Ref("Likkutei Torah, Sh'lach")),
+(Ref('Numbers 16:1-18:32'), Ref('Likkutei Torah, Korach')),
+(Ref('Numbers 19:1-22:1'), Ref('Likkutei Torah, Chukat')),
+(Ref('Numbers 22:2-25:9'), Ref('Likkutei Torah, Balak')),
+(Ref('Numbers 25:10-30:1'), Ref('Likkutei Torah, Pinchas')),
+(Ref('Numbers 30:2-32:42'), Ref('Likkutei Torah, Matot')),
+(Ref('Numbers 33:1-36:13'), Ref('Likkutei Torah, Masei')),
+(Ref('Deuteronomy 1:1-3:22'), Ref('Likkutei Torah, Devarim')),
+(Ref('Deuteronomy 3:23-7:11'), Ref('Likkutei Torah, Vaetchanan')),
+(Ref('Deuteronomy 7:12-11:25'), Ref('Likkutei Torah, Eikev')),
+(Ref('Deuteronomy 11:26-16:17'), Ref("Likkutei Torah, Re'eh")),
+(Ref('Deuteronomy 21:10-25:19'), Ref('Likkutei Torah, Ki Teitzei')),
+(Ref('Deuteronomy 26:1-29:8'), Ref('Likkutei Torah, Ki Tavo')),
+(Ref('Deuteronomy 29:9-30:20'), Ref('Likkutei Torah, Nitzavim')),
+(Ref('Deuteronomy 32:1-52'), Ref("Likkutei Torah, Ha'Azinu")),
+(Ref('Deuteronomy 33:1-34:12'), Ref("Likkutei Torah, V'Zot HaBerachah"))]
+
+# get_zip_parashot_refs("Torah Ohr")
+    # pairs = [(Ref('Genesis 1:1-6:8'), Ref('Torah Ohr, Bereshit')),
+    #  (Ref('Genesis 6:9-11:32'), Ref('Torah Ohr, Noach')),
+    #  (Ref('Genesis 12:1-17:27'), Ref('Torah Ohr, Lech Lecha')),
+    #  (Ref('Genesis 18:1-22:24'), Ref('Torah Ohr, Vayera')),
+    #  (Ref('Genesis 23:1-25:18'), Ref('Torah Ohr, Chayei Sara')),
+    #  (Ref('Genesis 25:19-28:9'), Ref('Torah Ohr, Toldot')),
+    #  (Ref('Genesis 28:10-32:3'), Ref('Torah Ohr, Vayetzei')),
+    #  (Ref('Genesis 32:4-36:43'), Ref('Torah Ohr, Vayishlach')),
+    #  (Ref('Genesis 37:1-40:23'), Ref('Torah Ohr, Vayeshev')),
+    #  (Ref('Genesis 41:1-44:17'), Ref('Torah Ohr, Miketz')),
+    #  (Ref('Genesis 44:18-47:27'), Ref('Torah Ohr, Vayigash')),
+    #  (Ref('Genesis 47:28-50:26'), Ref('Torah Ohr, Vayechi')),
+    pairs = [(Ref('Exodus 1:1-6:1'), Ref('Torah Ohr, Shemot')),
+     (Ref('Exodus 6:2-9:35'), Ref('Torah Ohr, Vaera')),
+     (Ref('Exodus 10:1-13:16'), Ref('Torah Ohr, Bo')),
+     (Ref('Exodus 13:17-17:16'), Ref('Torah Ohr, Beshalach')),
+     (Ref('Exodus 18:1-20:23'), Ref('Torah Ohr, Yitro')),
+     (Ref('Exodus 21:1-24:18'), Ref('Torah Ohr, Mishpatim')),
+     (Ref('Exodus 25:1-27:19'), Ref('Torah Ohr, Terumah')),
+     (Ref('Exodus 27:20-30:10'), Ref('Torah Ohr, Tetzaveh')),
+     (Ref('Exodus 30:11-34:35'), Ref('Torah Ohr, Ki Tisa')),
+     (Ref('Exodus 35:1-38:20'), Ref('Torah Ohr, Vayakhel'))]
+
+    # for pair in pairs:
+    #     dicta_links_from_ref(pair[1].normal(), post=True, onlyDH=True, min_thresh=22, offline=None,
+    #                  mongopost=True, seg_split='[:.;]', priority_tanakh_chunk=pair[0], generated_by="Torah_Ohr_dh_1")
+
+    ind = library.get_index("Likkutei Torah")
+    # ind = library.get_index("Torah Ohr")
+    refs = ind.all_segment_refs()
+    # refs.reverse()
+    for r in refs:
+        x = dicta_links_from_ref(r.normal(), post=True, onlyDH=False, min_thresh=20, offline=None,
+                 mongopost=True, seg_split='[:.;]', generated_by="Likkutei_Torah_qf")
+        # dicta_links_from_ref(r.normal(), post=True, onlyDH=False, min_thresh=20, offline=None,
+        #          mongopost=True, seg_split='[:.;]', generated_by="Torah_Ohr_qf")
