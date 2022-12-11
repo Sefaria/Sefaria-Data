@@ -1311,11 +1311,11 @@ def init_argparse() -> argparse.ArgumentParser:
     """
     Example commands for running
     - Mishnah
-        python ner_tagger.py -c ner_input/ner_tagger_input_mishnah.json -o output -t --primary-evaluation-language en --primary-evaluation-version-title "Mishnah Yomit by Dr. Joshua Kulp"
+        python ner_tagger.py -c ner_input/ner_tagger_input_mishnah.json -o output/mishnah -t --primary-evaluation-language en --primary-evaluation-version-title "Mishnah Yomit by Dr. Joshua Kulp"
     - Bavli
-        python ner_tagger.py -c ner_input/ner_tagger_input_bavli.json -o output -t --primary-evaluation-language he --primary-evaluation-version-title "William Davidson Edition - Aramaic"
+        python ner_tagger.py -c ner_input/ner_tagger_input_bavli.json -o output/bavli -t --primary-evaluation-language he --primary-evaluation-version-title "William Davidson Edition - Aramaic"
     - Jerusalem Talmud
-        python ner_tagger.py -c ner_input/ner_tagger_input_yerushalmi.json -o output -t --primary-evaluation-language en --primary-evaluation-version-title "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015"
+        python ner_tagger.py -c ner_input/ner_tagger_input_yerushalmi.json -o output/yerushalmi -t --primary-evaluation-language en --primary-evaluation-version-title "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015"
     """
     return parser
 
