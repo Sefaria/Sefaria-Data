@@ -2,8 +2,6 @@ import django
 
 django.setup()
 
-
-
 django.setup()
 
 # import statistics
@@ -149,7 +147,6 @@ def parse_csv_to_object():
 
 
 def get_list_of_masechtot_nodes(list_of_masechtot, starting_masechet_name):
-
     found_starting_masechet_flag = False
     # index = library.get_index("Introductions to the Babylonian Talmud")
     # parent = index.nodes
@@ -175,7 +172,6 @@ def get_list_of_masechtot_nodes(list_of_masechtot, starting_masechet_name):
 
 
 def list_of_masechtot_to_db(nodes_list):
-
     ####dangerous way to add new nodes:
     # index = library.get_index("Introductions to the Babylonian Talmud")
     # parent = index.nodes
@@ -189,7 +185,6 @@ def list_of_masechtot_to_db(nodes_list):
 
 
 def object_to_dict_of_refs(csv_parsed_object, language):
-
     refs_dict = {}
     text_language = ""
     if language == "english":
@@ -206,7 +201,11 @@ def object_to_dict_of_refs(csv_parsed_object, language):
             paragraph_num += 1
     return refs_dict
 
+
 def ingest_english_version():
+    vs = VersionState(index=library.get_index("Introductions to the Babylonian Talmud"))
+    vs.delete()
+    print("deleted version state")
     index = library.get_index("Introductions to the Babylonian Talmud")
 
     chapter = index.nodes.create_skeleton()
@@ -225,7 +224,11 @@ def ingest_english_version():
 
     print("finished updating English version db")
 
+
 def ingest_hebrew_version():
+    vs = VersionState(index=library.get_index("Introductions to the Babylonian Talmud"))
+    vs.delete()
+    print("deleted version state")
     index = library.get_index("Introductions to the Babylonian Talmud")
     chapter = index.nodes.create_skeleton()
     hebrew_version = Version({"versionTitle": "William Davidson Edition - Hebrew",
@@ -247,22 +250,118 @@ def delete_all_existing_versions():
                               'versionTitle': "William Davidson Edition - Hebrew"})
     if cur_version.count() > 0:
         cur_version.delete()
+        print("deleted existing hebrew version")
 
     cur_version = VersionSet({'title': 'Introductions to the Babylonian Talmud',
                               'versionTitle': "William Davidson Edition - English"})
     if cur_version.count() > 0:
         cur_version.delete()
+        print("deleted existing english version")
 
 
 def reorder_masechet_nodes():
     masechtot_keys_ordered = ["Berakhot", "Shabbat", "Eruvin", "Pesachim", "Rosh Hashanah", "Yoma", "Sukkah", "Beitzah",
                               "Taanit", "Megillah", "Moed Katan", "Chagigah",
-    "Yevamot", "Ketubot", "Nedarim", "Nazir", "Sotah", "Gittin", "Kiddushin",
-    "Bava Kamma", "Bava Metzia", "Bava Batra", "Sanhedrin", "Makkot", "Shevuot", "Avodah Zarah", "Horayot",
-    "Zevachim", "Menachot", "Chullin", "Bekhorot", "Arakhin", "Temurah", "Keritot", "Meilah", "Tamid", "Niddah"]
+                              "Yevamot", "Ketubot", "Nedarim", "Nazir", "Sotah", "Gittin", "Kiddushin",
+                              "Bava Kamma", "Bava Metzia", "Bava Batra", "Sanhedrin", "Makkot", "Shevuot",
+                              "Avodah Zarah", "Horayot",
+                              "Zevachim", "Menachot", "Chullin", "Bekhorot", "Arakhin", "Temurah", "Keritot", "Meilah",
+                              "Tamid", "Niddah"]
     index = library.get_index("Introductions to the Babylonian Talmud")
     reorder_children(index.nodes, masechtot_keys_ordered)
     print("finished re-ordering")
+
+
+def roman_to_int(s):
+    rom_val = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
+    int_val = 0
+    for i in range(len(s)):
+        if i > 0 and rom_val[s[i]] > rom_val[s[i - 1]]:
+            int_val += rom_val[s[i]] - 2 * rom_val[s[i - 1]]
+        else:
+            int_val += rom_val[s[i]]
+    return int_val
+
+
+def create_links(csv_object):
+    links = []
+    for ref_dict in csv_object:
+        raw_ref = ref_dict['ref']
+        if "Perek" in raw_ref:
+            # exact_ref = library.get_index('Berakhot').get_alt_structs['Perek'][0]['wholeRef']
+            chapter_num = roman_to_int(raw_ref.split("Perek", 1)[1].strip())
+            exact_ref = Ref(ref_dict["masechet"] + ", Chapter " + str(chapter_num)).normal()
+            # text_display_en = ref_dict["masechet"] + ", Chapter " + str(chapter_num)
+            # text_display_he = ref_dict["masechet_hebrew"] + ", פרק " + str(chapter_num)
+
+
+        else:
+            exact_ref = str(Ref(ref_dict["masechet"]).as_ranged_segment_ref())
+            # text_display_en = ref_dict["masechet"]
+            # text_display_he = ref_dict["masechet_hebrew"]
+
+        new_link_dict = {
+            "refs": [ref_dict['ref'], exact_ref],               #[ref_dict['ref'], exact_ref], [ref_dict['ref'], "Berakhot 2a:1"]
+            "type": "essay",
+            "versions": [
+                {
+                    "title": "NONE", "language": "en" # "title": "ALL", "language": "en"  "title": "NONE", "language": "en"
+                },
+                {
+                    "title": "ALL", "language": "ALL"
+                }
+            ],
+            "displayedText": [
+                {
+                    "en": ref_dict["title"],  # raw_ref.split("Talmud,", 1)[1].strip(),
+                    "he": ref_dict["title_hebrew"]  # raw_ref.split("Talmud,", 1)[1].strip()
+                },
+                {
+                    "en": "",
+                    "he": ""
+                }
+            ]
+
+        }
+        new_link = Link(new_link_dict)
+
+        links.append(new_link)
+
+    return (links)
+
+    # refs: list with two trefs
+    # type: "essay"
+    # versions: list with version titles
+    # displayedText: list with displayed text
+    #
+
+
+def delete_existing_links(query={"generated_by": "Koren Intro Parse Script"}):
+    list_of_links = LinkSet(query).array()
+    for l in list_of_links:
+        l.delete()
+
+def delete_existing_koren_links(query={"generated_by": "Koren Intro Parse Script"}):
+    list_of_links = LinkSet(query).array()
+    for l in list_of_links:
+        l.delete()
+
+def delete_existing_automated_links(query={"type": "", "refs": {"$regex" : "Introductions to the Babylonian Talmud"}}):
+    list_of_links = LinkSet(query).array()
+    for l in list_of_links:
+        if Ref(l.refs[0]).is_bavli():
+            l.delete()
+
+def delete_existing_correct_essay_links(query={"type":"essay", "refs": {"$regex" : "Introductions to the Babylonian Talmud"}}):
+    list_of_links = LinkSet(query).array()
+    for l in list_of_links:
+            l.delete()
+
+def insert_links_to_db(list_of_links):
+    for l in list_of_links:
+        l.save()
+
+
 
     # m = library._index_map
     # index = library.get_index("Introductions to the Babylonian Talmud")
@@ -277,28 +376,32 @@ def reorder_masechet_nodes():
     # db.index.insert_one(new_index)
     # index = library.get_index("Introductions to the Babylonian Talmud")
 
+
 if __name__ == '__main__':
     print("hello world")
 
+
+
     superuser_id = 171118
 
-    delete_all_existing_versions()
 
 
     csv_object = parse_csv_to_object()
+
+
     index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
     list_of_masechtot_to_db(index_nodes)
+    delete_all_existing_versions()
 
-    ingest_english_version()
     ingest_hebrew_version()
+    ingest_english_version()
+
     reorder_masechet_nodes()
 
-    link_creation_dict = {
-        'refs': ['Genesis 1:1', 'Genesis 2:1'],
-        'type': 'commentary',
-        'inline_reference': {
-            'data-commentator': "Child",
-            'data-order': 1
-        }}
 
-    link = Link(link_creation_dict).save()
+
+    delete_existing_correct_essay_links()
+    delete_existing_koren_links()
+    delete_existing_automated_links()
+    list_of_links = create_links(csv_object)
+    insert_links_to_db(list_of_links)
