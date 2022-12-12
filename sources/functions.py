@@ -9,6 +9,7 @@ import pdb
 import os
 import sys
 import codecs
+from tqdm import tqdm
 import re
 import bleach
 from pathlib import Path
