@@ -11,6 +11,7 @@ from sefaria.helper.schema import insert_last_child, reorder_children
 from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.system.database import db
+import time
 
 
 def latin_numeral_to_hebrew_numeral(latin_numeral):
@@ -391,9 +392,11 @@ if __name__ == '__main__':
 
     index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
     list_of_masechtot_to_db(index_nodes)
+    time.sleep(5)
     delete_all_existing_versions()
 
     ingest_hebrew_version()
+    time.sleep(5)
     ingest_english_version()
 
     reorder_masechet_nodes()
