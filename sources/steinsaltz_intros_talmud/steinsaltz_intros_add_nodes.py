@@ -390,14 +390,15 @@ if __name__ == '__main__':
     csv_object = parse_csv_to_object()
 
 
-    index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
-    list_of_masechtot_to_db(index_nodes)
-    time.sleep(5)
+    # index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
+    # list_of_masechtot_to_db(index_nodes)
+    # time.sleep(5)
     delete_all_existing_versions()
 
-    ingest_hebrew_version()
-    time.sleep(5)
     ingest_english_version()
+    time.sleep(5)
+    ingest_hebrew_version()
+
 
     reorder_masechet_nodes()
 
