@@ -13,11 +13,11 @@ MISSINGS = []
 X=set()
 REFS = set()
 
-def act_on_collection(col, callback, query={}):
+def act_on_collection(col, callback, query={}, active=False):
     col = getattr(db, col)
     docs = col.find(query)
     for doc in docs:
-        callback(col, doc)
+        callback(col, doc, active)
 
 with open('map_old_to_new.json') as fp:
     MAP = json.load(fp)
@@ -53,10 +53,11 @@ def new_ref(old_ref):
             else:
                 return new
 
-def change_link(col, link):
+def change_link(col, link, active=False):
     global MISSINGS, REFS
     if link['auto']:
-        # col.delete_one(link)
+        if active:
+            col.delete_one(link)
         return
     else:
         _id = link.pop('_id')
@@ -70,9 +71,10 @@ def change_link(col, link):
                         MISSINGS.append({'ref': ref, 'collection': col.name, '_id': _id})
                         segments = Ref(ref).all_segment_refs()
                         REFS.update({segments[0], segments[-1]})
-        # col.replace_one({'_id': _id}, link)
+        if active:
+            col.replace_one({'_id': _id}, link)
 
-def change_topic(col, topic):
+def change_topic(col, topic, active=False):
     global MISSINGS, REFS
     _id = topic.pop('_id')
     ref = topic['ref']
@@ -84,9 +86,10 @@ def change_topic(col, topic):
         MISSINGS.append({'ref': ref, 'collection': col.name, '_id': _id, 'more': f'https://www.sefaria.org/topics/{topic["toTopic"]}'})
         segments = Ref(ref).all_segment_refs()
         REFS.update({segments[0], segments[-1]})
-    # col.replace_one({'_id': _id}, topic)
+    if active:
+        col.replace_one({'_id': _id}, topic)
 
-def change_note(col, note):
+def change_note(col, note, active=False):
     global MISSINGS, REFS
     _id = note.pop('_id')
     new = new_ref(note['ref'])
@@ -96,9 +99,10 @@ def change_note(col, note):
         MISSINGS.append({'ref': note['ref'], 'collection': col.name, '_id': _id})
         segments = Ref(note['ref']).all_segment_refs()
         REFS.update({segments[0], segments[-1]})
-    # col.replace_one({'_id': _id}, note)
+    if active:
+        col.replace_one({'_id': _id}, note)
 
-def change_sheet(col, sheet):
+def change_sheet(col, sheet, active=False):
     global MISSINGS, REFS
     _id = sheet.pop('_id')
     old_refs = []
@@ -138,19 +142,21 @@ def change_sheet(col, sheet):
                     REFS.update({segments[0], segments[-1]})
     if len(old_refs) == len(new_refs):
         sheet['expandedRefs'] = [x for x in sheet['expandedRefs'] if not re.search('^Zohar \d', x)] + list(set([r.normal() for ref in new_refs for r in Ref(ref).all_segment_refs()]))
-        # col.replace_one({'_id': _id}, sheet)
+        if active:
+         col.replace_one({'_id': _id}, sheet)
 
-def change_webpage(col, wp):
+def change_webpage(col, wp, active=False):
     _id = wp.pop('_id')
     for refs in ['expandedRefs', 'refs']:
         wp[refs] = [r for r in wp[refs] if not re.search('^Zohar \d', r)]
-    # col.replace_one({'_id': _id}, wp)
+    if active:
+        col.replace_one({'_id': _id}, wp)
 
-def change_history(_, his):
-    # col.delete_one(his)
-    pass
+def change_history(col, his, active=False):
+    if active:
+        col.delete_one(his)
 
-def change_user_history(col, uh):
+def change_user_history(col, uh, active=False):
     _id = uh.pop('_id')
     new = new_ref(uh['ref'])
     if new:
@@ -159,26 +165,28 @@ def change_user_history(col, uh):
         uh['he_ref'] = Ref(new).he_normal()
         if 'he' in uh['versions'] and uh['versions']['he'] == 'New Torat Emet Zohar':
                 uh['versions']['he'] = 'Torat Emet'
-        # col.replace_one({'_id': _id}, uh)
+        if active:
+            col.replace_one({'_id': _id}, uh)
     else:
         MISSINGS.append({'ref': uh['ref'], 'collection': col.name, '_id': _id})
         segments = Ref(uh['ref']).all_segment_refs()
         REFS.update({segments[0], segments[-1]})
 
-def change_ref_data(_, rd):
-    # col.delete_one(rd)
-    pass
+def change_ref_data(col, rd, active=False):
+    if active:
+        col.delete_one(rd)
 
 
 if __name__ == '__main__':
-    act_on_collection('links', change_link, {'refs': {'$regex': '^Zohar \d'}})
-    act_on_collection('topic_links', change_topic, {'ref': {'$regex': '^Zohar \d'}})
-    act_on_collection('notes', change_note, {'ref': {'$regex': '^Zohar \d'}})
-    act_on_collection('sheets', change_sheet, {'expandedRefs': {'$regex': '^Zohar \d'}})
-    act_on_collection('webpages', change_webpage, {'expandedRefs': {'$regex': '^Zohar \d'}})
-    act_on_collection('history', change_history, {'ref': {'$regex': '^Zohar \d'}})
-    act_on_collection('user_history', change_user_history, {'ref': {'$regex': '^Zohar \d'}})
-    act_on_collection('ref_data', change_ref_data, {'ref': {'$regex': '^Zohar \d'}})
+    active = True
+    act_on_collection('links', change_link, {'refs': {'$regex': '^Zohar \d'}}, active)
+    act_on_collection('topic_links', change_topic, {'ref': {'$regex': '^Zohar \d'}}, active)
+    act_on_collection('notes', change_note, {'ref': {'$regex': '^Zohar \d'}}, active)
+    act_on_collection('sheets', change_sheet, {'expandedRefs': {'$regex': '^Zohar \d'}}, active)
+    act_on_collection('webpages', change_webpage, {'expandedRefs': {'$regex': '^Zohar \d'}}, active)
+    act_on_collection('history', change_history, {'ref': {'$regex': '^Zohar \d'}}, active)
+    act_on_collection('user_history', change_user_history, {'ref': {'$regex': '^Zohar \d'}}, active)
+    act_on_collection('ref_data', change_ref_data, {'ref': {'$regex': '^Zohar \d'}}, active)
 
     library.rebuild()
     if MULTISERVER_ENABLED:

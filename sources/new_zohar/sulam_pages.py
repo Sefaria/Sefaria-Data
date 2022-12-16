@@ -8,13 +8,14 @@ django.setup()
 from sefaria.model import *
 from sources.functions import getGematria, post_index
 from sefaria.utils.talmud import section_to_daf
+from sefaria.utils.hebrew import encode_hebrew_daf
 
 def missings(nums):
     if nums:
         return set(range(min(nums), max(nums)+1)) - set(nums)
 
 index = library.get_index('Zohar TNG')
-index.versionState().refresh()
+# index.versionState().refresh()
 oldbook = book = None
 parashot = {}
 refs = {}
@@ -157,6 +158,9 @@ for segment in refs:
         print('number of version is not 1', segment)
     tc = segment.text('he', vtitle=vs[0]['versionTitle'])
     text = tc.text
+    for daf in re.findall('<i data-overlay="Vilna Pages" data-value="([^"]*)"></i>'):
+        hebdaf = '(דף ' + encode_hebrew_daf(daf).replace('.', ' ע"א').replace(':', ' ע"ב') + ')'
+        text = text.replace(f'<i data-overlay="Vilna Pages" data-value="{daf}"></i>', hebdaf)
     for ref in re.findall('\(דף [^)]*\)', text):
         daf, amud = re.findall('^\(דף (["\'א-ת]{,4}) ע"([אב])', ref)[0]
         newpage = getGematria(daf) * 2 - 2 + getGematria(amud)
@@ -170,7 +174,7 @@ for segment in refs:
         else:
             text = re.sub(re.escape(ref), f'', text)
     tc.text = text
-    tc.save(force_save=True)
+    # tc.save(force_save=True)
 
 def combine_ref(refs):
     if len(refs) == 1:

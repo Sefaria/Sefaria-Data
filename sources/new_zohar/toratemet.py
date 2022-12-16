@@ -447,5 +447,5 @@ if __name__ == '__main__':
     parser = Parser()
     parser.parse()
     parser.match_all()
-    # parser.post()
+    parser.post()
     parser.make_csv()
