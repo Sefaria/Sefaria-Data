@@ -86,6 +86,8 @@ try:
 except ImportError:
     import re
 import regex
+from pathlib import Path
+import argparse
 from typing import Dict
 from tqdm import tqdm
 from functools import partial, reduce
@@ -892,7 +894,7 @@ class CorpusManager:
                 else:
                     segment_text = oref.text(lang, vtitle=vtitle).text
                 linked_text = self.add_html_links(temp_mentions, segment_text)
-                linked_text = TextChunk._strip_itags(linked_text)
+                linked_text = TextChunk.strip_itags(linked_text)
                 html += f"""
                     <p class="{lang}">{linked_text}</p>
                 """
@@ -1299,29 +1301,49 @@ def compare_two_versions_ner_tagger_output(filea, fileb, ner_file_prefix, vtitle
     save_set(b_not_a, f'{ner_file_prefix}/b_not_a.json')
 
 
-if __name__ == "__main__":
-    ner_file_prefix = "/home/nss/sefaria/datasets/ner/sefaria"
-    corpus_manager = CorpusManager(
-        "ner_input/ner_tagger_input_mishnah.json",
-        f"{ner_file_prefix}/ner_output_mishnah.json",
-        f"{ner_file_prefix}/html"
-    )
-    # corpus_manager.export_named_entities(f"{ner_file_prefix}/named_entities_export.csv")
-    corpus_manager.tag_corpus()
-    # corpus_manager.merge_rabbis_in_mentions(f"{ner_file_prefix}/swap_rabbis.json")
-    corpus_manager.save_mentions()
+def init_argparse() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", dest="config_filename", help="Config filename. Existing configs exist in `ner_input` directory")
+    parser.add_argument("-o", "--output", dest="output_directory", help="Output directory where various output files will be saved.")
+    parser.add_argument("-t", "--tag-entities", dest="tag_entities", help="Tag entities?", default=False, action='store_true')
+    parser.add_argument("--primary-evaluation-language", dest="evaluation_language", help="For evaluation, the primary language you want to evaluate results against. Should be language with the best and most complete results.")
+    parser.add_argument("--primary-evaluation-version-title", dest="evaluation_version_title", help="For evaluation, the primary version title you want to evaluate results against. Should be the version title with the best and most complete results.")
+    """
+    Example commands for running
+    - Mishnah
+        python ner_tagger.py -c ner_input/ner_tagger_input_mishnah.json -o output/mishnah -t --primary-evaluation-language en --primary-evaluation-version-title "Mishnah Yomit by Dr. Joshua Kulp"
+    - Bavli
+        python ner_tagger.py -c ner_input/ner_tagger_input_bavli.json -o output/bavli -t --primary-evaluation-language he --primary-evaluation-version-title "William Davidson Edition - Aramaic"
+    - Jerusalem Talmud
+        python ner_tagger.py -c ner_input/ner_tagger_input_yerushalmi.json -o output/yerushalmi -t --primary-evaluation-language en --primary-evaluation-version-title "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015"
+    """
+    return parser
 
-    #corpus_manager.load_mentions()
+
+if __name__ == "__main__":
+    parser = init_argparse()
+    args = parser.parse_args()
+    Path(args.output_directory + "/html").mkdir(parents=True, exist_ok=True)
+    corpus_manager = CorpusManager(
+        args.config_filename,
+        f"{args.output_directory}/mentions.json",
+        f"{args.output_directory}/html"
+    )
+    if args.tag_entities:
+        corpus_manager.tag_corpus()
+        corpus_manager.save_mentions()
+    else:
+        corpus_manager.load_mentions()
     corpus_manager.generate_html_files_for_mentions(special_slug_set={'rabi', 'rav'})
-    corpus_manager.cross_validate_mentions_by_lang_literal(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_common_mistakes.csv", f"{ner_file_prefix}/cross_validated_by_language_ambiguities.csv", ("Mishnah Yomit by Dr. Joshua Kulp", "en"), with_replace=True)  # ("Mishnah Yomit by Dr. Joshua Kulp", "en") ("William Davidson Edition - Aramaic", "he") ("The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015", "en")
-    corpus_manager.filter_cross_validation_by_topics(f"{ner_file_prefix}/cross_validated_by_language.csv", f"{ner_file_prefix}/cross_validated_by_language_filtered.csv", [{
+    corpus_manager.cross_validate_mentions_by_lang_literal(f"{args.output_directory}/cross_validated_by_language.csv", f"{args.output_directory}/cross_validated_by_language_common_mistakes.csv", f"{args.output_directory}/cross_validated_by_language_ambiguities.csv", (args.evaluation_version_title, args.evaluation_language), with_replace=True)
+    corpus_manager.filter_cross_validation_by_topics(f"{args.output_directory}/cross_validated_by_language.csv", f"{args.output_directory}/cross_validated_by_language_filtered.csv", [{
             "id": "biblical-figures",
             "idIsSlug": True,
             "getLeaves": True
         }
     ])
-    # compare_two_versions_ner_tagger_output('ner_output_talmud.json', 'ner_output_talmud_word_breakers.json', ner_file_prefix)
-    # compare_two_versions_ner_tagger_output('ner_output_mishnah.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
+    #     compare_two_versions_ner_tagger_output('ner_output_talmud.json', 'ner_output_talmud_word_breakers.json', ner_file_prefix)
+    #     compare_two_versions_ner_tagger_output('ner_output_mishnah.json', 'sperling_mentions_mishnah.json', ner_file_prefix, 'Torat Emet 357', 'he')
 
 """
 This file depends on first running

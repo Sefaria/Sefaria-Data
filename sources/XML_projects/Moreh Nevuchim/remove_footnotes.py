@@ -14,11 +14,25 @@ with open("Moreh Wout Footnotes.csv", 'w') as new_f:
                 i_tag = sup.next_sibling
                 if i_tag.name == "i":
                     ftnote = str(sup) + str(i_tag)
+                    actual_ftnote = ""
                     for word in ftnote.split():
-                        assert word in comm
-                    comm = comm.replace(ftnote, "fn{}".format(curr))
+                        if word not in comm:
+                            assert word.find("/>") == word.rfind("/>")
+                            pos = word.find("/>")
+                            actual_ftnote = actual_ftnote.replace(prev_word+" ", "")+word[:pos]+" "+prev_word+word[pos:]+" "
+                        else:
+                            actual_ftnote += word + " "
+                        prev_word = word
+
+                    actual_ftnote = actual_ftnote.strip()
+                    for word in actual_ftnote.split():
+                        if word not in comm:
+                            print(word)
+                            print(comm)
+                    comm = comm.replace(actual_ftnote, "fn{}".format(curr), 1)
                     curr += 1
                     ftnotes.append(ftnote)
+
             writer.writerow([ref, comm])
 
 with open("ftnotes.json", 'w') as f:
