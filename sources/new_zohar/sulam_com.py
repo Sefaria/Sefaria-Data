@@ -6,6 +6,7 @@ import re
 import os
 from sefaria.utils.hebrew import encode_hebrew_numeral
 from itertools import chain
+from sources.functions import post_index, post_text, post_link, add_term
 
 MIS, ER, NO = [[] for _ in range(3)]
 
@@ -57,6 +58,8 @@ def handle_element(element):
                 text[-1] = re.sub(' +\.', '.', text[-1])
                 text += subtext[1:]
     text = [' '.join(t.split()) for t in text if t.strip()]
+    text = [re.sub(' ([\.,:\)\]])', r'\1', t) for t in text]
+    text = [re.sub('([\(\[]) ', r'\1', t) for t in text]
     if (element.name == 'b' or 'style' in element.attrs and 'bold' in element.attrs['style']) and text:
         text = [f'<b>{t}</b>' for t in text]
     if not text:
@@ -128,24 +131,79 @@ def parse_parash(title):
             if new:
                 text += new
         parasha_text.append(text)
-    return parasha
+    return parasha_text
+
+if __name__ == '__main__':
+    name = 'Zohar TNNNG'
+    hname = Ref(name).he_normal()
+    index = library.get_index(name)
+    nodes = index.schema['nodes'][:2] + [{'titles': [{'text': 'Bereshit II'}, {'text': 'בראשית ב'}]}] + index.schema['nodes'][2:]
+    texts = {}
+    schema = SchemaNode()
+    sname = 'Sulam on Zohar'
+    shname = 'הסולם על ספר הזהר'
+    schema.add_primary_titles(sname, shname)
+    for node in nodes[:53]:
+        title = node['titles'][1]['text']
+        if title == 'בראשית':
+            title = 'בראשית א'
+            entitle = 'Bereshit I'
+        else:
+            entitle = node['titles'][0]['text']
+        print(title)
+        text = parse_parash(title)
+        if entitle == "Ha'Azinu":
+            text = text[:22] + [[] for _ in range(179)] + text[22:]
+        texts[entitle] = text
+
+        s_node = JaggedArrayNode()
+        s_node.add_primary_titles(entitle, title)
+        s_node.add_structure(['Paragraph', 'Paragraph'])
+        s_node.addressTypes = ['Integer', 'Integer']
+        s_node.depth = 2
+        if entitle == "Idra Zuta":
+            s_node.index_offsets_by_depth = {'1': 22}
+        schema.append(s_node)
 
 
-name = 'Zohar TNNNG'
-hname = Ref(name).he_normal()
-index = library.get_index(name)
-nodes = index.schema['nodes'][:2] + [{'titles': [1, {'text': 'בראשית ב'}]}] + index.schema['nodes'][2:]
-texts = []
-for node in nodes[:53]:
-    title = node['titles'][1]['text']
-    if title == 'בראשית':
-        title = 'בראשית א'
-    print(title)
-    text = parse_parash(title)
-    if title == 'בראשית ב':
-        texts[-1] += text
-    else:
-        texts.append(text)
+    with open('report.txt', 'w') as fp:
+        fp.write('\n'.join(['missing files']+MIS+['\n', 'erroneous files']+ER+['\n', 'files withno sulam']+NO))
 
-with open('report.txt', 'w') as fp:
-    fp.write('\n'.join(['missing files']+MIS+['\n', 'erroneous files']+ER+['\n', 'files withno sulam']+NO))
+    server = 'http://localhost:9000'
+    add_term('Sulam', 'הסולם', server=server)
+    schema.validate()
+    index_dict = {'title': sname,
+                  'categories': ['Kabbalah', 'Zohar'],
+                  'schema': schema.serialize(),
+                  'dependence': 'Commentary',
+                  'collective_title': 'Sulam',
+                  'base_text_titles': ['Zohar']
+                  }
+    post_index(index_dict, server=server)
+
+    for parash, text in texts.items():
+        text_version = {'title': f'{sname}, {parash}',
+            'versionTitle': 'Sulam',
+            'versionSource': "",
+            'language': 'he',
+            'text': text
+        }
+        post_text(f'{sname}, {parash}', text_version, server=server)
+
+    links = []
+    ref = Ref('Zohar').first_available_section_ref().all_segment_refs()[0]
+    while ref:
+        sec = re.findall(':(\d*)$', ref.normal())[0]
+        cont = ref.index_node.get_primary_title()
+        if cont == 'Bereshit':
+            cont = 'Bereshit I' if ref.sections[0] < 50 else 'Bereshit II'
+        elif cont == 'For Volume I':
+            break
+        sulm_ref = Ref(f'{sname}, {cont} {sec}')
+        for sref in sulm_ref.all_segment_refs():
+            links.append({'refs': [ref.normal(), sref.normal()],
+                          'auto': True,
+                          'generated_by': 'sulam parser',
+                          'dependence': 'commentary'})
+        ref = ref.next_segment_ref()
+    post_link(links, server, False, False)
