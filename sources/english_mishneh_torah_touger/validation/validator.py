@@ -82,14 +82,18 @@ if __name__ == '__main__':
     print("hello world")
     chabad_data = {}
     sefaria_data = {}
+    sefaria_raw = {}
+    chabad_raw = {}
     with open('chabad_data_sefaria_refs.csv', 'r') as f_chabad:
         reader = csv.reader(f_chabad)
         # Iterate over the rows of the CSV file
         for row in reader:
             row[0] = row[0].replace(".", ":")
             row[0] = row[0].replace(" ", "")
+
             # Append each row to the list
             chabad_data[row[0]] = row[1]
+            chabad_raw[row[0]] = row[1]
     with open('12_22_2022_mishneh_torah_data.csv', 'r') as f_sefaria:
         reader_sefaria = csv.reader(f_sefaria)
         reader = csv.reader(f_sefaria)
@@ -97,6 +101,7 @@ if __name__ == '__main__':
         for row in reader:
             # Append each row to the list
             sefaria_data[row[0]] = row[1]
+            sefaria_raw[row[0]] = row[1]
 
 
 
@@ -132,7 +137,7 @@ if __name__ == '__main__':
                 print("chabad:")
                 print(c_text)
                 mark_differnces(s_text, c_text)
-                tuple = (ref, s_text, c_text)
+                tuple = (ref, s_text, c_text, sefaria_raw[ref], chabad_raw[c_ref])
                 not_match_list.append(tuple)
 
     write_to_csv(not_match_list)
