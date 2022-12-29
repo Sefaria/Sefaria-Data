@@ -74,6 +74,8 @@ def write_to_csv(list):
         writer = csv.writer(csvfile)
 
         # Write the list to the CSV file
+        scheme = ("ref", "sefaria normal", "chabad normal", "sefaria raw", "chabad raw")
+        writer.writerow(scheme)
         for r in list:
             writer.writerow(r)
 
