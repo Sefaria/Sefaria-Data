@@ -54,17 +54,22 @@ def normalize_line(raw_text):
 def mark_differnces(string1, string2):
     diff = list(difflib.ndiff(string1, string2))
     # Iterate through the list of differences and highlight the ones that are different
+    result = ''
     for i in range(len(diff)):
         if diff[i][0] == ' ':
             # If the difference is a space, print the character as is
             print(diff[i][-1], end='')
+            result += diff[i][-1]
         elif diff[i][0] == '-':
             # If the difference is a deletion, print the character with a red background
             print('\033[41m' + diff[i][-1] + '\033[0m', end='')
+            result += '<span style="background-color: red;">' + diff[i][-1] + '</span>'
         elif diff[i][0] == '+':
             # If the difference is an insertion, print the character with a green background
             print('\033[42m' + diff[i][-1] + '\033[0m', end='')
+            result += '<span style="background-color: #green;">' + diff[i][-1] + '</span>'
     print("")
+    return result
 
 
 
@@ -78,7 +83,22 @@ def write_to_csv(list):
         writer.writerow(scheme)
         for r in list:
             writer.writerow(r)
+def tuples_to_html_table(data):
+    # Start building the table
+    html = '<table>\n'
 
+    # Add a row for each tuple in the list
+    for row in data:
+        html += '  <tr>\n'
+        for cell in row:
+            html += f'    <td>{cell}</td>\n'
+        html += '  </tr>\n'
+
+    # Close the table
+    html += '</table>'
+
+    # Return the finished HTML table
+    return html
 
 if __name__ == '__main__':
     print("hello world")
@@ -112,6 +132,8 @@ if __name__ == '__main__':
     not_match_count = 0
     not_match_list = []
 
+    diff_list = []
+
     # for ref in sefaria_data.keys():
     #     ref = ref.replace(".", ":")
     #     ref = ref.replace(" ", "")
@@ -138,12 +160,19 @@ if __name__ == '__main__':
                 print(s_text)
                 print("chabad:")
                 print(c_text)
-                mark_differnces(s_text, c_text)
+                diff = mark_differnces(s_text, c_text)
                 tuple = (ref, s_text, c_text, sefaria_raw[ref], chabad_raw[c_ref])
+                tuple2 = (ref, diff, s_text, c_text)
                 not_match_list.append(tuple)
+                diff_list.append(tuple2)
 
     write_to_csv(not_match_list)
-    print("hi")
+    diff_list.insert(0, ("Ref", "Difference", "Sefaria Text", "Chabad Text"))
+    html = tuples_to_html_table(diff_list)
+    with open('differences.html', 'w') as f:
+        # Write the HTML to the file
+        f.write(html)
+
 
             # rows_chabad = sorted(list(reader_chabad), key=lambda r: r[0].replace(" ", ""))
             # rows_sefaria = sorted(list(reader_sefaria), key=lambda a: a[0].replace(" ", ""))
