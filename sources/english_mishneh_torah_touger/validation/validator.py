@@ -67,7 +67,7 @@ def mark_differnces(string1, string2):
         elif diff[i][0] == '+':
             # If the difference is an insertion, print the character with a green background
             print('\033[42m' + diff[i][-1] + '\033[0m', end='')
-            result += '<span style="background-color: #green;">' + diff[i][-1] + '</span>'
+            result += '<span style="background-color: green;">' + diff[i][-1] + '</span>'
     print("")
     return result
 
