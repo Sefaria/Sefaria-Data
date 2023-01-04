@@ -84,8 +84,11 @@ def write_to_csv(list):
         for r in list:
             writer.writerow(r)
 def tuples_to_html_table(data):
+    html = '<html>'
+
+
     # Start building the table
-    html = '<table>\n'
+    html += '<table>\n'
 
     # Add a row for each tuple in the list
     for row in data:
@@ -96,6 +99,8 @@ def tuples_to_html_table(data):
 
     # Close the table
     html += '</table>'
+
+    html += '</html>'
 
     # Return the finished HTML table
     return html
