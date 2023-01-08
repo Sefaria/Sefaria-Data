@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
-import os
 import traceback
 from tqdm import tqdm
 from functools import reduce
-p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, p)
-SEFARIA_PROJECT_PATH = "/var/www/readonly"
-sys.path.insert(0, SEFARIA_PROJECT_PATH)
-os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
 
 import re, json, codecs, unicodecsv, heapq, random, regex, math, cProfile, pstats, csv
