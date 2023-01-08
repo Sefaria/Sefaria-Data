@@ -192,45 +192,6 @@ class Link_Disambiguator:
             final_result_dict[parallel_item_key] = result
         return final_result_dict
 
-    def disambiguate_gra(self):
-        gra_segs = OrderedDict()
-        matches = []
-        with codecs.open("gra2.txt", "rb", encoding="utf8") as fin:
-            curr_title = ""
-            for iline, line in enumerate(fin):
-                line = line.strip()
-                if not re.search(r"^[\u05d0-\u05ea]+:[\u05d0-\u05ea]+$", line) and len(line) > 40:
-                    key = "{}-{}".format(curr_title, iline)
-                    gra_segs[key] = line
-                elif len(line) > 0:
-                    curr_title = line
-        ber_tc = TextChunk(Ref("Genesis"), "he")
-        ber_word_list = [w for seg in ber_tc.ja().flatten_to_array() for w in self.tokenize_words(seg)]
-        all_matches = []
-        lengrasegs = len(list(gra_segs.items()))
-        for i, (gtitle, gtext) in enumerate(gra_segs.items()):
-            print("{}/{}".format(i, lengrasegs))
-            matcher = ParallelMatcher(self.tokenize_words, max_words_between=1, min_words_in_match=4, ngram_size=4,
-                                      parallelize=False, calculate_score=self.get_score, all_to_all=False,
-                                      verbose=False)
-            match_list = matcher.match(tref_list=[(gtext, gtitle), ber_tc], return_obj=True)
-            all_matches += [[mm.a.ref.normal(), mm.b.mesechta, mm.a.location, mm.b.location, mm.score] for mm in match_list if not mm is None]
-        for m in all_matches:
-            text_a = " ".join(ber_word_list[m[2][0]:m[2][1]+1])
-            gra_words = self.tokenize_words(gra_segs[m[1]])
-            padding = 4
-            start_gra = m[3][0] - padding if m[3][0] - padding >= 0 else 0
-            end_gra = m[3][1] + 1 + padding if m[3][1] + 1 + padding <= len(gra_words) else len(gra_words)
-            text_b = " ".join(gra_words[start_gra:m[3][0]]) + " [[ " + \
-                     " ".join(gra_words[m[3][0]:m[3][1]+1]) + " ]] " + \
-                     " ".join(gra_words[m[3][1]+1:end_gra])
-            matches += [{"Torah Text": text_a, "Gra Text": text_b, "Torah Ref": m[0], "Gra Ref": m[1], "Score": m[4]}]
-        matches.sort(key=lambda x: Ref(x["Torah Ref"]).order_id())
-        with open("gra_out.csv", "wb") as fout:
-            fcsv = unicodecsv.DictWriter(fout, ["Torah Ref", "Gra Ref", "Torah Text", "Gra Text", "Score"])
-            fcsv.writeheader()
-            fcsv.writerows(matches)
-
 
 def get_snippet_from_mesorah_item(mesorah_item, pm):
     words = pm.word_list_map[mesorah_item.mesechta]
@@ -240,6 +201,7 @@ def get_snippet_from_mesorah_item(mesorah_item, pm):
 def save_disambiguated_to_file(good, bad, csv_good, csv_bad):
     csv_good.writerows(good)
     csv_bad.writerows(bad)
+
 
 _tc_cache = {}
 def disambiguate_all():
@@ -572,13 +534,11 @@ def run():
     # ld.get_ambiguous_segments()
     # disambiguate_all()
     # get_qa_csv()
-    # ld = Link_Disambiguator()
-    # ld.disambiguate_gra()
     # count_words()
-    #post_unambiguous_links(post=True)
+    # post_unambiguous_links(post=True)
     # calc_stats()
-    #filter_books_from_output({u'Akeidat Yitzchak', u'HaKtav VeHaKabalah'}, {u'Responsa'})
-    #filter_books_from_output({u'Alshich on Torah', u'Meshech Hochma', u'Messilat Yesharim', u'Gevurot Hashem', u'Kedushat Levi', u'Mei HaShiloach'}, set())
+    # filter_books_from_output({u'Akeidat Yitzchak', u'HaKtav VeHaKabalah'}, {u'Responsa'})
+
 
 if __name__ == '__main__':
     profiling = False
@@ -591,10 +551,3 @@ if __name__ == '__main__':
     else:
         run()
 
-
-    # tc_list = [Ref("Zohar 1:70b:7").text("he"), Ref("Song of Songs 1").text("he")] #{'match_index': [[5, 7], [11, 13]], 'score': 81, 'match': [u'Zohar 1:70b:7', u'Song of Songs 1:3']}
-    # tc_list = [Ref("Zohar 1:70b:9").text("he"), Ref("Genesis 1").text("he")] #{'match_index': [[27, 32], [106, 111]], 'score': 96, 'match': [u'Genesis 1:4', u'Zohar 1:70b:9']}
-
-# TODO: find the right length of match. best way to score? limit matches to one side of ref
-
-""
