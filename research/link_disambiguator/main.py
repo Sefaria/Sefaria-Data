@@ -14,13 +14,11 @@ from collections import defaultdict, OrderedDict
 from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError, DuplicateRecordError
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.util import WeightedLevenshtein
-from data_utilities.ibid import CitationFinder
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
 from sources.functions import post_text, post_link
 
 LOWEST_SCORE = -28
 ROOT = "research/link_disambiguator"
-TALMUD_ADDRESS_REG = regex.compile(CitationFinder.create_jan_for_address_type(["Talmud"]).address_regex("he") + "$", regex.VERBOSE)
 def argmax(iterable, n=1):
     if n==1:
         return [max(enumerate(iterable), key=lambda x: x[1])[0]]
