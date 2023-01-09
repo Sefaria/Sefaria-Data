@@ -22,6 +22,22 @@ LOWEST_SCORE = -28
 DATA_DIR = "data"
 
 
+class TextChunkFactory:
+    """
+    Factory class for creating and caching text chunks for speed
+    """
+
+    _tc_cache = {}
+
+    @classmethod
+    def make(cls, tref, oref):
+        tc = oref.text('he')
+        cls._tc_cache[tref] = tc
+        if len(cls._tc_cache) > 5000:
+            cls._tc_cache = {}
+        return tc
+
+
 def argmax(iterable, n=1):
     if n==1:
         return [max(enumerate(iterable), key=lambda x: x[1])[0]]
@@ -485,21 +501,6 @@ def calc_stats():
         books = [list(x) for x in sorted(list(books.items()), key=lambda x: x[1], reverse=True)]
         json.dump({"books": books, "cats": cats}, fout, ensure_ascii=False, indent=2)
         
-
-class TextChunkFactory:
-    """
-    Factory class for creating and caching text chunks for speed
-    """
-
-    _tc_cache = {}
-
-    @classmethod
-    def make(cls, tref, oref):
-        tc = oref.text('he')
-        cls._tc_cache[tref] = tc
-        if len(cls._tc_cache) > 5000:
-            cls._tc_cache = {}
-        return tc
 
 def delete_irrelevant_disambiguator_links(dryrun=True):
     """
