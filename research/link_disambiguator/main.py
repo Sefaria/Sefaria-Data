@@ -2,7 +2,7 @@
 import sys
 import traceback
 from tqdm import tqdm
-from functools import reduce
+from functools import reduce, partial
 
 
 import re, json, heapq, random, regex, math, cProfile, pstats, csv
@@ -425,30 +425,20 @@ def filter_books_from_output(books, cats):
         cout.writerows(out_rows)
 
 
-word_counter = defaultdict(int)
+def count_words(lang):
+    word_counter = defaultdict(int)
 
-def count_words():
-    global word_counter
-    index_set = library.all_index_records()
-    for ii, i in enumerate(index_set):
-        print("{}/{}".format(ii, len(index_set)))
-        count_words_map(i)
+    version_set = VersionSet({"language": lang})
+    for version in tqdm(version_set, total=version_set.count()):
+        version.walk_thru_contents(partial(count_words_in_segment, word_counter))
+
     with open(DATA_DIR + '/word_counts.json', 'w') as fout:
         json.dump(word_counter, fout)
 
 
-def count_words_map(index):
-    global word_counter
-    try:
-        seg_list = index.nodes.traverse_to_list(
-            lambda n, _: TextChunk(n.ref(), "he").ja().flatten_to_array() if not n.children else [])
-        for seg in seg_list:
-            for w in Link_Disambiguator.tokenize_words(seg):
-                word_counter[w] += 1
-    except InputError:
-        pass
-    except AttributeError:
-        pass
+def count_words_in_segment(word_counter, segment_str, en_tref, he_tref, version):
+    for w in Link_Disambiguator.tokenize_words(segment_str):
+        word_counter[w] += 1
 
 
 def post_unambiguous_links(post=False):
@@ -533,12 +523,12 @@ def delete_irrelevant_disambiguator_links(dryrun=True):
 
 
 def run():
-    delete_irrelevant_disambiguator_links(False)  # run before disambiguate_all() to clear out irrelevant links first
+    count_words("he")
+    # delete_irrelevant_disambiguator_links(False)  # run before disambiguate_all() to clear out irrelevant links first
     # ld = Link_Disambiguator()
     # ld.get_ambiguous_segments()
     # disambiguate_all()
     # get_qa_csv()
-    # count_words()
     # post_unambiguous_links(post=True)
     # calc_stats()
     # filter_books_from_output({u'Akeidat Yitzchak', u'HaKtav VeHaKabalah'}, {u'Responsa'})
