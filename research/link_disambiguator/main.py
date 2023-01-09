@@ -476,7 +476,7 @@ def post_unambiguous_links(post=False):
 def calc_stats():
     books = defaultdict(int)
     cats = defaultdict(int)
-    with open("research/link_disambiguator/unambiguous_links.json", "r") as fin:
+    with open(DATA_DIR + "/unambiguous_links.json", "r") as fin:
         cin = csv.DictReader(fin)
         for row in cin:
             try:
@@ -486,7 +486,7 @@ def calc_stats():
                 cats[quoting.primary_category] += 1
             except InputError:
                 print(row["Quoting Ref"])
-    with open("research/link_disambiguator/unambiguous_books.json", "w") as fout:
+    with open(DATA_DIR + "/unambiguous_books.json", "w") as fout:
         books = [list(x) for x in sorted(list(books.items()), key=lambda x: x[1], reverse=True)]
         json.dump({"books": books, "cats": cats}, fout, ensure_ascii=False, indent=2)
 
