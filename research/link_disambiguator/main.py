@@ -5,7 +5,7 @@ from tqdm import tqdm
 from functools import reduce
 
 
-import re, json, codecs, unicodecsv, heapq, random, regex, math, cProfile, pstats, csv
+import re, json, heapq, random, regex, math, cProfile, pstats, csv
 import django
 django.setup()
 from sefaria.model import *
@@ -37,11 +37,12 @@ class Link_Disambiguator:
                   'לרב', 'לרבי',
                   "לר'", 'ברב', 'ברבי', "בר'", 'הא', 'בהא', 'הך', 'בהך', 'ליה', 'צריכי', 'צריכא', 'וצריכי',
                   'וצריכא', 'הלל', 'שמאי', "וגו'", 'וגו׳', 'וגו']
+
     def __init__(self):
         self.levenshtein = WeightedLevenshtein()
         self.matcher = None
         try:
-            with codecs.open(DATA_DIR + "/word_counts.json", "rb", encoding="utf8") as fin:
+            with open(DATA_DIR + "/word_counts.json", "r") as fin:
                 self.word_counts = json.load(fin)
         except IOError:
             self.word_counts = {}
@@ -221,11 +222,11 @@ def disambiguate_all():
         if len(_tc_cache) > 5000:
             _tc_cache = {}
         return tc
-    fgood = open(DATA_DIR +'/unambiguous_links.csv', 'wb')
-    fbad = open(DATA_DIR + '/still_ambiguous_links.csv', 'wb')
-    csv_good = unicodecsv.DictWriter(fgood, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
+    fgood = open(DATA_DIR +'/unambiguous_links.csv', 'w')
+    fbad = open(DATA_DIR + '/still_ambiguous_links.csv', 'w')
+    csv_good = csv.DictWriter(fgood, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
     csv_good.writeheader()
-    csv_bad = unicodecsv.DictWriter(fbad, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
+    csv_bad = csv.DictWriter(fbad, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
     csv_bad.writeheader()
     for iambig, (main_str, tref_list) in enumerate(ambig_dict.items()):
         if iambig % 50 == 0:
@@ -373,9 +374,10 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
 
 
 def get_qa_csv():
-    with open(DATA_DIR +"/unambiguous_links.json", "rb") as fin:
-        cin = unicodecsv.DictReader(fin)
+    with open(DATA_DIR +"/unambiguous_links.json", "r") as fin:
+        cin = csv.DictReader(fin)
         rows = [row for row in cin]
+
     def normalize(s):
         return re.sub(r"<[^>]+>", "", strip_cantillation(s, strip_vowels=True))
 
@@ -390,15 +392,15 @@ def get_qa_csv():
         }
         for x in (tanakh + talmud)]
 
-    with open(DATA_DIR +"/QA Section Links.csv", "wb") as fout:
-        csv = unicodecsv.DictWriter(fout, ["Source Text", "Found Text", "URL", "Wrong segment (seg) / Wrong link (link)"])
-        csv.writeheader()
-        csv.writerows(qa_rows)
+    with open(DATA_DIR +"/QA Section Links.csv", "w") as fout:
+        cin = csv.DictWriter(fout, ["Source Text", "Found Text", "URL", "Wrong segment (seg) / Wrong link (link)"])
+        cin.writeheader()
+        cin.writerows(qa_rows)
 
 
 def filter_books_from_output(books, cats):
-    with open(DATA_DIR + "/still_ambiguous_links.json", "rb") as fin:
-        cin = unicodecsv.DictReader(fin)
+    with open(DATA_DIR + "/still_ambiguous_links.json", "r") as fin:
+        cin = csv.DictReader(fin)
         out_rows = []
         for row in cin:
             r = Ref(row['Quoting Ref'])
@@ -417,8 +419,8 @@ def filter_books_from_output(books, cats):
     out_rows.sort(key=lambda x: x['id'])
     for r in out_rows:
         del r['id']
-    with open(DATA_DIR + "/qa_books.csv", "wb") as fout:
-        cout = unicodecsv.DictWriter(fout, ["Quoting Book", "Quoting Ref", "Quoted Book", "Quoted Ref", "Snippet"])
+    with open(DATA_DIR + "/qa_books.csv", "w") as fout:
+        cout = csv.DictWriter(fout, ["Quoting Book", "Quoting Ref", "Quoted Book", "Quoted Ref", "Snippet"])
         cout.writeheader()
         cout.writerows(out_rows)
 
@@ -431,7 +433,7 @@ def count_words():
     for ii, i in enumerate(index_set):
         print("{}/{}".format(ii, len(index_set)))
         count_words_map(i)
-    with codecs.open(DATA_DIR + '/word_counts.json', 'wb', encoding='utf8') as fout:
+    with open(DATA_DIR + '/word_counts.json', 'w') as fout:
         json.dump(word_counter, fout)
 
 
