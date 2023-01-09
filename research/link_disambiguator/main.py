@@ -436,7 +436,7 @@ def count_words(lang):
             pass
 
     with open(DATA_DIR + '/word_counts.json', 'w') as fout:
-        json.dump(word_counter, fout)
+        json.dump(word_counter, fout, ensure_ascii=False)
 
 
 def count_words_in_segment(word_counter, segment_str, en_tref, he_tref, version):
