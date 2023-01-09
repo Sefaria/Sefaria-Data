@@ -11,7 +11,7 @@ import bleach
 import os
 from sefaria.system.database import db
 from research.source_sheet_disambiguator.main import refine_ref_by_text
-from research.link_disambiguator.main import *
+from data_utilities.citation_disambiguator.main import *
 django.setup()
 from sources.functions import UnicodeWriter
 import urllib2, urllib
@@ -793,7 +793,7 @@ class Sheets:
 
     def fix_ref(self, ref, comment):
 
-        # ld = Link_Disambiguator()
+        # ld = CitationDisambiguator()
         # main_tc = TextChunk(Ref("Tosafot on Eruvin 92a:1:1"), "he")
         # other_tc = TextChunk(Ref(ref), "he")
         # print ld.disambiguate_segment((comment, "Nechama"), [other_tc])

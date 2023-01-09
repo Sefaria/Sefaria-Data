@@ -10,7 +10,7 @@ from tqdm import tqdm
 from sefaria.model import *
 from sefaria.utils.hebrew import strip_cantillation, gematria, has_cantillation
 from sefaria.system.exceptions import InputError
-from research.link_disambiguator.main import Link_Disambiguator
+from data_utilities.citation_disambiguator.main import CitationDisambiguator
 
 # TODO figure out how to map mekhilta
 
@@ -346,7 +346,7 @@ def disambiguate_ref_list(main_tref, tref_list, **kwargs):
     :param tref_list: list, each item could be either tuple of form (str, key) or a str which is a textual ref
     :return: dict where key is key and value is {"A Ref": tref, "B Ref": tref or key, "Score": float}. "A Ref" will be the disambiguagted ref for main_tref. value will be None if no result was found
     """
-    ld = Link_Disambiguator()
+    ld = CitationDisambiguator()
     results = ld.disambiguate_segment_by_snippet(main_tref, tref_list, **kwargs)
     return results
 
