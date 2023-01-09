@@ -537,12 +537,15 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--lang', dest='lang', help='')
     parser.add_argument('-c', '--force-word-count', action='store_true', dest="force_word_count", help="Force a word count")
+    parser.add_argument('-t', '--title', dest='title', help='Optional title. If passed, will only disambiguate citations in title. Otherwise, disambiguates on all texts.')
     return parser.parse_args()
 
 
 def run():
     args = get_args()
     count_words(args.lang, args.force_word_count)
+    if not args.title:
+        print("No title passed. Disambiguating all citations throughout the library. Sit tight...")
     # delete_irrelevant_disambiguator_links(False)  # run before disambiguate_all() to clear out irrelevant links first
     # ld = Link_Disambiguator()
     # ld.get_ambiguous_segments()
