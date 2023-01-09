@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-import sys
+import sys, os
 import traceback
 from tqdm import tqdm
 from functools import reduce, partial
+import argparse
 
 
 import re, json, heapq, random, regex, math, cProfile, pstats, csv
@@ -425,7 +426,14 @@ def filter_books_from_output(books, cats):
         cout.writerows(out_rows)
 
 
-def count_words(lang):
+def count_words(lang, force):
+    file_path = DATA_DIR + f'/word_counts_{lang}.json'
+    if not force:
+        if os.path.exists(file_path):
+            return
+        else:
+            print(f"Running word counts because {file_path} does not exist.")
+
     word_counter = defaultdict(int)
 
     version_set = VersionSet({"language": lang})
@@ -435,7 +443,7 @@ def count_words(lang):
         except InputError:
             pass
 
-    with open(DATA_DIR + '/word_counts.json', 'w') as fout:
+    with open(file_path, 'w') as fout:
         json.dump(word_counter, fout, ensure_ascii=False)
 
 
@@ -525,8 +533,16 @@ def delete_irrelevant_disambiguator_links(dryrun=True):
         db.links.bulk_write([DeleteOne({"_id": _id}) for _id in irrelevant_links])
 
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--lang', dest='lang', help='')
+    parser.add_argument('-c', '--force-word-count', dest="force_word_count", help="Force a word count")
+    return parser.parse_args()
+
+
 def run():
-    count_words("he")
+    args = get_args()
+    count_words(args.lang, args.force_word_count)
     # delete_irrelevant_disambiguator_links(False)  # run before disambiguate_all() to clear out irrelevant links first
     # ld = Link_Disambiguator()
     # ld.get_ambiguous_segments()
