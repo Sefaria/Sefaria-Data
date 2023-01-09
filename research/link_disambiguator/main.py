@@ -58,7 +58,8 @@ class Link_Disambiguator:
                   "לר'", 'ברב', 'ברבי', "בר'", 'הא', 'בהא', 'הך', 'בהך', 'ליה', 'צריכי', 'צריכא', 'וצריכי',
                   'וצריכא', 'הלל', 'שמאי', "וגו'", 'וגו׳', 'וגו']
 
-    def __init__(self):
+    def __init__(self, title=None):
+        self.title = title
         self.levenshtein = WeightedLevenshtein()
         self.matcher = None
         try:
@@ -553,8 +554,8 @@ def run():
         print("No title passed. Disambiguating all citations throughout the library. Sit tight...")
     if args.delete_old_links:
         delete_irrelevant_disambiguator_links(False)
-    # ld = Link_Disambiguator()
-    # ld.get_ambiguous_segments()
+    ld = Link_Disambiguator(args.title)
+    ld.get_ambiguous_segments()
     # disambiguate_all()
     # get_qa_csv()
     # post_unambiguous_links(post=True)
