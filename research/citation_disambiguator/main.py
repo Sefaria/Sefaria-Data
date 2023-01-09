@@ -48,7 +48,7 @@ def argmax(iterable, n=1):
         return heapq.nlargest(n, range(len(iterable)), iterable.__getitem__)
 
 
-class Link_Disambiguator:
+class CitationDisambiguator:
     stop_words = ["ר'", 'רב', 'רבי', 'בן', 'בר', 'בריה', 'אמר', 'כאמר', 'וכאמר', 'דאמר', 'ודאמר', 'כדאמר',
                   'וכדאמר', 'ואמר', 'כרב',
                   'ורב', 'כדרב', 'דרב', 'ודרב', 'וכדרב', 'כרבי', 'ורבי', 'כדרבי', 'דרבי', 'ודרבי', 'וכדרבי',
@@ -88,7 +88,7 @@ class Link_Disambiguator:
                    "\1\2\u05d0\u05dc\u05d4\u05d9\u05dd\3", base_str)
 
         word_list = re.split(r"\s+", base_str)
-        word_list = [w for w in word_list if len(w.strip()) > 0 and w not in Link_Disambiguator.stop_words]
+        word_list = [w for w in word_list if len(w.strip()) > 0 and w not in CitationDisambiguator.stop_words]
         return word_list
 
     def word_count_score(self, w):
@@ -228,7 +228,7 @@ def save_disambiguated_to_file(good, bad, csv_good, csv_bad):
 
 
 def disambiguate_all():
-    ld = Link_Disambiguator()
+    ld = CitationDisambiguator()
     #ld.find_indexes_with_ambiguous_links()
     #ld.get_ambiguous_segments()
 
@@ -460,7 +460,7 @@ def count_words(lang, force):
 
 
 def count_words_in_segment(word_counter, segment_str, en_tref, he_tref, version):
-    for w in Link_Disambiguator.tokenize_words(segment_str):
+    for w in CitationDisambiguator.tokenize_words(segment_str):
         word_counter[w] += 1
 
 
@@ -554,7 +554,7 @@ def run():
         print("No title passed. Disambiguating all citations throughout the library. Sit tight...")
     if args.delete_old_links:
         delete_irrelevant_disambiguator_links(False)
-    ld = Link_Disambiguator(args.title)
+    ld = CitationDisambiguator(args.title)
     ld.get_ambiguous_segments()
     # disambiguate_all()
     # get_qa_csv()
