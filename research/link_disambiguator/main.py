@@ -536,7 +536,7 @@ def delete_irrelevant_disambiguator_links(dryrun=True):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--lang', dest='lang', help='')
-    parser.add_argument('-c', '--force-word-count', dest="force_word_count", help="Force a word count")
+    parser.add_argument('-c', '--force-word-count', action='store_true', dest="force_word_count", help="Force a word count")
     return parser.parse_args()
 
 
