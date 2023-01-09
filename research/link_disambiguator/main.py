@@ -430,7 +430,10 @@ def count_words(lang):
 
     version_set = VersionSet({"language": lang})
     for version in tqdm(version_set, total=version_set.count()):
-        version.walk_thru_contents(partial(count_words_in_segment, word_counter))
+        try:
+            version.walk_thru_contents(partial(count_words_in_segment, word_counter))
+        except InputError:
+            pass
 
     with open(DATA_DIR + '/word_counts.json', 'w') as fout:
         json.dump(word_counter, fout)
