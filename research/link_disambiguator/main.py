@@ -207,7 +207,6 @@ def save_disambiguated_to_file(good, bad, csv_good, csv_bad):
     csv_bad.writerows(bad)
 
 
-_tc_cache = {}
 def disambiguate_all():
     ld = Link_Disambiguator()
     #ld.find_indexes_with_ambiguous_links()
@@ -216,13 +215,6 @@ def disambiguate_all():
     ambig_dict = json.load(open(DATA_DIR + "/ambiguous_segments.json",'r'))
     good = []
     bad = []
-    def make_tc(tref, oref):
-        global _tc_cache
-        tc = oref.text('he')
-        _tc_cache[tref] = tc
-        if len(_tc_cache) > 5000:
-            _tc_cache = {}
-        return tc
     fgood = open(DATA_DIR +'/unambiguous_links.csv', 'w')
     fbad = open(DATA_DIR + '/still_ambiguous_links.csv', 'w')
     csv_good = csv.DictWriter(fgood, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
@@ -234,10 +226,10 @@ def disambiguate_all():
             print("{}/{}".format(iambig, len(ambig_dict)))
         try:
             main_ref = Ref(main_str)
-            main_tc = _tc_cache.get(main_str, make_tc(main_str, main_ref))
+            main_tc = _tc_cache.get(main_str, TextChunkFactory.make(main_str, main_ref))
             for quoted_tref in tref_list:
                 quoted_oref = Ref(quoted_tref)
-                quoted_tc = _tc_cache.get(quoted_tref, make_tc(quoted_tref, quoted_oref))
+                quoted_tc = _tc_cache.get(quoted_tref, TextChunkFactory.make(quoted_tref, quoted_oref))
                 temp_good, temp_bad = disambiguate_one(ld, main_ref, main_tc, quoted_oref, quoted_tc)
                 good += temp_good
                 bad += temp_bad
@@ -492,20 +484,28 @@ def calc_stats():
     with open(DATA_DIR + "/unambiguous_books.json", "w") as fout:
         books = [list(x) for x in sorted(list(books.items()), key=lambda x: x[1], reverse=True)]
         json.dump({"books": books, "cats": cats}, fout, ensure_ascii=False, indent=2)
+        
 
+class TextChunkFactory:
+    """
+    Factory class for creating and caching text chunks for speed
+    """
+
+    _tc_cache = {}
+
+    @classmethod
+    def make(cls, tref, oref):
+        tc = oref.text('he')
+        cls._tc_cache[tref] = tc
+        if len(cls._tc_cache) > 5000:
+            cls._tc_cache = {}
+        return tc
 
 def delete_irrelevant_disambiguator_links(dryrun=True):
     """
     After a while, disambiguator links can break if segmentation changes
     Check that for each existing disambiguator link, there still exists an inline citation to back it
     """
-    def make_tc(tref, oref):
-        global _tc_cache
-        tc = oref.text('he')
-        _tc_cache[tref] = tc
-        if len(_tc_cache) > 5000:
-            _tc_cache = {}
-        return tc
     def normalize(s):
         return re.sub(r"<[^>]+>", "", strip_cantillation(s, strip_vowels=True))
     irrelevant_links = []
@@ -515,7 +515,7 @@ def delete_irrelevant_disambiguator_links(dryrun=True):
         source_oref = Ref(source_tref)
         quoted_oref= Ref(quoted_tref)
         if quoted_oref.primary_category != 'Talmud': continue
-        source_tc = _tc_cache.get(source_tref, make_tc(source_tref, source_oref))
+        source_tc = _tc_cache.get(source_tref, TextChunkFactory.make(source_tref, source_oref))
         if len(source_tc.text) == 0 or isinstance(source_tc.text, list):
             snippets = None
         else:
@@ -546,7 +546,7 @@ def run():
     count_words(args.lang, args.force_word_count)
     if not args.title:
         print("No title passed. Disambiguating all citations throughout the library. Sit tight...")
-    # delete_irrelevant_disambiguator_links(False)  # run before disambiguate_all() to clear out irrelevant links first
+    delete_irrelevant_disambiguator_links(False)  # run before disambiguate_all() to clear out irrelevant links first
     # ld = Link_Disambiguator()
     # ld.get_ambiguous_segments()
     # disambiguate_all()
