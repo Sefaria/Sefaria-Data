@@ -140,9 +140,10 @@ class CitationDisambiguator:
         for i in items:
             print(i)
 
-    def get_ambiguous_segments(self):
-        tanakh_books = library.get_indexes_in_category("Tanakh")
-        talmud_books = list(set(library.get_indexes_in_category("Bavli")) - set(library.get_indexes_in_category("Minor Tractates")))
+    @staticmethod
+    def get_ambiguous_segments():
+        tanakh_books = library.get_indexes_in_corpus("Tanakh")
+        talmud_books = library.get_indexes_in_corpus("Bavli")
         tan_tal_books = set(tanakh_books + talmud_books)
         query = {
             "refs": re.compile(r'^({}) \d+[ab]?$'.format('|'.join(tanakh_books + talmud_books)))
@@ -151,8 +152,8 @@ class CitationDisambiguator:
         print("Num ambiguous {}".format(linkset.count()))
         segment_map = defaultdict(list)
         actual_num = 0
-        for l in linkset:
-            quoter, quoted = l.refs if Ref(l.refs[1]).index.title in tan_tal_books else reversed(l.refs)
+        for link in linkset:
+            quoter, quoted = link.refs if Ref(link.refs[1]).index.title in tan_tal_books else reversed(link.refs)
             try:
                 segment_map[Ref(quoter).normal()] += [Ref(quoted).normal()]
                 actual_num += 1
@@ -162,9 +163,8 @@ class CitationDisambiguator:
                 pass
         print("Actual num ambiguous {}".format(actual_num))
         print("Num keys {}".format(len(segment_map)))
-        objStr = json.dumps(segment_map, indent=2, ensure_ascii=False)
-        with open(DATA_DIR + '/ambiguous_segments.json', "w") as f:
-            f.write(objStr)
+        with open(DATA_DIR + '/ambiguous_segments.json', "w") as fout:
+            json.dump(segment_map, fout, indent=2, ensure_ascii=False)
 
     def disambiguate_segment_by_snippet(self, main_tref, tref_list, lowest_score_threshold=LOWEST_SCORE, max_words_between=1, min_words_in_match=3, ngram_size=3, verbose=False, with_match_text=False):
         """
@@ -554,8 +554,8 @@ def run():
         print("No title passed. Disambiguating all citations throughout the library. Sit tight...")
     if args.delete_old_links:
         delete_irrelevant_disambiguator_links(False)
-    ld = CitationDisambiguator(args.title)
-    ld.get_ambiguous_segments()
+    cd = CitationDisambiguator(args.title)
+    cd.get_ambiguous_segments()
     # disambiguate_all()
     # get_qa_csv()
     # post_unambiguous_links(post=True)
