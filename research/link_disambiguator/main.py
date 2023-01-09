@@ -31,6 +31,9 @@ class TextChunkFactory:
 
     @classmethod
     def make(cls, tref, oref):
+        if tref in cls._tc_cache:
+            return cls._tc_cache[tref]
+
         tc = oref.text('he')
         cls._tc_cache[tref] = tc
         if len(cls._tc_cache) > 5000:
@@ -242,10 +245,10 @@ def disambiguate_all():
             print("{}/{}".format(iambig, len(ambig_dict)))
         try:
             main_ref = Ref(main_str)
-            main_tc = _tc_cache.get(main_str, TextChunkFactory.make(main_str, main_ref))
+            main_tc = TextChunkFactory.make(main_str, main_ref)
             for quoted_tref in tref_list:
                 quoted_oref = Ref(quoted_tref)
-                quoted_tc = _tc_cache.get(quoted_tref, TextChunkFactory.make(quoted_tref, quoted_oref))
+                quoted_tc = TextChunkFactory.make(quoted_tref, quoted_oref)
                 temp_good, temp_bad = disambiguate_one(ld, main_ref, main_tc, quoted_oref, quoted_tc)
                 good += temp_good
                 bad += temp_bad
@@ -516,7 +519,7 @@ def delete_irrelevant_disambiguator_links(dryrun=True):
         source_oref = Ref(source_tref)
         quoted_oref= Ref(quoted_tref)
         if quoted_oref.primary_category != 'Talmud': continue
-        source_tc = _tc_cache.get(source_tref, TextChunkFactory.make(source_tref, source_oref))
+        source_tc = TextChunkFactory.make(source_tref, source_oref)
         if len(source_tc.text) == 0 or isinstance(source_tc.text, list):
             snippets = None
         else:
