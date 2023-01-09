@@ -18,7 +18,9 @@ from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevens
 from sources.functions import post_text, post_link
 
 LOWEST_SCORE = -28
-ROOT = "research/link_disambiguator"
+DATA_DIR = "data"
+
+
 def argmax(iterable, n=1):
     if n==1:
         return [max(enumerate(iterable), key=lambda x: x[1])[0]]
@@ -39,7 +41,7 @@ class Link_Disambiguator:
         self.levenshtein = WeightedLevenshtein()
         self.matcher = None
         try:
-            with codecs.open(ROOT + "/word_counts.json", "rb", encoding="utf8") as fin:
+            with codecs.open(DATA_DIR + "/word_counts.json", "rb", encoding="utf8") as fin:
                 self.word_counts = json.load(fin)
         except IOError:
             self.word_counts = {}
@@ -139,7 +141,7 @@ class Link_Disambiguator:
         print("Actual num ambiguous {}".format(actual_num))
         print("Num keys {}".format(len(segment_map)))
         objStr = json.dumps(segment_map, indent=2, ensure_ascii=False)
-        with open(ROOT + '/ambiguous_segments.json', "w") as f:
+        with open(DATA_DIR + '/ambiguous_segments.json', "w") as f:
             f.write(objStr)
 
     def disambiguate_segment_by_snippet(self, main_tref, tref_list, lowest_score_threshold=LOWEST_SCORE, max_words_between=1, min_words_in_match=3, ngram_size=3, verbose=False, with_match_text=False):
@@ -209,7 +211,7 @@ def disambiguate_all():
     #ld.find_indexes_with_ambiguous_links()
     #ld.get_ambiguous_segments()
 
-    ambig_dict = json.load(open(ROOT + "/ambiguous_segments.json",'r'))
+    ambig_dict = json.load(open(DATA_DIR + "/ambiguous_segments.json",'r'))
     good = []
     bad = []
     def make_tc(tref, oref):
@@ -219,8 +221,8 @@ def disambiguate_all():
         if len(_tc_cache) > 5000:
             _tc_cache = {}
         return tc
-    fgood = open(ROOT +'/unambiguous_links.csv', 'wb')
-    fbad = open(ROOT + '/still_ambiguous_links.csv', 'wb')
+    fgood = open(DATA_DIR +'/unambiguous_links.csv', 'wb')
+    fbad = open(DATA_DIR + '/still_ambiguous_links.csv', 'wb')
     csv_good = unicodecsv.DictWriter(fgood, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
     csv_good.writeheader()
     csv_bad = unicodecsv.DictWriter(fbad, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
@@ -371,7 +373,7 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
 
 
 def get_qa_csv():
-    with open(ROOT +"/unambiguous_links.json", "rb") as fin:
+    with open(DATA_DIR +"/unambiguous_links.json", "rb") as fin:
         cin = unicodecsv.DictReader(fin)
         rows = [row for row in cin]
     def normalize(s):
@@ -388,14 +390,14 @@ def get_qa_csv():
         }
         for x in (tanakh + talmud)]
 
-    with open(ROOT +"/QA Section Links.csv", "wb") as fout:
+    with open(DATA_DIR +"/QA Section Links.csv", "wb") as fout:
         csv = unicodecsv.DictWriter(fout, ["Source Text", "Found Text", "URL", "Wrong segment (seg) / Wrong link (link)"])
         csv.writeheader()
         csv.writerows(qa_rows)
 
 
 def filter_books_from_output(books, cats):
-    with open(ROOT + "/still_ambiguous_links.json", "rb") as fin:
+    with open(DATA_DIR + "/still_ambiguous_links.json", "rb") as fin:
         cin = unicodecsv.DictReader(fin)
         out_rows = []
         for row in cin:
@@ -415,7 +417,7 @@ def filter_books_from_output(books, cats):
     out_rows.sort(key=lambda x: x['id'])
     for r in out_rows:
         del r['id']
-    with open(ROOT + "/qa_books.csv", "wb") as fout:
+    with open(DATA_DIR + "/qa_books.csv", "wb") as fout:
         cout = unicodecsv.DictWriter(fout, ["Quoting Book", "Quoting Ref", "Quoted Book", "Quoted Ref", "Snippet"])
         cout.writeheader()
         cout.writerows(out_rows)
@@ -429,7 +431,7 @@ def count_words():
     for ii, i in enumerate(index_set):
         print("{}/{}".format(ii, len(index_set)))
         count_words_map(i)
-    with codecs.open(ROOT + '/word_counts.json', 'wb', encoding='utf8') as fout:
+    with codecs.open(DATA_DIR + '/word_counts.json', 'wb', encoding='utf8') as fout:
         json.dump(word_counter, fout)
 
 
@@ -449,7 +451,7 @@ def count_words_map(index):
 
 def post_unambiguous_links(post=False):
     links = []
-    with open(ROOT + "/unambiguous_links.csv", "r") as fin:
+    with open(DATA_DIR + "/unambiguous_links.csv", "r") as fin:
         cin = csv.DictReader(fin)
         for row in cin:
             link = {"generated_by": "link_disambiguator", "auto": True,
@@ -518,7 +520,7 @@ def delete_irrelevant_disambiguator_links(dryrun=True):
         if snippets is None:
             irrelevant_links += [{"ID": link._id, "Source": source_tref, "Quoted": quoted_tref, "Source Text": normalize(source_tc.ja().flatten_to_string())}]
 
-    with open(ROOT + '/irrelevant_links.csv', 'w') as fout:
+    with open(DATA_DIR + '/irrelevant_links.csv', 'w') as fout:
         c = csv.DictWriter(fout, ['ID', 'Source', 'Quoted', 'Source Text'])
         c.writeheader()
         c.writerows(irrelevant_links)
