@@ -1,67 +1,43 @@
-import codecs
-import json
 import pytest
 import django
 django.setup()
+import json
 from sefaria.model import *
-from .main import *
-# {'quote': Ref('Yevamot 91a'), 'main': Ref('Maharam on Yevamot 88b:1')}
-# {'quote': Ref('Yevamot 91a'), 'main': Ref('Maharam on Yevamot 88b:1')}
-# {'quote': Ref('Zevachim 9b'), 'main': Ref('Commentary on Sefer Hamitzvot of Rasag, Positive Commandments 136:3')}
-# {'quote': Ref('Nedarim 46a'), 'main': Ref('Rashba on Bava Kamma 108b:9')}
-# {'quote': Ref('Ketubot 35b:4'), 'main': Ref('Gur Aryeh on Devarim 23:4:1')}
-# {'quote': Ref('Bava Metzia 23a:15'), 'main': Ref('Chiddushei Ramban on Bava Metzia 21a:1')}
+from .main import disambiguate_one, CitationDisambiguator
+
 
 def get_input_output():
+    input_trefs = [
+        ("Shemirat HaLashon, Book I, The Gate of Torah 4:25", "Shevuot 39a:22", True),
+        ("Commentary on Sefer Hamitzvot of Rasag, Positive Commandments 136:4", "Horayot 5a:1", False),
+    ]
     input_output = []
-    with codecs.open("test_good_links.json", "rb", encoding="utf8") as fin:
-        jin = json.load(fin)
-        for item in jin:
-            main = Ref(item[0])
-            quote = Ref(item[1])
-            input_output += [{
-                "in": {
-                    "main": main,
-                    "quote": quote.section_ref()
-                },
-                "out": {
-                    "main": main,
-                    "quote": quote
-                }
-            }]
-    with codecs.open("test_bad_links.json", "rb", encoding="utf8") as fin:
-        jin = json.load(fin)
-        for item in jin:
-            main = Ref(item[0])
-            quote = Ref(item[1])
-            input_output += [{
-                "in": {
-                    "main": main,
-                    "quote": quote
-                },
-                "out": {
-                    "main": main
-                }
-            }]
+    for main_tref, quote_tref, is_good in input_trefs:
+        main_oref = Ref(main_tref)
+        quote_oref = Ref(quote_tref)
+        input_output += [{
+            "in": {
+                "main": main_oref,
+                "quote": quote_oref.section_ref()
+            },
+            "out": {
+                "main": main_oref,
+                "quote": quote_oref if is_good else None
+            }
+        }]
     return input_output
 
 
-@pytest.mark.parametrize('test_items', get_input_output())
-def test_link_disambiguator(test_items):
+@pytest.mark.parametrize('test_item', get_input_output())
+def test_link_disambiguator(test_item):
 
     ld = CitationDisambiguator()
-    good, bad = disambiguate_one(ld, test_items["in"]["main"], test_items["in"]["main"].text('he'), test_items["in"]["quote"], test_items["in"]["quote"].text('he'))
-    print(test_items["in"])
-    if "quote" not in test_items["out"]:
+    good, bad = disambiguate_one(ld, test_item["in"]["main"], test_item["in"]["main"].text('he'), test_item["in"]["quote"], test_item["in"]["quote"].text('he'))
+    if test_item["out"]["quote"] is None:
         # output should be bad
         assert good == []
-        assert bad == [] or bad[0]['Quoting Ref'] == test_items["out"]["main"].normal()
+        assert bad == [] or bad[0]['Quoting Ref'] == test_item["out"]["main"].normal()
     else:
         # output is good
-        assert good[0]['Quoted Ref'] == test_items["out"]["quote"].normal()
+        assert good[0]['Quoted Ref'] == test_item["out"]["quote"].normal()
         assert bad == []
-
-
-
-# Makkot 10b:3 --> 4
-# Yevamot 91a:13 --> 12

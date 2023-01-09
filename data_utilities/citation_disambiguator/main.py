@@ -338,7 +338,7 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     if len(source_tc.text) == 0 or not isinstance(source_tc.text, str):
         print(source_tc._oref)
     source_text = re.sub(r"<[^>]+>", "", strip_cantillation(source_tc.text, strip_vowels=True))
-    linkified = library._wrap_all_refs_in_string(title_nodes, reg, source_text, "he")
+    linkified = library.get_wrapped_refs_string(source_text, "he", citing_only=False, reg=reg, title_nodes=title_nodes)
 
     snippets = []
     found_normal = found.normal()
