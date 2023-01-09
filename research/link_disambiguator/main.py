@@ -392,7 +392,7 @@ def get_qa_csv():
         }
         for x in (tanakh + talmud)]
 
-    with open(DATA_DIR +"/QA Section Links.csv", "w") as fout:
+    with open(DATA_DIR + "/QA Section Links.csv", "w") as fout:
         cin = csv.DictWriter(fout, ["Source Text", "Found Text", "URL", "Wrong segment (seg) / Wrong link (link)"])
         cin.writeheader()
         cin.writerows(qa_rows)
