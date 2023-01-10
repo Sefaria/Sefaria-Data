@@ -41,6 +41,10 @@ def test_tokenizer(citation_disambiguator, input_string, output_tokens):
     ("Shemirat HaLashon, Book I, The Gate of Torah 4:25", "Shevuot 39a:22", True, None),
     ("Commentary on Sefer Hamitzvot of Rasag, Positive Commandments 136:4", "Horayot 5a:1", False, None),
     ("Zohar, Vayishlach 26:254", "Zephaniah 3:9", True, "Torat Emet"),
+    ("Zohar, Idra Rabba 27:194", "Song of Songs 5:15", True, "Torat Emet"),
+    ("Zohar, Pinchas 10:50", "Amos 2:6", True, "Torat Emet"),
+    ("Zohar, Mishpatim 28:568", "Deuteronomy 14:3", True, "Torat Emet"),
+    ("Zohar, Vayechi 59:579", "Isaiah 63", False, "Torat Emet"),
 ], indirect=True)
 def test_citation_disambiguator(input_output, citation_disambiguator):
     input, output, vtitle = input_output
