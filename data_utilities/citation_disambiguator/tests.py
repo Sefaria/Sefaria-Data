@@ -27,6 +27,15 @@ def input_output(request):
     )
 
 
+@pytest.mark.parametrize(['input_string', 'output_tokens'], [
+    ('שלום', ['שלום']),
+    ('יי', ['\u05d9\u05d4\u05d5\u05d4']),
+])
+def test_tokenizer(citation_disambiguator, input_string, output_tokens):
+    test_tokens = citation_disambiguator.tokenize_words(input_string)
+    assert test_tokens == output_tokens
+
+
 @pytest.mark.parametrize('input_output', [
     ("Shemirat HaLashon, Book I, The Gate of Torah 4:25", "Shevuot 39a:22", True),
     ("Commentary on Sefer Hamitzvot of Rasag, Positive Commandments 136:4", "Horayot 5a:1", False),
