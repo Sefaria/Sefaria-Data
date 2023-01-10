@@ -169,7 +169,7 @@ class CitationDisambiguator:
         csv_good.writeheader()
         csv_bad = csv.DictWriter(fbad, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
         csv_bad.writeheader()
-        for iambig, (main_str, quoted_orefs) in tqdm(enumerate(self.segments_to_disambiguate.items())):
+        for iambig, (main_str, quoted_orefs) in tqdm(enumerate(self.segments_to_disambiguate.items()), total=len(self.segments_to_disambiguate), desc="disambiguate all"):
             try:
                 main_ref = Ref(main_str)
                 main_tc = TextChunkFactory.make(main_str, main_ref)
