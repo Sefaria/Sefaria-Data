@@ -691,7 +691,7 @@ class ParallelMatcher:
             matches_by_books_and_end_loc[key] += [m]
         new_matches = []
         for m_list in matches_by_books_and_end_loc.values():
-            m_list.sort(key=lambda x: (x.a.location[1] - x.a.location[0]) + (x.b.location[1] - x.b.location[0]))
+            m_list.sort(key=lambda x: (x.score or 0.0001) / ((x.a.location[1] - x.a.location[0]) + (x.b.location[1] - x.b.location[0])))
             new_matches += [m_list[-1]]
         return new_matches
 
