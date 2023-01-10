@@ -32,13 +32,13 @@ class TextChunkFactory:
     _tc_cache = {}
 
     @classmethod
-    def make(cls, tref, oref):
+    def make(cls, tref, oref, version_title=None):
         if tref is None:
             tref = oref.normal()
         if tref in cls._tc_cache:
             return cls._tc_cache[tref]
 
-        tc = oref.text('he')
+        tc = oref.text('he', vtitle=version_title)
         cls._tc_cache[tref] = tc
         if len(cls._tc_cache) > 5000:
             cls._tc_cache = {}
@@ -66,8 +66,9 @@ class CitationDisambiguator:
                   "לר'", 'ברב', 'ברבי', "בר'", 'הא', 'בהא', 'הך', 'בהך', 'ליה', 'צריכי', 'צריכא', 'וצריכי',
                   'וצריכא', 'הלל', 'שמאי', "וגו'", 'וגו׳', 'וגו']
 
-    def __init__(self, title=None):
+    def __init__(self, title=None, version_title=None):
         self.title = title
+        self.version_title = version_title
         self.levenshtein = WeightedLevenshtein()
         self.matcher = None
         # self.normalizer = NormalizerComposer(step_keys=['cantillation', 'html', 'parens-plus-contents', 'maqaf', 'kri-ktiv', 'hasehm', 'elokim'])
@@ -172,7 +173,7 @@ class CitationDisambiguator:
         for iambig, (main_str, quoted_orefs) in tqdm(enumerate(self.segments_to_disambiguate.items()), total=len(self.segments_to_disambiguate), desc="disambiguate all"):
             try:
                 main_ref = Ref(main_str)
-                main_tc = TextChunkFactory.make(main_str, main_ref)
+                main_tc = TextChunkFactory.make(main_str, main_ref, self.version_title)
                 for quoted_oref in quoted_orefs:
                     temp_good, temp_bad = self.disambiguate_one(main_ref, main_tc, quoted_oref)
                     good += temp_good
@@ -270,6 +271,37 @@ class CitationDisambiguator:
             final_result_dict[parallel_item_key] = result
         return final_result_dict
 
+    def delete_irrelevant_disambiguator_links(self, dryrun=True):
+        """
+        After a while, disambiguator links can break if segmentation changes
+        Check that for each existing disambiguator link, there still exists an inline citation to back it
+        """
+        def normalize(s):
+            return re.sub(r"<[^>]+>", "", strip_cantillation(s, strip_vowels=True))
+        irrelevant_links = []
+        ls = LinkSet({"generated_by": "link_disambiguator", "auto": True})
+        for link in tqdm(ls, total=ls.count()):
+            source_tref, quoted_tref = link.refs if Ref(link.refs[1]).primary_category == 'Talmud' else reversed(link.refs)
+            source_oref = Ref(source_tref)
+            quoted_oref= Ref(quoted_tref)
+            if quoted_oref.primary_category != 'Talmud': continue
+            source_tc = TextChunkFactory.make(source_tref, source_oref, self.version_title)
+            if len(source_tc.text) == 0 or isinstance(source_tc.text, list):
+                snippets = None
+            else:
+                snippets = get_snippet_by_seg_ref(source_tc, quoted_oref.section_ref(), must_find_snippet=True)
+            if snippets is None:
+                irrelevant_links += [{"ID": link._id, "Source": source_tref, "Quoted": quoted_tref, "Source Text": normalize(source_tc.ja().flatten_to_string())}]
+
+        with open(DATA_DIR + '/irrelevant_links.csv', 'w') as fout:
+            c = csv.DictWriter(fout, ['ID', 'Source', 'Quoted', 'Source Text'])
+            c.writeheader()
+            c.writerows(irrelevant_links)
+        if not dryrun:
+            from sefaria.system.database import db
+            from pymongo import DeleteOne
+            db.links.bulk_write([DeleteOne({"_id": _id}) for _id in irrelevant_links])
+
 
 def get_snippet_from_mesorah_item(mesorah_item, pm):
     words = pm.word_list_map[mesorah_item.mesechta]
@@ -360,6 +392,7 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
         return [source_text]
 
     return snippets
+
 
 
 def get_qa_csv():
@@ -485,36 +518,6 @@ def calc_stats():
         json.dump({"books": books, "cats": cats}, fout, ensure_ascii=False, indent=2)
         
 
-def delete_irrelevant_disambiguator_links(dryrun=True):
-    """
-    After a while, disambiguator links can break if segmentation changes
-    Check that for each existing disambiguator link, there still exists an inline citation to back it
-    """
-    def normalize(s):
-        return re.sub(r"<[^>]+>", "", strip_cantillation(s, strip_vowels=True))
-    irrelevant_links = []
-    ls = LinkSet({"generated_by": "link_disambiguator", "auto": True})
-    for link in tqdm(ls, total=ls.count()):
-        source_tref, quoted_tref = link.refs if Ref(link.refs[1]).primary_category == 'Talmud' else reversed(link.refs)
-        source_oref = Ref(source_tref)
-        quoted_oref= Ref(quoted_tref)
-        if quoted_oref.primary_category != 'Talmud': continue
-        source_tc = TextChunkFactory.make(source_tref, source_oref)
-        if len(source_tc.text) == 0 or isinstance(source_tc.text, list):
-            snippets = None
-        else:
-            snippets = get_snippet_by_seg_ref(source_tc, quoted_oref.section_ref(), must_find_snippet=True)
-        if snippets is None:
-            irrelevant_links += [{"ID": link._id, "Source": source_tref, "Quoted": quoted_tref, "Source Text": normalize(source_tc.ja().flatten_to_string())}]
-
-    with open(DATA_DIR + '/irrelevant_links.csv', 'w') as fout:
-        c = csv.DictWriter(fout, ['ID', 'Source', 'Quoted', 'Source Text'])
-        c.writeheader()
-        c.writerows(irrelevant_links)
-    if not dryrun:    
-        from sefaria.system.database import db
-        from pymongo import DeleteOne
-        db.links.bulk_write([DeleteOne({"_id": _id}) for _id in irrelevant_links])
 
 
 def get_args():
@@ -523,6 +526,7 @@ def get_args():
     parser.add_argument('-c', '--force-word-count', action='store_true', dest="force_word_count", help="Force a word count")
     parser.add_argument('-d', '--delete-old-links', action='store_true', dest="delete_old_links", help="Delete old link disambiguator links")
     parser.add_argument('-t', '--title', dest='title', help='Optional title. If passed, will only disambiguate citations in title. Otherwise, disambiguates on all texts.')
+    parser.add_argument('--version-title', dest='version_title')
     return parser.parse_args()
 
 
@@ -533,7 +537,7 @@ def run():
         print("No title passed. Disambiguating all citations throughout the library. Sit tight...")
     if args.delete_old_links:
         delete_irrelevant_disambiguator_links(False)
-    cd = CitationDisambiguator(args.title)
+    cd = CitationDisambiguator(args.title, args.version_title)
     cd.disambiguate_all()
     # get_qa_csv()
     # post_unambiguous_links(post=True)
