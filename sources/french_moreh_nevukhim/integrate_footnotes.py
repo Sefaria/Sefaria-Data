@@ -69,6 +69,8 @@ def fix_part_1():
                     ft_index += 1
                     match = re.search(pattern, row[2])
 
+                row[2] = row[2].replace('<italic>', '<i>')
+                row[2] = row[2].replace('</italic>', '</i>')
                 print(row[2])
                 writer.writerow(row)
                 print('###################')
@@ -122,8 +124,8 @@ def fix_part_2():
                         ft_index += 1
                     match = re.search(pattern, row[2])
 
-
-
+                row[2] = row[2].replace('<italic>', '<i>')
+                row[2] = row[2].replace('</italic>', '</i>')
                 print(row[2])
                 writer.writerow(row)
                 print('###################')
@@ -169,6 +171,8 @@ def fix_part_3():
                     ft_index += 1
                     match = re.search(pattern, row[2])
 
+                row[2] = row[2].replace('<italic>', '<i>')
+                row[2] = row[2].replace('</italic>', '</i>')
                 print(row[2])
                 writer.writerow(row)
                 print('###################')
