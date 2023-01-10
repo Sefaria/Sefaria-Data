@@ -2,7 +2,7 @@ import pytest
 import django
 django.setup()
 from sefaria.model import *
-from .main import disambiguate_one, CitationDisambiguator
+from .main import CitationDisambiguator
 
 
 @pytest.fixture(scope="module")
@@ -29,8 +29,8 @@ def input_output(request):
 def test_citation_disambiguator(input_output):
     input, output = input_output
 
-    ld = CitationDisambiguator()
-    good, bad = disambiguate_one(ld, input["main"], input["main"].text('he'), input["quote"], input["quote"].text('he'))
+    ld = CitationDisambiguator("he")
+    good, bad = ld.disambiguate_one(input["main"], input["main"].text('he'), input["quote"])
     if output["quote"] is None:
         # output should be bad
         assert good == []

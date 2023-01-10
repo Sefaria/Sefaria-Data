@@ -66,19 +66,20 @@ class CitationDisambiguator:
                   "לר'", 'ברב', 'ברבי', "בר'", 'הא', 'בהא', 'הך', 'בהך', 'ליה', 'צריכי', 'צריכא', 'וצריכי',
                   'וצריכא', 'הלל', 'שמאי', "וגו'", 'וגו׳', 'וגו']
 
-    def __init__(self, title=None, version_title=None):
+    def __init__(self, lang, title=None, version_title=None):
         self.title = title
         self.version_title = version_title
         self.levenshtein = WeightedLevenshtein()
         self.matcher = None
         # self.normalizer = NormalizerComposer(step_keys=['cantillation', 'html', 'parens-plus-contents', 'maqaf', 'kri-ktiv', 'hasehm', 'elokim'])
         try:
-            with open(DATA_DIR + "/word_counts.json", "r") as fin:
+            print("Loading word counts...")
+            with open(DATA_DIR + f"/word_counts_{lang}.json", "r") as fin:
                 self.word_counts = json.load(fin)
         except IOError:
-            self.word_counts = {}
+            raise Exception("Couldn't find word counts file. Please run count_words().")
 
-        self.segments_to_disambiguate: Dict[str, List[Ref]] = self.get_ambiguous_segments(self.title)
+        self.segments_to_disambiguate: Dict[str, List[Ref]] = []
 
     @staticmethod
     def tokenize_words(base_str):
@@ -133,8 +134,7 @@ class CitationDisambiguator:
         else:
             return -ComputeLevenshteinDistanceByWord(" ".join(words_a), " ".join(words_b)) + lazy_tfidf
 
-    @staticmethod
-    def get_ambiguous_segments(title):
+    def get_ambiguous_segments(self):
         tanakh_books = library.get_indexes_in_corpus("Tanakh")
         talmud_books = library.get_indexes_in_corpus("Bavli")
         tan_tal_books = set(tanakh_books + talmud_books)
@@ -148,7 +148,7 @@ class CitationDisambiguator:
             try:
                 orefs = [Ref(tref) for tref in link.refs]
                 quoter_oref, quoted_oref = orefs if orefs[1].index.title in tan_tal_books else reversed(orefs)
-                if title and quoter_oref.index.title != title:
+                if self.title and quoter_oref.index.title != self.title:
                     continue
                 segment_map[quoter_oref.normal()] += [quoted_oref]
                 total += 1
@@ -535,9 +535,10 @@ def run():
     count_words(args.lang, args.force_word_count)
     if not args.title:
         print("No title passed. Disambiguating all citations throughout the library. Sit tight...")
+    cd = CitationDisambiguator(args.lang, args.title, args.version_title)
     if args.delete_old_links:
-        delete_irrelevant_disambiguator_links(False)
-    cd = CitationDisambiguator(args.title, args.version_title)
+        cd.delete_irrelevant_disambiguator_links(False)
+    cd.get_ambiguous_segments()
     cd.disambiguate_all()
     # get_qa_csv()
     # post_unambiguous_links(post=True)
