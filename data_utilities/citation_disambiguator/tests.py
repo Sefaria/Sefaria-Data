@@ -12,7 +12,7 @@ def citation_disambiguator():
 
 @pytest.fixture(scope="module")
 def input_output(request):
-    main_tref, quote_tref, is_good = request.param
+    main_tref, quote_tref, is_good, vtitle = request.param
     main_oref = Ref(main_tref)
     quote_oref = Ref(quote_tref)
     return (
@@ -23,7 +23,8 @@ def input_output(request):
         {
             "main": main_oref,
             "quote": quote_oref if is_good else None
-        }
+        },
+        vtitle
     )
 
 
@@ -37,13 +38,15 @@ def test_tokenizer(citation_disambiguator, input_string, output_tokens):
 
 
 @pytest.mark.parametrize('input_output', [
-    ("Shemirat HaLashon, Book I, The Gate of Torah 4:25", "Shevuot 39a:22", True),
-    ("Commentary on Sefer Hamitzvot of Rasag, Positive Commandments 136:4", "Horayot 5a:1", False),
+    ("Shemirat HaLashon, Book I, The Gate of Torah 4:25", "Shevuot 39a:22", True, None),
+    ("Commentary on Sefer Hamitzvot of Rasag, Positive Commandments 136:4", "Horayot 5a:1", False, None),
+    ("Zohar, Vayishlach 26:254", "Zephaniah 3:9", True, "Torat Emet"),
 ], indirect=True)
 def test_citation_disambiguator(input_output, citation_disambiguator):
-    input, output = input_output
+    input, output, vtitle = input_output
 
-    good, bad = citation_disambiguator.disambiguate_one(input["main"], input["main"].text('he'), input["quote"])
+    main_tc = input["main"].text('he', vtitle=vtitle)
+    good, bad = citation_disambiguator.disambiguate_one(input["main"], main_tc, input["quote"])
     if output["quote"] is None:
         # output should be bad
         assert good == []
