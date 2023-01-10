@@ -121,25 +121,6 @@ class CitationDisambiguator:
         else:
             return -ComputeLevenshteinDistanceByWord(" ".join(words_a), " ".join(words_b)) + lazy_tfidf
 
-    def find_indexes_with_ambiguous_links(self):
-        tanakh_books = library.get_indexes_in_category("Tanakh")
-        query = {
-            "refs": re.compile(r'^({}) \d+$'.format('|'.join(tanakh_books)))
-        }
-        linkset = LinkSet(query)
-        index_dict = defaultdict(int)
-        for l in linkset:
-            try:
-                index_dict[Ref(l.refs[0]).index.title] += 1
-            except PartialRefInputError:
-                pass
-            except InputError:
-                pass
-
-        items = sorted(list(index_dict.items()), key=lambda x: x[1])
-        for i in items:
-            print(i)
-
     @staticmethod
     def get_ambiguous_segments():
         tanakh_books = library.get_indexes_in_corpus("Tanakh")
@@ -229,7 +210,6 @@ def save_disambiguated_to_file(good, bad, csv_good, csv_bad):
 
 def disambiguate_all():
     ld = CitationDisambiguator()
-    #ld.find_indexes_with_ambiguous_links()
     #ld.get_ambiguous_segments()
 
     ambig_dict = json.load(open(DATA_DIR + "/ambiguous_segments.json",'r'))
