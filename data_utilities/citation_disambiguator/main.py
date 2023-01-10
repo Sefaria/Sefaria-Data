@@ -79,7 +79,7 @@ class CitationDisambiguator:
         except IOError:
             raise Exception("Couldn't find word counts file. Please run count_words().")
 
-        self.segments_to_disambiguate: Dict[str, List[Ref]] = []
+        self.segments_to_disambiguate: Dict[str, List[Ref]] = None
 
     @staticmethod
     def tokenize_words(base_str):
@@ -159,7 +159,7 @@ class CitationDisambiguator:
         print(f"Total num ambiguous {total}")
         print(f"Num unique refs with ambiguous citations {len(segment_map.keys())}")
 
-        return segment_map
+        self.segments_to_disambiguate = segment_map
 
     def disambiguate_all(self):
         good = []
@@ -221,7 +221,7 @@ class CitationDisambiguator:
                         good += [temp]
         return good, bad
 
-    def disambiguate_segment_by_snippet(self, main_tref, tref_list, lowest_score_threshold=LOWEST_SCORE, max_words_between=1, min_words_in_match=3, ngram_size=3, verbose=False, with_match_text=False):
+    def disambiguate_segment_by_snippet(self, main_tref, tref_list, lowest_score_threshold=LOWEST_SCORE, max_words_between=1, min_words_in_match=2, ngram_size=3, verbose=False, with_match_text=False):
         """
 
         :param main_tref: Must be a text ref
