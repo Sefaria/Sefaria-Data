@@ -136,20 +136,19 @@ class CitationDisambiguator:
             "refs": re.compile(r'^({}) \d+[ab]?$'.format('|'.join(tanakh_books + talmud_books)))
         }
         linkset = LinkSet(query)
-        print("Num ambiguous {}".format(linkset.count()))
         segment_map = defaultdict(list)
-        actual_num = 0
-        for link in linkset:
-            quoter, quoted = link.refs if Ref(link.refs[1]).index.title in tan_tal_books else reversed(link.refs)
+        total = 0
+        for link in tqdm(linkset, total=linkset.count(), desc="validate ambiguous refs"):
             try:
+                quoter, quoted = link.refs if Ref(link.refs[1]).index.title in tan_tal_books else reversed(link.refs)
                 segment_map[Ref(quoter).normal()] += [Ref(quoted).normal()]
-                actual_num += 1
+                total += 1
             except PartialRefInputError:
                 pass
             except InputError:
                 pass
-        print("Actual num ambiguous {}".format(actual_num))
-        print("Num keys {}".format(len(segment_map)))
+        print(f"Total num ambiguous {total}")
+        print(f"Num unique refs with ambiguous citations {len(segment_map.keys())}")
         with open(DATA_DIR + '/ambiguous_segments.json', "w") as fout:
             json.dump(segment_map, fout, indent=2, ensure_ascii=False)
 
@@ -425,6 +424,9 @@ def filter_books_from_output(books, cats):
 
 
 def count_words(lang, force):
+    if lang is None:
+        raise Exception("Error: No language passed. Use -l to specify a language")
+
     file_path = DATA_DIR + f'/word_counts_{lang}.json'
     if not force:
         if os.path.exists(file_path):
