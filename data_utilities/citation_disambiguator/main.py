@@ -10,6 +10,7 @@ import re, json, heapq, random, regex, math, cProfile, pstats, csv
 import django
 django.setup()
 from sefaria.model import *
+from sefaria.helper.normalization import NormalizerComposer, RegexNormalizer, ReplaceNormalizer
 from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
 from collections import defaultdict, OrderedDict
 from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError, DuplicateRecordError
@@ -62,6 +63,7 @@ class CitationDisambiguator:
         self.title = title
         self.levenshtein = WeightedLevenshtein()
         self.matcher = None
+        # self.normalizer = NormalizerComposer(step_keys=['cantillation', 'html', 'parens-plus-contents', 'maqaf', 'kri-ktiv', 'hasehm', 'elokim'])
         try:
             with open(DATA_DIR + "/word_counts.json", "r") as fin:
                 self.word_counts = json.load(fin)
