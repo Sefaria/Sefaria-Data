@@ -1,7 +1,6 @@
 import pytest
 import django
 django.setup()
-import json
 from sefaria.model import *
 from .main import disambiguate_one, CitationDisambiguator
 
