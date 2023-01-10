@@ -132,74 +132,6 @@ class CitationDisambiguator:
         else:
             return -ComputeLevenshteinDistanceByWord(" ".join(words_a), " ".join(words_b)) + lazy_tfidf
 
-    def disambiguate_all(self):
-        good = []
-        bad = []
-        fgood = open(DATA_DIR +'/unambiguous_links.csv', 'w')
-        fbad = open(DATA_DIR + '/still_ambiguous_links.csv', 'w')
-        csv_good = csv.DictWriter(fgood, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
-        csv_good.writeheader()
-        csv_bad = csv.DictWriter(fbad, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
-        csv_bad.writeheader()
-        for iambig, (main_str, quoted_orefs) in tqdm(enumerate(self.segments_to_disambiguate.items())):
-            try:
-                main_ref = Ref(main_str)
-                main_tc = TextChunkFactory.make(main_str, main_ref)
-                for quoted_oref in quoted_orefs:
-                    quoted_tc = TextChunkFactory.make(None, quoted_oref)
-                    temp_good, temp_bad = self.disambiguate_one(main_ref, main_tc, quoted_oref, quoted_tc)
-                    good += temp_good
-                    bad += temp_bad
-                    if len(good) + len(bad) > 1000:
-                        save_disambiguated_to_file(good, bad, csv_good, csv_bad)
-                        good = []
-                        bad = []
-            except PartialRefInputError:
-                pass
-            except InputError as e:
-                traceback.print_exc(file=sys.stdout)
-                pass
-            except TypeError as e:
-                traceback.print_exc(file=sys.stdout)
-                pass
-        save_disambiguated_to_file(good, bad, csv_good, csv_bad)
-        fgood.close()
-        fbad.close()
-
-    def disambiguate_one(self, main_oref, main_tc, quoted_oref, quoted_tc):
-        good, bad = [], []
-        try:
-            main_snippet_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
-        except InputError:
-            return good, bad
-        except UnicodeEncodeError:
-            return good, bad
-        if main_snippet_list:
-            for isnip, main_snippet in enumerate(main_snippet_list):
-                quoted_tref = quoted_oref.normal()
-                # if is_ref_to_daf and quoted_tref[-1] == "a":
-                #     quoted_tref += "-b"  # make ref to full daf
-                #     quoted_tref = Ref(quoted_tref).normal()  # renormalize
-                results = self.disambiguate_segment_by_snippet(quoted_tref, [(main_snippet, main_oref.normal())])
-                temp_good, temp_bad = [], []
-                for k, v in list(results.items()):
-                    is_bad = v is None
-                    temp = {
-                        "Quote Num": isnip,
-                        "Snippet": main_snippet,
-                        "Quoted Ref": v["A Ref"] if not is_bad else quoted_oref.normal(),
-                        "Quoting Ref": v["B Ref"] if not is_bad else k,
-                        "Score": v["Score"] if not is_bad else LOWEST_SCORE
-                    }
-                    # if is_ref_to_daf:
-                    #     print("ref to daf!")
-                    #     print(temp)
-                    if is_bad:
-                        bad += [temp]
-                    else:
-                        good += [temp]
-        return good, bad
-
     @staticmethod
     def get_ambiguous_segments(title):
         tanakh_books = library.get_indexes_in_corpus("Tanakh")
@@ -227,6 +159,66 @@ class CitationDisambiguator:
         print(f"Num unique refs with ambiguous citations {len(segment_map.keys())}")
 
         return segment_map
+
+    def disambiguate_all(self):
+        good = []
+        bad = []
+        fgood = open(DATA_DIR +'/unambiguous_links.csv', 'w')
+        fbad = open(DATA_DIR + '/still_ambiguous_links.csv', 'w')
+        csv_good = csv.DictWriter(fgood, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
+        csv_good.writeheader()
+        csv_bad = csv.DictWriter(fbad, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
+        csv_bad.writeheader()
+        for iambig, (main_str, quoted_orefs) in tqdm(enumerate(self.segments_to_disambiguate.items())):
+            try:
+                main_ref = Ref(main_str)
+                main_tc = TextChunkFactory.make(main_str, main_ref)
+                for quoted_oref in quoted_orefs:
+                    temp_good, temp_bad = self.disambiguate_one(main_ref, main_tc, quoted_oref)
+                    good += temp_good
+                    bad += temp_bad
+                    if len(good) + len(bad) > 1000:
+                        save_disambiguated_to_file(good, bad, csv_good, csv_bad)
+                        good = []
+                        bad = []
+            except PartialRefInputError:
+                pass
+            except InputError as e:
+                traceback.print_exc(file=sys.stdout)
+                pass
+            except TypeError as e:
+                traceback.print_exc(file=sys.stdout)
+                pass
+        save_disambiguated_to_file(good, bad, csv_good, csv_bad)
+        fgood.close()
+        fbad.close()
+
+    def disambiguate_one(self, main_oref, main_tc, quoted_oref):
+        good, bad = [], []
+        try:
+            main_snippet_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
+        except InputError:
+            return good, bad
+        except UnicodeEncodeError:
+            return good, bad
+        if main_snippet_list:
+            for isnip, main_snippet in enumerate(main_snippet_list):
+                quoted_tref = quoted_oref.normal()
+                results = self.disambiguate_segment_by_snippet(quoted_tref, [(main_snippet, main_oref.normal())])
+                for k, v in list(results.items()):
+                    is_bad = v is None
+                    temp = {
+                        "Quote Num": isnip,
+                        "Snippet": main_snippet,
+                        "Quoted Ref": v["A Ref"] if not is_bad else quoted_oref.normal(),
+                        "Quoting Ref": v["B Ref"] if not is_bad else k,
+                        "Score": v["Score"] if not is_bad else LOWEST_SCORE
+                    }
+                    if is_bad:
+                        bad += [temp]
+                    else:
+                        good += [temp]
+        return good, bad
 
     def disambiguate_segment_by_snippet(self, main_tref, tref_list, lowest_score_threshold=LOWEST_SCORE, max_words_between=1, min_words_in_match=3, ngram_size=3, verbose=False, with_match_text=False):
         """
