@@ -50,6 +50,10 @@ def argmax(iterable, n=1):
 
 
 class CitationDisambiguator:
+    """
+    Currently limited to disambiguating citations to Tanakh and Bavli
+    """
+
     stop_words = ["ר'", 'רב', 'רבי', 'בן', 'בר', 'בריה', 'אמר', 'כאמר', 'וכאמר', 'דאמר', 'ודאמר', 'כדאמר',
                   'וכדאמר', 'ואמר', 'כרב',
                   'ורב', 'כדרב', 'דרב', 'ודרב', 'וכדרב', 'כרבי', 'ורבי', 'כדרבי', 'דרבי', 'ודרבי', 'וכדרבי',
