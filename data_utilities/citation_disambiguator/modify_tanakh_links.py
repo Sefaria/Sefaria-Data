@@ -101,11 +101,7 @@ def get_full_version(v):
 def modify_tanakh_links_one(main_ref, section_map, error_file_csv, vtitle):
     try:
         main_tc, main_oref, main_version = get_tc(main_ref, vtitle=vtitle)
-        if main_tc.is_merged:
-            # not really possible but whatevs
-            return
-        # to make it _savable
-        main_tc._saveable = True
+        assert not main_tc.is_merged
         new_main_text = main_tc.text
 
         def find_text_to_remove(s):
