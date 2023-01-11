@@ -33,21 +33,6 @@ def get_tc(tref, vtitle=None, just_ref=False, tries=0):
             raise AutoReconnect("Tried so hard but got so many autoreconnects...")
 
 
-def modify_text(user, oref, versionTitle, language, text, versionSource, tries=0):
-    try:
-        tracker.modify_text(user, oref, versionTitle, language, text, versionSource, method="API", skip_links=False)
-    except UnicodeEncodeError:
-        print("UnicodeEncodeError: {}".format(oref.normal()))
-        pass  # there seems to be unicode error in "/app/sefaria/system/varnish/wrapper.py", line 55
-    except AutoReconnect:
-        if tries < 200:
-            modify_text(user, oref, versionTitle, language, text, versionSource, tries=tries+1)
-        else:
-            raise AutoReconnect("Tried so hard but got so many autoreconnects...")
-    except AssertionError:
-        pass
-
-
 def wrap_chars_with_overlaps(s, chars_to_wrap, get_wrapped_text):
     chars_to_wrap.sort(key=lambda x: (x[0],x[0]-x[1]))
     for i, (start, end, metadata) in enumerate(chars_to_wrap):
@@ -212,75 +197,6 @@ def modify_tanakh_links_all(start=0, end=None, min_num_citation=0):
         tracker.modify_bulk_text(skip_links=True, count_after=False, **func_input)
     error_file.close()
 
-###
-# Deletion damage control
-###
-def get_bad_refs():
-    with open(DATA_DIR + "/unambiguous_links.csv", "r") as fin:
-        cin = csv.DictReader(fin)
-        mapping = defaultdict(lambda: defaultdict(dict))
-        for row in cin:
-            quoted_ref = get_tc(row["Quoted Ref"], just_ref=True)
-            if quoted_ref.primary_category != "Tanakh":
-                continue
-            section_ref = quoted_ref.section_ref().normal()
-            curr_dict = mapping[row["Quoting Ref"]][section_ref]
-            if curr_dict.get(int(row["Quote Num"]), None) is not None and curr_dict.get(int(row["Quote Num"]), None) != quoted_ref:
-                print("{} - {}==={} - {}".format(row["Quoting Ref"], row["Quoted Ref"], curr_dict.get(int(row["Quote Num"]), None),row["Quote Num"]))
-            curr_dict[int(row["Quote Num"])] = quoted_ref
-    out_mapping = {}
-    for k, v in mapping.items():
-        if len(v) >= 2:
-            out_mapping[k] = v
-    return out_mapping
-
-def verify_refs_werent_edited():
-    hist_refs = {h.ref for h in HistorySet()}
-    mapping = get_bad_refs()
-    print(len(mapping))
-    for k in mapping.keys():
-        if k in hist_refs:
-            print(k)
-
-def dump_backed_up_text():
-    from sefaria.settings import MONGO_HOST, MONGO_PORT
-    from pymongo import MongoClient
-    mapping = get_bad_refs()
-    client = MongoClient(MONGO_HOST, MONGO_PORT)
-    db_backup = client.sefaria_test
-    rows = []
-    for main_ref in tqdm(mapping.keys(), total=len(mapping)):
-        main_tc, main_oref, main_version = get_tc(main_ref)
-        backup_version_raw = db_backup.texts.find_one({"title": main_version.title, "versionTitle": main_version.versionTitle, "language": main_version.language})
-        backup_version = Version(backup_version_raw)
-        backup_text = backup_version.sub_content_with_ref(main_oref)
-        rows += [{
-            "Ref": main_ref,
-            "Title": main_version.title,
-            "Version Title": main_version.versionTitle,
-            "Language": main_version.language,
-            "Text": backup_text
-        }]
-    with open(DATA_DIR + '/backup_text.csv', 'w') as fout:
-        c = csv.DictWriter(fout, ['Ref', 'Title', 'Version Title', 'Language', 'Text'])
-        c.writeheader()
-        c.writerows(rows)
-
-def restore_text_from_backup():
-    with open(DATA_DIR + '/backup_text.csv', 'r') as fin:
-        c = list(csv.DictReader(fin))
-        for row in tqdm(c):
-            main_tc, main_oref, main_version = get_tc(row['Ref'])
-            main_tc.text = row['Text']
-            main_tc.save()
-###
-# End deletion damage control
-###
-
 
 if __name__ == "__main__":
     modify_tanakh_links_all(start=0)
-    # verify_refs_werent_edited()
-    # dump_backed_up_text()
-    # restore_text_from_backup()
-# Rashi on Sanhedrin 61b:23:2 defaultdict(<type 'dict'>, {u'Leviticus 5': {0: Ref('Leviticus 5:18')}})
