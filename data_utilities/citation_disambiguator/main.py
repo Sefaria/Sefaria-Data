@@ -166,9 +166,9 @@ class CitationDisambiguator:
         bad = []
         fgood = open(DATA_DIR +'/unambiguous_links.csv', 'w')
         fbad = open(DATA_DIR + '/still_ambiguous_links.csv', 'w')
-        csv_good = csv.DictWriter(fgood, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
+        csv_good = csv.DictWriter(fgood, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet', 'Quoting Version Title'])
         csv_good.writeheader()
-        csv_bad = csv.DictWriter(fbad, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet'])
+        csv_bad = csv.DictWriter(fbad, ['Quoting Ref', 'Quoted Ref', 'Score', 'Quote Num', 'Snippet', 'Quoting Version Title'])
         csv_bad.writeheader()
         for iambig, (main_str, quoted_orefs) in tqdm(enumerate(self.segments_to_disambiguate.items()), total=len(self.segments_to_disambiguate), desc="disambiguate all"):
             try:
@@ -197,7 +197,7 @@ class CitationDisambiguator:
     def disambiguate_one(self, main_oref, main_tc, quoted_oref):
         good, bad = [], []
         try:
-            main_snippet_list = get_snippet_by_seg_ref(main_tc, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
+            main_snippet_list = get_snippet_by_seg_ref(main_tc.text, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
         except InputError:
             return good, bad
         except UnicodeEncodeError:
@@ -211,6 +211,7 @@ class CitationDisambiguator:
                     temp = {
                         "Quote Num": isnip,
                         "Snippet": main_snippet,
+                        "Quoting Version Title": main_tc.vtitle,
                         "Quoted Ref": v["A Ref"] if not is_bad else quoted_oref.normal(),
                         "Quoting Ref": v["B Ref"] if not is_bad else k,
                         "Score": v["Score"] if not is_bad else LOWEST_SCORE
@@ -289,7 +290,7 @@ class CitationDisambiguator:
             if len(source_tc.text) == 0 or isinstance(source_tc.text, list):
                 snippets = None
             else:
-                snippets = get_snippet_by_seg_ref(source_tc, quoted_oref.section_ref(), must_find_snippet=True)
+                snippets = get_snippet_by_seg_ref(source_tc.text, quoted_oref.section_ref(), must_find_snippet=True)
             if snippets is None:
                 irrelevant_links += [{"ID": link._id, "Source": source_tref, "Quoted": quoted_tref, "Source Text": normalize(source_tc.ja().flatten_to_string())}]
 
@@ -313,10 +314,10 @@ def save_disambiguated_to_file(good, bad, csv_good, csv_bad):
     csv_bad.writerows(bad)
 
 
-def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=100, use_indicator_words=False, return_matches=False):
+def get_snippet_by_seg_ref(source_text, found, must_find_snippet=False, snip_size=100, use_indicator_words=False, return_matches=False):
     """
     based off of library.get_wrapped_refs_string
-    :param source:
+    :param source_text:
     :param found:
     :param must_find_snippet: bool, True if you only want to return a str if you found a snippet
     :param snip_size int number of chars in snippet on each side
@@ -343,9 +344,9 @@ def get_snippet_by_seg_ref(source_tc, found, must_find_snippet=False, snip_size=
     title_nodes = {t: found_node for t in found.index.all_titles("he")}
     all_reg = library.get_multi_title_regex_string(set(found.index.all_titles("he")), "he")
     reg = regex.compile(all_reg, regex.VERBOSE)
-    if len(source_tc.text) == 0 or not isinstance(source_tc.text, str):
-        print(source_tc._oref)
-    source_text = re.sub(r"<[^>]+>", "", strip_cantillation(source_tc.text, strip_vowels=True))
+    if len(source_text) == 0 or not isinstance(source_text, str):
+        print(f"Invalid source text with value '{source_text}'")
+    source_text = re.sub(r"<[^>]+>", "", strip_cantillation(source_text, strip_vowels=True))
     linkified = library.get_wrapped_refs_string(source_text, "he", citing_only=False, reg=reg, title_nodes=title_nodes)
 
     snippets = []
@@ -408,7 +409,7 @@ def get_qa_csv():
     qa_rows = [
         {
             "Found Text": normalize(Ref(x['Quoted Ref']).text("he").ja().flatten_to_string()),
-            "Source Text": "...".join(get_snippet_by_seg_ref(Ref(x['Quoting Ref']).text('he'), Ref(x['Quoted Ref']))),
+            "Source Text": "...".join(get_snippet_by_seg_ref(Ref(x['Quoting Ref']).text('he').text, Ref(x['Quoted Ref']))),
             "URL": "https://sefaria.org/{}?p2={}".format(Ref(x['Quoting Ref']).url(), Ref(x['Quoted Ref']).url()),
             "Wrong segment (seg) / Wrong link (link)": ""
         }
