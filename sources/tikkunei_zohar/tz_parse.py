@@ -607,6 +607,7 @@ class HtmlTzParser(TzParser):
 
     def get_endnote_dict(self, endnotes_doc):
         endnote_dict = {}
+        endnote_dict['579'] = 'There is some confusion about the designation of Tiqun 15 as being the Ellul reading for ‘Day 8’, since it is also the designation found for the commencement of Tiqun 13 on TZ 27a.'
         if endnotes_doc: # assumes endnotes are doc file
             endnotes_doc_rep = Document(endnotes_doc)
             prev_endnote = '1'
@@ -622,7 +623,10 @@ class HtmlTzParser(TzParser):
                         endnote_number = re.match(r'[0-9]+', paragraph.text)
                         if endnote_number:
                             endnote_number = endnote_number[0]
-                            endnote_number_real = int(endnote_number) + 1
+                            if int(endnote_number) < 578:
+                                endnote_number_real = int(endnote_number) + 1
+                            else:
+                                endnote_number_real = int(endnote_number) + 2
                             endnote_dict[str(endnote_number_real)] = paragraph.text.lstrip(endnote_number)
                             prev_endnote = str(endnote_number_real)
                         else:

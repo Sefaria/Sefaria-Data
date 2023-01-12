@@ -1,7 +1,7 @@
 import django
 django.setup()
 
-from sefaria.tracker import modify_bulk_text
+# from sefaria.tracker import modify_bulk_text
 from sefaria.model import Ref, VersionSet, Version, TextChunk
 from sources.functions import post_text, post_index, add_term, add_category,post_link
 from tz_parse import *
@@ -94,6 +94,8 @@ def get_index():
 
 def get_mappings():
     parsers = [HtmlTzParser("vol2.html", 2, language="bi", endnotes_doc="vol2_endnotes.docx")]
+    # parsers = [DocsTzParser("vol1.docx", 1, language="bi"), DocsTzParser("vol6.docx", 6, language="bi")]
+    # parsers = [DocsTzParser2("vol3.docx", 3, language="bi")]
     # parsers = [DocsTzParser("vol3.docx", 3, language="bi")]
     #parsers = [HtmlTzParser("vol2.html", 2, language="bi"), DocsTzParser("vol3.docx", 3, language="bi"), DocsTzParser("vol4.docx", 4, language="bi"), DocsTzParser("vol5.docx", 5, language="bi")]
     #parsers = [DocsTzParser("vol4.docx", 4, language="bi"), DocsTzParser("vol5.docx", 5, language="bi")]
