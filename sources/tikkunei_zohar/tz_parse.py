@@ -1,5 +1,6 @@
 from docx import Document
 from bs4 import BeautifulSoup
+from docx2python import docx2python
 from tz_base import *
 import re
 import csv
@@ -183,7 +184,8 @@ class DocsTzParser(TzParser):
         return daf
 
     def cursor_is_tikkun(self):
-        return re.match(r'^\[?Tiqun', self.processed_elem_cursor.text) is not None
+        return re.match(r'^\[?Tiqun', self.processed_elem_cursor.text) is not None or \
+               re.match(r'^\[?The Introduction of Tiqunei', self.processed_elem_cursor.text) is not None
 
     def get_tikkun(self):
         # print(self.processed_elem_cursor.text)
@@ -343,6 +345,222 @@ class DocsTzParser(TzParser):
                     self.word.footnotes.append(self.current_footnote)
                     self.current_footnote = None
             #print(self.word.text)
+
+
+class DocsTzParser2(TzParser):
+    def __init__(self, filename, volume, language="english", starting_tikkun=None, starting_daf=None):
+        TzParser.__init__(self, filename, volume, language, starting_tikkun, starting_daf)
+        self.paragraph_index = 0
+
+    def get_document_representation(self):
+        return docx2python(self.file, html=True)  # YOU ARE HERE
+
+    def get_document_representation_he(self):
+        filename = self.file.replace('.docx', '_he.docx')
+        return Document(filename)
+
+    def get_title(self):
+        return self.file
+
+    def move_cursor(self):
+        if self.paragraph_index < len(self.doc_rep.document[0][0][0]):
+            cursor = self.doc_rep.document[0][0][0][self.paragraph_index]
+            self.paragraph_index += 1
+            # print(cursor.text)
+            return cursor
+        else:
+            return None
+
+    @staticmethod
+    def get_processed_elem(elem_cursor):
+        return BeautifulSoup(elem_cursor, 'html.parser')
+
+    def cursor_is_daf(self):
+        return re.search(r'\[[0-9]+[ab]\]', self.processed_elem_cursor.text) is not None
+
+    def get_daf(self):
+        stripped_text = self.processed_elem_cursor.text.strip()
+        stripped_text = stripped_text.lstrip("[")
+        stripped_text = stripped_text.rstrip("]")
+        daf = Daf(stripped_text)
+        self.dapim.append(daf)
+        return daf
+
+    def cursor_is_tikkun(self):
+        return re.match(r'^\[?Tiqun', self.processed_elem_cursor.text) is not None or \
+               re.match(r'^\[?The Introduction of Tiqunei', self.processed_elem_cursor.text) is not None
+
+    def process_tikkun_name_contents(self, tikkun, segment):
+        if isinstance(segment, str):
+            if segment.startswith("----endnote"):
+                endnote_number = segment.lstrip("----endnote")[0]
+                tikkun.words.append(Word("[ENDNOTE_REFERENCE_" + endnote_number + "]", None, None, self.daf, tikkun, None))
+            else:
+                tikkun.words.append(Word(segment, None, None, self.daf, tikkun, None))
+        else:
+            for seg_child in segment.children:
+                self.process_tikkun_name_contents(seg_child)
+
+    def get_tikkun(self):
+        # print(self.processed_elem_cursor.text)
+        tikkun = Tikkun(self.processed_elem_cursor.text, next(self.tikkun_number))
+        for segment in self.processed_elem_cursor:
+            self.process_tikkun_name_contents(tikkun, segment)
+        #     if run.text == '' and run.element.style == 'EndnoteReference':
+        #         tikkun.words.append(Word("[ENDNOTE_REFERENCE]", None, None, self.daf, tikkun, None))
+        #     else:
+        #         tikkun.words.append(Word(run.text, None, None, self.daf, tikkun, None))
+        # print([word.text for word in tikkun.words])
+        # self.tikkunim.append(tikkun)
+        return tikkun # TODO: handle tikkun footnotes
+
+    def cursor_is_paragraph(self):
+        return self.processed_elem_cursor.text.strip() == '' and self.processed_elem_cursor.style.name == 'Normal'
+
+    def process_paragraph(self):
+        if not self.paragraph or len(self.paragraph.words) > 0:
+            self.create_new_paragraph()
+    # def cursor_contains_words(self):
+    #     if paragraph.text
+
+    def cursor_contains_words(self):
+        return True  # catchall????
+
+    @staticmethod
+    def get_formatting(run):
+        if run.bold and run.italic:
+            formatting = Formatting.BOLD_ITALICS
+        elif run.bold:
+            formatting = Formatting.BOLD
+        elif run.italic:
+            formatting = Formatting.ITALICS
+        elif run.font.color.rgb is not None:
+            formatting = Formatting.FADED
+        else:
+            formatting = None
+        return formatting
+
+    def parse_hebrew_contents(self):
+        daf_index = 0
+        tikkun_index = 0
+        paragraph_index = 0
+        for paragraph in self.doc_rep_he.paragraphs: #daf
+            if re.search(r'[\u0590-\u05fe]{1,3}/[אב]', paragraph.text):
+                daf = re.search(r'[\u0590-\u05fe]{1,3}/[אב]', paragraph.text).group(0)
+                self.daf = self.dapim[daf_index]
+                self.daf.he_name = daf
+                print(self.daf.name)
+                print(self.daf.he_name)
+                daf_index += 1
+                paragraph_index = 0
+            elif re.match(r'תּקונא', paragraph.text) or re.match(r'תקונא', paragraph.text):
+                self.tikkun = self.tikkunim[tikkun_index]
+                self.tikkun.he_name = paragraph.text
+                tikkun_index +=1
+            elif paragraph.text != '':
+                if paragraph_index < len(self.daf.paragraphs):
+                    self.paragraph = self.daf.paragraphs[paragraph_index]
+                else:  # somehow misaligned??
+                    self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
+                    self.daf.paragraphs.append(self.paragraph)
+                self.paragraph.he_words = self.clean_he(paragraph.text)
+                paragraph_index += 1
+
+    @staticmethod
+    def clean_he(hebrew_text):
+        return hebrew_text.replace("\n", "</br>")
+
+    def process_words(self):
+        if self.line is None:
+            self.create_new_paragraph()
+        for run in self.processed_elem_cursor.runs:
+            if self.parsing_footnote:
+                for char in run.text:
+                    self.process_word(char, True, run)
+            else:
+                if len(run.text) > 0 and run.text[0] == ' ':
+                    self.append_to_previous = False
+                # if run.style == Normal??
+                # for i, elem_word in enumerate(run.text.split(' ')):
+                # else process footnote?
+                # append to previous?????
+                if not self.append_to_previous or len(self.line.phrases) == 0:  # new phrase for run
+                    formatting = DocsTzParser.get_formatting(run)
+                    self.phrase = self.line.add_new_phrase(formatting)
+                    self.phrases.append(self.phrase)
+                if self.current_footnote and self.phrase.formatting and not self.parsing_footnote:
+                    self.current_footnote.anchor = self.phrase
+                    self.phrase.footnotes.append(self.current_footnote)
+                    self.current_footnote = None
+                if run.text == ' ':
+                    self.append_to_previous = False
+                else:
+                    for i, elem_word in enumerate(run.text.split(' ')):
+                        if i > 0:
+                            self.append_to_previous = False
+                        if '{' in elem_word or '}' in elem_word or '\n' in elem_word or '‹' in elem_word or '›' in elem_word:
+                            for char in elem_word:
+                                self.process_word(char, True)
+                        elif elem_word == '':
+                            # parse w/ beautiful soup
+                            pass
+                        else:
+                            self.process_word(elem_word)
+                    # print(run.text)
+                            if len(run.text) > 0 and run.text[-1] != ' ':
+                                self.append_to_previous = True
+                            else:
+                                self.append_to_previous = False
+
+    def process_word(self, word, char=False, run=None):
+        if word == '{':
+            self.parsing_footnote = True
+            self.append_to_previous = False
+            self.current_footnote = Footnote(FootnoteType.CITATION, None)
+        elif word == '}':
+            self.parsing_footnote = False
+            self.append_to_previous = False
+        elif word == '‹':
+            self.parsing_footnote = True
+            self.append_to_previous = False
+            self.current_footnote = Footnote(FootnoteType.SYMBOL, None)  # TODO: Get specific type from BS
+        elif word == '›':
+            self.parsing_footnote = False
+            if self.current_footnote:  # TODO: handle errors
+                self.current_footnote.anchor = self.word
+                self.word.footnotes.append(self.current_footnote)
+                self.current_footnote = None
+        elif word == '\n':
+            self.line = self.paragraph.add_new_line()
+            self.lines.append(self.line)
+            self.append_to_previous = False
+
+        else:
+            if self.parsing_footnote:
+                if char: #why
+                    self.current_footnote.text += word
+                    self.current_footnote.formatting = DocsTzParser.get_formatting(run) if run else \
+                        self.current_footnote.formatting
+            elif self.append_to_previous:
+                if self.parsing_footnote:
+                    self.current_footnote.text += word
+                else:
+                    self.word.add_to_word(word)
+                # self.append_to_previous = False
+            else:
+                if self.parsing_footnote:  # delete? this won't ever get hit
+                    self.current_footnote.text += " "
+                    self.current_footnote.text += word
+                else:
+                    self.word = self.phrase.add_new_word(word)
+                    self.word.footnotes = []
+                    self.words.append(self.word)
+                if self.current_footnote and not self.parsing_footnote:
+                    self.current_footnote.anchor = self.word
+                    self.word.footnotes.append(self.current_footnote)
+                    self.current_footnote = None
+            #print(self.word.text)
+
 
 class HtmlTzParser(TzParser):
     FOOTNOTES = {
