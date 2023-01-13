@@ -71,6 +71,10 @@ def fix_part_1():
 
                 row[2] = row[2].replace('<italic>', '<i>')
                 row[2] = row[2].replace('</italic>', '</i>')
+                row[2] = row[2].replace('  <sup class="footnote-marker">', '<sup class="footnote-marker">')
+                row[2] = row[2].replace(' <sup class="footnote-marker">', '<sup class="footnote-marker">')
+                row[2] = row[2].replace(' »', '»')
+                row[2] = row[2].replace('« ', '«')
                 print(row[2])
                 writer.writerow(row)
                 print('###################')
@@ -126,6 +130,10 @@ def fix_part_2():
 
                 row[2] = row[2].replace('<italic>', '<i>')
                 row[2] = row[2].replace('</italic>', '</i>')
+                row[2] = row[2].replace('  <sup class="footnote-marker">', '<sup class="footnote-marker">')
+                row[2] = row[2].replace(' <sup class="footnote-marker">', '<sup class="footnote-marker">')
+                row[2] = row[2].replace(' »', '»')
+                row[2] = row[2].replace('« ', '«')
                 print(row[2])
                 writer.writerow(row)
                 print('###################')
@@ -173,6 +181,10 @@ def fix_part_3():
 
                 row[2] = row[2].replace('<italic>', '<i>')
                 row[2] = row[2].replace('</italic>', '</i>')
+                row[2] = row[2].replace('  <sup class="footnote-marker">', '<sup class="footnote-marker">')
+                row[2] = row[2].replace(' <sup class="footnote-marker">', '<sup class="footnote-marker">')
+                row[2] = row[2].replace(' »', '»')
+                row[2] = row[2].replace('« ', '«')
                 print(row[2])
                 writer.writerow(row)
                 print('###################')
@@ -216,7 +228,8 @@ def add_base64_imgs(csv_file_name_no_csv_at_the_end, path_to_images_folder):
                     if "P284" in path and "French_2" in path_to_images_folder:
                         path = path.replace("P284", "P247")
 
-
+                    if "est aussi un adverbe de lieu" in row[2]:
+                        a = 5
                     # Open the image file
                     with open(path_to_images_folder + path, 'rb') as f:
                         # Read the image file content in binary
@@ -224,10 +237,18 @@ def add_base64_imgs(csv_file_name_no_csv_at_the_end, path_to_images_folder):
 
                     orig_height = img.size[1]
                     orig_width = img.size[0]
-                    if orig_width > 40:
-                        percent = 40 / float(orig_width)
-                        height = int(float(orig_height) * float(percent))
-                        img = img.resize((40, height), PIL.Image.ANTIALIAS)
+                    # if orig_width > 40:
+                    #     percent = 40 / float(orig_width)
+                    #     height = int(float(orig_height) * float(percent))
+                    #     img = img.resize((40, height), PIL.Image.ANTIALIAS)
+                    # Calculate the new width and height
+                    width, height = img.size
+                    new_width = int(width * 0.5)
+                    new_height = int(height * 0.5)
+
+                    # Resize the image
+                    img = img.resize((new_width, new_height), Image.ANTIALIAS)
+
 
                     img = img.convert('L')
                     img = img.save("abc.jpg")
@@ -240,10 +261,11 @@ def add_base64_imgs(csv_file_name_no_csv_at_the_end, path_to_images_folder):
 
                     print(match.group())  # prints 'some_string'
                     # Construct the replacement string using the src value
-                    replacement = '<img src="data:image/{};base64,{}"> </img >'.format('jpg', str(base64_image)[2:-1])
+                    replacement = '<img a="dont match regex for replacement" src="data:image/{};base64,{}"> </img >'.format('jpg', str(base64_image)[2:-1])
                     # replacement = f'<img src=data:image/jpg;base64,"{str(base64_image)[2:-1]}"/>'
                     # Use re.sub() to perform the replacement
-                    row[2] = re.sub(pattern, replacement, row[2])
+                    row[2], n = re.subn(pattern, replacement, row[2], count=1)
+                row[2] = row[2].replace(' a="dont match regex for replacement"', '')
                 writer.writerow(row)
 
 
