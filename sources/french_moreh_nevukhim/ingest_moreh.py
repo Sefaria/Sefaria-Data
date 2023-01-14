@@ -20,7 +20,7 @@ if __name__ == "__main__":
         cur_version.delete()
 
     # parse csv into dictionary of refs:
-    with open('moreh_fixed_all_parts_with_imgs.csv', newline='') as csvfile:
+    with open('moreh_fixed_all_parts_with_imgs_arabic_numerals.csv', newline='') as csvfile:
         r = csv.reader(csvfile, delimiter=',')
         for row in r:
             if('Guide for the Perplexed' in row[0]):
