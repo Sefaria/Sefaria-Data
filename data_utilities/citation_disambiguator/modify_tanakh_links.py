@@ -116,13 +116,13 @@ def get_wrapped_text(text, replacement):
 
 def convert_all_section_citations_to_segments(main_text, section_map):
     for section_tref, segment_ref_dict in list(section_map.items()):
-        temp_main_text = convert_section_citation_segment(main_text, section_tref, segment_ref_dict)
+        temp_main_text = convert_section_citation_to_segment_citation(main_text, section_tref, segment_ref_dict)
         if temp_main_text:
             main_text = temp_main_text
     return main_text
 
 
-def convert_section_citation_segment(main_text, section_tref, segment_ref_dict: Dict[int, str]):
+def convert_section_citation_to_segment_citation(main_text, section_tref, segment_ref_dict: Dict[int, str]):
     removal_map = get_mapping_after_normalization(main_text, find_text_to_remove)
     section_oref = get_tc(section_tref, just_ref=True)
     quoted_list_temp = sorted(list(segment_ref_dict.items()), key=lambda x: x[0])
