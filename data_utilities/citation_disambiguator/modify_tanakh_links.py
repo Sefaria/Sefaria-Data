@@ -1,4 +1,5 @@
 import re, csv, time
+import argparse
 from typing import Dict, List, Optional
 from collections import defaultdict
 from pymongo.errors import AutoReconnect
@@ -216,5 +217,13 @@ def modify_tanakh_links_all(start=0, end=None, min_num_citation=0):
     error_file.close()
 
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--start', default=0, type=int)
+    parser.add_argument('--end', default=None, type=int)
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    modify_tanakh_links_all(start=0)
+    args = get_args()
+    modify_tanakh_links_all(start=args.start, end=args.end)
