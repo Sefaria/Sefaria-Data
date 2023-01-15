@@ -12,8 +12,6 @@ from sefaria.utils.hebrew import strip_cantillation
 import sefaria.tracker as tracker
 from data_utilities.citation_disambiguator.main import get_snippet_by_seg_ref
 
-DATA_DIR = "data"
-
 
 def get_tc(tref, vtitle=None, just_ref=False, tries=0):
     try:
@@ -165,13 +163,13 @@ def get_edit_for_quoting_segment(main_ref, section_map, error_file_csv, vtitle):
         error_file_csv.writerow({"Quoting Ref": main_ref, "Error": message})
 
 
-def modify_tanakh_links_all(start=0, end=None, min_num_citation=0):
-    error_file = open(DATA_DIR + "/modify_tanakh_errors.csv", "w")
+def modify_tanakh_links_all(input_filename, error_output_filename, start=0, end=None, min_num_citation=0):
+    error_file = open(error_output_filename, "w")
     error_file_csv = csv.DictWriter(error_file, ["Quoting Ref", "Error"])
     total = 0
     user = 5842
     all_modify_bulk_text_input = {}  # key = (title, vtitle, lang). value = {"version", "user", "text_map"}
-    with open(DATA_DIR + "/unambiguous_links.csv", "r") as fin:
+    with open(input_filename, "r") as fin:
         cin = csv.DictReader(fin)
         vtitle_mapping = {}
         mapping = defaultdict(lambda: defaultdict(dict))
@@ -219,6 +217,8 @@ def modify_tanakh_links_all(start=0, end=None, min_num_citation=0):
 
 def get_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('input_filename')
+    parser.add_argument('error_output_filename')
     parser.add_argument('--start', default=0, type=int)
     parser.add_argument('--end', default=None, type=int)
     return parser.parse_args()
@@ -226,4 +226,4 @@ def get_args():
 
 if __name__ == "__main__":
     args = get_args()
-    modify_tanakh_links_all(start=args.start, end=args.end)
+    modify_tanakh_links_all(args.input_filename, args.error_output_filename, start=args.start, end=args.end)
