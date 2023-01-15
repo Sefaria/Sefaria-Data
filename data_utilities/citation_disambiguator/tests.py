@@ -3,7 +3,7 @@ import django
 django.setup()
 from sefaria.model import *
 from .main import CitationDisambiguator
-from .modify_tanakh_links import modify_tanakh_links_one
+from .modify_tanakh_links import convert_section_citation_to_segment_citation
 
 
 @pytest.fixture(scope="module")
@@ -62,5 +62,11 @@ def test_citation_disambiguator(input_output, citation_disambiguator):
         assert bad == []
 
 
-def test_modify_tanakh_links_one():
+@pytest.mark.parametrize(['input_text', 'section_tref', 'segment_ref_dict', 'output_text'], [
+   ['שלום (בראשית א) מה קורה?', 'Genesis 1', {0: Ref('Genesis 1:1')}, 'שלום (בראשית א׳:א׳) מה קורה?']
+])
+def test_convert_section_citation(input_text, section_tref, segment_ref_dict, output_text):
+    temp_output_text = convert_section_citation_to_segment_citation(input_text, section_tref, segment_ref_dict)
+    assert temp_output_text == output_text
+
 
