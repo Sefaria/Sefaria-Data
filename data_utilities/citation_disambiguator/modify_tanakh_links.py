@@ -121,7 +121,7 @@ def convert_all_section_citations_to_segments(main_text, section_map):
     return main_text
 
 
-def convert_section_citation_to_segment_citation(main_text, section_tref, segment_ref_dict: Dict[int, str]):
+def convert_section_citation_to_segment_citation(main_text, section_tref, segment_ref_dict: Dict[int, Ref]):
     removal_map = get_mapping_after_normalization(main_text, find_text_to_remove)
     section_oref = get_tc(section_tref, just_ref=True)
     quoted_list_temp = sorted(list(segment_ref_dict.items()), key=lambda x: x[0])
