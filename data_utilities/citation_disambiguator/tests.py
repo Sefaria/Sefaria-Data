@@ -3,6 +3,7 @@ import django
 django.setup()
 from sefaria.model import *
 from .main import CitationDisambiguator
+from .modify_tanakh_links import modify_tanakh_links_one
 
 
 @pytest.fixture(scope="module")
@@ -59,3 +60,7 @@ def test_citation_disambiguator(input_output, citation_disambiguator):
         # output is good
         assert good[0]['Quoted Ref'] == output["quote"].normal()
         assert bad == []
+
+
+def test_modify_tanakh_links_one():
+

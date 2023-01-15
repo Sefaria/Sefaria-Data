@@ -1,4 +1,5 @@
 import re, csv, time
+from typing import Dict, List, Optional
 from collections import defaultdict
 from pymongo.errors import AutoReconnect
 from tqdm import tqdm
@@ -98,45 +99,66 @@ def get_full_version(v):
     return _version_cache[key]
 
 
-def modify_tanakh_links_one(main_ref, section_map, error_file_csv, vtitle):
-    try:
-        main_tc, main_oref, main_version = get_tc(main_ref, vtitle=vtitle)
-        assert not main_tc.is_merged
-        new_main_text = main_tc.text
+def get_text_and_version_from_ref(oref, vtitle):
+    main_tc, main_oref, main_version = get_tc(oref, vtitle=vtitle)
+    assert not main_tc.is_merged
+    return main_tc.text
 
-        def find_text_to_remove(s):
-            for m in re.finditer(r"(<[^>]+>|[\u0591-\u05bd\u05bf-\u05c5\u05c7])", s):
-                yield m, ''
-        for section_tref, segment_ref_dict in list(section_map.items()):
-            removal_map = get_mapping_after_normalization(new_main_text, find_text_to_remove)
-            section_oref = get_tc(section_tref, just_ref=True)
-            quoted_list_temp = sorted(list(segment_ref_dict.items()), key=lambda x: x[0])
-            segment_ref_list = [segment_ref_dict.get(i, None) for i in range(quoted_list_temp[-1][0]+1)]
-            match_list = get_snippet_by_seg_ref(new_main_text, section_oref, must_find_snippet=True, snip_size=65, return_matches=True)
-            if match_list:
-                if len(match_list) == len(segment_ref_list):
-                    chars_to_wrap = []
-                    for (m, linkified_text), r in zip(match_list, segment_ref_list):
-                        if r is None:
-                            # None is how I represent a bad match
-                            continue
-                        cumulative_a_tag_offset = (m.start(2)-len(re.sub(r"<[^>]+>", "", linkified_text[:m.start(2)])))
-                        unnorm_inds = convert_normalized_indices_to_unnormalized_indices([(m.start(2)-cumulative_a_tag_offset, m.end(2)-cumulative_a_tag_offset)], removal_map)[0]
-                        chars_to_wrap += [(unnorm_inds[0],unnorm_inds[1], r.he_normal())]
-                        main_tc_snippet = new_main_text[chars_to_wrap[-1][0]:chars_to_wrap[-1][1]]
-                        assert  strip_cantillation(main_tc_snippet, strip_vowels=True) == m.group(2), f"\n\n\n-----\nmain tc snippet:\n'{main_tc_snippet}'\nmatch group 2:\n'{m.group(2)}'\nRef: {main_tc._oref.normal()}"
-                    def get_wrapped_text(text, replacement):
-                        return replacement, (len(replacement) - len(text)), 0
-                    new_main_text = wrap_chars_with_overlaps(new_main_text, chars_to_wrap, get_wrapped_text)
-                else:
-                    raise InputError("DiffLen")
-        if new_main_text != main_tc.text:
-            v = main_version
-            return {
-                "version": get_full_version(v),
-                "tref": main_ref,
-                "text": new_main_text
-            }
+
+def find_text_to_remove(s):
+    for m in re.finditer(r"(<[^>]+>|[\u0591-\u05bd\u05bf-\u05c5\u05c7])", s):
+        yield m, ''
+
+
+def get_wrapped_text(text, replacement):
+    return replacement, (len(replacement) - len(text)), 0
+
+
+def convert_all_section_citations_to_segments(main_text, section_map):
+    for section_tref, segment_ref_dict in list(section_map.items()):
+        temp_main_text = convert_section_citation_segment(main_text, section_tref, segment_ref_dict)
+        if temp_main_text:
+            main_text = temp_main_text
+    return main_text
+
+
+def convert_section_citation_segment(main_text, section_tref, segment_ref_dict: Dict[int, str]):
+    removal_map = get_mapping_after_normalization(main_text, find_text_to_remove)
+    section_oref = get_tc(section_tref, just_ref=True)
+    quoted_list_temp = sorted(list(segment_ref_dict.items()), key=lambda x: x[0])
+    segment_ref_list = [segment_ref_dict.get(i, None) for i in range(quoted_list_temp[-1][0]+1)]
+    match_list = get_snippet_by_seg_ref(main_text, section_oref, must_find_snippet=True, snip_size=65, return_matches=True)
+
+    if not match_list:
+        return None
+    elif len(match_list) != len(segment_ref_list):
+        raise InputError("DiffLen")
+
+    chars_to_wrap = []
+    for (m, linkified_text), r in zip(match_list, segment_ref_list):
+        if r is None:
+            # None is how I represent a bad match
+            continue
+        cumulative_a_tag_offset = (m.start(2)-len(re.sub(r"<[^>]+>", "", linkified_text[:m.start(2)])))
+        unnorm_inds = convert_normalized_indices_to_unnormalized_indices([(m.start(2)-cumulative_a_tag_offset, m.end(2)-cumulative_a_tag_offset)], removal_map)[0]
+        chars_to_wrap += [(unnorm_inds[0],unnorm_inds[1], r.he_normal())]
+        main_tc_snippet = main_text[chars_to_wrap[-1][0]:chars_to_wrap[-1][1]]
+        assert strip_cantillation(main_tc_snippet, strip_vowels=True) == m.group(2), f"\n\n\n-----\nmain tc snippet:\n'{main_tc_snippet}'\nmatch group 2:\n'{m.group(2)}'"
+    return wrap_chars_with_overlaps(main_text, chars_to_wrap, get_wrapped_text)
+
+
+def get_edit_for_quoting_segment(main_ref, section_map, error_file_csv, vtitle):
+    try:
+        orig_text, version_stub = get_text_and_version_from_ref(main_ref, vtitle)
+        updated_text = convert_all_section_citations_to_segments(orig_text, section_map)
+        if updated_text == orig_text:
+            return None
+
+        return {
+            "version": get_full_version(version_stub),
+            "tref": main_ref,
+            "text": updated_text
+        }
     except InputError as e:
         message = e.args[0]
         error_file_csv.writerow({"Quoting Ref": main_ref, "Error": message})
@@ -175,7 +197,7 @@ def modify_tanakh_links_all(start=0, end=None, min_num_citation=0):
                 continue
             if len(v) < min_num_citation:
                 continue
-            single_edit = modify_tanakh_links_one(quoting_tref, v, error_file_csv, vtitle_mapping[quoting_tref])
+            single_edit = get_edit_for_quoting_segment(quoting_tref, v, error_file_csv, vtitle_mapping[quoting_tref])
             if single_edit is None: continue
             vers = single_edit['version']
             key = (vers.title, vers.versionTitle, vers.language)
