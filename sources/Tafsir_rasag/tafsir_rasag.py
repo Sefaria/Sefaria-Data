@@ -4,7 +4,7 @@ import re
 import os
 import codecs
 from collections import OrderedDict
-from data_utilities.util import ja_to_xml, traverse_ja
+from parsing_utilities.util import ja_to_xml, traverse_ja
 from sources import functions
 from sefaria.model import *
 

@@ -3,7 +3,7 @@
 __author__ = 'stevenkaplan'
 from sources.functions import *
 from sefaria.model import *
-from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
+from parsing_utilities.XML_to_JaggedArray import XML_to_JaggedArray
 from sefaria.helper.schema import *
 import bleach
 import os

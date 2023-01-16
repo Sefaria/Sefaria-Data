@@ -2,7 +2,7 @@
 
 import codecs
 import re
-from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja
+from parsing_utilities.util import ja_to_xml, multiple_replace, traverse_ja
 from sources.functions import post_text, post_index, post_link
 from sefaria.model import *
 from sefaria.datatype.jagged_array import JaggedArray

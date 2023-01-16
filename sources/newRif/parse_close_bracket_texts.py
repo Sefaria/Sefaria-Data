@@ -2,7 +2,7 @@ import django
 django.setup()
 import re
 import json
-from data_utilities.util import getGematria
+from parsing_utilities.util import getGematria
 from rif_utils import path, tags_map, maor_tags
 from tags_fix_and_check import tags_by_criteria, save_tags
 from tags_compare import compare_tags_nums, compare_tags, OrderedCounter

@@ -3,7 +3,7 @@
 __author__ = 'stevenkaplan'
 
 
-#from data_utilities.util import set_ranges_between_refs
+#from parsing_utilities.util import set_ranges_between_refs
 from sefaria.model import *
 #from sources.functions import *
 from bson import ObjectId

@@ -3,8 +3,8 @@
 import re
 import pytest
 from collections import namedtuple
-# from data_utilities.ParseUtil import Description, ParsedDocument, run_on_list, directed_run_on_list, ClashError
-from data_utilities.ParseUtil import *
+# from parsing_utilities.ParseUtil import Description, ParsedDocument, run_on_list, directed_run_on_list, ClashError
+from parsing_utilities.ParseUtil import *
 
 
 def test_run_on_list():

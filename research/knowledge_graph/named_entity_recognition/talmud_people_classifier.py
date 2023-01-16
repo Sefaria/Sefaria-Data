@@ -209,7 +209,7 @@ class FindMissingNames:
         self.save_titles()
 
     def action(self, s, en_tref, he_tref, v):
-        from data_utilities.util import get_window_around_match
+        from parsing_utilities.util import get_window_around_match
         mentions = self.mentions_by_ref.get(en_tref, [])
         snorm = self.normalizer.normalize(s)
         rm = self.normalizer.get_mapping_after_normalization(s, reverse=True)

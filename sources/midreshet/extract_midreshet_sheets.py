@@ -25,7 +25,7 @@ from collections import namedtuple, Counter, defaultdict
 from multiprocessing import Pool
 from sources.functions import post_sheet
 from sources.local_settings import API_KEY
-from data_utilities.util import Singleton, getGematria, split_list, numToHeb
+from parsing_utilities.util import Singleton, getGematria, split_list, numToHeb
 from research.source_sheet_disambiguator.main import refine_ref_by_text
 
 import django

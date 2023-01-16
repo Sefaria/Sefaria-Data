@@ -1,6 +1,6 @@
 __author__ = 'stevenkaplan'
 
-from data_utilities.XML_to_JaggedArray import *
+from parsing_utilities.XML_to_JaggedArray import *
 
 if __name__ == "__main__":
     post_info = {}

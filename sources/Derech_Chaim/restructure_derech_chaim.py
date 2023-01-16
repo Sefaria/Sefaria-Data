@@ -3,7 +3,7 @@
 import re
 import json
 from sefaria.model import JaggedArrayNode
-from data_utilities.util import getGematria
+from parsing_utilities.util import getGematria
 from sefaria.datatype.jagged_array import JaggedArray
 from sources.functions import post_index, post_link, post_text
 

@@ -44,7 +44,7 @@ import django
 django.setup()
 from sefaria.model import *
 
-from data_utilities.util import convert_dict_to_array
+from parsing_utilities.util import convert_dict_to_array
 from collections import namedtuple
 
 

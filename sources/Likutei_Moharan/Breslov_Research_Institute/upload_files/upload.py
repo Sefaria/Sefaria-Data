@@ -3,7 +3,7 @@
 import re
 import unicodecsv
 from xml.sax.saxutils import unescape
-from data_utilities.util import convert_dict_to_array, ja_to_xml
+from parsing_utilities.util import convert_dict_to_array, ja_to_xml
 from sources.functions import post_text
 
 import django

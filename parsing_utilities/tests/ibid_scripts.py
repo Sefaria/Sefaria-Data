@@ -8,7 +8,7 @@ import unicodecsv, random, bleach
 from collections import defaultdict
 from sefaria.model import *
 from data_utilities.alt_titles import alt_name_dict , rambam_alt_names
-from data_utilities.ibid import *
+from parsing_utilities.ibid import *
 from sefaria.utils.hebrew import strip_nikkud
 from sefaria.system.exceptions import BookNameError
 

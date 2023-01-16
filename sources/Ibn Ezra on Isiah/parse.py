@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from sources.functions import *
 from sefaria.model import *
-from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
+from parsing_utilities.XML_to_JaggedArray import XML_to_JaggedArray
 from sefaria.helper.schema import *
 from sefaria.helper.text import replace_roman_numerals_including_lowercase
 import re

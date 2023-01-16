@@ -2,7 +2,7 @@
 
 
 from sources.Shulchan_Arukh.ShulchanArukh import *
-from data_utilities.util import he_ord
+from parsing_utilities.util import he_ord
 
 def markup(b_vol):
     commentaries = root.get_commentaries()

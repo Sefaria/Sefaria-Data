@@ -4,7 +4,7 @@ import re
 import codecs
 from sources.functions import post_text, post_index, post_link
 from sefaria.model.schema import JaggedArrayNode, SchemaNode
-from data_utilities.util import file_to_ja, multiple_replace, traverse_ja
+from parsing_utilities.util import file_to_ja, multiple_replace, traverse_ja
 
 
 def parse_yitzira():

@@ -4,7 +4,7 @@ from collections import defaultdict
 from tqdm import tqdm
 from sefaria.model import *
 from sefaria.utils.hebrew import strip_cantillation
-from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
+from parsing_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
 from research.knowledge_graph.named_entity_recognition.ner_tagger import CorpusManager
 import unicodedata
 # How to get all people in Tanakh

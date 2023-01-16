@@ -1,6 +1,6 @@
 # encoding=utf-8
 
-from data_utilities.sanity_checks import TagTester
+from parsing_utilities.sanity_checks import TagTester
 import codecs
 
 

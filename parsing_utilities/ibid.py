@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
-
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
 from sefaria.utils import talmud
 from sefaria.utils.hebrew import strip_nikkud
 from collections import OrderedDict
 import regex as re
-import json, codecs
-from data_utilities.util import getGematria
 
 
 class CitationFinder():

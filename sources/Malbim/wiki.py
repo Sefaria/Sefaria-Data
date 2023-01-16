@@ -3,7 +3,7 @@ import django
 django.setup()
 from sefaria.model import *
 import requests
-from data_utilities.util import numToHeb
+from parsing_utilities.util import numToHeb
 from bs4 import BeautifulSoup, NavigableString, Tag
 from sources.functions import *
 

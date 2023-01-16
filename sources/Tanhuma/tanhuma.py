@@ -4,7 +4,7 @@ import sys
 import re
 from sources.functions import *
 from sefaria.model import *
-from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
+from parsing_utilities.XML_to_JaggedArray import XML_to_JaggedArray
 from lxml import etree
 import BeautifulSoup
 

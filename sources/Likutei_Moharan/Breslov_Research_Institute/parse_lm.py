@@ -56,7 +56,7 @@ from Levenshtein import distance
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.util import getGematria
+from parsing_utilities.util import getGematria
 
 
 class LMFile(object):

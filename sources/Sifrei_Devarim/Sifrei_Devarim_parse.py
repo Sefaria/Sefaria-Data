@@ -13,7 +13,7 @@ sys.path.insert(0, p)
 from local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 sys.path.insert(0, SEFARIA_DATA_PATH)
-from data_utilities.util import ja_to_xml
+from parsing_utilities.util import ja_to_xml
 os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from functions import *
 

@@ -3,7 +3,7 @@ import django
 django.setup()
 
 from sefaria.model import *
-from data_utilities.ibid import *
+from parsing_utilities.ibid import *
 import pytest
 
 

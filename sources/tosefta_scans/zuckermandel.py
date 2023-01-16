@@ -6,7 +6,7 @@ django.setup()
 from sefaria.model import *
 import re
 from sources.functions import getGematria
-from data_utilities.text_align import CompareBreaks
+from parsing_utilities.text_align import CompareBreaks
 from sefaria.model.manuscript import Manuscript, ManuscriptPage
 from sefaria.system.exceptions import InputError, DuplicateRecordError
 from pymongo.errors import DuplicateKeyError

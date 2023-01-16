@@ -12,9 +12,9 @@ import string
 import unicodecsv as csv
 import json
 import pickle
-from data_utilities.util import getGematria, numToHeb
+from parsing_utilities.util import getGematria, numToHeb
 import codecs
-from data_utilities.ibid import *
+from parsing_utilities.ibid import *
 from aspaklaria_connect import client
 from parse_aspaklaria import *
 

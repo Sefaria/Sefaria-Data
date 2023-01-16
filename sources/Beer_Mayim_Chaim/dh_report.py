@@ -6,7 +6,7 @@ from sources.functions import *
 import os
 from data_utilities.parallel_matcher import ParallelMatcher
 from BeautifulSoup import *
-from data_utilities.util import set_ranges_between_refs
+from parsing_utilities.util import set_ranges_between_refs
 from data_utilities.weighted_levenshtein import WeightedLevenshtein
 
 

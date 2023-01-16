@@ -5,7 +5,7 @@ import json
 from sources import functions
 from sefaria.model.schema import *
 from sefaria.model import *
-from data_utilities.util import getGematria as gematria
+from parsing_utilities.util import getGematria as gematria
 import copy
 
 def dhtolink(siman, par, dh, plink):

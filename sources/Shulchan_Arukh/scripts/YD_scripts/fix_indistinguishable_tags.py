@@ -53,7 +53,7 @@ import os
 import re
 import time
 from collections import defaultdict
-from data_utilities.util import StructuredDocument, getGematria
+from parsing_utilities.util import StructuredDocument, getGematria
 
 
 class Commentary:

@@ -6,7 +6,7 @@ import re
 
 from sefaria.model import *
 from sources.functions import http_request, add_term, post_index, post_text
-from data_utilities.util import file_to_ja_g, ja_to_xml
+from parsing_utilities.util import file_to_ja_g, ja_to_xml
 from sources.local_settings import SEFARIA_SERVER, API_KEY
 
 # @55 / @66 - chapter
