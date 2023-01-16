@@ -22,7 +22,7 @@ import difflib
 from collections import Counter
 import time
 from sefaria.model.schema import AddressYear, AddressInteger
-from data_utilities.util import WeightedLevenshtein
+from data_utilities.weighted_levenshtein import WeightedLevenshtein
 from data_utilities.parallel_matcher import ParallelMatcher
 from sefaria.system.exceptions import *
 from sources.functions import UnicodeWriter, UnicodeReader

@@ -22,7 +22,7 @@ import regex
 from sefaria.model import *
 from sefaria.utils.hebrew import gematria
 #from research.talmud_pos_research.language_classifier.language_tools import weighted_levenshtein, weighted_levenshtein_cost
-from data_utilities.util import WeightedLevenshtein
+from data_utilities.weighted_levenshtein import WeightedLevenshtein
 from num2words import num2words
 
 

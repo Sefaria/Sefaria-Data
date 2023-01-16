@@ -22,7 +22,7 @@ from sources.functions import *
 import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.parallel_matcher import ParallelMatcher
-from data_utilities.util import WeightedLevenshtein
+from data_utilities.weighted_levenshtein import WeightedLevenshtein
 # from fuzzywuzzy import fuzz
 import datetime
 import traceback

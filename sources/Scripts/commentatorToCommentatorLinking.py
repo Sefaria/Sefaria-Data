@@ -8,7 +8,7 @@ from sefaria.utils.hebrew import *
 from data_utilities.parallel_matcher import ParallelMatcher
 import unicodedata
 import bleach
-from data_utilities.util import WeightedLevenshtein
+from data_utilities.weighted_levenshtein import WeightedLevenshtein
 import functools
 
 

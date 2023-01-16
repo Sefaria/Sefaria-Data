@@ -1,5 +1,5 @@
 from sources.functions import *
-from data_utilities.util import WeightedLevenshtein
+from data_utilities.weighted_levenshtein import WeightedLevenshtein
 def get_dh(txt, ref):
 	just_dh = txt.split("</b>")[0]
 	num_words_just_dh = just_dh.count(" ")

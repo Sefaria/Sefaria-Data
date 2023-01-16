@@ -248,7 +248,7 @@ class FindMissingNames:
             cout.writerows(self.possible_title_continuations)
 
 def suggest_people_duplicates():
-    from data_utilities.util import WeightedLevenshtein
+    from data_utilities.weighted_levenshtein import WeightedLevenshtein
     norm2peeps = defaultdict(list)
     letter_counts = defaultdict(int)
     with open('/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_basic_en_titles.json', 'r') as fin:

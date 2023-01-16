@@ -1,5 +1,5 @@
 from sources.functions import *
-from data_utilities.util import WeightedLevenshtein
+from data_utilities.weighted_levenshtein import WeightedLevenshtein
 from data_utilities.dibur_hamatchil_matcher import *
 # 1. scrape
 # 2. check that number of rashi comments is same as wiki source rashi comments

@@ -9,7 +9,7 @@ import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
 from collections import OrderedDict
 from segments import *
-from data_utilities.util import WeightedLevenshtein
+from data_utilities.weighted_levenshtein import WeightedLevenshtein
 
 
 

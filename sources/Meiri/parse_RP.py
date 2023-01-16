@@ -5,7 +5,7 @@ import os
 from functools import reduce
 from sefaria.utils.hebrew import strip_cantillation
 from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
-from data_utilities.util import WeightedLevenshtein
+from data_utilities.weighted_levenshtein import WeightedLevenshtein
 levenshtein = WeightedLevenshtein()
 mode = "0"
 import json
