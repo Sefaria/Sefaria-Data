@@ -18,7 +18,6 @@ from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersio
 from sefaria.utils.hebrew import strip_cantillation
 from linking_utilities.weighted_levenshtein import WeightedLevenshtein
 from linking_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
-from sources.functions import post_text, post_link
 
 LOWEST_SCORE = -28
 DATA_DIR = "data"
@@ -478,6 +477,8 @@ def count_words_in_segment(word_counter, segment_str, en_tref, he_tref, version)
 
 
 def post_unambiguous_links(post=False):
+    from sources.functions import post_link
+
     links = []
     with open(DATA_DIR + "/unambiguous_links.csv", "r") as fin:
         cin = csv.DictReader(fin)
