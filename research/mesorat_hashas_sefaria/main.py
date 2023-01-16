@@ -1,4 +1,4 @@
-from data_utilities.parallel_matcher import *
+from linking_utilities.parallel_matcher import *
 #pm = ParallelMatcher(tokenize_words, parallelize=False, all_to_all=True, verbose=True)
 
 # pm.match(index_list=get_texts_from_category("All"), use_william=True)

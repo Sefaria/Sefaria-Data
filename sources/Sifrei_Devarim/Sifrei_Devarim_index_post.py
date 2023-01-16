@@ -12,7 +12,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sources.functions import *
 from Sifrei_Devarim_en_post import *
 import re
-import data_utilities
+import linking_utilities
 import codecs
 from sources import functions
 

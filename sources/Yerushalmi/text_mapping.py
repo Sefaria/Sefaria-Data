@@ -10,7 +10,7 @@ import zipfile
 from typing import List
 from functools import reduce
 from itertools import zip_longest
-import data_utilities.text_align as align
+import parsing_utilities.text_align as align
 from parsing_utilities.sanity_checks import find_out_of_order
 import simpleaudio
 from sources.functions import post_text, post_index, add_term, add_category
@@ -21,9 +21,9 @@ from sefaria.model.schema import AddressTalmud
 from sefaria.datatype.jagged_array import JaggedArray
 from concurrent.futures.process import ProcessPoolExecutor
 from parsing_utilities.util import ja_to_xml, traverse_ja
-from data_utilities.normalization import TextSanitizer, sanitized_words_to_unsanitized_words
+from linking_utilities.normalization import TextSanitizer, sanitized_words_to_unsanitized_words
 from parsing_utilities.ParseUtil import *
-from data_utilities.dibur_hamatchil_matcher import match_ref, match_text
+from linking_utilities.dibur_hamatchil_matcher import match_ref, match_text
 
 time_start = time.time()
 

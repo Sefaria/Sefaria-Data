@@ -10,7 +10,7 @@ from sefaria.model import *
 from sefaria.system.exceptions import InputError
 from sefaria.utils.hebrew import strip_cantillation
 import sefaria.tracker as tracker
-from data_utilities.citation_disambiguator.main import get_snippet_by_seg_ref
+from linking_utilities.citation_disambiguator.main import get_snippet_by_seg_ref
 
 
 def get_tc(tref, vtitle=None, just_ref=False, tries=0):

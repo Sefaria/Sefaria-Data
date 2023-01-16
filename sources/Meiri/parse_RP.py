@@ -1,16 +1,16 @@
 from sources.functions import *
-from data_utilities.parallel_matcher import ParallelMatcher
-from data_utilities.citation_disambiguator.main import CitationDisambiguator
+from linking_utilities.parallel_matcher import ParallelMatcher
+from linking_utilities.citation_disambiguator.main import CitationDisambiguator
 import os
 from functools import reduce
 from sefaria.utils.hebrew import strip_cantillation
-from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
-from data_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
 levenshtein = WeightedLevenshtein()
 mode = "0"
 import json
 import math
-from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
+from linking_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
 
 
 class ScoreManager:

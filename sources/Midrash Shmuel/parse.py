@@ -2,7 +2,7 @@
 
 __author__ = 'stevenkaplan'
 from sources.functions import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 links = []
 
 def parse_intro(file):

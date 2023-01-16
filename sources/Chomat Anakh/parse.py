@@ -4,8 +4,8 @@ import re
 from sefaria.model import *
 from sources.functions import *
 from sefaria.system.exceptions import *
-from data_utilities.citation_disambiguator.main import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.citation_disambiguator.main import *
+from linking_utilities.dibur_hamatchil_matcher import *
 
 SERVER = "http://draft.sefaria.org"
 versionTitle = "Chomat Anakh, Jerusalem 1965"

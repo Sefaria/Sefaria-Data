@@ -39,7 +39,7 @@ from sefaria.model import *
 from sefaria.system.exceptions import DuplicateRecordError
 from sefaria.system.exceptions import InputError
 from sefaria.system.exceptions import PartialRefInputError
-from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh, get_maximum_dh, ComputeLevenshteinDistanceByWord
+from linking_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh, get_maximum_dh, ComputeLevenshteinDistanceByWord
 
 import logging
 import multiprocessing

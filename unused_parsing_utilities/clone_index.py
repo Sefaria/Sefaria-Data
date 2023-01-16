@@ -97,15 +97,15 @@ if __name__ == "__main__":
     Clone Index is a command-line tool used when we want to create a new commentary, say "Zeroa Yamin", a Pirkei Avot commentary,
     but we know it is going to be the same structure as other Pirkei Avot commentaries, such as "Magen Avot".
     In directory Sefaria-Project one can run:
-    ./run ../Sefaria-Data/data_utilities/clone_index.py [base_text] [existing_commentary] [new_commentary]
+    ./run ../Sefaria-Data/linking_utilities/clone_index.py [base_text] [existing_commentary] [new_commentary]
     and it will create a new Index that is a commentary on the base text and has the same structure as the
     existing commentary.
     For example,
-    ./run ./Sefaria-Data/data_utilities/clone_index.py "Pirkei Avot" "Magen Avot" "Zeroa Yamin"
+    ./run ./Sefaria-Data/linking_utilities/clone_index.py "Pirkei Avot" "Magen Avot" "Zeroa Yamin"
     will create a new Pirkei Avot commentary called "Zeroa Yamin" and
     will have the exact same structure as "Magen Avot"
     Likewise:
-    ./run ./Sefaria-Data/data_utilities/clone_index.py "Genesis" "Rashi on Genesis" "Malbim on Genesis"
+    ./run ./Sefaria-Data/linking_utilities/clone_index.py "Genesis" "Rashi on Genesis" "Malbim on Genesis"
     will create "Malbim on Genesis" with the structure of "Rashi on Genesis".
     '''
     new_titles = []

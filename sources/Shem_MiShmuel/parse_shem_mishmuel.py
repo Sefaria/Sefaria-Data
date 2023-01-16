@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from multiprocessing import Pool
 from collections import OrderedDict
 from parsing_utilities.util import PlaceHolder
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sources.functions import post_text, post_index, post_link
 
 

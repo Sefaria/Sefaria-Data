@@ -1,7 +1,7 @@
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.parallel_matcher import ParallelMatcher
+from linking_utilities.parallel_matcher import ParallelMatcher
 from rif_utils import path, tags_map, unite_ref_pages, hebrewplus
 from sefaria.utils.talmud import daf_to_section
 import re

@@ -15,7 +15,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 
 from sefaria.model import *
 
-from data_utilities import dibur_hamatchil_matcher
+from linking_utilities import dibur_hamatchil_matcher
 from research.talmud_pos_research.language_classifier import cal_tools
 
 

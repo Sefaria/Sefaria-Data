@@ -12,7 +12,7 @@ sys.path.append('../')
 
 import re
 from sefaria.model import *
-from data_utilities import dibur_hamatchil_matcher
+from linking_utilities import dibur_hamatchil_matcher
 
 def tokenize_words(str):
     str = str.replace("־", " ")

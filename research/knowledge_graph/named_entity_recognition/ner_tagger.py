@@ -29,7 +29,7 @@ inputs
             ],
             "pretagOverrideNamedEntities": <Same format as namedEntities. these namedEntities will only be used on pretagged segments>
             "normalizers": {
-                "en": [<STRING>], (list of normalizers to use. will be applied in this same order. normalizer keys can be found in data_utilities/normalizations.py in NormalizerComposer)
+                "en": [<STRING>], (list of normalizers to use. will be applied in this same order. normalizer keys can be found in linking_utilities/normalizations.py in NormalizerComposer)
                 "he": [<STRING>]
             },
             "corpus": [

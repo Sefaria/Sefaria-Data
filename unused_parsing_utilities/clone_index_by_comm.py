@@ -20,7 +20,7 @@ def verify_input(original, new):
 
 if __name__ == "__main__":
     ## This clones indexes the following way:
-    #./run ../Sefaria-Data/data_utilities/clone_index_by_commentary.py "Midrash Lekach Tov on Ruth" "Midrash Lekach Tov on Song of Songs"
+    #./run ../Sefaria-Data/linking_utilities/clone_index_by_commentary.py "Midrash Lekach Tov on Ruth" "Midrash Lekach Tov on Song of Songs"
     #The first text already exists and the second should follow the exact same structure as the first
     original = sys.argv[1]
     new = sys.argv[2]

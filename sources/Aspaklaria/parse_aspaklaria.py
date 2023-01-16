@@ -30,7 +30,7 @@ import itertools
 from sources.EinMishpat.ein_parser import is_hebrew_number, hebrew_number_regex
 from research.knowledge_graph.sefer_haagada.main import disambiguate_ref_list
 from sefaria.utils.hebrew import is_hebrew
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.dibur_hamatchil_matcher import match_text
 from aspaklaria_settings import ASPAKLARIA_HTML_FILES
 
 db_aspaklaria = client.aspaklaria

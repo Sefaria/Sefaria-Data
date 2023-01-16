@@ -1,6 +1,6 @@
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
-from data_utilities import dibur_hamatchil_matcher
+from linking_utilities import dibur_hamatchil_matcher
 import json, re
 
 class GemaraCommentaryMatcher:

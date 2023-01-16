@@ -6,7 +6,7 @@ from sefaria.model import *
 from sources.functions import *
 import csv
 from sefaria.system.exceptions import InputError
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sefaria.system.database import db
 
 

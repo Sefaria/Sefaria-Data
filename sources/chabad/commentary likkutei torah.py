@@ -1,6 +1,6 @@
 import csv
 from sources.functions import *
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.dibur_hamatchil_matcher import match_text
 from tqdm import tqdm
 ref_to_soup = defaultdict(str)
 from sefaria.system.exceptions import InputError

@@ -12,7 +12,7 @@ sys.path.insert(0, p)
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
-from data_utilities import util, sanity_checks
+from parsing_utilities import util, sanity_checks
 from parsing_utilities.sanity_checks import TagTester
 from functions import *
 from local_settings import *

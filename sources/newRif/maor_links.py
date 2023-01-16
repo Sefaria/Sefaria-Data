@@ -5,7 +5,7 @@ import json
 import copy
 from functools import partial
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from rif_utils import maor_tags, hebrewplus, remove_metadata, get_hebrew_masechet, path
 from sefaria.system.exceptions import InputError
 

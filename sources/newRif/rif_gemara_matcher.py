@@ -7,7 +7,7 @@ django.setup()
 from functools import partial
 from sefaria.model import *
 from rif_utils import path, remove_metadata, tags_map, get_hebrew_masechet, hebrewplus, netlen2
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.system.exceptions import InputError
 
 def base_tokenizer(string):

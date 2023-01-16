@@ -1,7 +1,7 @@
 # encoding=utf-8
 
-from data_utilities import sanity_checks as tests
-from data_utilities import util
+from linking_utilities import sanity_checks as tests
+from parsing_utilities import util
 import re
 from sources import functions
 import codecs

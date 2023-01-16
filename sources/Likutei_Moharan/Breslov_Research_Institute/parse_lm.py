@@ -50,7 +50,7 @@ from matplotlib import pyplot as plt
 from itertools import izip_longest
 from xml.sax.saxutils import unescape, escape
 from bs4 import BeautifulSoup, Tag, NavigableString
-from data_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
 from Levenshtein import distance
 
 import django

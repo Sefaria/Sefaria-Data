@@ -3,7 +3,7 @@ import codecs
 from sefaria.model import *
 import regex
 from sources import functions
-from data_utilities import util
+from parsing_utilities import util
 from sources.Rasag_commentary import rasag_commentary_index_record
 from sources.Rasag_commentary import positive_and_negative_parse
 from sources.Rasag_commentary import punishments_parse

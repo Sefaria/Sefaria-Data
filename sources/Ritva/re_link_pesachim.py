@@ -1,6 +1,6 @@
 from sources.functions import *
 import os
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 def dher(str):
     dh = re.search("<b>(.*?)</b>", str)
     return dh.group(1) if dh else ""

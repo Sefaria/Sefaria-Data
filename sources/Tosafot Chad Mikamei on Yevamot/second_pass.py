@@ -3,7 +3,7 @@ import django
 django.setup()
 from sefaria.model import *
 import codecs
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sources.functions import UnicodeReader
 with codecs.open("results - results.csv", encoding='utf-8') as f:
     lines = list(f)

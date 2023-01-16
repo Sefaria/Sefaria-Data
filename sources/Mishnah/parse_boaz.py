@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from data_utilities import util
+from parsing_utilities import util
 import codecs
 import re
 from sources import functions

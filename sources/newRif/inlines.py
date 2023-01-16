@@ -8,7 +8,7 @@ from sefaria.utils.talmud import section_to_daf
 from parsing_utilities.util import getGematria
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 
 def find_dh(section):
     dh = re.sub('\[[^\]]*\]|<\/?b>', '', section).split('.')[0]

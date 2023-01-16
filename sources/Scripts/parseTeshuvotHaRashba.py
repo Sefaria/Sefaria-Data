@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import codecs
 from sefaria.model import *
-from data_utilities import util
+from parsing_utilities import util
 from sources import functions
 from sources.Scripts import function
 

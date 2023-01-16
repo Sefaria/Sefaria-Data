@@ -6,7 +6,7 @@ import os
 import re
 import time
 import json
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sefaria.profiling import *
 from sefaria.tracker import *
 

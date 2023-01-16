@@ -11,7 +11,7 @@ import bleach
 import os
 from sefaria.system.database import db
 from research.source_sheet_disambiguator.main import refine_ref_by_text
-from data_utilities.citation_disambiguator.main import *
+from linking_utilities.citation_disambiguator.main import *
 django.setup()
 from sources.functions import UnicodeWriter
 import urllib2, urllib
@@ -22,8 +22,8 @@ import difflib
 from collections import Counter
 import time
 from sefaria.model.schema import AddressYear, AddressInteger
-from data_utilities.weighted_levenshtein import WeightedLevenshtein
-from data_utilities.parallel_matcher import ParallelMatcher
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.parallel_matcher import ParallelMatcher
 from sefaria.system.exceptions import *
 from sources.functions import UnicodeWriter, UnicodeReader
 

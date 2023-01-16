@@ -12,12 +12,12 @@ import django
 django.setup()
 from sefaria.model import *
 from sefaria.helper.normalization import NormalizerComposer, RegexNormalizer, ReplaceNormalizer
-from data_utilities.parallel_matcher import ParallelMatcher
+from linking_utilities.parallel_matcher import ParallelMatcher
 from collections import defaultdict, OrderedDict
 from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError, DuplicateRecordError
 from sefaria.utils.hebrew import strip_cantillation
-from data_utilities.weighted_levenshtein import WeightedLevenshtein
-from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
 from sources.functions import post_text, post_link
 
 LOWEST_SCORE = -28

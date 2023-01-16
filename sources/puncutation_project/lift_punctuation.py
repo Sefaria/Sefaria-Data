@@ -12,8 +12,8 @@ from bs4 import BeautifulSoup, Tag
 from collections import namedtuple
 from sefaria.utils.hebrew import strip_nikkud
 import sources.puncutation_project.sefaria_classes as sef
-from data_utilities.weighted_levenshtein import WeightedLevenshtein
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.dibur_hamatchil_matcher import match_text
 
 Quotation = namedtuple('Quotation', ['word_index', 'type'])
 

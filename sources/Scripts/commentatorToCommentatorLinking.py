@@ -2,13 +2,13 @@
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 from sefaria.utils.hebrew import *
-from data_utilities.parallel_matcher import ParallelMatcher
+from linking_utilities.parallel_matcher import ParallelMatcher
 import unicodedata
 import bleach
-from data_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
 import functools
 
 

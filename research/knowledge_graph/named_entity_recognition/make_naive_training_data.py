@@ -7,7 +7,7 @@ from collections import defaultdict
 from bisect import bisect_right
 django.setup()
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.dibur_hamatchil_matcher import match_text
 
 DATA_LOC = "/home/nss/sefaria/datasets/ner/michael-sperling"
 

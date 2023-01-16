@@ -12,7 +12,7 @@ from sources.functions import *
 from sefaria.model.text import *
 import re
 import codecs
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 import pdb
 
 sefer_names = ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy"]

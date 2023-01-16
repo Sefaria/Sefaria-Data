@@ -2,7 +2,7 @@
 
 import json
 from itertools import zip_longest
-import data_utilities.text_align as align
+import parsing_utilities.text_align as align
 from diff_match_patch import diff_match_patch
 from sefaria.utils.hebrew import strip_nikkud
 

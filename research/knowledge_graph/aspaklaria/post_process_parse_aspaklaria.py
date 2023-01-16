@@ -6,7 +6,7 @@ from collections import defaultdict
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.parallel_matcher import ParallelMatcher
+from linking_utilities.parallel_matcher import ParallelMatcher
 from research.knowledge_graph.sefer_haagada.main import disambiguate_ref_list
 from sefaria.settings import MONGO_HOST, MONGO_PORT
 from sefaria.system.exceptions import InputError

@@ -3,7 +3,7 @@ import django
 django.setup()
 from sefaria.model import *
 from sources.functions import UnicodeReader, convertDictToArray, post_link
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 def dh_extract(str):
     if u"כו'" in str:
         str = str.split(u"כו'")[0]

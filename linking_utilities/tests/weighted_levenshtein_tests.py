@@ -1,5 +1,5 @@
 import pytest
-from data_utilities.weighted_levenshtein import WeightedLevenshtein, LevenshteinError
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein, LevenshteinError
 
 
 class TestWeightedLevenshtein:

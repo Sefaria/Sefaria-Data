@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import django
 django.setup()
-from data_utilities import dibur_hamatchil_matcher as dhm
+from linking_utilities import dibur_hamatchil_matcher as dhm
 from sefaria.model import *
 from sefaria.utils import hebrew
 import regex as re

@@ -5,7 +5,7 @@ from tqdm import tqdm
 from functools import reduce
 from sources.functions import post_link
 from sefaria.model.text import library, Ref
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.model.schema import JaggedArrayNode, SchemaNode, Term
 from sefaria.system.exceptions import InputError
 

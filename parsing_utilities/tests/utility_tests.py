@@ -6,7 +6,7 @@ import os
 import codecs
 import pytest
 from io import StringIO
-from data_utilities import util
+from parsing_utilities import util
 
 from sefaria.model import *
 

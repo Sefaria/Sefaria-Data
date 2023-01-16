@@ -15,7 +15,6 @@ from Ben_Ish_Chai_parse import *
 import csv
 from functions import *
 import re
-import data_utilities
 import codecs
 from sources import functions
 from Ben_Ish_Chai_parse import *

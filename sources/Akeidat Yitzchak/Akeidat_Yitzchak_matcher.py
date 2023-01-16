@@ -8,7 +8,7 @@ from sources.local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sources.functions import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 import re
 import codecs
 import pdb

@@ -4,7 +4,7 @@ from sefaria.model import *
 import re
 from sources.functions import getGematria, post_text, post_index, post_link
 import requests
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.utils.talmud import section_to_daf
 
 #SERVER = 'http://localhost:9000'

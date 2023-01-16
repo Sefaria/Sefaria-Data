@@ -21,8 +21,8 @@ import shutil
 from sources.functions import *
 import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
-from data_utilities.parallel_matcher import ParallelMatcher
-from data_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.parallel_matcher import ParallelMatcher
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
 # from fuzzywuzzy import fuzz
 import datetime
 import traceback

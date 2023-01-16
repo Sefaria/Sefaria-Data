@@ -4,7 +4,7 @@ import re
 import json
 from parsing_utilities.ParseUtil import ParsedDocument, Description, ParseState
 from sefaria.utils.talmud import section_to_daf, daf_to_section
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from rif_utils import remove_metadata, get_hebrew_masechet, tags_map, path, hebrewplus, cleanspaces
 from sefaria.model import *
 

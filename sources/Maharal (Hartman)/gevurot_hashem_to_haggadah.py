@@ -1,6 +1,6 @@
 from sources.functions import *
 import bleach
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 def dher(str):
     # re.split("\.;:", str)
     bold_match = re.search('^<b>(.*?)</b>', str)

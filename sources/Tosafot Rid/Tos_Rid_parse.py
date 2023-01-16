@@ -12,7 +12,7 @@ import re
 import codecs
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 import pdb
 
 en_talmud = ["Berakhot","Shabbat","Eruvin","Pesachim","Rosh Hashanah","Yoma","Sukkah","Beitzah","Taanit","Megillah","Moed Katan",

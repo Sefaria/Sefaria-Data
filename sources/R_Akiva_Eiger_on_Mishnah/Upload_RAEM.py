@@ -7,7 +7,7 @@ django.setup()
 from sefaria.model import *
 
 from sources.functions import post_index, post_text, add_term, add_category, post_link
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from parsing_utilities.util import getGematria
 import re
 try:

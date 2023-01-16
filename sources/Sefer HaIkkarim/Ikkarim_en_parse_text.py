@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-#import data_utilities
+#import linking_utilities
 import codecs
 def fix_quotation_marks(string_list):
     return list(map((lambda x: x.replace("\xe2\x80\x9c","").replace("\xe2\x80\x9d","")),string_list))
