@@ -38,7 +38,6 @@ from collections import OrderedDict, defaultdict
 import itertools
 import bleach
 from sefaria.model import *
-from sources.functions import post_link
 from sefaria.system.exceptions import DuplicateRecordError
 from sefaria.system.exceptions import InputError
 from sefaria.system.exceptions import PartialRefInputError
@@ -1122,8 +1121,9 @@ def save_links_local(category, mesorat_hashas_name):
     print("num dups {}".format(num_dups))
 
 
-
 def save_links_post_request(category):
+    from sources.functions import post_link
+
     query = {"generated_by": "mesorat_hashas.py {}".format(category), "auto": True,
              "type": "mesorat hashas"}
     ls = LinkSet(query)
@@ -1133,6 +1133,8 @@ def save_links_post_request(category):
         print("Posting [{}:{}]".format(i, i+499))
         print(post_link(links[i:i+500]))
         i += 500
+
+
 class Mesorah_Match_Ref:
 
     def __init__(self,a,b, id=None):
