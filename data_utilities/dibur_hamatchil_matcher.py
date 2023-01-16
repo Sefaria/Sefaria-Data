@@ -1,10 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import math as mathy
 import bisect
-import csv
-import codecs
-import itertools
 import numpy
 
 import logging
