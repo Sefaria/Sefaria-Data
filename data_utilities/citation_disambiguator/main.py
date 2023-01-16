@@ -12,7 +12,7 @@ import django
 django.setup()
 from sefaria.model import *
 from sefaria.helper.normalization import NormalizerComposer, RegexNormalizer, ReplaceNormalizer
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.parallel_matcher import ParallelMatcher
 from collections import defaultdict, OrderedDict
 from sefaria.system.exceptions import PartialRefInputError, InputError, NoVersionFoundError, DuplicateRecordError
 from sefaria.utils.hebrew import strip_cantillation

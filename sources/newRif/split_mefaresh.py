@@ -1,6 +1,6 @@
 import re
 from functools import partial
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.parallel_matcher import ParallelMatcher
 from sources.functions import getGematria
 from rif_gemara_matcher_masoret import base_tokenizer
 from rif_utils import path, tags_map

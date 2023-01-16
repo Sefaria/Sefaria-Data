@@ -21,7 +21,7 @@ import shutil
 from sources.functions import *
 import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.parallel_matcher import ParallelMatcher
 from data_utilities.util import WeightedLevenshtein
 # from fuzzywuzzy import fuzz
 import datetime

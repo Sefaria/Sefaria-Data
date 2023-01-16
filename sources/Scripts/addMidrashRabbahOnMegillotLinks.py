@@ -4,7 +4,7 @@ django.setup()
 
 import string
 from sources.functions import *
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.parallel_matcher import ParallelMatcher
 from sources.Scripts.commentatorToCommentatorLinking import tokenizer, get_score
 from data_utilities.dibur_hamatchil_matcher import *
 from sefaria.utils.hebrew import strip_cantillation

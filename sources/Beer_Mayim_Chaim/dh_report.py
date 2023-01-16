@@ -4,7 +4,7 @@ __author__ = 'stevenkaplan'
 
 from sources.functions import *
 import os
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.parallel_matcher import ParallelMatcher
 from BeautifulSoup import *
 from data_utilities.util import set_ranges_between_refs
 from data_utilities.util import WeightedLevenshtein

@@ -1,5 +1,5 @@
 from sources.functions import *
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.parallel_matcher import ParallelMatcher
 from data_utilities.citation_disambiguator.main import CitationDisambiguator
 import os
 from functools import reduce

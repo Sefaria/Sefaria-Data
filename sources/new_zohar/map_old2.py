@@ -8,7 +8,7 @@ import django
 django.setup()
 from sefaria.model import *
 from sources.functions import getGematria
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.parallel_matcher import ParallelMatcher
 from data_utilities.dibur_hamatchil_matcher import match_ref
 
 

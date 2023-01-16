@@ -4,7 +4,7 @@ import django
 django.setup()
 
 from sheets import *
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.parallel_matcher import ParallelMatcher
 import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
 from collections import OrderedDict

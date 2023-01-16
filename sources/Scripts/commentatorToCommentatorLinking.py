@@ -5,7 +5,7 @@ from sefaria.model import *
 from data_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 from sefaria.utils.hebrew import *
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from data_utilities.parallel_matcher import ParallelMatcher
 import unicodedata
 import bleach
 from data_utilities.util import WeightedLevenshtein
