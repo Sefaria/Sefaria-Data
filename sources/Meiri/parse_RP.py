@@ -1,6 +1,6 @@
 from sources.functions import *
 from linking_utilities.parallel_matcher import ParallelMatcher
-from linking_utilities.citation_disambiguator.main import CitationDisambiguator
+from linking_utilities.citation_disambiguator.citation_disambiguator import CitationDisambiguator
 import os
 from functools import reduce
 from sefaria.utils.hebrew import strip_cantillation

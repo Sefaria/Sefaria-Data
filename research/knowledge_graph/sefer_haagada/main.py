@@ -10,7 +10,7 @@ from tqdm import tqdm
 from sefaria.model import *
 from sefaria.utils.hebrew import strip_cantillation, gematria, has_cantillation
 from sefaria.system.exceptions import InputError
-from linking_utilities.citation_disambiguator.main import CitationDisambiguator
+from linking_utilities.citation_disambiguator.citation_disambiguator import CitationDisambiguator
 
 # TODO figure out how to map mekhilta
 

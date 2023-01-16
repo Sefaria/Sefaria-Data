@@ -11,7 +11,7 @@ import bleach
 import os
 from sefaria.system.database import db
 from research.source_sheet_disambiguator.main import refine_ref_by_text
-from linking_utilities.citation_disambiguator.main import *
+from linking_utilities.citation_disambiguator.citation_disambiguator import *
 django.setup()
 from sources.functions import UnicodeWriter
 import urllib2, urllib

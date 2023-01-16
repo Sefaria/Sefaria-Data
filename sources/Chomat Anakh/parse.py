@@ -4,7 +4,7 @@ import re
 from sefaria.model import *
 from sources.functions import *
 from sefaria.system.exceptions import *
-from linking_utilities.citation_disambiguator.main import *
+from linking_utilities.citation_disambiguator.citation_disambiguator import *
 from linking_utilities.dibur_hamatchil_matcher import *
 
 SERVER = "http://draft.sefaria.org"
