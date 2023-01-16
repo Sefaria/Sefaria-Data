@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 algorithm - credit Dicta (dicta.org.il):
 - make 484 (=22^2) hashtables
@@ -33,8 +31,8 @@ import regex as re
 import time as pytime
 import numpy as np
 import pickle as pickle
-import bisect, csv, codecs, json
-from collections import OrderedDict, defaultdict
+import bisect, json
+from collections import defaultdict
 import itertools
 import bleach
 from sefaria.model import *
@@ -46,7 +44,6 @@ from data_utilities.dibur_hamatchil_matcher import get_maximum_subset_dh, get_ma
 import logging
 import multiprocessing
 
-from sefaria.profiling import *
 
 logging.disable(logging.WARNING)
 
@@ -79,13 +76,6 @@ def get_texts_from_category(category):
 
     return text_names
 
-def tokenize_words_old(str):
-    str = str.replace("־"," ")
-    str = re.sub(r"</?[^>]+>","",str) #get rid of html tags
-    str = re.sub(r"\([^\(\)]+\)","",str) #get rid of refs
-    str = str.replace('"',"'")
-    word_list = list(filter(bool,re.split(r"[\s\:\-\,\.\;\(\)\[\]\{\}]",str)))
-    return word_list
 
 stop_words = ["ר'",'רב','רבי','בן','בר','בריה','אמר','כאמר','וכאמר','דאמר','ודאמר','כדאמר','וכדאמר','ואמר','כרב',
               'ורב','כדרב','דרב','ודרב','וכדרב','כרבי','ורבי','כדרבי','דרבי','ודרבי','וכדרבי',"כר'","ור'","כדר'",
