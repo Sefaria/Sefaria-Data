@@ -98,10 +98,10 @@ def get_full_version(v):
     return _version_cache[key]
 
 
-def get_text_and_version_from_ref(oref, vtitle):
-    main_tc, main_oref, main_version = get_tc(oref, vtitle=vtitle)
+def get_text_and_version_from_ref(tref, vtitle):
+    main_tc, main_oref, main_version = get_tc(tref, vtitle=vtitle)
     assert not main_tc.is_merged
-    return main_tc.text
+    return main_tc.text, main_version
 
 
 def find_text_to_remove(s):
@@ -146,21 +146,21 @@ def convert_section_citation_to_segment_citation(main_text, section_tref, segmen
     return wrap_chars_with_overlaps(main_text, chars_to_wrap, get_wrapped_text)
 
 
-def get_edit_for_quoting_segment(main_ref, section_map, error_file_csv, vtitle):
+def get_edit_for_quoting_segment(main_tref, section_map, error_file_csv, vtitle):
     try:
-        orig_text, version_stub = get_text_and_version_from_ref(main_ref, vtitle)
+        orig_text, version_stub = get_text_and_version_from_ref(main_tref, vtitle)
         updated_text = convert_all_section_citations_to_segments(orig_text, section_map)
         if updated_text == orig_text:
             return None
 
         return {
             "version": get_full_version(version_stub),
-            "tref": main_ref,
+            "tref": main_tref,
             "text": updated_text
         }
     except InputError as e:
         message = e.args[0]
-        error_file_csv.writerow({"Quoting Ref": main_ref, "Error": message})
+        error_file_csv.writerow({"Quoting Ref": main_tref, "Error": message})
 
 
 def modify_tanakh_links_all(input_filename, error_output_filename, start=0, end=None, min_num_citation=0):
