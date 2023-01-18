@@ -45,12 +45,12 @@ def get_symbol(footnote):
 def get_tag(formatting_type, opening_tag=True):
     if not formatting_type:
         return ''
-    elements = None
+    attributes = None
     if formatting_type == Formatting.BOLD:
         tags = ['b']
     elif formatting_type == Formatting.FADED:
         tags = ['span']
-        elements = 'style="background-color:powderblue"'
+        attributes = 'class="mediumGrey'
     elif formatting_type == Formatting.ITALICS:
         tags = ['i']
     elif formatting_type == Formatting.BOLD_ITALICS:
@@ -58,7 +58,7 @@ def get_tag(formatting_type, opening_tag=True):
 
     tag_string = ''
     for tag in tags:
-        tag_string += f'<{"/" if not opening_tag else ""}{tag}{" " + elements if elements and opening_tag else ""}>'
+        tag_string += f'<{"/" if not opening_tag else ""}{tag}{" " + attributes if attributes and opening_tag else ""}>'
     return tag_string
 
 
