@@ -12,6 +12,7 @@ from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.system.database import db
 import time
+from docx import Document
 
 
 def latin_numeral_to_hebrew_numeral(latin_numeral):
@@ -380,32 +381,90 @@ def insert_links_to_db(list_of_links):
 
 if __name__ == '__main__':
     print("hello world")
+    # "Guide for the Perplexed, Part 1 2:7"
+    ref_prefix = "Efodi on Guide for the Perplexed, "
+    sections = ["Introduction, Letter to R Joseph son of Judah", "Introduction, Prefatory Remarks", "Introduction, Introduction",
+                "Part 1", "Part 2 Introduction", "Part 2", "Part 3 Introduction", "Part 3"]
+    ref = ''
+    ref_chapter = 0
+    ref_paragraph = 0
+    # Open the docx file
+    document = Document('efodi.docx')
+
+    comm_list = []
+    letter_to_R_Joseph_son_of_Judah = {}
+    prefatory_Remarks = {}
+    introduction = {}
+    part_1 = {}
+    part_2_introduction = {}
+    part_2 = {}
+    part_3_introduction = {}
+    part_3 = {}
+    comm_list = [letter_to_R_Joseph_son_of_Judah, prefatory_Remarks, introduction, part_1, part_2_introduction, part_2, part_3_introduction, part_3]
 
 
+
+    # Print the text of the docx file
+    section_index = -1
+    for para in document.paragraphs:
+        print(para.text)
+        if para.text == '' or '@22' in para.text:
+            continue
+        if '@00' in para.text and not para.text.startswith("@00פרק"):
+            section_index += 1
+            ref_chapter = 0
+            ref_paragraph = 0
+
+        elif '@00' in para.text:
+            ref_chapter += 1;
+            ref_paragraph = 0
+
+        else:
+            ref_paragraph += 1
+            if section_index in {0,1,2,4,6}:
+                ref = str(ref_prefix) + sections[section_index] + ' ' + str(ref_paragraph)
+
+            else:
+                ref = str(ref_prefix) + sections[section_index] + ' ' + str(ref_chapter) + ' ' + ":" + str(ref_paragraph)
+            comm_list[section_index][ref] = para.text.translate(str.maketrans("", "", "0123456789@"))
+        # cleaned_string = para.text.translate(str.maketrans("", "", "0123456789@"))
+        # print(cleaned_string)
+    he_title, en_title = """רב פנינים על משלי / Rav Peninim on Proverbs""".split(" / ")
+    en_title = 'Efodi on Guide for the Perplexed'
+    he_title = 'אפודי על מורה נבוכים'
+    root = SchemaNode()
+    root.add_primary_titles(en_title, he_title)
+    intro = SchemaNode()
+    intro.add_shared_term("Introduction")
+    letter = JaggedArrayNode()
+    letter.add_structure(["Paragraph"])
+    prefatory = JaggedArrayNode()
+    prefatory.add_structure(["Paragraph"])
+    introduction = JaggedArrayNode()
+    introduction.add_structure(["Paragraph"])
+    intro.key = "Introduction"
+    letter.ket = "Letter to R Joseph son of Judah"
+    prefatory.key = "Prefatory Remarks"
+    introduction.key = "Introduction"
+
+    part2_intro = JaggedArrayNode()
+    part2_intro.add_structure(["Paragraph"])
+    part2_intro.key = "Part 2 Introduction"
+
+    part2 = JaggedArrayNode()
+
+    # default = JaggedArrayNode()
+    # default.default = True
+    # default.key = "default"
+    # default.add_structure(["Chapter", "Verse", "Comment"])
+    root.append(intro)
+    # root.append(default)
+    root.validate()
+    # post_index({"title": en_title,
+    #             "base_text_titles": ["Proverbs"],
+    #             "base_text_mapping": "many_to_one_default_only",
+    #             "dependence": "Commentary", "collective_title": "Alshich",
+    #             "categories": ["Tanakh", "Commentary", "Alshich", "Writings"], "schema": root.serialize()})
 
     superuser_id = 171118
 
-
-
-    csv_object = parse_csv_to_object()
-
-
-    # index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
-    # list_of_masechtot_to_db(index_nodes)
-    # time.sleep(5)
-    delete_all_existing_versions()
-
-    ingest_english_version()
-    time.sleep(5)
-    ingest_hebrew_version()
-
-
-    reorder_masechet_nodes()
-
-
-
-    delete_existing_correct_essay_links()
-    delete_existing_koren_links()
-    delete_existing_automated_links()
-    list_of_links = create_links(csv_object)
-    insert_links_to_db(list_of_links)
