@@ -901,11 +901,8 @@ class HtmlTzParser(TzParser):
 
             elif elem.name == 'span' and all(x not in HtmlTzParser.FOOTNOTES for x in elem['class']):  # Formatted text
                 for child in elem.children:  # exception for gray-text override-9
-                    if 'grey-text' in elem['class'] and 'CharOverride-9' in elem['class']:
-                        format_class = None
-                    else:
-                        format_class = HtmlTzParser.FORMATTING_CLASSES[[x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0]] if \
-                            any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']) else None
+                    format_class = HtmlTzParser.FORMATTING_CLASSES[[x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0]] if \
+                        any(x in HtmlTzParser.FORMATTING_CLASSES for x in elem['class']) else None
                     if len([x for x in elem['class'] if x in HtmlTzParser.APPEND_TO_WORD]) > 0:
                         self.continue_phrase = True
                     self.process_paragraph_elem(child, paragraph, format_class)
