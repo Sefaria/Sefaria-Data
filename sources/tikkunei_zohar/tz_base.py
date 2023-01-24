@@ -50,7 +50,7 @@ def get_tag(formatting_type, opening_tag=True):
         tags = ['b']
     elif formatting_type == Formatting.FADED:
         tags = ['span']
-        attributes = 'class="mediumGrey'
+        attributes = 'class="mediumGrey"'
     elif formatting_type == Formatting.ITALICS:
         tags = ['i']
     elif formatting_type == Formatting.BOLD_ITALICS:
