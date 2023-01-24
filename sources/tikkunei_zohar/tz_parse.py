@@ -1,6 +1,7 @@
 from docx import Document
 from bs4 import BeautifulSoup
 from docx2python import docx2python
+from base64 import b64encode
 from tz_base import *
 import re
 import csv
@@ -587,7 +588,7 @@ class HtmlTzParser(TzParser):
         "it-text": Formatting.ITALICS,
         "grey-text": Formatting.FADED,
         "bd-it-text": Formatting.BOLD_ITALICS,
-        "bd": Formatting.BOLD
+        "bd": Formatting.BOLD,
     }
 
     SIDENOTE_CLASSES = {
@@ -703,7 +704,7 @@ class HtmlTzParser(TzParser):
     def cursor_is_paragraph(self):
         return self.processed_elem_cursor.name == 'p' and self.processed_elem_cursor['class']
 
-    def process_words(self, elem, formatting):
+    def process_words(self, elem, formatting, is_img_tag=False):
         """Process words or partial words and add to existing or new Word"""
         if (not self.append_to_previous or elem[0].isspace()) and not self.continue_phrase:  # new phrase
             self.append_to_previous = False
@@ -714,75 +715,81 @@ class HtmlTzParser(TzParser):
                 self.phrase.footnotes.append(self.current_footnote)
                 self.current_footnote = None
         self.continue_phrase = False
-        for i, elem_word in enumerate(elem.split()):
-            if i == 0 and (self.append_to_previous or re.match(r'[?.\].,:!]+$', str(elem_word))):  # ending punctuation
-                self.word.add_to_word(elem_word)
-            elif re.match(r'[?.\[\].,:!]*‘[?.\[\].,:!]*$', str(elem_word)): # punctuation with backtaick
-                if re.match(r'[?.\[\].,:!]*‘[?.\[\].,:!]*$', str(elem_word)) and len(self.paragraph.quoted_cursor) > 0:   # self.paragraph.inside_quotes:
+        if is_img_tag:
+            self.word = self.phrase.add_new_word(elem)
+            # self.word.footnotes = []
+            self.paragraph.add_to_quoted_if_in_quotes(self.word)
+            self.words.append(self.word)
+        else:
+            for i, elem_word in enumerate(elem.split()):
+                if i == 0 and (self.append_to_previous or re.match(r'[?.\].,:!]+$', str(elem_word))):  # ending punctuation
                     self.word.add_to_word(elem_word)
+                elif re.match(r'[?.\[\].,:!]*‘[?.\[\].,:!]*$', str(elem_word)): # punctuation with backtaick
+                    if re.match(r'[?.\[\].,:!]*‘[?.\[\].,:!]*$', str(elem_word)) and len(self.paragraph.quoted_cursor) > 0:   # self.paragraph.inside_quotes:
+                        self.word.add_to_word(elem_word)
+                    else:
+                        self.word = self.phrase.add_new_word(elem_word)
+                        # self.word.footnotes = []
+                        self.paragraph.add_to_quoted_if_in_quotes(self.word)
+                        self.words.append(self.word)
+                    # elif self.line.inside_quotes:
+                    # else:
+                    #     self.word = self.phrase.add_new_word(elem_word)
+                    #     self.words.append(self.word)
+                    #     self.line.add_to_quoted_if_necessary(self.word)
                 else:
                     self.word = self.phrase.add_new_word(elem_word)
                     # self.word.footnotes = []
-                    self.paragraph.add_to_quoted_if_in_quotes(self.word)
                     self.words.append(self.word)
-                # elif self.line.inside_quotes:
-                # else:
-                #     self.word = self.phrase.add_new_word(elem_word)
-                #     self.words.append(self.word)
-                #     self.line.add_to_quoted_if_necessary(self.word)
-            else:
-                self.word = self.phrase.add_new_word(elem_word)
-                # self.word.footnotes = []
-                self.words.append(self.word)
-                self.paragraph.add_to_quoted_if_in_quotes(self.word)
-            #self.line.add_to_quoted_if_necessary(self.word)
-            if '‘' in elem_word or '’' in elem_word:
-                if re.match(r'^[?./‘\[\].,:!]+[a-zA-Z0-9]+.*$', str(elem_word)):  # starts with ‘
-                    self.paragraph.add_new_quoted()  # create a Quote()
                     self.paragraph.add_to_quoted_if_in_quotes(self.word)
-                    if re.match(r'.*[?.\[\].,:!]*’[?.\[\].,:!]*', str(elem_word)):  # word ends in punctuation including ‘
-                        self.paragraph.commit_quoted()
-                    # number += 1
-                    # if number != 1:
-                    #    print("help!")
-                    # self.line.add_new_quoted()
-                elif re.match(r'^[a-zA-Z0-9]+[?.\[\].,:!]*’[?.\[\].,:!]*$', str(elem_word)):  # word ends in punctuation including backtick but doesn't start with
-                    self.paragraph.commit_quoted()
-                elif re.match(r'[A-Za-z]+’[A-Za-z]+', str(elem_word)):
-                    pass
-                else:  # just ‘
-                    # if self.line.inside_quotes:
-                    #     self.line.commit_quoted()
-                    # else:
-                    #     self.line.add_new_quoted()
-                    #     self.line.add_to_quoted(self.word)
-                    # pass
-                    # print(word)
-                    if '‘' in elem_word:  # new quoted
-                        if elem_word != '‘':
-                            print(elem_word)
-                        self.paragraph.add_new_quoted()
+                #self.line.add_to_quoted_if_necessary(self.word)
+                if '‘' in elem_word or '’' in elem_word:
+                    if re.match(r'^[?./‘\[\].,:!]+[a-zA-Z0-9]+.*$', str(elem_word)):  # starts with ‘
+                        self.paragraph.add_new_quoted()  # create a Quote()
                         self.paragraph.add_to_quoted_if_in_quotes(self.word)
-                    else:
-                        if self.file == 'vol2.html' and self.has_vol_1_exceptions(elem_word):
-                            pass
+                        if re.match(r'.*[?.\[\].,:!]*’[?.\[\].,:!]*', str(elem_word)):  # word ends in punctuation including ‘
+                            self.paragraph.commit_quoted()
+                        # number += 1
+                        # if number != 1:
+                        #    print("help!")
+                        # self.line.add_new_quoted()
+                    elif re.match(r'^[a-zA-Z0-9]+[?.\[\].,:!]*’[?.\[\].,:!]*$', str(elem_word)):  # word ends in punctuation including backtick but doesn't start with
+                        self.paragraph.commit_quoted()
+                    elif re.match(r'[A-Za-z]+’[A-Za-z]+', str(elem_word)):
+                        pass
+                    else:  # just ‘
+                        # if self.line.inside_quotes:
+                        #     self.line.commit_quoted()
+                        # else:
+                        #     self.line.add_new_quoted()
+                        #     self.line.add_to_quoted(self.word)
+                        # pass
+                        # print(word)
+                        if '‘' in elem_word:  # new quoted
+                            if elem_word != '‘':
+                                print(elem_word)
+                            self.paragraph.add_new_quoted()
+                            self.paragraph.add_to_quoted_if_in_quotes(self.word)
                         else:
-                            if len(self.paragraph.quoted_cursor) == 0: #assume typo? # need to fix this see "and who raises her to her place"
+                            if self.file == 'vol2.html' and self.has_vol_1_exceptions(elem_word):
                                 pass
-                                # print(self.word.text)
-                                # self.paragraph.add_new_quoted()
-                                # self.paragraph.add_to_quoted_if_in_quotes(self.word)
                             else:
-                                self.paragraph.commit_quoted()
-                        # if len(self.paragraph.quoted_cursor) == 0:  # self.paragraph.inside_quotes:
-                        #     print(elem_word)
-                        #print(str(elem_word))
+                                if len(self.paragraph.quoted_cursor) == 0: #assume typo? # need to fix this see "and who raises her to her place"
+                                    pass
+                                    # print(self.word.text)
+                                    # self.paragraph.add_new_quoted()
+                                    # self.paragraph.add_to_quoted_if_in_quotes(self.word)
+                                else:
+                                    self.paragraph.commit_quoted()
+                            # if len(self.paragraph.quoted_cursor) == 0:  # self.paragraph.inside_quotes:
+                            #     print(elem_word)
+                            #print(str(elem_word))
 
-                # if it's start
-                # if it's end
-                # if it's both
+                    # if it's start
+                    # if it's end
+                    # if it's both
 
-        self.append_to_previous = not elem[-1].isspace()
+            self.append_to_previous = not elem[-1].isspace()
 
     def has_vol_1_exceptions(self, elem_word):
         if len(self.paragraphs) == 33 and len(self.paragraph.words) == 24:  # specific exception for typo
@@ -888,6 +895,23 @@ class HtmlTzParser(TzParser):
             if letter not in ["\uF0A4",""]:  # don't add gibberish
                 self.current_footnote.text += letter
 
+    def process_image(self, elem, return_text=False):
+        img_src = elem.attrs['src']
+        img_location = img_src[img_src.index('image/'):]
+        try:
+            with open(img_location, 'rb') as img_file:
+                img_data = img_file.read()
+                b64_img_data = b64encode(img_data)
+                elem['src'] = "data:image/{};base64,{}".format('jpg', str(b64_img_data)[2:-1])
+                if return_text:
+                    return elem
+                else:
+                    self.process_words(str(elem), None, True)
+        except Exception as e:
+            print('Exception: {}. Original Source: {}'.format(e, img_src))
+            if return_text:
+                return ''
+
     def process_paragraph_elem(self, elem, paragraph, formatting=None):
         #try:
             if isinstance(elem, str):
@@ -898,7 +922,6 @@ class HtmlTzParser(TzParser):
             elif elem.name == 'span' and any(x in HtmlTzParser.FOOTNOTES for x in elem['class']):  # other Footnotes
                 # footnote_type = [x for x in elem['class'] if x in HtmlTzParser.FOOTNOTES]
                 self.process_footnote_material(elem)
-
             elif elem.name == 'span' and all(x not in HtmlTzParser.FOOTNOTES for x in elem['class']):  # Formatted text
                 for child in elem.children:  # exception for gray-text override-9
                     format_class = HtmlTzParser.FORMATTING_CLASSES[[x for x in elem['class'] if x in HtmlTzParser.FORMATTING_CLASSES][0]] if \
@@ -910,10 +933,11 @@ class HtmlTzParser(TzParser):
                 self.line = self.paragraph.add_new_line()
                 self.lines.append(self.line)
                 self.append_to_previous = False
-            elif elem.name != 'img':
+            elif elem.name == 'img':
+                self.process_image(elem)
+            else:
                 raise Exception("Unhandled: " + str(elem))
                 # TODO: handle unhandled
-                pass
         #except Exception as e:
         #    logging.error("Error for parsing element " + str(elem) + ". " + str(e))
         # elif #citation
@@ -929,8 +953,7 @@ class HtmlTzParser(TzParser):
     def get_next_word(self):
         return None
 
-    @staticmethod
-    def clean_he(hebrew_text):
+    def clean_he(self, hebrew_text):
         if isinstance(hebrew_text, str):
             return hebrew_text
         else:
@@ -945,7 +968,13 @@ class HtmlTzParser(TzParser):
                         child.name = 'b'
                         child.attrs = {}
                     else:
-                        print(str(child))
+                        for child_of_child in child.children:
+                            if isinstance(child, str):
+                                cleaned_hebrew_text += child_of_child
+                            elif child.name == 'img':
+                                cleaned_hebrew_text += self.process_image(child_of_child, True)
+                            else:
+                                print(str(child))
                     cleaned_hebrew_text += str(child)
                 else:
                     print(str(child))
