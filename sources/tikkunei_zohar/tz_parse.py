@@ -904,7 +904,7 @@ class HtmlTzParser(TzParser):
                 b64_img_data = b64encode(img_data)
                 elem['src'] = "data:image/{};base64,{}".format('jpg', str(b64_img_data)[2:-1])
                 if return_text:
-                    return elem
+                    return str(elem)
                 else:
                     self.process_words(str(elem), None, True)
         except Exception as e:
@@ -971,11 +971,13 @@ class HtmlTzParser(TzParser):
                         for child_of_child in child.children:
                             if isinstance(child, str):
                                 cleaned_hebrew_text += child_of_child
-                            elif child.name == 'img':
+                            elif child_of_child.name == 'img':
                                 cleaned_hebrew_text += self.process_image(child_of_child, True)
                             else:
                                 print(str(child))
                     cleaned_hebrew_text += str(child)
+                elif child.name == 'img':
+                    cleaned_hebrew_text += self.process_image(child, True)
                 else:
                     print(str(child))
             return cleaned_hebrew_text
