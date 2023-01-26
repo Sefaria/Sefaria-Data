@@ -6,7 +6,8 @@ Documentation last updated: Jan 18, 2023
 
 ## Usage
 
-Running `python tz_post.py` should run the parsers and post the parsed text.
+Running `python tz_post.py` should run `post_tz()` and `post_version()` which should the parsers and post the parsed
+text.
 
 ## Environment Variables
 `PYTHONUNBUFFERED=1;DJANGO_SETTINGS_MODULE=sefaria.settings;PYTHONPATH=Path/To/Your/Sefaria-Project`
