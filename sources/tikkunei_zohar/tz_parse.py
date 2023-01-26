@@ -722,7 +722,7 @@ class HtmlTzParser(TzParser):
             self.words.append(self.word)
         else:
             for i, elem_word in enumerate(elem.split()):
-                if i == 0 and (self.append_to_previous or re.match(r'[?.\].,:!]+$', str(elem_word))):  # ending punctuation
+                if i == 0 and (self.append_to_previous or re.match(r'[?.\].,:!]+$', str(elem_word))) and len(self.line.words) > 0:  # ending punctuation when not new line
                     self.word.add_to_word(elem_word)
                 elif re.match(r'[?.\[\].,:!]*‘[?.\[\].,:!]*$', str(elem_word)): # punctuation with backtaick
                     if re.match(r'[?.\[\].,:!]*‘[?.\[\].,:!]*$', str(elem_word)) and len(self.paragraph.quoted_cursor) > 0:   # self.paragraph.inside_quotes:
