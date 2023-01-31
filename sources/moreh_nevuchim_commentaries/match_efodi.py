@@ -13,6 +13,15 @@ from sefaria.tracker import modify_bulk_text
 from sefaria.helper.category import create_category
 from sefaria.system.database import db
 import json
+import re
+
+
+def extract_last_number(string):
+    match = re.findall(r'\d+', string)
+    if match:
+        return int(match[-1])
+    else:
+        return None
 
 def insert_links_to_db(list_of_links):
     for l in list_of_links:
@@ -104,17 +113,139 @@ def cauldron_pipeline():
         links = json.load(f)
     links = list_of_dict_to_links(links)
     insert_links_to_db(links)
+    with open('inferred_links.json') as f:
+        links = json.load(f)
+    links = list_of_dict_to_links(links)
+    insert_links_to_db(links)
 
 def clean():
     query = {"refs": {"$regex" : "Efodi on Guide for the Perplexed"}}
     list_of_links = LinkSet(query).array()
     for l in list_of_links:
         l.delete()
+def exists_with_ref_x(list_of_dicts, x):
+    for d in list_of_dicts:
+        if d["refs"][0] == x:
+            # return d
+            return d
+    return None
+
+def check_neighbors(links, x, base_txt_ref):
+    for d in list_of_dicts:
+        if d["refs"][0] == x:
+            # return d
+            return d
+    return None
+
+def prev_element(lst, element):
+    index = lst.index(element)
+    if index > 0:
+        return lst[index - 1]
+    else:
+        return None
+
+def next_element(lst, element):
+    index = lst.index(element)
+    if index + 1 < len(lst):
+        return lst[index+1]
+    else:
+        return None
+
+def trim_last_num(string):
+    match = re.search(r'\d+$', string)
+    if match:
+        string = string[: -len(match.group(0))]
+    return string
+
+def extract_last_number(string):
+    return int(re.findall(r'\d+', string)[-1])
+def infer_links():
+    with open('links_list.json') as f:
+        auto_links = json.load(f)
+
+    inferred = []
+
+    last_segment_num = 0
+    base_text_ref = ''
+    count = 0
+    # for sec in sections:
+    #     r_string_comm = "Efodi on Guide for the Perplexed, {}".format(sec)
+    #     refs_comm = Ref(r_string_comm).all_segment_refs()
+    #     for r in refs_comm:
+    #         if exists_with_ref_x(auto_links, r.tref) == None:
+    #             count += 1
+    #             if exists_with_ref_x(auto_links, prev_element(r).tref) and
+    #                 r. exists_with_ref_x(auto_links, prev_element(r).tref)["refs"][1]
+    for link in auto_links[1:]:
+        prev_comm_ref = prev_element(auto_links, link)["refs"][0]
+        curr_comm_ref = link["refs"][0]
+        # next_comm_ref = next_element(auto_links, link)["refs"][0]
+
+        i_minus_one = int(extract_last_number(prev_comm_ref))
+        i = int(extract_last_number(curr_comm_ref))
+        # i_plus_one = int(extract_last_number(next_comm_ref))
+        if i_minus_one + 1 < i and link["refs"][1] ==  prev_element(auto_links, link)["refs"][1]:
+            count += 1
+            print(prev_comm_ref, curr_comm_ref)
+            inferred.append(
+                {
+                    "refs": [
+                        trim_last_num(prev_comm_ref) + str(i_minus_one+1),
+                        prev_element(auto_links, link)["refs"][1]
+                    ],
+                    "generated_by": "Guide for the Perplexed_to_Efodi",
+                    "type": "Commentary",
+                    "auto": True
+                }
+            )
+    print(count)
+    with open("inferred_links.json", "w") as f:
+        # Write the list of dictionaries to the file as JSON
+        json.dump(inferred, f, ensure_ascii=False, indent=2)
+
+
+def create_report():
+
+    auto = []
+    inferred = []
+
+    with open('links_list.json') as f:
+        auto = json.load(f)
+
+    with open('inferred_links.json') as f:
+        inferred = json.load(f)
+
+    tuples = []
+    tuples.append(("Efodi Ref", "Moreh Ref Script", "Moreh Ref Inferred"))
+    for sec in sections:
+        r_string_comm = "Efodi on Guide for the Perplexed, {}".format(sec)
+        r_string_base = "Guide for the Perplexed, {}".format(sec)
+        all_refs_for_sec = Ref(r_string_comm).all_segment_refs()
+
+        for r in all_refs_for_sec:
+            auto_ref = ''
+            inferred_ref = ''
+            d =  exists_with_ref_x(auto, r.tref)
+            if d != None:
+                auto_ref = d["refs"][1]
+            else:
+                d =  exists_with_ref_x(inferred, r.tref)
+                if d != None:
+                    inferred_ref = d["refs"][1]
+            tuples.append((r.tref, auto_ref, inferred_ref))
+    with open("report.csv", "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerows(tuples)
+
 
 if __name__ == '__main__':
     print("hello world")
+    # infer_links()
     clean()
     cauldron_pipeline()
+    # create_report()
+    print("hi")
+
     # post_link(links)
 
 
