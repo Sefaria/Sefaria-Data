@@ -159,12 +159,27 @@ def trim_last_num(string):
 
 def extract_last_number(string):
     return int(re.findall(r'\d+', string)[-1])
+def replace_last_number(s, x):
+    return re.sub(r'\d+(?=$)', str(x), s)
+def find_ref_in_list(ref_string, list_of_refs):
+    for ref in list_of_refs:
+        if ref.tref == ref_string:
+            return ref
+
+    return None
 def infer_links():
     with open('links_list.json') as f:
         auto_links = json.load(f)
 
-    inferred = []
-
+    sandwich_links = []
+    last_in_seg_links = []
+    all_refs_base = []
+    all_refs_comm = []
+    for sec in sections:
+        r_string_base = "Guide for the Perplexed, {}".format(sec)
+        all_refs_base += Ref(r_string_base).all_segment_refs()
+        r_string_comm = "Efodi on Guide for the Perplexed, {}".format(sec)
+        all_refs_comm += Ref(r_string_comm).all_segment_refs()
     last_segment_num = 0
     base_text_ref = ''
     count = 0
@@ -181,13 +196,13 @@ def infer_links():
         curr_comm_ref = link["refs"][0]
         # next_comm_ref = next_element(auto_links, link)["refs"][0]
 
+
         i_minus_one = int(extract_last_number(prev_comm_ref))
         i = int(extract_last_number(curr_comm_ref))
         # i_plus_one = int(extract_last_number(next_comm_ref))
         if i_minus_one + 1 < i and link["refs"][1] ==  prev_element(auto_links, link)["refs"][1]:
-            count += 1
-            print(prev_comm_ref, curr_comm_ref)
-            inferred.append(
+            # count += 1
+            sandwich_links.append(
                 {
                     "refs": [
                         trim_last_num(prev_comm_ref) + str(i_minus_one+1),
@@ -198,25 +213,54 @@ def infer_links():
                     "auto": True
                 }
             )
+        if 'Efodi on Guide for the Perplexed, Part 1 10:1' in link["refs"][0]:
+            a =1
+        possibly_missing_efodi_link_ref = replace_last_number(prev_element(auto_links, link)["refs"][0], i_minus_one+1)
+        possibly_non_existing_more_ref = replace_last_number(prev_element(auto_links, link)["refs"][1], i_minus_one+1)
+        if i < i_minus_one and not exists_with_ref_x(auto_links, possibly_missing_efodi_link_ref) and find_ref_in_list(possibly_missing_efodi_link_ref, all_refs_comm) \
+                and not find_ref_in_list(possibly_non_existing_more_ref, all_refs_base):
+            # print("%%%%%%%%%%%%%")
+            last_in_seg_links.append(
+                {
+                    "refs": [
+                        possibly_missing_efodi_link_ref,
+                        prev_element(auto_links, link)["refs"][1]
+                    ],
+                    "generated_by": "Guide for the Perplexed_to_Efodi",
+                    "type": "Commentary",
+                    "auto": True
+                }
+            )
+            count += 1
+
     print(count)
-    with open("inferred_links.json", "w") as f:
+
+
+    with open("sandwich_links.json", "w") as f:
         # Write the list of dictionaries to the file as JSON
-        json.dump(inferred, f, ensure_ascii=False, indent=2)
+        json.dump(sandwich_links, f, ensure_ascii=False, indent=2)
+    with open("last_in_seg_links.json", "w") as f:
+        # Write the list of dictionaries to the file as JSON
+        json.dump(last_in_seg_links, f, ensure_ascii=False, indent=2)
 
 
 def create_report():
 
     auto = []
-    inferred = []
+    sandwich_links = []
+    last_in_seg_links = []
 
     with open('links_list.json') as f:
         auto = json.load(f)
 
     with open('inferred_links.json') as f:
-        inferred = json.load(f)
+        sandwich_links = json.load(f)
+
+    with open('last_in_seg_links.json') as f:
+        last_in_seg_links = json.load(f)
 
     tuples = []
-    tuples.append(("Efodi Ref", "Moreh Ref Script", "Moreh Ref Inferred"))
+    tuples.append(("Efodi Ref", "Moreh Ref Script", "Moreh Ref Sandwich Heuristic", "Moreh Ref Last in Segment Heuristic"))
     for sec in sections:
         r_string_comm = "Efodi on Guide for the Perplexed, {}".format(sec)
         r_string_base = "Guide for the Perplexed, {}".format(sec)
@@ -224,15 +268,20 @@ def create_report():
 
         for r in all_refs_for_sec:
             auto_ref = ''
-            inferred_ref = ''
+            sandwich_ref = ''
+            last_in_seg_ref = ''
             d =  exists_with_ref_x(auto, r.tref)
             if d != None:
                 auto_ref = d["refs"][1]
             else:
-                d =  exists_with_ref_x(inferred, r.tref)
+                d =  exists_with_ref_x(sandwich_links, r.tref)
                 if d != None:
-                    inferred_ref = d["refs"][1]
-            tuples.append((r.tref, auto_ref, inferred_ref))
+                    sandwich_ref = d["refs"][1]
+                else:
+                    d = exists_with_ref_x(last_in_seg_links, r.tref)
+                    if d != None:
+                        last_in_seg_ref = d["refs"][1]
+            tuples.append((r.tref, auto_ref, sandwich_ref, last_in_seg_ref))
     with open("report.csv", "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerows(tuples)
@@ -240,11 +289,13 @@ def create_report():
 
 if __name__ == '__main__':
     print("hello world")
-    # infer_links()
-    clean()
-    cauldron_pipeline()
-    # create_report()
+    infer_links()
+    # clean()
+    # cauldron_pipeline()
+    create_report()
+    index = library.get_index("Guide for the Perplexed")
     print("hi")
+
 
     # post_link(links)
 
