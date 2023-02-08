@@ -247,7 +247,7 @@ class DocsTzParser(TzParser):
                 if paragraph_index < len(self.daf.paragraphs):
                     self.paragraph = self.daf.paragraphs[paragraph_index]
                 else:  # somehow misaligned??
-                    self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
+                    self.paragraph = Paragraph(self.tikkun, self.daf, next(self.daf.paragraph_number))
                     self.daf.paragraphs.append(self.paragraph)
                 self.paragraph.he_words = self.clean_he(paragraph.text)
                 paragraph_index += 1
@@ -985,9 +985,10 @@ class HtmlTzParser(TzParser):
     def parse_hebrew_contents(self):
         hebrew = self.doc_rep.find(id="_idContainer2165")
         types = {}
-        daf_index = 0
+        next_daf_index = 0
         tikkun_index = 0
         paragraph_index = 0
+        overall_paragraph_index = 0
 
         for raw_child in hebrew.children:
             if isinstance(raw_child, str):
@@ -997,32 +998,41 @@ class HtmlTzParser(TzParser):
             if isinstance(child, str):
                 pass
             if child.name == 'div' and 'daf-hebrew' in child.attrs['class']:  # daf
-                if paragraph_index < len(self.daf.paragraphs):
+                if paragraph_index < len(self.daf.paragraphs) - 1 and next_daf_index != 0:  # fewer paragraphs than daf has
                     print(paragraph_index)
                     print(len(self.daf.paragraphs))
                     print(self.daf.name)
                     print("^paragraph_index, self.daf.paragraphs length, daf -- not enough hebrew")
-                self.daf = self.dapim[daf_index]
+                    while paragraph_index < len(self.daf.paragraphs) - 1:
+                        paragraph_index += 1
+                        self.daf.paragraphs[paragraph_index].he_words = "" # fill in he words with blank
+                # go to next daf
+                self.daf = self.dapim[next_daf_index]
                 daf = child.find_next('p').text
                 self.daf.he_name = daf
-                daf_index += 1
+                next_daf_index += 1
                 paragraph_index = 0
             elif child.name == 'p' and 'chapter-number-title-Hebrew' in child.attrs['class']:
                 self.tikkun = self.tikkunim[tikkun_index]
                 self.tikkun.he_name = "".join([str(content) for content in child.contents])
                 tikkun_index += 1
             elif child.name == 'p' and 'verse-Hebrew' in child.attrs['class']:
-                if paragraph_index < len(self.daf.paragraphs):
+                # set paragraph
+                if paragraph_index < len(self.daf.paragraphs): # paragraph index is inside of daf
                     self.paragraph = self.daf.paragraphs[paragraph_index]
                 # TODO: Debug misaligned verses
-                else:  # somehow misaligned??
-                    self.paragraph = Paragraph(self.tikkun, self.daf, next(self.paragraph_number))
+                else:  # not enough
+                    self.paragraph = Paragraph(self.tikkun, self.daf, next(self.daf.paragraph_number))
                     self.daf.paragraphs.append(self.paragraph)
+                    self.paragraphs.insert(overall_paragraph_index, self.paragraph)
+                    overall_paragraph_index += 1
                     print(self.daf.name)
-                    print("too much hebrew")
+                    print("too much hebrew. APpended to empty:")
+                    print(self.clean_he(child.contents))
                 self.paragraph.he_words = self.clean_he(child.contents)
                     #''.join([str(content) for content in child.contents])
                 paragraph_index += 1
+                overall_paragraph_index += 1
 
 #
 # parser2 = DocsTzParser("vol3.docx", 3)
