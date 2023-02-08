@@ -211,11 +211,11 @@ class Paragraph(object):
         "Naḥ.": "Nah",
         "Ḥab": "Hab",
         "Lev.": "Lev",
-        "Ez.": "Ezr",
+        "Ez.": "Ezekiel",
         "1 King.": "1 Kings",
         "2 King.": "2 Kings",
         "Jer.": "Jeremiah",
-        "Ez": "Ezra",
+        "Ez": "Ezekiel",
     }
 
     def get_links(self):
