@@ -39,10 +39,10 @@ footnotes, and endnotes (see: `FootnoteType` enum).
 `tz_parse.py` contains the parser classes. The base class, `TzParser`, from which `DocsTzParser`,
 `DocsTzParser2`, and `HtmlTzParser` are derived.
 
-#### note on `normalize` function
+#### note on `correct_misalignment` function
 There is an issue with the vol2 HTML file where on most of the pages, the first verse of English on the page is before the daf change (For example, in the structured HTML document version of the volume, the first verse on page 18b chapter is technically on page 18a), while the Hebrew 1st verse is in the correct location (on page 18b). Where the verses were then mis-aligned, I had a bug in appending hebrew text that did not correspond with English text.
 
-The `normalize` function pops the last paragraph of each daf and places it into the next daf.
+The `correct_misalignment` function pops the last paragraph of each daf and places it into the next daf.
 
 If it is desired to remove this function from other files later, it can be modified.
 
