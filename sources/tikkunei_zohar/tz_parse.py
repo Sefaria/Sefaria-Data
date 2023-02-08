@@ -77,11 +77,11 @@ class TzParser(object):
         while self.elem_cursor:
             self.process_cursor()
             self.elem_cursor = self.move_cursor()
-        self.normalize()
+        self.correct_misalignment()
         if self.language == "bi":
             self.parse_hebrew_contents()
 
-    def normalize(self):
+    def correct_misalignment(self):
         pass
 
     def parse_hebrew_contents(self):
@@ -986,7 +986,7 @@ class HtmlTzParser(TzParser):
                     print(str(child))
             return cleaned_hebrew_text
 
-    def normalize(self):
+    def correct_misalignment(self):
         i = 0
         while i < len(self.dapim) - 1:
             self.dapim[i+1].paragraphs.insert(0,self.dapim[i].paragraphs.pop())
