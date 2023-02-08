@@ -77,8 +77,12 @@ class TzParser(object):
         while self.elem_cursor:
             self.process_cursor()
             self.elem_cursor = self.move_cursor()
+        self.normalize()
         if self.language == "bi":
             self.parse_hebrew_contents()
+
+    def normalize(self):
+        pass
 
     def parse_hebrew_contents(self):
         pass
@@ -981,6 +985,17 @@ class HtmlTzParser(TzParser):
                 else:
                     print(str(child))
             return cleaned_hebrew_text
+
+    def normalize(self):
+        i = 0
+        while i < len(self.dapim) - 1:
+            self.dapim[i+1].paragraphs.insert(0,self.dapim[i].paragraphs.pop())
+            for paragraph in self.dapim[i+1].paragraphs:
+                paragraph.paragraph_number += 1
+            self.dapim[i+1].paragraphs[0].paragraph_number = 0
+            self.dapim[i+1].paragraphs[0].daf = self.dapim[i+1]
+            i += 1
+
 
     def parse_hebrew_contents(self):
         hebrew = self.doc_rep.find(id="_idContainer2165")
