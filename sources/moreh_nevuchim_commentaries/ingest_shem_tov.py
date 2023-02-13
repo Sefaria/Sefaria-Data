@@ -11,7 +11,7 @@ from sefaria.helper.schema import insert_last_child, reorder_children
 from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.helper.category import create_category
-from sources.functions import post_index
+# from sources.functions import post_index
 from sefaria.system.database import db
 import time
 from docx import Document
@@ -83,18 +83,12 @@ def create_text_object():
 
         elif '0' in para.text:
             ref_chapter += 1;
-            ref_paragraph = 0
+            ref_paragraph = 1
             if "פרק מה" in para.text and section_index == 7:
                 ref_chapter += 2
 
         elif '1' in para.text:
-            ref_paragraph += 1
-            if section_index in {0, 1, 2, 4, 6}:
-                ref = str(ref_prefix) + sections[section_index] + ' ' + str(ref_paragraph)
-
-            else:
-                ref = str(ref_prefix) + sections[section_index] + ' ' + str(ref_chapter) + ":" + str(
-                    ref_paragraph)
+            # ref_paragraph += 1
             text = ''
             # Iterate over the runs in the paragraph
             for run in para.runs:
@@ -102,9 +96,48 @@ def create_text_object():
                     text += "<b>" + run.text + "</b>"
                 else:
                     text += run.text
+            if section_index in {0, 1, 2, 4, 6}:
+                list_seg = text.split(':')
+                for seg in list_seg:
+                    if seg == ' ':
+                        continue
+                    ref_paragraph += 1
+                    ref = str(ref_prefix) + sections[section_index] + ' ' + str(ref_paragraph)
+                    text = seg + ':'
+                    # text = ''
+                    # # Iterate over the runs in the paragraph
+                    # for run in para.runs:
+                    #     if run.bold and run.text != '@' and not run.text.isnumeric():
+                    #         text += "<b>" + run.text + "</b>"
+                    #     else:
+                    #         text += run.text
+                    print(text)
+                    comm_list[section_index][ref] = text.translate(str.maketrans("", "", "0123456789@&")).replace(
+                        "</b><b>", "").replace("</b> <b>", "").replace(" </b>", "</b> ")
 
-            print(text)
-            comm_list[section_index][ref] = text.translate(str.maketrans("", "", "0123456789@")).replace("</b><b>", "").replace("</b> <b>", "").replace(" </b>", "</b> ")
+            else:
+                # ref = str(ref_prefix) + sections[section_index] + ' ' + str(ref_chapter) + ":" + str(
+                #     ref_paragraph)
+                # ref_paragraph += 1
+
+                list_seg = text.split(':')
+                for seg in list_seg:
+                    if seg == ' ':
+                        continue
+                    ref = str(ref_prefix) + sections[section_index] + ' ' + str(ref_chapter) + ":" + str(
+                        ref_paragraph)
+                    ref_paragraph += 1
+                    text = seg + ':'
+                    # text = ''
+                    # # Iterate over the runs in the paragraph
+                    # for run in para.runs:
+                    #     if run.bold and run.text != '@' and not run.text.isnumeric():
+                    #         text += "<b>" + run.text + "</b>"
+                    #     else:
+                    #         text += run.text
+                    print(text)
+                    comm_list[section_index][ref] = text.translate(str.maketrans("", "", "0123456789@&")).replace("</b><b>", "").replace("</b> <b>", "").replace(" </b>", "</b> ")
+
 
     return {**comm_list[0], **comm_list[1], **comm_list[2], **comm_list[3], **comm_list[4], **comm_list[5], **comm_list[6], **comm_list[7]}
 
@@ -113,15 +146,15 @@ def ingest_version(map_text):
     # vs = VersionState(index=library.get_index("Introductions to the Babylonian Talmud"))
     # vs.delete()
     # print("deleted version state")
-    index = library.get_index("Efodi on Guide for the Perplexed")
-    cur_version = VersionSet({'title': 'Efodi on Guide for the Perplexed'})
+    index = library.get_index("Shem Tov on Guide for the Perplexed")
+    cur_version = VersionSet({'title': 'Shem Tov on Guide for the Perplexed'})
     if cur_version.count() > 0:
         cur_version.delete()
         print("deleted existing version")
     chapter = index.nodes.create_skeleton()
     version = Version({"versionTitle": "Warsaw, 1872",
                        "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH990017717720205171/NLI",
-                       "title": "Efodi on Guide for the Perplexed",
+                       "title": "Shem Tov on Guide for the Perplexed",
                        "language": "he",
                        "chapter": chapter,
                        "digitizedBySefaria": True,
@@ -132,8 +165,8 @@ def ingest_version(map_text):
 
     modify_bulk_text(superuser_id, version, map_text)
 def ingest_nodes():
-    en_title = 'Efodi on Guide for the Perplexed'
-    he_title = 'אפודי על מורה נבוכים'
+    en_title = 'Shem Tov on Guide for the Perplexed'
+    he_title = 'שם טוב על מורה נבוכים'
     root = SchemaNode()
     root.add_primary_titles(en_title, he_title)
     introduction_node = SchemaNode()
@@ -212,14 +245,14 @@ def ingest_nodes():
 
 if __name__ == '__main__':
     print("hello world")
-    # "Guide for the Perplexed, Part 1 2:7"
-    create_text_object()
+    # ingest_nodes()
 
 
 
-    # obj = create_text_object()
+
+    obj = create_text_object()
     # print(obj)
-    # ingest_version(obj)
+    ingest_version(obj)
     # add_new_categories()
 
 
