@@ -48,7 +48,7 @@ def add_new_categories():
     create_category(['Jewish Thought', 'Guide for the Perplexed', "Commentary"], 'Commentary', "מפרשים")
 
 def create_text_object():
-    ref_prefix = "Efodi on Guide for the Perplexed, "
+    ref_prefix = "Shem Tov on Guide for the Perplexed, "
     sections = ["Introduction, Letter to R Joseph son of Judah", "Introduction, Prefatory Remarks",
                 "Introduction, Introduction",
                 "Part 1", "Part 2 Introduction", "Part 2", "Part 3 Introduction", "Part 3"]
@@ -56,7 +56,7 @@ def create_text_object():
     ref_chapter = 0
     ref_paragraph = 0
     # Open the docx file
-    document = Document('efodi.docx')
+    document = Document('shem_tov.docx')
 
     comm_list = []
     letter_to_R_Joseph_son_of_Judah = {}
@@ -72,19 +72,22 @@ def create_text_object():
 
     # Print the text of the docx file
     section_index = -1
+    switch_segment = False
     for para in document.paragraphs:
         if para.text == '' or para.text == ' ' or para.text == '  ' or '@22' in para.text:
             continue
-        if '@00' in para.text and not para.text.startswith("@00פרק"):
+        if '@*' in para.text:
             section_index += 1
             ref_chapter = 0
             ref_paragraph = 0
 
-        elif '@00' in para.text:
+        elif '0' in para.text:
             ref_chapter += 1;
             ref_paragraph = 0
+            if "פרק מה" in para.text and section_index == 7:
+                ref_chapter += 2
 
-        else:
+        elif '1' in para.text:
             ref_paragraph += 1
             if section_index in {0, 1, 2, 4, 6}:
                 ref = str(ref_prefix) + sections[section_index] + ' ' + str(ref_paragraph)
@@ -101,9 +104,8 @@ def create_text_object():
                     text += run.text
 
             print(text)
-            # comm_list[section_index][ref] = para.text.translate(str.maketrans("", "", "0123456789@"))
             comm_list[section_index][ref] = text.translate(str.maketrans("", "", "0123456789@")).replace("</b><b>", "").replace("</b> <b>", "").replace(" </b>", "</b> ")
-            # comm_list[section_index][ref] = "AAAAAAAAAAA"
+
     return {**comm_list[0], **comm_list[1], **comm_list[2], **comm_list[3], **comm_list[4], **comm_list[5], **comm_list[6], **comm_list[7]}
 
 
@@ -211,7 +213,8 @@ def ingest_nodes():
 if __name__ == '__main__':
     print("hello world")
     # "Guide for the Perplexed, Part 1 2:7"
-    ingest_nodes()
+    create_text_object()
+
 
 
     # obj = create_text_object()
