@@ -971,15 +971,15 @@ class HtmlTzParser(TzParser):
                     if 'hebrew-bd' in child.attrs['class']:
                         child.name = 'b'
                         child.attrs = {}
+                        cleaned_hebrew_text += str(child)
                     else:
                         for child_of_child in child.children:
-                            if isinstance(child, str):
+                            if isinstance(child_of_child, str):
                                 cleaned_hebrew_text += child_of_child
                             elif child_of_child.name == 'img':
                                 cleaned_hebrew_text += self.process_image(child_of_child, True)
                             else:
                                 print(str(child))
-                    cleaned_hebrew_text += str(child)
                 elif child.name == 'img':
                     cleaned_hebrew_text += self.process_image(child, True)
                 else:
