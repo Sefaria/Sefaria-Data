@@ -84,8 +84,10 @@ def create_text_object():
         elif '0' in para.text:
             ref_chapter += 1;
             ref_paragraph = 1
+            if "פרק מג" in para.text and section_index == 7:
+                ref_chapter += 1
             if "פרק מה" in para.text and section_index == 7:
-                ref_chapter += 2
+                ref_chapter += 1
 
         elif '1' in para.text:
             # ref_paragraph += 1
@@ -135,7 +137,8 @@ def create_text_object():
                     #         text += "<b>" + run.text + "</b>"
                     #     else:
                     #         text += run.text
-                    print(text)
+
+                    # print(text)
                     comm_list[section_index][ref] = text.translate(str.maketrans("", "", "0123456789@&")).replace("</b><b>", "").replace("</b> <b>", "").replace(" </b>", "</b> ")
 
 
