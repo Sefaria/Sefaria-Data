@@ -15,7 +15,12 @@ from sources.functions import post_index
 from sefaria.system.database import db
 import time
 # from docx import Document
-
+introductory = [
+'Transmission of the Oral Law',
+'Positive Mitzvot',
+'Negative Mitzvot',
+'Overview of Mishneh Torah Contents'
+]
 books = [
 # 'Transmission of the Oral Law',
 # 'Positive Mitzvot',
@@ -109,15 +114,20 @@ books = [
 
 if __name__ == '__main__':
     print("hello world")
-    # a = Ref("Mishneh_Torah, Robbery_and_Lost_Property 11:13")
-    # b = a.next_segment_ref().text().text
-    # while a:
-    #     a = a.next_segment_ref()
-    #     print(a.text().text)
+
     for book in books:
         ref_iterator = Ref("Mishneh Torah, " + book + " 1:1")
         while ref_iterator:
             # print(ref_iterator.text().text)
+            # if '&lt' in ref_iterator.text().text or '&gt' in ref_iterator.text().text:
+            if '&' in ref_iterator.text().text:
+                print(ref_iterator)
+            ref_iterator = ref_iterator.next_segment_ref()
+    for book in introductory:
+        print(book)
+        ref_iterator = Ref("Mishneh Torah, " + book + " 1")
+        while ref_iterator:
+            print(ref_iterator.text().text)
             # if '&lt' in ref_iterator.text().text or '&gt' in ref_iterator.text().text:
             if '&' in ref_iterator.text().text:
                 print(ref_iterator)
