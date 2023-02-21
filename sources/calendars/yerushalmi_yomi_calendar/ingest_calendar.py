@@ -157,14 +157,15 @@ def fill_vilna_to_ref_map():
 if __name__ == '__main__':
     print("hello world")
     fill_vilna_to_ref_map()
-    a = Ref('Jerusalem Talmud Niddah 3:5:3-4')
-    a = a.he_book()
+    # a = Ref('Jerusalem Talmud Niddah 3:5:3-4')
+    # a = a.he_book()
 
     collection = []
     with open('Yerushalmi_Yomi_Cal_-_Sheet1.csv', 'r') as file:
         reader = csv.reader(file, delimiter=',')
         for row in reader:
-            if row[3] != '' and row[3] != "Niddah 13":
+            # if row[3] != '' and row[3] != "Niddah 13":
+            if row[3] != '':
                 ref = rectify_yersuhalmi_ref(row[3]).normal('en')
                 last_space_index = row[3].rfind(" ")
                 last_part = row[3][last_space_index + 1:]
