@@ -171,7 +171,7 @@ if __name__ == '__main__':
                 he_display = Ref(ref).he_book() + " " + str(num_to_gematria(int(last_part)))
                 # ref = Ref("Jerusalem Talmud Vilna, Berakhot  1a").normal('en')
 
-                date = convert_date_format(row[0])
+                # date = convert_date_format(row[0])
                 entry = {
                     "date": datetime.strptime(row[0], "%m/%d/%Y"),
                     "ref": ref,
