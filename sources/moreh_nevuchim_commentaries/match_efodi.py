@@ -113,7 +113,11 @@ def cauldron_pipeline():
         links = json.load(f)
     links = list_of_dict_to_links(links)
     insert_links_to_db(links)
-    with open('inferred_links.json') as f:
+    with open('sandwich_links.json') as f:
+        links = json.load(f)
+    links = list_of_dict_to_links(links)
+    insert_links_to_db(links)
+    with open('last_in_seg_links.json') as f:
         links = json.load(f)
     links = list_of_dict_to_links(links)
     insert_links_to_db(links)
@@ -289,11 +293,11 @@ def create_report():
 
 if __name__ == '__main__':
     print("hello world")
-    infer_links()
-    # clean()
-    # cauldron_pipeline()
-    create_report()
-    index = library.get_index("Guide for the Perplexed")
+    # infer_links()
+    clean()
+    cauldron_pipeline()
+    # create_report()
+    # index = library.get_index("Guide for the Perplexed")
     print("hi")
 
 

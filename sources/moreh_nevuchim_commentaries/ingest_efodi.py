@@ -205,11 +205,11 @@ def ingest_nodes():
 if __name__ == '__main__':
     print("hello world")
     # "Guide for the Perplexed, Part 1 2:7"
-    ingest_nodes()
+    # ingest_nodes()
 
-    # obj = create_text_object()
-    # print(obj)
-    # ingest_version(obj)
+    obj = create_text_object()
+    print(obj)
+    ingest_version(obj)
     # add_new_categories()
 
 
