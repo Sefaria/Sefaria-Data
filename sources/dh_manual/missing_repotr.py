@@ -4,7 +4,7 @@ import django
 django.setup()
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 
 def text_with_seg_numbers(ref):
     if type(ref) == str:

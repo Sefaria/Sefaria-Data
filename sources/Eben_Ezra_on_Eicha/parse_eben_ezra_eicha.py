@@ -3,7 +3,7 @@ import codecs
 from sefaria.model import *
 import regex
 from sources import functions
-from data_utilities import util
+from parsing_utilities import util
 from sources.Eben_Ezra_on_Eicha import eee_functions
 
 """

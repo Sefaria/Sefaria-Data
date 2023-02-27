@@ -1,6 +1,6 @@
 import codecs, json, re, bisect, bleach, unicodecsv
 from sefaria.model import *
-from data_utilities import dibur_hamatchil_matcher
+from linking_utilities import dibur_hamatchil_matcher
 
 mesechtot = ["Sanhedrin"]
 

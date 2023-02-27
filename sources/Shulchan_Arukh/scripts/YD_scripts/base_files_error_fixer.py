@@ -4,7 +4,7 @@ import re
 import os
 from YD_base import filenames, patterns
 from collections import defaultdict, Counter
-from data_utilities.util import StructuredDocument, getGematria
+from parsing_utilities.util import StructuredDocument, getGematria
 from sources.Shulchan_Arukh.ShulchanArukh import correct_marks_in_file
 
 u"""

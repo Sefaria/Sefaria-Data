@@ -1,7 +1,7 @@
 # encoding=utf-8
 
 import os
-from data_utilities.util import numToHeb, getGematria
+from parsing_utilities.util import numToHeb, getGematria
 from os.path import dirname as loc
 from sources.Shulchan_Arukh.ShulchanArukh import *
 

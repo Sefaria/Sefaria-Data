@@ -4,7 +4,7 @@ __author__ = 'stevenkaplan'
 from os import listdir
 from os.path import isfile
 from sources.functions import *
-from data_utilities.util import wordToNumber, getGematria, convert_dict_to_array
+from parsing_utilities.util import wordToNumber, getGematria, convert_dict_to_array
 import re
 from sefaria.model import *
 

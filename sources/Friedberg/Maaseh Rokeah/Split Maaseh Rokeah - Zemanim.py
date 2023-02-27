@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from data_utilities import *
 import os
 import regex as re
 import codecs
@@ -75,8 +72,8 @@ def write_buf(buf, file_count, book_name, section_name):
 
     with codecs.open(filename, 'w', "utf-8") as fout:
 
-        clean_50s = re.compile(ur"@05([^6]*)@06")
-        split_pattern = re.compile(ur"(\s*@(?:55|77)" + u"(?:[^@]+)" + u"@(?:66|88)\s*)")
+        clean_50s = re.compile(r"@05([^6]*)@06")
+        split_pattern = re.compile(r"(\s*@(?:55|77)" + u"(?:[^@]+)" + u"@(?:66|88)\s*)")
 
         for line in buf:
             newline = clean_50s.sub(lambda x: u"\n@05" + x.group(1).replace(u"@05", u"") + u"@06", line)

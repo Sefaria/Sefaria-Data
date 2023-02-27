@@ -9,7 +9,7 @@ import numpy as np
 import pymongo
 from sefaria.settings import *
 import logging
-from data_utilities.util import * #get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
+from parsing_utilities.util import * #get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
 import datetime
 # logging.basicConfig(filename='wordLevelData.log', encoding='utf-8', level=logging.DEBUG)
 path = os.getcwd()

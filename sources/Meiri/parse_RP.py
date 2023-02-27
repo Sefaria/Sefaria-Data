@@ -1,16 +1,16 @@
 from sources.functions import *
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
-from research.link_disambiguator.main import Link_Disambiguator
+from linking_utilities.parallel_matcher import ParallelMatcher
+from linking_utilities.citation_disambiguator.citation_disambiguator import CitationDisambiguator
 import os
 from functools import reduce
 from sefaria.utils.hebrew import strip_cantillation
-from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
-from data_utilities.util import WeightedLevenshtein
+from linking_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord, match_text
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
 levenshtein = WeightedLevenshtein()
 mode = "0"
 import json
 import math
-from data_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
+from linking_utilities.dibur_hamatchil_matcher import get_maximum_dh, ComputeLevenshteinDistanceByWord
 
 
 class ScoreManager:
@@ -71,13 +71,13 @@ def get_ref(pos, text, ref):
 
 def PM_regular(lines, comm_title, base_ref, writer, score_manager):
     links = []
-    matcher = ParallelMatcher(Link_Disambiguator.tokenize_words, max_words_between=4, min_words_in_match=9,
+    matcher = ParallelMatcher(CitationDisambiguator.tokenize_words, max_words_between=4, min_words_in_match=9,
                               ngram_size=5,
                               parallelize=False, all_to_all=False,
                               verbose=False, calculate_score=score_manager.get_score)
     words = " ".join(lines)
     base = TextChunk(Ref(base_ref), lang='he')
-    ber_word_list = [w for seg in base.ja().flatten_to_array() for w in Link_Disambiguator.tokenize_words(seg)]
+    ber_word_list = [w for seg in base.ja().flatten_to_array() for w in CitationDisambiguator.tokenize_words(seg)]
     match_list = matcher.match(
         tref_list=[(words, comm_title), (" ".join(ber_word_list), base_ref)],
         return_obj=True)
@@ -129,7 +129,7 @@ def tokenize_words(base_str):
                       "\1\2\u05d0\u05dc\u05d4\u05d9\u05dd\3", base_str)
 
     word_list = re.split(r"\s+", base_str)
-    word_list = [w for w in word_list if len(w.strip()) > 0 and w not in Link_Disambiguator.stop_words]
+    word_list = [w for w in word_list if len(w.strip()) > 0 and w not in CitationDisambiguator.stop_words]
     return word_list
 
 def dher(text):
@@ -170,7 +170,7 @@ for f in os.listdir("."):
                     curr_section = daf
                     lines[curr][curr_section] = []
                 else:
-                    words = Link_Disambiguator.tokenize_words(line)
+                    words = CitationDisambiguator.tokenize_words(line)
                     for word in words:
                         if word not in word_count_meiri:
                             word_count_meiri[word] = 1
@@ -195,17 +195,17 @@ if __name__ == "__main__":
     c = Category()
     c.path = ["Talmud", "Bavli", "Commentary", "Meiri"]
     c.add_shared_term("Meiri")
-    c.save()
+    #c.save()
     #add_category("Meiri", c.path)
 
     links = []
-    start = "Bava Kamma"
-    starting = True
+    start = "Yoma"
+    starting = False
     # for en_title, he_title in lines.keys():
     #     print(en_title)
     #     for ref in library.get_index(en_title).all_segment_refs():
     #         tc = TextChunk(ref, vtitle="William Davidson Edition - Aramaic", lang="he").text
-    #         words = Link_Disambiguator.tokenize_words(tc)
+    #         words = CitationDisambiguator.tokenize_words(tc)
     #         for word in words:
     #             if word not in word_count_meiri:
     #                 word_count_meiri[word] = 0
@@ -253,8 +253,8 @@ if __name__ == "__main__":
             root.add_structure(["Daf", "Line"], address_types=["Talmud", "Integer"])
         root.validate()
         print(categories)
-        post_index({"title": full_title, "schema": root.serialize(), "dependence": "Commentary",
-                  "categories": categories, "base_text_titles": [en_title], "collective_title": "Meiri"}, dump_json=True)
+        # post_index({"title": full_title, "schema": root.serialize(), "dependence": "Commentary",
+        #           "categories": categories, "base_text_titles": [en_title], "collective_title": "Meiri"}, dump_json=True)
         lines_in_title = lines[(en_title, he_title)]
         intro = lines_in_title.pop("Introduction")
         send_text = {
@@ -263,7 +263,7 @@ if __name__ == "__main__":
             "versionSource": "http://www.sefaria.org",
             "text": intro
         }
-        # post_text(full_title + ", Introduction", send_text, index_count="on")
+        post_text(full_title + ", Introduction", send_text, index_count="on", server="https://www.sefaria.org")
         send_text = {
             "language": "he",
             "versionTitle": "Meiri on Shas",
@@ -271,7 +271,7 @@ if __name__ == "__main__":
             "text": convertDictToArray(lines_in_title)
         }
         mishnah = "משנה"
-        # post_text(full_title, send_text, index_count="on")
+        post_text(full_title, send_text, index_count="on", server="https://www.sefaria.org")
         found_refs = []
 
         new_links = []
@@ -313,4 +313,4 @@ if __name__ == "__main__":
 
     with open("{}.json".format(mode), 'w') as f:
         json.dump(links, f)
-#post_link(links)
+post_link(links, server="https://pele.cauldron.sefaria.org")

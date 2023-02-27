@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'stevenkaplan'
 import codecs
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 
 

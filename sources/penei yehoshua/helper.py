@@ -2,7 +2,7 @@
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 
 #Helper functions to be used for Talmud commentaries such as Penei Yehoshua.
 #The main function to call is get_links()

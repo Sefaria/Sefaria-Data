@@ -10,7 +10,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sources.functions import *
 import codecs
 from fuzzywuzzy import fuzz
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 
 
 title_dict = {u"אסתר":{"en_name":"Esther","en_commentary_name":"Massat Moshe","he_commentary_name":u"משאת משה","chapter_mark":u"@00","skip":["@22"]},

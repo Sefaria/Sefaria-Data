@@ -3,9 +3,9 @@ import django
 django.setup()
 import json
 import copy
-from data_utilities.util import getGematria
+from parsing_utilities.util import getGematria
 from sefaria.utils.talmud import daf_to_section, section_to_daf
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.model import *
 from rif_utils import path
 from more_talmud_refs import base_tokenizer

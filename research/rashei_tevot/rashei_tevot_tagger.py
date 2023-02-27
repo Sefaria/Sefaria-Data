@@ -2,8 +2,8 @@
 import re
 from sefaria.model import *
 from sefaria.utils import hebrew
-from data_utilities.util import traverse_ja
-from data_utilities.dibur_hamatchil_matcher import match_text
+from parsing_utilities.util import traverse_ja
+from linking_utilities.dibur_hamatchil_matcher import match_text
 
 slinks = LinkSet({"refs":{"$all":[re.compile("^Mishnah Berurah"),re.compile("^Shulchan Arukh, Orach Chayim")]}})
 print(len(slinks))

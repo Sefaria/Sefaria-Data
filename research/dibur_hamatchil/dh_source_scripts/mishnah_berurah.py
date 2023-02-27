@@ -3,7 +3,7 @@ import re
 import codecs
 from collections import OrderedDict
 import json,csv,unicodecsv
-from data_utilities import dibur_hamatchil_matcher
+from linking_utilities import dibur_hamatchil_matcher
 from sefaria.model import *
 from sefaria.utils import hebrew
 from sefaria.system.exceptions import DuplicateRecordError

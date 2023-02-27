@@ -1,5 +1,5 @@
 from sources.functions import *
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.dibur_hamatchil_matcher import match_text
 
 def dher(x):
     result = re.sub("<b>(.*?)</b>.*", "\g<1>", x).replace(":", "").replace("[", "").replace("]", "").replace(",", "").replace(".", "").replace(";", "")

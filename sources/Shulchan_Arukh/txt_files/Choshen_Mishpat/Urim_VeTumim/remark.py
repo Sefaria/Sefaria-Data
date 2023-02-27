@@ -1,7 +1,7 @@
 # encoding=utf-8
 
 import re
-from data_utilities.util import StructuredDocument, numToHeb
+from parsing_utilities.util import StructuredDocument, numToHeb
 
 
 def remark_chapter(chapter_text, bad_seifim, pattern):

@@ -9,8 +9,8 @@ import codecs
 import StringIO
 import unicodecsv as csv
 from bs4 import BeautifulSoup, Tag
-from data_utilities.util import ja_to_xml, getGematria
-from data_utilities.dibur_hamatchil_matcher import match_text
+from parsing_utilities.util import ja_to_xml, getGematria
+from linking_utilities.dibur_hamatchil_matcher import match_text
 from sources.functions import post_text, post_index, post_link, post_term, add_category
 
 

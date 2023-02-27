@@ -3,7 +3,7 @@
 import re
 from sefaria.model import *
 from sources.functions import post_link
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 
 
 class DivreiLinks:

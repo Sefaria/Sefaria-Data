@@ -9,7 +9,7 @@ from sources.functions import *
 import codecs
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 
 talmud_words = [u'בגמרא', u'גמרא', u'בגמ\'', u'גמ\'', u'במשנה', u'משנה', u'מתניתין', u'מתני\'', u'שם', u'בתר"י',
                 u'בהרי"ף', u'ברי"ף', u'בר"ן']

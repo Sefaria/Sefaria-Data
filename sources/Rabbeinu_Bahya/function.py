@@ -3,7 +3,7 @@ import codecs
 import regex
 from sefaria.model import *
 from sources import functions
-from data_utilities import util
+from parsing_utilities import util
 # from sources.Match import match_new
 # from sources.Match.match import Match
 from sefaria.model.schema import AddressTalmud, SchemaNode, JaggedArrayNode

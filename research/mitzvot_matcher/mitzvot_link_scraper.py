@@ -12,7 +12,7 @@ from sefaria.system.exceptions import InputError
 from sefaria.helper.link import create_link_cluster
 import regex as re
 from sources.functions import post_link
-from data_utilities.util import getGematria, numToHeb,isGematria
+from parsing_utilities.util import getGematria, numToHeb,isGematria
 
 def scrape_wiki():
     url = "https://he.wikipedia.org/wiki/%D7%9E%D7%A0%D7%99%D7%99%D7%9F_%D7%94%D7%9E%D7%A6%D7%95%D7%95%D7%AA_%D7%A2%D7%9C_%D7%A4%D7%99_%D7%A1%D7%A4%D7%A8_%D7%94%D7%97%D7%99%D7%A0%D7%95%D7%9A"

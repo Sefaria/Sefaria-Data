@@ -2,7 +2,7 @@ __author__ = 'stevenkaplan'
 from sources.functions import *
 import json
 import csv
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 
 class Resegment:
     def __init__(self, errors):

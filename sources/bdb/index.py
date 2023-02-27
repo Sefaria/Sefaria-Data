@@ -115,7 +115,7 @@ if __name__ == '__main__':
     for le in LexiconEntrySet({'parent_lexicon': {'$regex': 'BDB.*? Dictionary'}}):
         for i, par in enumerate(le.as_strings(), 1):
             bref = f'{abook if "Aramaic" in le.parent_lexicon else book}, {le.headword}:{i}'
-            for ref in re.findall(r'<a (?:href|data-ref)="(.*?)"', par):
+            for ref in set(re.findall(r'<a (?:href|data-ref)="(.*?)"', par)):
                 try:
                     ref = Ref(ref.replace('/', '').replace('_', ' ')).normal()
                 except InputError:

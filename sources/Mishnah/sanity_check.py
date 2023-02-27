@@ -7,12 +7,12 @@ import codecs
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 sys.path.insert(0, '../Match/')
-from data_utilities.util import *
+from parsing_utilities.util import *
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from sources.functions import *
 import glob
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
-from data_utilities.sanity_checks import TagTester
+from parsing_utilities.sanity_checks import TagTester
 from sefaria.model import *
 
 tractates = library.get_indexes_in_category('Mishnah')

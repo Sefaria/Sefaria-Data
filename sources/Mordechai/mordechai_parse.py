@@ -11,7 +11,6 @@ import django
 django.setup()
 from sources.functions import *
 from fuzzywuzzy import fuzz
-import data_utilities
 import re
 
 def not_blank(s):
@@ -22,10 +21,10 @@ def clean_line(s):
     s=s.replace(u'\n',u'')
     if s[-1]!=u':':
         s=s+u":"
-    s=re.sub(ur'\$(\S+)#',ur'<small>[רמז \1]</small>',s)
-    s=re.sub(ur'%(.*?)#',ur'<small>\1</small>',s)
-    if re.search(ur'&\S+\"\S+#',s):
-        s=re.sub(ur'[&#]',u'',s)
+    s=re.sub(r'\$(\S+)#',r'<small>[רמז \1]</small>',s)
+    s=re.sub(r'%(.*?)#',r'<small>\1</small>',s)
+    if re.search(r'&\S+\"\S+#',s):
+        s=re.sub(r'[&#]',u'',s)
         s=u'<small>'+s+u'</small>'
     return s
 def post_mord_index(tractate):

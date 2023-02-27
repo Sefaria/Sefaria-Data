@@ -1,6 +1,6 @@
 from sources.functions import *
 from sefaria.system.database import db
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 i = library.get_index("Tzafnat Pa'neach on Torah")
 links = []
 

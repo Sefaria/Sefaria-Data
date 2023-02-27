@@ -13,7 +13,7 @@ sys.path.insert(0, p)
 from sources import local_settings
 django.setup()
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.system.database import db
 from sefaria.system.exceptions import InputError
 from sefaria.utils.hebrew import strip_cantillation

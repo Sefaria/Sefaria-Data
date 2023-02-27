@@ -2,8 +2,8 @@
 
 import codecs
 import re
-from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g
-from data_utilities.sanity_checks import TagTester
+from parsing_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g
+from parsing_utilities.sanity_checks import TagTester
 from sources.functions import post_text, post_index, post_link
 from sefaria.model import *
 from sefaria.datatype.jagged_array import JaggedArray

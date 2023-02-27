@@ -1,8 +1,8 @@
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import *
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from linking_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.parallel_matcher import ParallelMatcher
 from fuzzywuzzy import fuzz
 import bleach
 from collections import Counter

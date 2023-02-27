@@ -12,7 +12,7 @@ import sys
 import re
 import glob
 
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 
 from local_settings import *
 from sources.functions import *

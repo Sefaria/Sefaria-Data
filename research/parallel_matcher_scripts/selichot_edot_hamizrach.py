@@ -2,7 +2,7 @@ import django, re, csv, json
 django.setup()
 from sefaria.model import *
 from sefaria.utils.hebrew import strip_cantillation
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from linking_utilities.parallel_matcher import ParallelMatcher
 
 stop_words = set(["ר'", 'רב', 'רבי', 'בן', 'בר', 'בריה', 'אמר', 'כאמר', 'וכאמר', 'דאמר', 'ודאמר', 'כדאמר',
                 'וכדאמר', 'ואמר', 'כרב',

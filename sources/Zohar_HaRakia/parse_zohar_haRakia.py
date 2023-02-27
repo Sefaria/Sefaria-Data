@@ -3,8 +3,8 @@ from sources.functions import *
 import re
 import codecs
 from collections import OrderedDict
-from data_utilities.util import getGematria
-from data_utilities.ParseUtil import run_on_list, Description, ParsedDocument
+from parsing_utilities.util import getGematria
+from parsing_utilities.ParseUtil import run_on_list, Description, ParsedDocument
 
 
 def find_line_with_pattern(pattern, lines):

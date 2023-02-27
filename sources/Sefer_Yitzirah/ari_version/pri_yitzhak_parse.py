@@ -2,7 +2,7 @@
 
 import codecs
 import regex
-from data_utilities.util import ja_to_xml,  traverse_ja, multiple_replace
+from parsing_utilities.util import ja_to_xml,  traverse_ja, multiple_replace
 from sources.functions import post_text, post_index, post_link
 from sefaria.model import *
 from sefaria.system.exceptions import DuplicateRecordError

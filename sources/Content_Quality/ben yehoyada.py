@@ -7,7 +7,7 @@ from sefaria.model.schema import AddressTalmud
 from sources.functions import *
 import codecs
 from collections import Counter
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 def dher(str):
     if "!? " in str:
         return str.split("!? ")[0]

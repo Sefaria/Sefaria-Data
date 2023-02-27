@@ -6,7 +6,7 @@ import codecs
 import base64
 import urllib2
 from bs4 import BeautifulSoup
-from data_utilities.util import getGematria
+from parsing_utilities.util import getGematria
 from sefaria.model.schema import JaggedArrayNode, SchemaNode
 from sources.functions import post_text, post_index
 from sefaria.datatype.jagged_array import JaggedArray

@@ -5,7 +5,7 @@ import os
 import codecs
 from collections import defaultdict
 from os.path import dirname as loc
-from data_utilities.util import getGematria, Singleton
+from parsing_utilities.util import getGematria, Singleton
 from itertools import count
 from sources.Shulchan_Arukh.ShulchanArukh import *
 

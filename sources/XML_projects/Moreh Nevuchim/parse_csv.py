@@ -3,7 +3,7 @@ import django
 django.setup()
 from sefaria.model import *
 from sefaria.system.exceptions import *
-from data_utilities.XML_to_JaggedArray import *
+from parsing_utilities.XML_to_JaggedArray import *
 import bleach
 
 french_by_sec = {}

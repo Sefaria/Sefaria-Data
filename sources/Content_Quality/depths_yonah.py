@@ -3,7 +3,7 @@ import django
 django.setup()
 from sefaria.model import *
 import csv
-from data_utilities.XML_to_JaggedArray import roman_to_int, int_to_roman
+from parsing_utilities.XML_to_JaggedArray import roman_to_int, int_to_roman
 from sources.functions import *
 file = open("depths of yonah - depths of yonah.csv")
 section = 0

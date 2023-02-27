@@ -6,10 +6,10 @@ import bs4
 import csv
 import json
 from itertools import zip_longest
-from data_utilities.util import traverse_ja
+from parsing_utilities.util import traverse_ja
 from sources.Yerushalmi.sefaria_objects import *
 from sources.Yerushalmi.text_mapping import create_helper_html
-from data_utilities.ParseUtil import ParsedDocument, Description, ParseState
+from parsing_utilities.ParseUtil import ParsedDocument, Description, ParseState
 import yutil
 
 

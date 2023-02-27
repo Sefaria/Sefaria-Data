@@ -10,20 +10,20 @@ import zipfile
 from typing import List
 from functools import reduce
 from itertools import zip_longest
-import data_utilities.text_align as align
-from data_utilities.sanity_checks import find_out_of_order
+import parsing_utilities.text_align as align
+from parsing_utilities.sanity_checks import find_out_of_order
 import simpleaudio
 from sources.functions import post_text, post_index, add_term, add_category
-from data_utilities.util import getGematria, traverse_ja, word_index_from_char_index
+from parsing_utilities.util import getGematria, traverse_ja, word_index_from_char_index
 from sources.Yerushalmi import sefaria_objects
 from sefaria.utils.hebrew import strip_nikkud
 from sefaria.model.schema import AddressTalmud
 from sefaria.datatype.jagged_array import JaggedArray
 from concurrent.futures.process import ProcessPoolExecutor
-from data_utilities.util import ja_to_xml, traverse_ja
-from data_utilities.normalization import TextSanitizer, sanitized_words_to_unsanitized_words
-from data_utilities.ParseUtil import *
-from data_utilities.dibur_hamatchil_matcher import match_ref, match_text
+from parsing_utilities.util import ja_to_xml, traverse_ja
+from linking_utilities.normalization import TextSanitizer, sanitized_words_to_unsanitized_words
+from parsing_utilities.ParseUtil import *
+from linking_utilities.dibur_hamatchil_matcher import match_ref, match_text
 
 time_start = time.time()
 
@@ -879,7 +879,7 @@ def debugging_method(input_string, start_character, end_character):
     :return:
     """
     from itertools import zip_longest
-    from data_utilities.util import get_word_indices
+    from parsing_utilities.util import get_word_indices
     input_string = input_string[start_character:end_character]
     indices = get_word_indices(input_string, r'\s+|$')
     words = input_string.split()

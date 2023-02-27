@@ -4,7 +4,7 @@ from sefaria.model import *
 import re
 from sources.functions import getGematria, post_text, post_index, post_link, add_term, add_category
 from sefaria.utils.talmud import section_to_daf
-from data_utilities.dibur_hamatchil_matcher import ComputeLevenshteinDistanceByWord, match_text
+from linking_utilities.dibur_hamatchil_matcher import ComputeLevenshteinDistanceByWord, match_text
 import time
 
 #SERVER = 'http://localhost:9000'

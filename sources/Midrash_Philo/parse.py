@@ -25,7 +25,7 @@ import collections
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
-from data_utilities import util
+from parsing_utilities import util
 from sources.local_settings import *
 from sources import functions
 sys.path.insert(0, SEFARIA_PROJECT_PATH)

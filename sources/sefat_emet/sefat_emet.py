@@ -3,7 +3,7 @@ import re
 import os
 import codecs
 from collections import Counter, OrderedDict
-from data_utilities import util
+from parsing_utilities import util
 from sefaria.utils.hebrew import hebrew_term
 from urllib2 import HTTPError, URLError
 from sources import functions
