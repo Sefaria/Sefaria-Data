@@ -11,7 +11,7 @@ from sefaria.helper.schema import insert_last_child, reorder_children
 from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.helper.category import create_category
-# from sources.functions import post_index
+from sources.functions import post_index
 from sefaria.system.database import db
 import time
 from docx import Document
@@ -235,7 +235,10 @@ def ingest_nodes():
     index = {
         "title": en_title,
         "schema": root.serialize(),
-        "categories": ['Jewish Thought', 'Guide for the Perplexed', "Commentary"]
+        "categories": ['Jewish Thought', 'Guide for the Perplexed', "Commentary"],
+        "dependence": 'commentary',
+        "base_text_titles": ["Guide for the Perplexed"]
+
     }
     post_index(index, server="https://guide-commentaries.cauldron.sefaria.org")
     # post_index(index)
@@ -248,14 +251,13 @@ def ingest_nodes():
 
 if __name__ == '__main__':
     print("hello world")
-    # ingest_nodes()
+    ingest_nodes()
 
 
 
 
-    obj = create_text_object()
-    # print(obj)
-    ingest_version(obj)
+    # obj = create_text_object()
+    # ingest_version(obj)
     # add_new_categories()
 
 

@@ -11,7 +11,7 @@ from sefaria.helper.schema import insert_last_child, reorder_children
 from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.helper.category import create_category
-from sources.functions import post_index
+# from sources.functions import post_index
 from sefaria.system.database import db
 import time
 from docx import Document
@@ -29,6 +29,30 @@ from docx import Document
     #
     # db.index.insert_one(new_index)
     # index = library.get_index("Introductions to the Babylonian Talmud")
+
+def compute_gematria(word):
+    # Define the numerical values of each letter
+    gematria = {'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5, 'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9, 'י': 10, 'כ': 20, 'ל': 30, 'מ': 40, 'נ': 50, 'ס': 60, 'ע': 70, 'פ': 80, 'צ': 90, 'ק': 100, 'ר': 200, 'ש': 300, 'ת': 400}
+
+    # Compute the Gematria of the word
+    total = 0
+    for letter in word:
+        if letter in gematria:
+            total += gematria[letter]
+
+    return total
+
+def extract_last_word(string):
+    # Split the string into words using the whitespace as the delimiter
+    words = string.split()
+
+    # If there are no words, return an empty string
+    if len(words) == 0:
+        return ""
+
+    # Otherwise, return the last word
+    return words[-1]
+
 
 def create_fake_schema(en, he):
     root = JaggedArrayNode()
@@ -48,7 +72,7 @@ def add_new_categories():
     create_category(['Jewish Thought', 'Guide for the Perplexed', "Commentary"], 'Commentary', "מפרשים")
 
 def create_text_object():
-    ref_prefix = "Efodi on Guide for the Perplexed, "
+    ref_prefix = "Crescas on Guide for the Perplexed, "
     sections = ["Introduction, Letter to R Joseph son of Judah", "Introduction, Prefatory Remarks",
                 "Introduction, Introduction",
                 "Part 1", "Part 2 Introduction", "Part 2", "Part 3 Introduction", "Part 3"]
@@ -56,7 +80,7 @@ def create_text_object():
     ref_chapter = 0
     ref_paragraph = 0
     # Open the docx file
-    document = Document('efodi.docx')
+    document = Document('crescas.docx')
 
     comm_list = []
     letter_to_R_Joseph_son_of_Judah = {}
@@ -79,10 +103,14 @@ def create_text_object():
             section_index += 1
             ref_chapter = 0
             ref_paragraph = 0
+            print(para.text)
 
         elif '@00' in para.text:
             ref_chapter += 1;
+            if '@00פרק' in para.text:
+                ref_chapter = compute_gematria(extract_last_word(para.text))
             ref_paragraph = 0
+            print(para.text)
 
         else:
             ref_paragraph += 1
@@ -100,7 +128,7 @@ def create_text_object():
                 else:
                     text += run.text
 
-            print(text)
+            # print(text)
             # comm_list[section_index][ref] = para.text.translate(str.maketrans("", "", "0123456789@"))
             comm_list[section_index][ref] = text.translate(str.maketrans("", "", "0123456789@")).replace("</b><b>", "").replace("</b> <b>", "").replace(" </b>", "</b> ")
             # comm_list[section_index][ref] = "AAAAAAAAAAA"
@@ -111,15 +139,15 @@ def ingest_version(map_text):
     # vs = VersionState(index=library.get_index("Introductions to the Babylonian Talmud"))
     # vs.delete()
     # print("deleted version state")
-    index = library.get_index("Efodi on Guide for the Perplexed")
-    cur_version = VersionSet({'title': 'Efodi on Guide for the Perplexed'})
+    index = library.get_index("Crescas on Guide for the Perplexed")
+    cur_version = VersionSet({'title': 'Crescas on Guide for the Perplexed'})
     if cur_version.count() > 0:
         cur_version.delete()
         print("deleted existing version")
     chapter = index.nodes.create_skeleton()
     version = Version({"versionTitle": "Warsaw, 1872",
                        "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH990017717720205171/NLI",
-                       "title": "Efodi on Guide for the Perplexed",
+                       "title": "Crescas on Guide for the Perplexed",
                        "language": "he",
                        "chapter": chapter,
                        "digitizedBySefaria": True,
@@ -130,8 +158,8 @@ def ingest_version(map_text):
 
     modify_bulk_text(superuser_id, version, map_text)
 def ingest_nodes():
-    en_title = 'Efodi on Guide for the Perplexed'
-    he_title = 'אפודי על מורה נבוכים'
+    en_title = 'Crescas on Guide for the Perplexed'
+    he_title = 'קרשקש על מורה נבוכים'
     root = SchemaNode()
     root.add_primary_titles(en_title, he_title)
     introduction_node = SchemaNode()
@@ -207,11 +235,11 @@ def ingest_nodes():
 if __name__ == '__main__':
     print("hello world")
     # "Guide for the Perplexed, Part 1 2:7"
-    ingest_nodes()
+    # ingest_nodes()
 
-    # obj = create_text_object()
+    obj = create_text_object()
     # print(obj)
-    # ingest_version(obj)
+    ingest_version(obj)
     # add_new_categories()
 
 

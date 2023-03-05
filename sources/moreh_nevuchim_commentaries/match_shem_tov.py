@@ -115,6 +115,7 @@ def local_pipeline():
 
 
 def cauldron_pipeline():
+    clean()
     with open('shem_tov_parallel_matcher_links.json') as f:
         links = json.load(f)
     links = list_of_dict_to_links(links)
@@ -335,6 +336,16 @@ def tokenizer(s):
     s = re.sub(r'[:,.]', '', s)
     s = re.sub(r'\([^\)]*\)', ' ', s)
     s = re.sub(r'<[^>]*>', ' ', s)
+    if "היושב על חוג הארץ" in s:
+        a = 7
+    # s = s.replace(" "+"–", '')
+    s = s.replace("–", '')
+    s = s.replace('״', '')
+    s = s.replace('"', '')
+    s = s.replace(';', '')
+    s = s.replace('׳', '')
+    # # re.sub(r'\s{2,}', ' ', s)
+    # a = s.split()
     return s.split()
 
 
@@ -350,7 +361,8 @@ def print_parallel_matches(matches):
         print('}}}')
 
 
-def matches_to_links(matches):
+def matches_to_links(matches, score_threshold = -6.5):
+    matches = [m for m in matches if m.score > score_threshold]
     matches = [[m.a.ref.tref, m.b.ref.tref] for m in matches]
     matches = list(set(tuple(inner_list) for inner_list in matches))
     links = []
@@ -378,16 +390,20 @@ def create_links():
     #                           min_distance_between_matches=0,
     #                           only_match_first=True, ngram_size=5, max_words_between=7,
     #                           both_sides_have_min_words=True)
-    matcher = ParallelMatcher(tokenizer, verbose=False, all_to_all=False, min_words_in_match=7,
-                              min_distance_between_matches=0,
-                              only_match_first=True, ngram_size=5, max_words_between=7,
-                              both_sides_have_min_words=True)
+    matcher = ParallelMatcher(tokenizer, verbose=False, all_to_all=False, min_words_in_match=3,
+                              # min_distance_between_matches=0,  only_match_first=True,
+                              ngram_size=3, max_words_between=0,
+                              both_sides_have_min_words=False)
+
     for sec in sections:
         print(sec)
         r_string_comm = "Shem Tov on Guide for the Perplexed, {}".format(sec)
         r_string_base = "Guide for the Perplexed, {}".format(sec)
         if sec == 'Part 1':
+            # break
             for i in range(1, 76):
+                if i == 11:
+                    a = 11
                 r_string_comm_spec = r_string_comm + " " + str(i)
                 r_string_base_spec = r_string_base + ":" + str(i)
                 matches = matcher.match([r_string_comm_spec, r_string_base_spec], return_obj=True)
@@ -396,6 +412,7 @@ def create_links():
             continue
 
         if sec == 'Part 2':
+            # break
             for i in range(1, 48):
                 r_string_comm_spec = r_string_comm + " " + str(i)
                 r_string_base_spec = r_string_base + ":" + str(i)
@@ -453,10 +470,10 @@ if __name__ == '__main__':
     # clean = clean_matches(matches)
     # # print_parallel_matches(matches)
 
-    clean()
+    # clean()
     cauldron_pipeline()
     # links = create_links()
-    #
+
     # insert_links_to_db(links)
     #
     # create_report()
