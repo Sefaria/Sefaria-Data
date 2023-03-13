@@ -13,7 +13,7 @@ from sefaria.helper.category import create_category
 from sefaria.system.database import db
 import json
 import re
-# from linking_utilities.parallel_matcher import ParallelMatcher
+
 
 
 def extract_last_number(string):
@@ -131,7 +131,7 @@ def cauldron_pipeline():
 
 
 def clean():
-    query = {"refs": {"$regex": "Shem Tov on Guide for the Perplexed"}}
+    query = {"refs": {"$regex": "Shem Tov on Guide for the Perplexed"}, "generated_by": "Guide for the Perplexed_to_Shem Tov"}
     list_of_links = LinkSet(query).array()
     for l in list_of_links:
         l.delete()
@@ -184,89 +184,89 @@ def replace_last_number(s, x):
     return re.sub(r'\d+(?=$)', str(x), s)
 
 
-def find_ref_in_list(ref_string, list_of_refs):
-    for ref in list_of_refs:
-        if ref.tref == ref_string:
-            return ref
+# def find_ref_in_list(ref_string, list_of_refs):
+#     for ref in list_of_refs:
+#         if ref.tref == ref_string:
+#             return ref
+#
+#     return None
 
-    return None
 
-
-def infer_links():
-    with open('links_list.json') as f:
-        auto_links = json.load(f)
-
-    sandwich_links = []
-    last_in_seg_links = []
-    all_refs_base = []
-    all_refs_comm = []
-    for sec in sections:
-        r_string_base = "Guide for the Perplexed, {}".format(sec)
-        all_refs_base += Ref(r_string_base).all_segment_refs()
-        r_string_comm = "Efodi on Guide for the Perplexed, {}".format(sec)
-        all_refs_comm += Ref(r_string_comm).all_segment_refs()
-    last_segment_num = 0
-    base_text_ref = ''
-    count = 0
-    # for sec in sections:
-    #     r_string_comm = "Efodi on Guide for the Perplexed, {}".format(sec)
-    #     refs_comm = Ref(r_string_comm).all_segment_refs()
-    #     for r in refs_comm:
-    #         if exists_with_ref_x(auto_links, r.tref) == None:
-    #             count += 1
-    #             if exists_with_ref_x(auto_links, prev_element(r).tref) and
-    #                 r. exists_with_ref_x(auto_links, prev_element(r).tref)["refs"][1]
-    for link in auto_links[1:]:
-        prev_comm_ref = prev_element(auto_links, link)["refs"][0]
-        curr_comm_ref = link["refs"][0]
-        # next_comm_ref = next_element(auto_links, link)["refs"][0]
-
-        i_minus_one = int(extract_last_number(prev_comm_ref))
-        i = int(extract_last_number(curr_comm_ref))
-        # i_plus_one = int(extract_last_number(next_comm_ref))
-        if i_minus_one + 1 < i and link["refs"][1] == prev_element(auto_links, link)["refs"][1]:
-            # count += 1
-            sandwich_links.append(
-                {
-                    "refs": [
-                        trim_last_num(prev_comm_ref) + str(i_minus_one + 1),
-                        prev_element(auto_links, link)["refs"][1]
-                    ],
-                    "generated_by": "Guide for the Perplexed_to_Efodi",
-                    "type": "Commentary",
-                    "auto": True
-                }
-            )
-        if 'Efodi on Guide for the Perplexed, Part 1 10:1' in link["refs"][0]:
-            a = 1
-        possibly_missing_efodi_link_ref = replace_last_number(prev_element(auto_links, link)["refs"][0],
-                                                              i_minus_one + 1)
-        possibly_non_existing_more_ref = replace_last_number(prev_element(auto_links, link)["refs"][1], i_minus_one + 1)
-        if i < i_minus_one and not exists_with_ref_x(auto_links, possibly_missing_efodi_link_ref) and find_ref_in_list(
-                possibly_missing_efodi_link_ref, all_refs_comm) \
-                and not find_ref_in_list(possibly_non_existing_more_ref, all_refs_base):
-            # print("%%%%%%%%%%%%%")
-            last_in_seg_links.append(
-                {
-                    "refs": [
-                        possibly_missing_efodi_link_ref,
-                        prev_element(auto_links, link)["refs"][1]
-                    ],
-                    "generated_by": "Guide for the Perplexed_to_Efodi",
-                    "type": "Commentary",
-                    "auto": True
-                }
-            )
-            count += 1
-
-    print(count)
-
-    with open("sandwich_links.json", "w") as f:
-        # Write the list of dictionaries to the file as JSON
-        json.dump(sandwich_links, f, ensure_ascii=False, indent=2)
-    with open("last_in_seg_links.json", "w") as f:
-        # Write the list of dictionaries to the file as JSON
-        json.dump(last_in_seg_links, f, ensure_ascii=False, indent=2)
+# def infer_links():
+#     with open('links_list.json') as f:
+#         auto_links = json.load(f)
+#
+#     sandwich_links = []
+#     last_in_seg_links = []
+#     all_refs_base = []
+#     all_refs_comm = []
+#     for sec in sections:
+#         r_string_base = "Guide for the Perplexed, {}".format(sec)
+#         all_refs_base += Ref(r_string_base).all_segment_refs()
+#         r_string_comm = "Efodi on Guide for the Perplexed, {}".format(sec)
+#         all_refs_comm += Ref(r_string_comm).all_segment_refs()
+#     last_segment_num = 0
+#     base_text_ref = ''
+#     count = 0
+#     # for sec in sections:
+#     #     r_string_comm = "Efodi on Guide for the Perplexed, {}".format(sec)
+#     #     refs_comm = Ref(r_string_comm).all_segment_refs()
+#     #     for r in refs_comm:
+#     #         if exists_with_ref_x(auto_links, r.tref) == None:
+#     #             count += 1
+#     #             if exists_with_ref_x(auto_links, prev_element(r).tref) and
+#     #                 r. exists_with_ref_x(auto_links, prev_element(r).tref)["refs"][1]
+#     for link in auto_links[1:]:
+#         prev_comm_ref = prev_element(auto_links, link)["refs"][0]
+#         curr_comm_ref = link["refs"][0]
+#         # next_comm_ref = next_element(auto_links, link)["refs"][0]
+#
+#         i_minus_one = int(extract_last_number(prev_comm_ref))
+#         i = int(extract_last_number(curr_comm_ref))
+#         # i_plus_one = int(extract_last_number(next_comm_ref))
+#         if i_minus_one + 1 < i and link["refs"][1] == prev_element(auto_links, link)["refs"][1]:
+#             # count += 1
+#             sandwich_links.append(
+#                 {
+#                     "refs": [
+#                         trim_last_num(prev_comm_ref) + str(i_minus_one + 1),
+#                         prev_element(auto_links, link)["refs"][1]
+#                     ],
+#                     "generated_by": "Guide for the Perplexed_to_Efodi",
+#                     "type": "Commentary",
+#                     "auto": True
+#                 }
+#             )
+#         if 'Efodi on Guide for the Perplexed, Part 1 10:1' in link["refs"][0]:
+#             a = 1
+#         possibly_missing_efodi_link_ref = replace_last_number(prev_element(auto_links, link)["refs"][0],
+#                                                               i_minus_one + 1)
+#         possibly_non_existing_more_ref = replace_last_number(prev_element(auto_links, link)["refs"][1], i_minus_one + 1)
+#         if i < i_minus_one and not exists_with_ref_x(auto_links, possibly_missing_efodi_link_ref) and find_ref_in_list(
+#                 possibly_missing_efodi_link_ref, all_refs_comm) \
+#                 and not find_ref_in_list(possibly_non_existing_more_ref, all_refs_base):
+#             # print("%%%%%%%%%%%%%")
+#             last_in_seg_links.append(
+#                 {
+#                     "refs": [
+#                         possibly_missing_efodi_link_ref,
+#                         prev_element(auto_links, link)["refs"][1]
+#                     ],
+#                     "generated_by": "Guide for the Perplexed_to_Efodi",
+#                     "type": "Commentary",
+#                     "auto": True
+#                 }
+#             )
+#             count += 1
+#
+#     print(count)
+#
+#     with open("sandwich_links.json", "w") as f:
+#         # Write the list of dictionaries to the file as JSON
+#         json.dump(sandwich_links, f, ensure_ascii=False, indent=2)
+#     with open("last_in_seg_links.json", "w") as f:
+#         # Write the list of dictionaries to the file as JSON
+#         json.dump(last_in_seg_links, f, ensure_ascii=False, indent=2)
 
 
 # def create_report():
@@ -322,7 +322,7 @@ def create_report():
 
         for r in all_refs_for_sec:
 
-            basetext_linked_refs = [l.refs[0] for l in list_of_links if r.normal() in l.refs[1]] #+ [l.refs[1] for l in list_of_links if r_string_base in l.refs[1]]
+            basetext_linked_refs = [l.refs[0] for l in list_of_links if r.normal() == l.refs[1]] #+ [l.refs[1] for l in list_of_links if r_string_base in l.refs[1]]
             separator = ", "
             basetext_linked_refs_string = separator.join(basetext_linked_refs)
             list_of_tuples.append((r, basetext_linked_refs_string))
@@ -361,7 +361,7 @@ def print_parallel_matches(matches):
         print('}}}')
 
 
-def matches_to_links(matches, score_threshold = -6.5):
+def matches_to_links(matches, score_threshold = -4):
     matches = [m for m in matches if m.score > score_threshold]
     matches = [[m.a.ref.tref, m.b.ref.tref] for m in matches]
     matches = list(set(tuple(inner_list) for inner_list in matches))
@@ -385,6 +385,7 @@ def matches_to_links(matches, score_threshold = -6.5):
 
 
 def create_links():
+    from linking_utilities.parallel_matcher import ParallelMatcher
     links = []
     # matcher = ParallelMatcher(tokenizer, verbose=False, all_to_all=False, min_words_in_match=5,
     #                           min_distance_between_matches=0,
@@ -470,13 +471,13 @@ if __name__ == '__main__':
     # clean = clean_matches(matches)
     # # print_parallel_matches(matches)
 
-    # clean()
-    cauldron_pipeline()
-    # links = create_links()
+    clean()
+    # cauldron_pipeline()
+    links = create_links()
 
-    # insert_links_to_db(links)
+    insert_links_to_db(links)
     #
-    # create_report()
+    create_report()
     print("hi")
 
     # post_link(links)
