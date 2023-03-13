@@ -166,8 +166,7 @@ def cauldron_pipeline():
 
 
 def clean():
-    query = {"refs": {"$regex": "Shem Tov on Guide for the Perplexed"}}
-    # query = {"refs": {"$regex": "Shem Tov on Guide for the Perplexed"}, "generated_by": "Guide for the Perplexed_to_Shem"}
+    query = {"refs": {"$regex": "Shem Tov on Guide for the Perplexed"}, "generated_by": "Guide for the Perplexed_to_Shem"}
     list_of_links = LinkSet(query).array()
     for l in list_of_links:
         l.delete()
