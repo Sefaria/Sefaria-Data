@@ -153,7 +153,7 @@ def create_text_object():
             text = text.replace("@33", '</b>')
             comm_list[section_index][ref] = text.translate(str.maketrans("", "", "0123456789@")).replace("</b><b>", "").replace("</b> <b>", "").replace(" </b>", "</b> ")
             # comm_list[section_index][ref] = "AAAAAAAAAAA"
-    return {**comm_list[0], **comm_list[1], **comm_list[2], **comm_list[3], **comm_list[4], **comm_list[5]}
+    return {**comm_list[0], **comm_list[1], **comm_list[2], **comm_list[3], **comm_list[4], **comm_list[5], **comm_list[6]}
 
 
 def ingest_version(map_text):
