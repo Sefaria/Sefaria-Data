@@ -11,7 +11,6 @@ from sefaria.helper.schema import insert_last_child, reorder_children
 from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.helper.category import create_category
-from sources.functions import post_index
 from sefaria.system.database import db
 import time
 from docx import Document
@@ -130,6 +129,7 @@ def ingest_version(map_text):
 
     modify_bulk_text(superuser_id, version, map_text)
 def ingest_nodes():
+    from sources.functions import post_index
     en_title = 'Efodi on Guide for the Perplexed'
     he_title = 'אפודי על מורה נבוכים'
     root = SchemaNode()
@@ -199,7 +199,9 @@ def ingest_nodes():
         "schema": root.serialize(),
         "categories": ['Jewish Thought', 'Guide for the Perplexed', "Commentary"],
         "dependence": 'commentary',
-        "base_text_titles": ["Guide for the Perplexed"]
+        "base_text_titles": ["Guide for the Perplexed"],
+        "collective_title": "Efodi",
+
     }
     post_index(index, server="https://guide-commentaries.cauldron.sefaria.org")
     # post_index(index)

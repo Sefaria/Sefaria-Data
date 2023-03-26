@@ -11,7 +11,6 @@ from sefaria.helper.schema import insert_last_child, reorder_children
 from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.helper.category import create_category
-# from sources.functions import post_index
 from sefaria.system.database import db
 import time
 from docx import Document
@@ -158,6 +157,9 @@ def ingest_version(map_text):
 
     modify_bulk_text(superuser_id, version, map_text)
 def ingest_nodes():
+    from sources.functions import post_index
+    from sources.functions import add_term
+
     en_title = 'Crescas on Guide for the Perplexed'
     he_title = 'קרשקש על מורה נבוכים'
     root = SchemaNode()
@@ -222,24 +224,41 @@ def ingest_nodes():
     root.append(part3_node)
     root.validate()
 
+    # add_term("Crescas", u"קרשקש", scheme='commentary_works', server="http://localhost:8000/")
+    # t = Term()
+    # term_dict = {
+    #     'name': "Crescas",
+    #     'scheme': "commentary_works",
+    #     'titles': [{'lang': 'en', 'text': "Crescas", 'primary': True}, {'lang': 'he', 'text': "קרשקש", 'primary': True}]
+    # }
+    # add_term("Monthly Cycle", u"לוח חודשי")
     index = {
         "title": en_title,
         "schema": root.serialize(),
         "categories": ['Jewish Thought', 'Guide for the Perplexed', "Commentary"],
         "dependence": 'commentary',
-        "base_text_titles": ["Guide for the Perplexed"]
+        "base_text_titles": ["Guide for the Perplexed"],
+        "collective_title": "Crescas"
+
+        # "collective_title": {"en": "Crescas", "he": "קרשקש"}
     }
     post_index(index, server="https://guide-commentaries.cauldron.sefaria.org")
     # post_index(index)
 
 if __name__ == '__main__':
     print("hello world")
-    # "Guide for the Perplexed, Part 1 2:7"
-    # ingest_nodes()
 
-    obj = create_text_object()
+    # t = Term()
+    # t.name = 'Crescas'
+    # t.scheme = 'commentary_works'
+    # t.set_titles([{'lang': 'en', 'text': 'Crescas', 'primary': True}, {'lang': 'he', 'text': 'קרשקש', 'primary': True}])
+    # t.save()
+
+    ingest_nodes()
+
+    # obj = create_text_object()
     # print(obj)
-    ingest_version(obj)
+    # ingest_version(obj)
     # add_new_categories()
 
 

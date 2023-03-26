@@ -245,7 +245,8 @@ def ingest_nodes():
         "schema": root.serialize(),
         "categories": ['Jewish Thought', 'Guide for the Perplexed', "Commentary"],
         "dependence": 'commentary',
-        "base_text_titles": ["Guide for the Perplexed"]
+        "base_text_titles": ["Guide for the Perplexed"],
+        "collective_title": "Narboni"
     }
     # post_index(index, server="https://guide-commentaries.cauldron.sefaria.org")
     post_index(index)
@@ -253,11 +254,11 @@ def ingest_nodes():
 if __name__ == '__main__':
     print("hello world")
     # "Guide for the Perplexed, Part 1 2:7"
-    # ingest_nodes()
+    ingest_nodes()
 
-    obj = create_text_object()
+    # obj = create_text_object()
     # print(obj)
-    ingest_version(obj)
+    # ingest_version(obj)
     # add_new_categories()
 
 
