@@ -30,11 +30,13 @@ def create_logic_links(lines):
 
 
 if __name__ == "__main__":
+    g
+
     already_posted = True
 
     root = SchemaNode()
     base = "Torah Ohr"
-    he_title = "מראי מקומות הערות וציונים לתורה אור" if base == "Torah Ohr" else "מראי מקומות הערות וציונים לקוטי תורה"
+    he_title = "מראי מקומות הערות וציונים על תורה אור" if base == "Torah Ohr" else "מראי מקומות הערות וציונים על לקוטי תורה"
     title = f"Sources and References on {base}"
     # if not already_posted:
     #     try:
@@ -60,6 +62,13 @@ if __name__ == "__main__":
     new_parasha = True
     for l, line in enumerate(lines):
         parasha, dh, matched_ref, comm, seg, logic_ref = line
+        if "Hosafot" in parasha:
+            parasha = parasha.replace("Hosafot", "")
+            supplements = "Supplements, "
+            hosafot = "Hosafot"
+        else:
+            supplements = ""
+            hosafot = ""
         term = Term().load({"titles.text": parasha})
         if term is None:
             term = Topic().load({"titles.text": parasha})
@@ -68,8 +77,7 @@ if __name__ == "__main__":
         except:
             print(f"Warning regarding {parasha}")
         seg = seg.replace(" ", "")
-        #found_ref = matched_ref if len(matched_ref) != 0 else logic_ref
-        found_ref = matched_ref
+        found_ref = matched_ref if len(matched_ref) != 0 else logic_ref
         parts = seg.split(",")
         integer_daf = heb_string_to_int(parts[0])
         if integer_daf - prev_integer_daf not in [0, 1]:
@@ -107,7 +115,7 @@ if __name__ == "__main__":
             parshiyot.append([parasha, he_parasha])
             node.add_primary_titles(parasha, he_parasha)
             root.append(node)
-            text[parasha] = {}
+            text[hosafot+parasha] = {}
             curr_para = 0
             parasha_ranges[parasha]["startingAddress"] = folio_daf
 
@@ -135,12 +143,11 @@ if __name__ == "__main__":
 
         prev_folio_daf = folio_daf
 
+        if integer_daf not in text[hosafot+parasha]:
+            text[hosafot+parasha][integer_daf] = []
 
-        if integer_daf not in text[parasha]:
-            text[parasha][integer_daf] = []
 
-
-        text[parasha][integer_daf].append(f"<b>{dh}</b> {comm}")
+        text[hosafot+parasha][integer_daf].append(f"<b>{dh}</b> {comm}")
         if len(found_ref) > 0:
             ranged_links.append({"refs": [curr_ref, found_ref], "type": "Commentary",
                     "generated_by": "likkutei_torah_torah_ohr_script", "auto": True})
@@ -158,9 +165,10 @@ if __name__ == "__main__":
 
     root.validate()
     index_dict = {"title": title, "schema": root.serialize(), "categories": ["Chasidut", "Early Works"], "base_text_titles": [base],
-                  "dependence": "Commentary"}
+                  "dependence": "Commentary", "collective_title": "Sources and References"}
 
     if already_posted:
+        #LinkSet({"generated_by": "likkutei_torah_torah_ohr_script"}).delete()
         for link in tqdm(ranged_links):
             try:
                 Link(link).save()
@@ -189,16 +197,16 @@ if __name__ == "__main__":
 
     if not already_posted:
         for parasha in text:
-            for ref in text[parasha]:
+            for ref in text[hosafot+parasha]:
                 curr_ref = f"{title}, {parasha} {ref}"
                 send_text = {
                     "versionTitle": "NLI",
                     "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH002082151",
                     "language": "he",
-                    "text": text[parasha][ref]
+                    "text": text[hosafot+parasha][ref]
                 }
                 tc = TextChunk(Ref(curr_ref), lang='he', vtitle="NLI")
-                tc.text = text[parasha][ref]
+                tc.text = text[hosafot+parasha][ref]
                 tc.save(force_save=True)
 
     total = len(lines)
@@ -214,9 +222,10 @@ if __name__ == "__main__":
     #
     # with open("Likkutei Torah Main Text.csv", 'r') as f:
     #     create_logic_links(f)
-from sefaria.helper.schema import *
-for title in ["Likkutei Torah", "Torah Ohr"]:
-    comm_title = f"Sources and References on {title}"
-    parent_node = library.get_index(comm_title).nodes
-    last_node = library.get_index(title).nodes.children[-1]
-    insert_last_child(last_node, parent_node)
+# from sefaria.helper.schema import *
+# for title in ["Likkutei Torah", "Torah Ohr"]:
+#     comm_title = f"Sources and References on {title}"
+#     parent_node = library.get_index(comm_title).nodes
+#     last_node = library.get_index(title).nodes.children[-1]
+#     print(last_node)
+#     #insert_last_child(last_node, parent_node)

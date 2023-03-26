@@ -31,7 +31,13 @@ def get_next_parasha(title, parasha):
             return ref_to_return
     raise Exception
 
-def seg_to_ref(name, parasha, seg, prev_ref):
+def seg_to_ref(name, parasha, seg, prev_ref, hosafot):
+    if hosafot:
+        parasha = parasha.replace(hosafot, "")
+        supplements = "Supplements, "
+    else:
+        supplements = ""
+
     if len(parasha) > 0:
         try:
             parasha = Term().load({"titles.text": parasha}).get_primary_title('en')
@@ -45,19 +51,19 @@ def seg_to_ref(name, parasha, seg, prev_ref):
     if seg == "":
         return (prev_ref, False)
     else:
-        parasha = parasha.replace("Shmini Atzeret", "Shemini Atzeret").replace("Song of Songs", "Shir HaShirim")
-        last_ref = Ref(f"{name}, {parasha}").all_segment_refs()[-1]
-        parasha_refs = Ref(f"{name}, {parasha}").all_segment_refs() if prev_ref == "" else Ref(prev_ref).to(last_ref).range_list()
+        parasha = parasha.replace("Shmini Atzeret", "Shemini Atzeret").replace("Song of Songs", "Shir HaShirim").replace("Megilat Esther", "Megillat Esther")
+        last_ref = Ref(f"{name}, {supplements}{parasha}").all_segment_refs()[-1]
+        parasha_refs = Ref(f"{name}, {supplements}{parasha}").all_segment_refs() if prev_ref == "" else Ref(prev_ref).to(last_ref).range_list()
         next_refs = []
         if title == "Torah Ohr" and parasha == "Tetzaveh":
             next_refs = Ref("Torah Ohr, Parashat Zakhor").all_segment_refs()
         elif title == "Torah Ohr" and parasha == "Vayakhel":
             next_refs = Ref(f"{title}, Megillat Esther").all_segment_refs()
         seg = seg.replace(" ", "").strip()
-        main_ref = Ref(f"{name}, {parasha}")
+        main_ref = Ref(f"{name}, {supplements}{parasha}")
         result = refs_to_value(parasha_refs, seg, main_ref)
         if result == -1:
-            assert len(prev_ref) > 0
+            # assert len(prev_ref) > 0
             result = refs_to_value(next_refs, seg, main_ref)
             if result == -1:
                 # print(f"Falling back on {prev_ref}")
@@ -98,12 +104,13 @@ def parse(f, title, curr_parasha="", curr_segment="", curr_dh="", text={}):
     which_dict = text
     prev_ref = ""
     curr_daf = ""
+    hosafot = ""
     rows = list(enumerate(csv.reader(f)))
     for r, row in rows:
         parasha, daf, dh, comm = row
         parasha = parasha.replace('אחרי', 'אחרי מות').replace('בחקותי', "בחוקתי")\
             .replace('פינחס', "פנחס").replace('תצא', 'כי תצא').replace('תבא', 'כי תבוא')\
-            .replace('ר"ה', 'ראש השנה').replace('יוהכ"פ', "יום כיפור").replace('שמ"ע', 'שמיני עצרת')
+            .replace('ר"ה', 'ראש השנה').replace('יוהכ"פ', "יום כיפור").replace('שמ"ע', 'שמיני עצרת').replace('מגלת אסתר', "מגילת אסתר")
         if "".join(row) == "":
             continue
         if 'הוספות' in parasha:
@@ -120,13 +127,18 @@ def parse(f, title, curr_parasha="", curr_segment="", curr_dh="", text={}):
             # curr_text = curr_text + "<br>" + comm if len(curr_text) > 0 else comm
             # addenda[book][seg][dh] = curr_text
             # which_dict = addenda
-            return (text, addenda)
+            hosafot = "Hosafot"
+            prev_ref = ""
+            curr_daf = ""
+            curr_dh = ""
+
+            continue
 
         if len(daf) > 0:
             curr_dh = ""
 
 
-        temp, next_parasha_bool = seg_to_ref(title, parasha, daf, prev_ref)
+        temp, next_parasha_bool = seg_to_ref(title, parasha, daf, prev_ref, hosafot)
         if next_parasha_bool:
             parasha = " ".join(temp.replace(title, "").split(", ")[1].split()[:-1])
             print(f"Switched to {parasha}")
@@ -136,7 +148,7 @@ def parse(f, title, curr_parasha="", curr_segment="", curr_dh="", text={}):
         prev_ref = seg
 
         if len(parasha) > 0:
-            curr_parasha = parasha
+            curr_parasha = hosafot+parasha
             which_dict[curr_parasha] = {}
             new_parasha = True
             curr_dh = ""
@@ -179,7 +191,7 @@ if __name__ == "__main__":
     next_parasha_dict = {"Torah Ohr": [{"Vayakhel": "Megillat Esther"}, {"Tetzaveh": "Parashat Zachor"}]}
     torah_ohr = {"Introduction": {"1": {}}}
     # #
-    title = "Likkutei Torah"
+    title = "Torah Ohr"
     file = f"{title} Main Text2.csv"
     # with open("Torah Ohr Commentary.csv", 'r') as to:
     #     # to_text, to_addenda = parse_to(to, "Likkutei Torah", curr_parasha="Introduction", curr_segment="1", text=torah_ohr)
@@ -202,20 +214,29 @@ if __name__ == "__main__":
         if parasha in ["Introduction", ""]:
             continue
         print(parasha)
+        if "Hosafot" in parasha:
+            parasha = parasha.replace("Hosafot", "")
+            supplements = "Supplements, "
+            continue
+        else:
+            supplements = ""
         term = Term().load({"titles.text": parasha})
         if term is None:
             term = Topic().load({"titles.text": parasha})
         try:
-            parasha_ref = Ref(f"""{title}, {term.get_primary_title('en').replace("Shmini Atzeret", "Shemini Atzeret").replace("Song of Songs", "Shir HaShirim")}""")
+            parasha_ref = Ref(f"""{title}, {supplements}{term.get_primary_title('en').replace("Shmini Atzeret", "Shemini Atzeret")
+                              .replace("Song of Songs", "Shir HaShirim").replace("Megilat Esther", "Megillat Esther")}""")
         except:
             parasha = parasha.replace("Shmini Atzeret", "Shemini Atzeret")
-            parasha_ref = Ref(f"{title}, {parasha}")
+            parasha_ref = Ref(f"{title}, {supplements}{parasha}")
 
         last_ref = parasha_ref.all_segment_refs()[-1]
         last_found = ""
         dhs = []
-        for d, daf in enumerate(text[parasha]):
+        if len(supplements) > 0:
+            parasha = "Hosafot"+parasha
 
+        for d, daf in enumerate(text[parasha]):
             next_ref = None
             for base_ref in text[parasha][daf]:
                 if next_ref is None:
