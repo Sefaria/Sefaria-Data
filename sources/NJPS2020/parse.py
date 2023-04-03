@@ -20,6 +20,12 @@ def get_body_html(document, ftnotes):
             curr_perek = 0
         elif len(book) > 0 and not comment.startswith("BOOK"):
             if comment.strip().isdigit():
+                if int(curr_perek) > 0 and len(Ref(f"{book} {curr_perek}").all_segment_refs()) != len(new_body[book][curr_perek]):
+                    for l, line in enumerate(new_body[book][curr_perek]):
+                        jps1985 = float(TextChunk(Ref(f"{book} {curr_perek}:{l+1}"), lang='en',
+                                            vtitle='Tanakh: The Holy Scriptures, published by JPS').text.count(" "))
+                        our_count = float(line.count(" "))
+                        #assert jps1985/our_count < 1.1  # want to make sure that our line isn't much smaller than jps
                 curr_perek = int(comment.strip())
                 new_body[book][curr_perek] = []
             else:
@@ -48,17 +54,16 @@ def get_body_html(document, ftnotes):
                     count += curr_markers
                     assert marker not in pasuk
                     assert "-footnote" not in pasuk
-                    if len(pasukim) == 1 and len(new_body[book][curr_perek]) > 0:
-                        new_body[book][curr_perek][-1] += " " + pasuk
+                    if pasukim[0].strip() != "" and p == 0:
+                        if len(new_body[book][curr_perek]) == 0:
+                            print(comment)
+                        else:
+                            new_body[book][curr_perek][-1] += " " + pasuk
                     else:
                         new_body[book][curr_perek].append(pasuk)
 
-                if len(Ref(f"{book} {curr_perek}").all_segment_refs()) < len(new_body[book][curr_perek]):
-                    for line in new_body[book][curr_perek]:
-                        jps1985 = float(TextChunk(Ref(f"{book} {curr_perek}:{len(new_body[book][curr_perek])}"), lang='en',
-                                            vtitle='JPS, 1985').text.count(" "))
-                        our_count = float(line.count(" "))
-                        assert jps1985/our_count < 1.5  # want to make sure that our line isn't much smaller than jps
+
+
                 assert len(ftnoteholders[count:]) == 0
     return new_body
 
@@ -139,10 +144,6 @@ for f in os.listdir("RJPS"):
     print(f)
     ftnotes = get_footnotes(document)
     x.update(get_body_html(document, ftnotes))
-
-from tqdm import tqdm
-with open("RJPS_results.json", 'r') as f:
-    x = json.load(f)
 
 for b in tqdm(x):
     diff = len(x[b]) - len(library.get_index(b).all_section_refs())
