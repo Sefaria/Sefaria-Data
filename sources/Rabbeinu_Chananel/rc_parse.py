@@ -14,7 +14,7 @@ from sources.functions import *
 import codecs
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 import pdb
 
 tractate_titles = {}

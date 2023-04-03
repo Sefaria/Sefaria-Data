@@ -1,7 +1,7 @@
 #encoding=utf-8
 import django
 django.setup()
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sefaria.system.database import db
 from sources.functions import post_link
 if __name__ == "__main__":

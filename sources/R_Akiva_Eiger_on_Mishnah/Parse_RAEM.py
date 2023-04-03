@@ -8,7 +8,7 @@ from sefaria.model import *
 import time
 
 from docx import Document
-from data_utilities.util import convert_dict_to_array, ja_to_xml
+from parsing_utilities.util import convert_dict_to_array, ja_to_xml
 from sources.yesh_seder_lamishna.Parse_YSLM import make_gematria_list
 import re
 #import copy

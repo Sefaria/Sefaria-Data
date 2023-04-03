@@ -1,6 +1,6 @@
 # coding=utf-8
-from data_utilities.util import ToratEmetData
-from data_utilities.util import ja_to_xml, multiple_replace
+from parsing_utilities.util import ToratEmetData
+from parsing_utilities.util import ja_to_xml, multiple_replace
 from bs4 import BeautifulSoup
 import re
 import unicodecsv as csv

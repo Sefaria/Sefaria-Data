@@ -4,8 +4,8 @@ import codecs
 import re
 from collections import OrderedDict
 import unicodecsv as csv
-from data_utilities.util import getGematria, numToHeb
-from data_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g, file_to_ja
+from parsing_utilities.util import getGematria, numToHeb
+from parsing_utilities.util import ja_to_xml, multiple_replace, traverse_ja, file_to_ja_g, file_to_ja
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model import *
 from sources.functions import post_text, post_index, post_link

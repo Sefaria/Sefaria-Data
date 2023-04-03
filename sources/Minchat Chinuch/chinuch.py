@@ -2,8 +2,8 @@
 import re
 import unicodecsv as csv
 import codecs
-from data_utilities.sanity_checks import TagTester
-from data_utilities import util
+from parsing_utilities.sanity_checks import TagTester
+from parsing_utilities import util
 from sources.Match.match import Match
 from sources import functions
 import json

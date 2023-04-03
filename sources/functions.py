@@ -25,7 +25,7 @@ django.setup()
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
 from sefaria.model.schema import AddressTalmud
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.utils.util import replace_using_regex as reg_replace
 from sefaria.system.exceptions import BookNameError
 import base64

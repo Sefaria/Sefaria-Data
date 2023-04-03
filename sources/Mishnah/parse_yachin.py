@@ -6,8 +6,8 @@ from sefaria.datatype import jagged_array
 from collections import Counter
 from urllib2 import URLError
 import json
-from data_utilities.util import jagged_array_to_file as j_to_file, getGematria
-from data_utilities.sanity_checks import *
+from parsing_utilities.util import jagged_array_to_file as j_to_file, getGematria
+from parsing_utilities.sanity_checks import *
 from sources import functions
 from sefaria.model import *
 

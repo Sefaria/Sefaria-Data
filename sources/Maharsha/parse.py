@@ -6,7 +6,7 @@ import os
 import sys
 from bs4 import BeautifulSoup
 import re
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 
 

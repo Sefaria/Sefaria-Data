@@ -8,7 +8,7 @@ from sefaria.model import *
 
 from sources.functions import post_index, post_text, add_term, add_category, post_link
 from docx import Document
-from data_utilities.util import convert_dict_to_array, getGematria
+from parsing_utilities.util import convert_dict_to_array, getGematria
 import re
 import codecs
 

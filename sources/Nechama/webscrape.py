@@ -11,7 +11,7 @@ import bleach
 import os
 from sefaria.system.database import db
 from research.source_sheet_disambiguator.main import refine_ref_by_text
-from research.link_disambiguator.main import *
+from linking_utilities.citation_disambiguator.citation_disambiguator import *
 django.setup()
 from sources.functions import UnicodeWriter
 import urllib2, urllib
@@ -22,8 +22,8 @@ import difflib
 from collections import Counter
 import time
 from sefaria.model.schema import AddressYear, AddressInteger
-from data_utilities.util import WeightedLevenshtein
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.parallel_matcher import ParallelMatcher
 from sefaria.system.exceptions import *
 from sources.functions import UnicodeWriter, UnicodeReader
 
@@ -793,7 +793,7 @@ class Sheets:
 
     def fix_ref(self, ref, comment):
 
-        # ld = Link_Disambiguator()
+        # ld = CitationDisambiguator()
         # main_tc = TextChunk(Ref("Tosafot on Eruvin 92a:1:1"), "he")
         # other_tc = TextChunk(Ref(ref), "he")
         # print ld.disambiguate_segment((comment, "Nechama"), [other_tc])

@@ -16,7 +16,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 
 from functions import *
 import re
-import data_utilities
+import linking_utilities
 import codecs
 from sources import functions
 from bs4 import BeautifulSoup

@@ -5,9 +5,9 @@ from xml.etree import ElementTree as ET
 import csv
 import urllib2
 import re
-from data_utilities import util
+from parsing_utilities import util
 import unicodecsv as ucsv
-from data_utilities import util
+from parsing_utilities import util
 from sefaria.utils.hebrew import hebrew_term
 from sefaria.model import *
 import json

@@ -2,7 +2,7 @@
 import re
 from sefaria.model import *
 from sources.functions import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from glob import glob
 
 pasuk_errors = 0

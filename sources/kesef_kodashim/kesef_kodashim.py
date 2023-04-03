@@ -3,7 +3,7 @@ import csv
 import django
 django.setup()
 
-from data_utilities.util import getGematria as gematria
+from parsing_utilities.util import getGematria as gematria
 
 book = "Kesef Kodashim on Shulchan Arukh, Choshen Mishpat"
 colluma = ['Version Title', "Language", "Version Source", "Version Notes"]

@@ -1,7 +1,7 @@
 import re
 import json
 from rif_utils import path, tags_map
-from data_utilities.util import getGematria
+from parsing_utilities.util import getGematria
 from tags_fix_and_check import tags_by_criteria, save_tags, next_gem
 from tags_compare import compare_tags_nums, compare_tags, OrderedCounter
 

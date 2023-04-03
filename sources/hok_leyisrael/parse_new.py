@@ -7,7 +7,7 @@ from sefaria.model import *
 from bs4 import BeautifulSoup, element as Element
 import re
 from sources.functions import getGematria, post_sheet, inv_gematria
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from linking_utilities.parallel_matcher import ParallelMatcher
 from sefaria.utils.hebrew import strip_cantillation
 
 def del_children(elements):

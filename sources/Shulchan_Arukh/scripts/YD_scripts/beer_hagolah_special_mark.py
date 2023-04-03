@@ -16,10 +16,10 @@ import os
 import regex
 import beer_hagolah
 from os.path import dirname as loc
-from data_utilities.util import StructuredDocument
+from parsing_utilities.util import StructuredDocument
 from collections import defaultdict
 from sources.Shulchan_Arukh.ShulchanArukh import *
-from data_utilities.util import numToHeb, getGematria
+from parsing_utilities.util import numToHeb, getGematria
 
 
 root_dir = loc(loc(loc(os.path.abspath(__file__))))

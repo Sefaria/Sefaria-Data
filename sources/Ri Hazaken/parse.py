@@ -3,7 +3,7 @@
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 
 def get_relevant_DHs(ch_name, file_name):

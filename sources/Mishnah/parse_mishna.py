@@ -23,7 +23,7 @@ import codecs
 import json
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, p)
-from data_utilities import util, sanity_checks
+from parsing_utilities import util, sanity_checks
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from sources.local_settings import *
 from sources import functions

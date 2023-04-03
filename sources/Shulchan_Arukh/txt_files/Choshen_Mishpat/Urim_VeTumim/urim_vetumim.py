@@ -11,7 +11,7 @@ import Levenshtein
 from functools import partial
 from collections import Counter
 from tag_merge import merge_tags
-from data_utilities.util import traverse_ja
+from parsing_utilities.util import traverse_ja
 from sources.Shulchan_Arukh.ShulchanArukh import *
 from sources.functions import post_text, post_index, post_link, add_category
 import django

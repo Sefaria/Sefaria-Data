@@ -7,7 +7,7 @@ django.setup()
 from sefaria.model import *
 
 from sources.functions import post_link
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sources.R_Akiva_Eiger_on_Mishnah.Upload_RAEM import extract_and_split_dh
 import re
 try:

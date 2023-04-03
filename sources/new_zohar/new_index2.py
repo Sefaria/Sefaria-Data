@@ -16,7 +16,7 @@ for i in range(3):
         start = int(node['refs'][0].split(':')[-1])
         if start != 1:
             node['startingAddress'] = start
-index['alt_structs']['Pages']['nodes'] = [
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    index['alt_structs']['Pages']['nodes'] = [
     {'titles':  [
                         {
                             "primary" : True,

@@ -1,5 +1,5 @@
 from sources.functions import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 def dher(str):
     if not "<b>" in str or not "</b>" in str:
         return ""

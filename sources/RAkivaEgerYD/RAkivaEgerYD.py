@@ -7,7 +7,7 @@ from sefaria.model.schema import *
 from sefaria.model import *
 import csv
 import re
-from data_utilities.util import getGematria as gematria
+from parsing_utilities.util import getGematria as gematria
 import copy
 
 def tags(text):

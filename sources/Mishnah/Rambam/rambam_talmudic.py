@@ -3,13 +3,13 @@
 import re
 import codecs
 import csv
-from data_utilities.util import get_cards_from_trello
-from data_utilities.util import getGematria
+from parsing_utilities.util import get_cards_from_trello
+from parsing_utilities.util import getGematria
 from sources.local_settings import SEFARIA_PROJECT_PATH
 from sefaria.utils.talmud import section_to_daf
 from fuzzywuzzy import process, fuzz
 from sefaria.datatype.jagged_array import JaggedArray
-from data_utilities.util import ja_to_xml
+from parsing_utilities.util import ja_to_xml
 from sources.functions import post_index, post_link, post_text
 from sefaria.model import *
 

@@ -7,7 +7,7 @@ import sys
 from bs4 import BeautifulSoup
 import re
 from sources.local_settings import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 
 

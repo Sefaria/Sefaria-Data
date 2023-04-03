@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from sefaria.model import *
-from data_utilities import dibur_hamatchil_matcher as dhm
+from linking_utilities import dibur_hamatchil_matcher as dhm
 import unicodecsv, codecs, json
 import regex as re
 

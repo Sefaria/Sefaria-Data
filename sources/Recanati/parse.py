@@ -4,7 +4,7 @@ django.setup()
 from sefaria.model import *
 import requests
 from bs4 import BeautifulSoup, Tag
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 from sefaria.export import *
 

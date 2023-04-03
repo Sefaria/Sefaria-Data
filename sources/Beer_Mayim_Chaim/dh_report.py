@@ -4,13 +4,13 @@ __author__ = 'stevenkaplan'
 
 from sources.functions import *
 import os
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from linking_utilities.parallel_matcher import ParallelMatcher
 from BeautifulSoup import *
-from data_utilities.util import set_ranges_between_refs
-from data_utilities.util import WeightedLevenshtein
+from parsing_utilities.util import set_ranges_between_refs
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
 
 
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 import bleach
 
 SERVER="http://proto.sefaria.org"

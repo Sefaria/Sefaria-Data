@@ -7,7 +7,7 @@ django.setup()
 from functools import partial
 from sefaria.model import *
 from rif_utils import path, remove_metadata, tags_map, get_hebrew_masechet, hebrewplus, netlen2, unite_ref
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from linking_utilities.parallel_matcher import ParallelMatcher
 from sefaria.system.exceptions import InputError
 from scoremanager import ScoreManager
 

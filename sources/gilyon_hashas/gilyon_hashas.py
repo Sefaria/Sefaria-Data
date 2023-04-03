@@ -4,7 +4,7 @@ from sefaria.model import *
 import re
 from sources.functions import getGematria, post_index, post_text, post_link, add_term, add_category
 from sefaria.utils.talmud import section_to_daf
-from data_utilities.dibur_hamatchil_matcher import ComputeLevenshteinDistanceByWord, match_text, match_ref
+from linking_utilities.dibur_hamatchil_matcher import ComputeLevenshteinDistanceByWord, match_text, match_ref
 
 with open('gilyon_hashas.txt', encoding='utf-8') as fp:
     data = fp.readlines()

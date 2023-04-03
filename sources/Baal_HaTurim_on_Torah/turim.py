@@ -1,8 +1,8 @@
 # coding=utf-8
 
 from bs4 import BeautifulSoup
-from data_utilities.util import ToratEmetData
-from data_utilities import util
+from parsing_utilities.util import ToratEmetData
+from parsing_utilities import util
 import re
 from sefaria.utils.hebrew import hebrew_term
 from sources import functions

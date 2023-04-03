@@ -1,6 +1,6 @@
 # encoding=utf-8
 
-from data_utilities.util import numToHeb
+from parsing_utilities.util import numToHeb
 from sources.Shulchan_Arukh.ShulchanArukh import *
 
 """

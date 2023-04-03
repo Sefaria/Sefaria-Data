@@ -1,6 +1,6 @@
 import django
 django.setup()
-from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
+from parsing_utilities.XML_to_JaggedArray import XML_to_JaggedArray
 from sefaria.helper.schema import *
 from sources.functions import *
 from lxml import etree

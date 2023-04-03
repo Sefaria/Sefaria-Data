@@ -1,6 +1,6 @@
 __author__ = 'stevenkaplan'
 
-from data_utilities.XML_to_JaggedArray import *
+from parsing_utilities.XML_to_JaggedArray import *
 SERVER = "http://ste.sefaria.org"
 
 def reorder_modify(text):

@@ -5,8 +5,8 @@ from sefaria.model import *
 import codecs
 import regex as re
 import pygtrie
-from data_utilities.util import getGematria
-from data_utilities.ibid import BookIbidTracker, IbidKeyNotFoundException
+from parsing_utilities.util import getGematria
+from parsing_utilities.ibid import BookIbidTracker, IbidKeyNotFoundException
 from sefaria.utils.hebrew import strip_nikkud
 import unicodecsv as csv
 import logging

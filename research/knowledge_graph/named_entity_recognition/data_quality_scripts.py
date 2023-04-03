@@ -435,7 +435,7 @@ def get_words_removed(s, t):
 
 def find_changes_between_wiki_and_will():
     import math, bisect
-    from data_utilities import dibur_hamatchil_matcher
+    from linking_utilities import dibur_hamatchil_matcher
     from tqdm import tqdm
 
     out = {}

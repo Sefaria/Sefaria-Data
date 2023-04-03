@@ -7,7 +7,7 @@ import bs4
 from functools import partial
 from itertools import zip_longest
 from sources.Yerushalmi.sefaria_objects import *
-from data_utilities.ParseUtil import ParsedDocument, Description, ParseState
+from parsing_utilities.ParseUtil import ParsedDocument, Description, ParseState
 
 """
 Let's make sure:
@@ -220,5 +220,5 @@ if __name__ == '__main__':
                 writer = csv.DictWriter(fp, filednames, restval='')
                 writer.writeheader()
                 document.filter_ja(lambda x: writer.writerow(x))
-    from data_utilities.util import ja_to_xml
+    from parsing_utilities.util import ja_to_xml
     # ja_to_xml(document.get_ja(), ["Chapter", "Halakha", "Segment"], "code_output/parse_test.xml")

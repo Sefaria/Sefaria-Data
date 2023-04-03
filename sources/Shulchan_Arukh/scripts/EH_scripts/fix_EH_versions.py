@@ -5,7 +5,7 @@ import os
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.splice import SegmentSplicer
+from parsing_utilities.splice import SegmentSplicer
 from sefaria.helper.schema import migrate_to_complex_structure
 
 merging_refs = [

@@ -44,7 +44,7 @@ import random
 from itertools import chain
 from collections import Counter
 
-from data_utilities.util import getGematria as get_gematria
+from parsing_utilities.util import getGematria as get_gematria
 from bs4 import BeautifulSoup, Tag
 
 import django

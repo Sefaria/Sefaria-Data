@@ -5,7 +5,7 @@ import os
 import sys
 import re
 
-from data_utilities import dibur_hamatchil_matcher
+from linking_utilities import dibur_hamatchil_matcher
 from sefaria.model import *
 
 

@@ -4,7 +4,7 @@ django.setup()
 
 import csv
 import re
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.dibur_hamatchil_matcher import match_text
 from commentary_data import commentary_dict
 
 from sefaria.model import *

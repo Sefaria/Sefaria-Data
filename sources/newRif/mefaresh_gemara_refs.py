@@ -2,7 +2,7 @@ import django
 django.setup()
 import json
 import re
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from rif_utils import tags_map, path, remove_metadata
 from sefaria.model import *
 from mefaresh_parse import split_dh, find_dh

@@ -7,9 +7,9 @@ import unicodecsv as csv
 from bs4 import BeautifulSoup, Tag
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model.text import Ref, JaggedArrayNode
-from data_utilities.sanity_checks import TagTester
+from parsing_utilities.sanity_checks import TagTester
 from sources.functions import post_link, post_text, post_index
-from data_utilities.util import get_cards_from_trello, numToHeb, ja_to_xml, getGematria, traverse_ja
+from parsing_utilities.util import get_cards_from_trello, numToHeb, ja_to_xml, getGematria, traverse_ja
 
 
 def get_cards():

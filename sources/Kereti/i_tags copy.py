@@ -7,7 +7,7 @@ from sources.functions import *
 import re
 from bs4 import BeautifulSoup
 from difflib import context_diff
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 import bleach
 
 
