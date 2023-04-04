@@ -21,11 +21,33 @@ def get_body_html(document, ftnotes):
         elif len(book) > 0 and not comment.startswith("BOOK"):
             if comment.strip().isdigit():
                 if int(curr_perek) > 0 and len(Ref(f"{book} {curr_perek}").all_segment_refs()) != len(new_body[book][curr_perek]):
+                    max = 0
+                    max_line = -1
                     for l, line in enumerate(new_body[book][curr_perek]):
-                        jps1985 = float(TextChunk(Ref(f"{book} {curr_perek}:{l+1}"), lang='en',
-                                            vtitle='Tanakh: The Holy Scriptures, published by JPS').text.count(" "))
-                        our_count = float(line.count(" "))
-                        #assert jps1985/our_count < 1.1  # want to make sure that our line isn't much smaller than jps
+                        jps = TextChunk(Ref(f"{book} {curr_perek}:{l+1}"), lang='en', vtitle='Tanakh: The Holy Scriptures, published by JPS').text.replace("<br>", " ").replace("<br/>", " ").replace("  ", " ")
+                        line = line.replace("<br>", " ").replace("<br/>", " ").replace("  ", " ")
+                        jps = BeautifulSoup(jps)
+                        line = BeautifulSoup(line)
+                        for x in line.findAll('sup'):
+                            x.decompose()
+                        for x in jps.findAll('sup'):
+                            x.decompose()
+                        for x in line.findAll("i", {"class": "footnote"}):
+                            x.decompose()
+                        for x in jps.findAll("i", {"class": "footnote"}):
+                            x.decompose()
+                        line = line.text
+                        jps = jps.text
+                        order = (line, jps) if line.count(" ") > jps.count(" ") else (jps, line)
+                        curr = (order[0].count(" ")-order[1].count(" "))/float(order[0].count(" "))
+                        if curr > max:
+                            max = curr
+                            max_line = l
+                    print("***")
+                    print(f"{book} {curr_perek}")
+                    print(new_body[book][curr_perek][max_line])
+                    print(TextChunk(Ref(f"{book} {curr_perek}:{max_line+1}"), lang='en', vtitle='Tanakh: The Holy Scriptures, published by JPS').text)
+
                 curr_perek = int(comment.strip())
                 new_body[book][curr_perek] = []
             else:
@@ -38,10 +60,14 @@ def get_body_html(document, ftnotes):
                     ftnotes[curr_perek][char] = ftnotes[curr_perek][char][1:]
                     ftnoteholders.append(f"<sup class='footnote-marker'>{char}</sup><i class='footnote'>{ftnote_text}</i>")
                     comment = comment.replace(full_ftnote, marker)
-                for tag in allowed+allowed[::-1]:
+                for tag in allowed:
                     m = re.search(f"<{tag}>(\\d+"+chr(160)+f")</{tag}>", comment)
                     if m:
                         comment = comment.replace(m.group(0), m.group(1))
+                    for tag in [x for x in allowed if x != tag]:
+                        m = re.search(f"<{tag}>(\\d+" + chr(160) + f")</{tag}>", comment)
+                        if m:
+                            comment = comment.replace(m.group(0), m.group(1))
                 pasukim = re.split(f"\d+" + chr(160), comment)
                 count = 0
                 for p, pasuk in enumerate(pasukim):
@@ -58,7 +84,7 @@ def get_body_html(document, ftnotes):
                         if len(new_body[book][curr_perek]) == 0:
                             print(comment)
                         else:
-                            new_body[book][curr_perek][-1] += " " + pasuk
+                            new_body[book][curr_perek][-1] += "<br/>" + pasuk
                     else:
                         new_body[book][curr_perek].append(pasuk)
 
@@ -111,37 +137,13 @@ def get_footnotes(document):
 
         prev = ftnote
     return new_ftnotes
-#
-# authors = {}
-# for i in IndexSet():
-#     if len(getattr(i, "authors", [])) > 0:
-#         authors[i.title] = i.authors
-#
-# topics = []
-# for t in TopicSet():
-#     if getattr(t, "subclass", "").startswith("author"):
-#         topics.append(t.slug)
-#
-# with open('authors.json', 'w') as f:
-#     json.dump(authors, f)
-#
-# with open('topics.json', 'w') as f:
-#     json.dump(topics, f)
-# with open("authors_march30.csv", 'w') as f:
-#     writer = csv.writer(f)
-#     for t in authors:
-#         writer.writerow([t, authors[t]])
-# with open("topics_march30.csv", 'w') as f:
-#     writer = csv.writer(f)
-#     for t in topics:
-#         writer.writerow([t])
+
 x = {}
 for f in os.listdir("RJPS"):
     if not f.endswith("docx"):
         continue
     start_at = 0
     document = docx2python("RJPS/"+f, html=True)
-    print(f)
     ftnotes = get_footnotes(document)
     x.update(get_body_html(document, ftnotes))
 
