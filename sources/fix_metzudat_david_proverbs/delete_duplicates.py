@@ -35,12 +35,12 @@ if __name__ == '__main__':
             link_refs_list.append(link_refs)
 
 
-    with open("links_to_delete.json", "w") as outfile:
-
-        dicts = [vars(link) for link in to_delete]
-        for dict in dicts:
-            dict['_id'] = str( dict['_id'])
-        json.dump(dicts, outfile, indent=4)
+    # with open("links_to_delete.json", "w") as outfile:
+    #
+    #     dicts = [vars(link) for link in to_delete]
+    #     for dict in dicts:
+    #         dict['_id'] = str( dict['_id'])
+    #     json.dump(dicts, outfile, indent=4)
     delete_links(to_delete)
 
     print("deleted " + str(len(to_delete)) + " links")
