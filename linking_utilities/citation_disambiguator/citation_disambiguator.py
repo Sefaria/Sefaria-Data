@@ -312,7 +312,6 @@ def save_disambiguated_to_file(good, bad, csv_good, csv_bad):
     csv_good.writerows(good)
     csv_bad.writerows(bad)
 
-
 def get_snippet_by_seg_ref(source_text, found, must_find_snippet=False, snip_size=100, use_indicator_words=False, return_matches=False):
     """
     based off of library.get_wrapped_refs_string

@@ -6,6 +6,38 @@ from sefaria.utils.hebrew import *
 from sefaria.system.database import db
 from django.contrib.auth.models import User
 
+def get_ranged_links(lines, title):
+    found_ref = None
+    parasha = None
+    # every consecutive match, we extend the range
+    prev_parasha = None
+    start_ref = end_ref = None
+    links = []
+    ref = ""
+    segment_count = Counter()
+    prev_matched_ref = ""
+    for l, line in enumerate(lines):
+        dh, matched_ref, comm, seg = line
+        seg = seg.replace(" ", "")
+        if len(matched_ref) != 0:
+            parasha = Ref(matched_ref).index_node.get_primary_title('en')
+            parts = seg.split(",")
+            daf = 4 * (heb_string_to_int(parts[0]) - 1) + heb_string_to_int(parts[1])
+            ref = f"{title}, {parasha} {daf}"
+            if matched_ref != prev_matched_ref:
+                segment_count[ref] = 1
+            else:
+                segment_count[ref] += 1
+            if already_posted:
+                link = {"refs": [f"{ref}:{segment_count[ref]}", matched_ref], "type": "Commentary",
+                     "generated_by": "likkutei_torah_torah_ohr_script", "auto": True}
+                if link not in links:
+                    links.append(link)
+            prev_matched_ref = matched_ref
+        elif len(ref) != "":
+            segment_count[ref] += 1
+    return links
+
 def create_logic_links(lines):
     prev_ref = None
     logic_links = []
@@ -27,38 +59,6 @@ def create_logic_links(lines):
             prev_ref = orig_ref
     return [[x[0][0], x[0][1], x[0][2], x[0][3], x[1]] for x in list(zip(lines, logic_links))]
 
-def get_ranged_links(lines, title):
-    found_ref = None
-    parasha = None
-    # every consecutive match, we extend the range
-    prev_parasha = None
-    start_ref = end_ref = None
-    links = []
-    ref = ""
-    segment_count = Counter()
-    prev_matched_ref = ""
-    for l, line in enumerate(lines):
-        dh, matched_ref, comm, seg = line
-        seg = seg.replace(" ", "")
-        if len(matched_ref) == 0 or matched_ref != prev_matched_ref:
-            if start_ref and end_ref:
-                if already_posted:
-                    links.append({"refs": [Ref(start_ref).to(Ref(end_ref)).normal(), prev_matched_ref], "type": "Commentary",
-                              "generated_by": "likkutei_torah_torah_ohr_script", "auto": True, })
-            start_ref = None
-            segment_count[ref] += 1
-        elif len(matched_ref) > 0:
-            parasha = Ref(matched_ref).index_node.get_primary_title('en')
-            parts = seg.split(",")
-            daf = 4 * (heb_string_to_int(parts[0]) - 1) + heb_string_to_int(parts[1])
-            ref = f"{title}, {parasha} {daf}"
-            segment_count[ref] += 1
-            end_ref = f"{ref}:{segment_count[ref]}"
-            if start_ref is None:
-                start_ref = end_ref
-        prev_parasha = parasha
-        prev_matched_ref = matched_ref
-    return links
 
 
 if __name__ == "__main__":
@@ -76,7 +76,10 @@ if __name__ == "__main__":
 
     if already_posted:
         for link in ranged_links:
-            Link(link).save()
+            try:
+                Link(link).save()
+            except Exception as e:
+                print(e)
     for l, line in enumerate(lines):
         dh, matched_ref, comm, seg, logic_ref = line
         seg = seg.replace(" ", "")

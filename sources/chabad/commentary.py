@@ -131,68 +131,6 @@ def parse_to(f, title, curr_parasha="", curr_segment="", curr_dh="", text={}):
 
     return (text, addenda)
 
-
-def parse(f, title, curr_parasha="", curr_segment="", curr_dh="", text={}):
-    def add(parasha="", seg="", dh=""):
-        curr_text = which_dict[parasha][seg].get(dh, "")
-        curr_text = curr_text + "<br>" + comm if len(curr_text) > 0 else comm
-        which_dict[parasha][seg][dh] = curr_text
-
-    new_parasha = False
-    addenda = {}
-    which_dict = text
-    prev_ref = ""
-    rows = list(enumerate(csv.reader(f)))
-    for r, row in rows:
-        parasha, seg, dh, comm = row
-        parasha = parasha.replace('אחרי', 'אחרי מות').replace('בחקותי', "בחוקתי")
-        if "".join(row) == "":
-            continue
-        if 'הוספות' in parasha:
-            book = Ref(" ".join(prev_ref.replace(title + ", ", "").split()[:-1])).book
-            book_refs = []
-            for node in library.get_index(book).contents()["alts"]["Parasha"]["nodes"]:
-                book_refs += Ref(f"{title}, {node['title']}").all_segment_refs()
-            seg = refs_to_value(book_refs, seg, Ref(f"{title}, {node['title']}"))
-            prev_ref = seg
-            if book not in addenda:
-                addenda[book] = {}
-            addenda[book][seg] = {}
-            curr_text = addenda[book][seg].get("dh", "")
-            curr_text = curr_text + "<br>" + comm if len(curr_text) > 0 else comm
-            addenda[book][seg][dh] = curr_text
-            which_dict = addenda
-            return (text, addenda)
-
-        if len(seg) > 0:
-            curr_dh = ""
-
-        seg = seg_to_ref(title, parasha, seg, prev_ref)
-        prev_ref = seg
-
-        if len(parasha) > 0:
-            curr_parasha = parasha
-            which_dict[curr_parasha] = {}
-            new_parasha = True
-            curr_dh = ""
-        else:
-            new_parasha = False
-
-        if seg not in which_dict[curr_parasha]:
-            which_dict[curr_parasha][seg] = {}
-
-        if len(dh) > 0:
-            curr_dh = dh
-            which_dict[curr_parasha][seg][curr_dh] = ""
-
-        add(parasha=curr_parasha, seg=seg, dh=curr_dh)
-
-        prev_row = row
-
-
-    return (text, addenda)
-
-
 def dher(dh):
     dh = dh.replace("— כו'", "")
     dh = dh.split(" — ")[0].replace(":", "").strip()
@@ -214,7 +152,7 @@ if __name__ == "__main__":
 
 
     lines = {}
-    for text, file in [(lt_text, "Likkutei Torah Main Text.csv")]:
+    for text, file in [(to_text, "Torah Ohr Main Text.csv")]:
                   # (to_text, "Torah Ohr Main Text.csv"), (to_addenda, "Torah Ohr Addenda.csv")]:
         lines[file] = []
         title = "Likkutei Torah" if "Likkutei" in file else "Torah Ohr"
