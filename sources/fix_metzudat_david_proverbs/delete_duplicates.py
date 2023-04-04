@@ -12,7 +12,7 @@ import json
 def delete_links(list_of_links):
     for l in list_of_links:
         # print("deleted link with refs: " + str(l.refs))
-        print("deleted link with id " + l._id)
+        print(f"deleted link with id {l._id}")
 
         to_del = LinkSet({'_id': ObjectId(l._id)}).array()[0]
         to_del.delete()
