@@ -31,17 +31,18 @@ with open("The Early Prophets with Essays.csv", 'r') as f:
 ftnotes_counter = {x: 1 for x in ["Joshua", "Judges", "I Samuel", "II Samuel", "I Kings", "II Kings"]}
 new_text = defaultdict(list)
 for r, row in enumerate(new_rows):
-    ref = row[0].rsplit(".")[0]
+    ref = row[0].rsplit(".")[0].replace("Chapters ", "")
     new_text[ref].append(row[1])
 
 invalid_refs = []
 short_refs = {}
 essay_refs = {}
+
 with open("essays.csv", 'w') as essay_f:
     essay_writer = csv.writer(essay_f)
     for k in new_text:
         for book in ["Joshua", "Judges", "Samuel", "Kings"]:
-            if book in k and not re.search(f"The Early Prophets, {book}, \d+", k):
+            if "The Early Prophets, "+book in k and not re.search(f"The Early Prophets, {book}, [\d:-]+", k):
                 for l, line in enumerate(new_text[k]):
                     essay_writer.writerow([k, l+1, line])
                 poss_ref = new_text[k][0]
@@ -72,7 +73,7 @@ found_essay = None
 actual_text = {}
 for k in new_text:
     for book in ["Joshua", "Judges", "I Samuel", "II Samuel", "I Kings", "II Kings"]:
-        if re.search(f"The Early Prophets, {book}, \d+", k):
+        if re.search(f"The Early Prophets, {book}, [\d:-]+", k):
             actual_text[book] = []
             start_ftnotes = False
             # parse mini essays and footnotes
@@ -81,7 +82,7 @@ for k in new_text:
                     assert " " not in line
                     continue
                 line = line.replace('–', '-')
-                m = re.search("^Chapter ([\d:-]{1,6})\. (.{,50}):", line)
+                m = re.search("^Chapters? ([\d:-]{1,10})\. (.{,50}):", line)
                 if m:
                     ch = Ref(f"{book} {m.group(1)}")
                     title = m.group(2)
@@ -116,6 +117,14 @@ for k in new_text:
                                 not_found = False
                         assert not_found is False
                     except Exception as e:
+                        if title == 'David’s Reaction to Sha’ul’s Death':
+                            found_essay = (Ref('I Samuel 16:1-31:13'), "The Early Prophets, Samuel, Part III; The Rise of David and the Fall of Sha'ul")
+                        else:
+                            found_essay = (Ref('I Kings 16'), 'Northern Kings')
+                        essay_refs[found_essay] = []
+                        essay_refs[found_essay].append((ch.as_ranged_segment_ref(), title))
+                        essay_refs[found_essay].append(line.replace(m.group(0), ""))
+
                         invalid_refs.append((title, ch))
                 elif found_essay:
                     essay_refs[found_essay].append(line)
