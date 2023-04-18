@@ -21,8 +21,8 @@ def ingest_category():
 
 if __name__ == '__main__':
     print("hello world")
-    # ingest_term("Eliyahu Rabbah", "אליהו רבה")
-    ingest_category()
+    ingest_term("Eliyahu Rabbah", "אליהו רבא")
+    # ingest_category()
 
 
 
