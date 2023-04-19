@@ -106,35 +106,13 @@ def fix_indices():
         post_index(index, server = "https://piaseczno.cauldron.sefaria.org")
 
 if __name__ == '__main__':
-    # index = {"title" : "Eliyahu Rabbah on Mishnah Kelim"}
-    # index  = post_index(index, method='GET', server="https://piaseczno.cauldron.sefaria.org")
-    # index["base_text_titles"] = ["Mishnah Kelim"]
-    # index['dependence'] = 'commentary'
-    # post_index(index, server='http://localhost:8000/')
-    # version_map = csv_to_dict("Eliyahu Rabbah on Mishnah Kelim - he - Vilna, 1901.csv")
-    # ingest_version(version_map)
-    # fix_indices()
-    clean_links()
-    auto_links = []
+   r = Ref("Mishnah Niddah 8:5").text().text
+   for index in all_indices:
+       masechet_name = get_last_two_words(index)
+       segment_refs = Ref(index).all_segment_refs()
+       for seg_ref in segment_refs:
+           mishsa_tref = masechet_name + ' ' + delete_until_first_digit(delete_until_last_colon(seg_ref.tref))
+           if Ref(mishsa_tref).text().text == '':
+               print(mishsa_tref)
 
-    for index in all_indices:
-        masechet_name= get_last_two_words(index)
-        segment_refs = Ref(index).all_segment_refs()
-        for seg_ref in segment_refs:
-            auto_links.append(
-                {
-                    "refs": [
-                        seg_ref.tref,
-                        masechet_name + ' ' + delete_until_first_digit(delete_until_last_colon(seg_ref.tref))
-                    ],
-                    "type": "Commentary",
-                    "auto": True
-                }
-            )
-
-    auto_links = list_of_dict_to_links(auto_links)
-    insert_links_to_db(auto_links)
-
-
-
-    print("hi")
+   print("hi")
