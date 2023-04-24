@@ -76,7 +76,7 @@ def ingest_playground_version(version_map):
                                "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH003570676/NLI",
                                "title": "Mishnat Eretz Yisrael on Pirkei Avot Playground",
                                "chapter": chapter,
-                               "language": "he",
+                               "language": "en",
                                "digitizedBySefaria": True,
                                "license": "CC-BY-NC",
                                "status": "locked"
@@ -86,11 +86,27 @@ def ingest_playground_version(version_map):
 
     print("finished updating version db")
 if __name__ == '__main__':
-    img_html_str = '<img src = "/static/imgs_playground/img1.jpg" class="mishna_project_image" alt = "My Image" >'
+    img_title_html_str = '<p class="mishna_project_image_title">Lorem ipsum dolor sit amet</p>'
+
+    img1_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img1.jpg"   alt = "My Image" >' + img_title_html_str + "</div>"
+    img2_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img2.jpg"  alt = "My Image" >'+ img_title_html_str + "</div>"
+    img3_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img3.jpg"  alt = "My Image" >'+ img_title_html_str + "</div>"
+    img4_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img4.jpg"  alt = "My Image" >'+ img_title_html_str + "</div>"
+    lorem_str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+    duis_str = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
     version_map ={
-        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 2": img_html_str,
-        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 3": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 1": lorem_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 2": img1_html_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 3": duis_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 4": lorem_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 5": img2_html_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 6": duis_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 7": lorem_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 8": img3_html_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 9": duis_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 10": lorem_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 11": img4_html_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 12": duis_str,
     }
     # post_playground_index()
     ingest_playground_version(version_map)
