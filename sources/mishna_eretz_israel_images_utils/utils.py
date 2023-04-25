@@ -86,12 +86,20 @@ def ingest_playground_version(version_map):
 
     print("finished updating version db")
 if __name__ == '__main__':
-    img_title_html_str = '<p class="mishna_project_image_title">Lorem ipsum dolor sit amet</p>'
+    # img_title_html_str = '<p class="mishna_project_image_title">Lorem ipsum dolor sit amet</p>'
+    img_title_html_str = "my image is Lorem ipsum dolor sit"
 
     img1_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img1.jpg"   alt = "My Image" >' + img_title_html_str + "</div>"
     img2_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img2.jpg"  alt = "My Image" >'+ img_title_html_str + "</div>"
     img3_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img3.jpg"  alt = "My Image" >'+ img_title_html_str + "</div>"
     img4_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img4.jpg"  alt = "My Image" >'+ img_title_html_str + "</div>"
+    lorem_str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+    duis_str = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+
+    img1_html_str = f'<img src = "/static/imgs_playground/img1.jpg"   alt ="{img_title_html_str}">'
+    img2_html_str = f'<img src = "/static/imgs_playground/img2.jpg"   alt ="{img_title_html_str}">'
+    img3_html_str = f'<img src = "/static/imgs_playground/img3.jpg"   alt ="{img_title_html_str}">'
+    img4_html_str = f'<img src = "/static/imgs_playground/img4.jpg"   alt ="{img_title_html_str}">'
     lorem_str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
     duis_str = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
     version_map ={
