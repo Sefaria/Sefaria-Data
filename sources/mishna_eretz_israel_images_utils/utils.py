@@ -61,7 +61,7 @@ def post_playground_index():
 #         cur_version.delete()
 #         print("deleted existing english version")
 
-def ingest_playground_version(version_map):
+def ingest_playground_version(version_map, lang):
     # vs = VersionState(index=library.get_index("Mishnat Eretz Yisrael on Pirkei Avot Playground"))
     # vs.delete()
     # print("deleted version state")
@@ -76,7 +76,7 @@ def ingest_playground_version(version_map):
                                "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH003570676/NLI",
                                "title": "Mishnat Eretz Yisrael on Pirkei Avot Playground",
                                "chapter": chapter,
-                               "language": "en",
+                               "language": lang,
                                "digitizedBySefaria": True,
                                "license": "CC-BY-NC",
                                "status": "locked"
@@ -87,7 +87,7 @@ def ingest_playground_version(version_map):
     print("finished updating version db")
 if __name__ == '__main__':
     # img_title_html_str = '<p class="mishna_project_image_title">Lorem ipsum dolor sit amet</p>'
-    img_title_html_str = "my image is Lorem ipsum dolor sit"
+    img_title_html_str = "זו תמונה זו תמונה זו תמונה"
 
     img1_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img1.jpg"   alt = "My Image" >' + img_title_html_str + "</div>"
     img2_html_str = '<div class="mishna_project_image"><img src = "/static/imgs_playground/img2.jpg"  alt = "My Image" >'+ img_title_html_str + "</div>"
@@ -96,13 +96,16 @@ if __name__ == '__main__':
     lorem_str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
     duis_str = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
+    lorem_he_str = "לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום לורם איפסום"
+    duis_he_str = "דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה דואיס אוטה"
+
     img1_html_str = f'<img src = "/static/imgs_playground/img1.jpg"   alt ="{img_title_html_str}">'
     img2_html_str = f'<img src = "/static/imgs_playground/img2.jpg"   alt ="{img_title_html_str}">'
     img3_html_str = f'<img src = "/static/imgs_playground/img3.jpg"   alt ="{img_title_html_str}">'
     img4_html_str = f'<img src = "/static/imgs_playground/img4.jpg"   alt ="{img_title_html_str}">'
     lorem_str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
     duis_str = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-    version_map ={
+    version_map_en ={
         "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 1": lorem_str,
         "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 2": img1_html_str,
         "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 3": duis_str,
@@ -116,8 +119,23 @@ if __name__ == '__main__':
         "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 11": img4_html_str,
         "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 12": duis_str,
     }
+
+    version_map_he = {
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 1": lorem_he_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 2": img1_html_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 3": duis_he_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 4": lorem_he_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 5": img2_html_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 6": duis_he_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 7": lorem_he_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 8": img3_html_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 9": duis_he_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 10": lorem_he_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 11": img4_html_str,
+        "Mishnat Eretz Yisrael on Pirkei Avot, Introduction 12": duis_he_str,
+    }
     # post_playground_index()
-    ingest_playground_version(version_map)
+    ingest_playground_version(version_map_he, "he")
 
 
 
