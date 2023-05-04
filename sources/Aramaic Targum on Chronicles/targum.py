@@ -5,7 +5,7 @@ import urllib2
 import codecs
 from sefaria.datatype.jagged_array import JaggedArray
 from bs4 import BeautifulSoup
-from data_utilities.util import getGematria, ja_to_xml, traverse_ja
+from parsing_utilities.util import getGematria, ja_to_xml, traverse_ja
 from sources import functions
 from sefaria.model import *
 

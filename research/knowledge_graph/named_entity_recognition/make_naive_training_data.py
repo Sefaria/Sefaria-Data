@@ -7,7 +7,7 @@ from collections import defaultdict
 from bisect import bisect_right
 django.setup()
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.dibur_hamatchil_matcher import match_text
 
 DATA_LOC = "/home/nss/sefaria/datasets/ner/michael-sperling"
 
@@ -375,7 +375,7 @@ class NaiveNERTagger(object):
                 self.unique_uncaught_rabbis[uncaught_rabbi] += 1
 
     def tag_index(self, index):
-        from data_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
+        from parsing_utilities.util import get_mapping_after_normalization, convert_normalized_indices_to_unnormalized_indices
         training = []
         mentions = []
         for seg in tqdm(index.all_segment_refs(), desc='Segs'):

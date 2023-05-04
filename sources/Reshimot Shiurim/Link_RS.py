@@ -8,7 +8,7 @@ from sefaria.model import *
 import time
 
 from sources.functions import post_link
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 import re
 try:
     import cPickle as pickle

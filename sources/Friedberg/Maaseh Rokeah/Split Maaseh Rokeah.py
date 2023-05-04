@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from data_utilities import *
+from linking_utilities import *
 import os
 import regex as re
 import codecs

@@ -3,7 +3,7 @@ import codecs
 import regex
 from sefaria.model import *
 from sources import functions
-from data_utilities import util
+from parsing_utilities import util
 from sources.Targum_Isaiah_English import ti_functions
 
 targum_isaiah = ti_functions.parse_targum_isaiah_english()

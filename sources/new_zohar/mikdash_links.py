@@ -4,7 +4,7 @@ import django
 django.setup()
 from sefaria.model import *
 from sefaria.utils.talmud import daf_to_section, section_to_daf
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sources.functions import getGematria
 from sefaria.system.exceptions import InputError
 

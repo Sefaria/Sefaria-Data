@@ -5,7 +5,7 @@ from sources.local_settings import *
 sys.path.insert(0, "/home/steve/Sefaria/Sefaria-Data")
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.dibur_hamatchil_matcher import match_text
 from sources.functions import *
 import os
 from collections import Counter

@@ -2,7 +2,7 @@
 
 import codecs
 import re
-from data_utilities.util import ja_to_xml, multiple_replace
+from parsing_utilities.util import ja_to_xml, multiple_replace
 from sources.functions import post_text, post_index
 from sefaria.model import *
 

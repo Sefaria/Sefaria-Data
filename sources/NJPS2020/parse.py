@@ -1,27 +1,9 @@
 from sources.functions import *
 from docx2python import docx2python
 from bs4 import BeautifulSoup
-
+allowed = ('i', 'b', 'br', 'u', 'strong', 'em', 'big', 'small', 'img', 'sup', 'a')
 
 def get_body_html(document, ftnotes):
-    def add_pasukim(str, pasukim):
-        pasukim = re.split("<font size=\"\d+\">[\d ]+</font>", str)
-        if re.search("<font size=\"\d+\">[\d ]+</font>", str) is None:
-            new_body[book][curr_perek][-1] += "<br/>"+" "+pasukim[0].strip()
-        else:
-            for pasuk in pasukim:
-                if len(pasuk.strip()) > 1:
-                    new_body[book][curr_perek].append(pasuk.strip())
-
-    def are_ftnotes_in_perek(perek):
-        if len(perek) == 0:
-            return True
-        for comment in perek:
-            matches = list(re.finditer("-{1,}footnote\d*-{1,}", comment)) + list(re.finditer("<i>([a-z]{1})-{1,}</i>.+<i>-([a-z]{1})</i>", comment))
-            if len(matches) > 0 or "footnote" in comment:
-                return True
-        return False
-
     new_body = {}
     book = ""
     curr_perek = 0
@@ -37,157 +19,165 @@ def get_body_html(document, ftnotes):
             total += curr_perek
             curr_perek = 0
         elif len(book) > 0 and not comment.startswith("BOOK"):
-            full_perek = re.search("<font size=\"\d+\"><b>\d+[ \t]*\d?</b></font>", comment)
-            perek = re.search("<b>(\d+)[ \t]*\d?</b>", comment)
-            pasukim = re.findall("<font size=\"\d+\">[\d ]+</font>", comment)
-            if perek:
-                if curr_perek > 0:
-                    last_perek = new_body[book].get(curr_perek, [])
-                if not comment.startswith(full_perek.group(0)):
-                    before, comment = comment.split(perek.group(0))
-                    add_pasukim(before, pasukim)
-                    comment = perek.group(0) + comment
+            if comment.strip().isdigit():
+                if int(curr_perek) > 0 and len(Ref(f"{book} {curr_perek}").all_segment_refs()) != len(new_body[book][curr_perek]):
+                    max = 0
+                    max_line = -1
+                    for l, line in enumerate(new_body[book][curr_perek]):
+                        jps = TextChunk(Ref(f"{book} {curr_perek}:{l+1}"), lang='en', vtitle='Tanakh: The Holy Scriptures, published by JPS').text.replace("<br>", " ").replace("<br/>", " ").replace("  ", " ")
+                        line = line.replace("<br>", " ").replace("<br/>", " ").replace("  ", " ")
+                        jps = BeautifulSoup(jps)
+                        line = BeautifulSoup(line)
+                        for x in line.findAll('sup'):
+                            x.decompose()
+                        for x in jps.findAll('sup'):
+                            x.decompose()
+                        for x in line.findAll("i", {"class": "footnote"}):
+                            x.decompose()
+                        for x in jps.findAll("i", {"class": "footnote"}):
+                            x.decompose()
+                        line = line.text
+                        jps = jps.text
+                        order = (line, jps) if line.count(" ") > jps.count(" ") else (jps, line)
+                        curr = (order[0].count(" ")-order[1].count(" "))/float(order[0].count(" "))
+                        if curr > max:
+                            max = curr
+                            max_line = l
+                    print("***")
+                    print(f"{book} {curr_perek}")
+                    print(new_body[book][curr_perek][max_line])
+                    print(TextChunk(Ref(f"{book} {curr_perek}:{max_line+1}"), lang='en', vtitle='Tanakh: The Holy Scriptures, published by JPS').text)
 
-                if not are_ftnotes_in_perek(last_perek):
-                    ftnotes.insert(curr_perek + total - 1, {})
-                perek_group_1 = perek.group(1).strip()
-                if curr_perek > 0:
-                    assert int(perek_group_1) - 1 in new_body[book]
-                curr_perek = int(perek_group_1)
+                curr_perek = int(comment.strip())
                 new_body[book][curr_perek] = []
-                comment = comment.replace(full_perek.group(0), "")
-
-
-            add_pasukim(comment, pasukim)
-    return new_body, ftnotes
-#
-# def get_footnotes(document):
-#     ftnotes = list(document.footnotes[0][0][0])
-#     new_ftnotes = {}
-#     last_ftnote = ""
-#     curr = 0
-#     for i, ftnote in enumerate(ftnotes):
-#         if not ftnote or not " " in ftnote:
-#             continue
-#         ftnote = BeautifulSoup(ftnote).text
-#         basic_pattern = re.search("([a-z]{1}) (.+)", ftnote)
-#         dash_pattern = re.search("([a-z]{1})-[a-z]{1} (.+)", ftnote)
-#         pattern = basic_pattern if basic_pattern else dash_pattern
-#         if pattern:
-#             ftnote = pattern.group(1)
-#             comment = pattern.group(2)
-#             last_ftnote = ftnote
-#             if last_ftnote == "a":
-#                 curr += 1
-#                 new_ftnotes[curr] = {}
-#         else:
-#             comment = ftnote
-#             ftnote = chr(ord(last_ftnote)+1)
-#             last_ftnote = ftnote
-#         new_ftnotes[curr][ftnote] = comment
-#     return convertDictToArray(new_ftnotes)
-
-
-
-def get_body_insert_ftnotes(body, ftnotes):
-    def ftnote_range(match, pasuk, book, found_ftnotes):
-        char = match.group(1)
-        if char == match.group(2):
-            relevant_ftnote = ftnotes_perek[char]
-            found_ftnotes.writerow([book, relevant_ftnote])
-            i_tag = '<sup>{}</sup><i class="footnotes">{}</i>'.format(char, relevant_ftnote)
-            first_regexes = ["<i>[a-z]{1}</i>", "<i>[a-z]{1}-{1,}</i>", "<i>[a-z]{1}-{1,}footnote\d*-{1,}</i>"]
-            ending_regexes = ["<i>-[a-z]{1}</i>"]
-            #first replace beginning parts with actual i_tag
-            #then replace ending parts with <sup>char</sup>
-            for regex in first_regexes:
-                pasuk = re.sub(regex, i_tag, pasuk)
-            for regex in ending_regexes:
-                pasuk = re.sub(regex, "<sup>-{}</sup>".format(char), pasuk)
-        return pasuk
-
-    new_body = {}
-    curr = 0
-    with open("found_ftnotes.csv", 'w') as found_ftnote_f:
-        found_ftnotes = csv.writer(found_ftnote_f)
-        for book in body:
-            new_body[book] = {}
-            for perek in body[book]:
-                new_body[book][perek] = []
-                ftnotes_perek = ftnotes[curr]
-                curr += 1
-
-                for p, pasuk in enumerate(body[book][perek]):
-                    double_ftnotes = list(re.finditer("<i>([a-z]{1})</i>.*?footnote\d*.*?<i>-([a-z]{1})</i>", pasuk)) + list(
-                        re.finditer("<i>([a-z]{1})-{1,}</i>.*?<i>-([a-z]{1})</i>", pasuk)) + list(
-                        re.finditer("<i>([a-z]{1})-{1,}footnote\d*-{1,}</i>.*?<i>-([a-z]{1})</i>", pasuk))
-
-                    for match in double_ftnotes:
-                        pasuk = ftnote_range(match, pasuk, book, found_ftnotes)
-
-                    for match in re.finditer("<.*?>-{1,}footnote\d*-{1,}([a-z]{1})</.*?>", pasuk):
-                        char = match.group(1)
-                        relevant_ftnote = ftnotes_perek[char]
-                        found_ftnotes.writerow([book, relevant_ftnote])
-                        relevant_ftnote = '<sup>{}</sup><i class="footnotes">{}</i>'.format(char, relevant_ftnote)
-                        pasuk = pasuk.replace(match.group(0),
-                                              relevant_ftnote)
-                    # for match in re.finditer("-{1,}footnote-{1,}([a-z]{1})</", pasuk):
-                    #     char = match.group(1)
-                    #     relevant_ftnote = ftnotes_perek[char]
-                    #     found_ftnotes.writerow([book, relevant_ftnote])
-                    #     relevant_ftnote = '<sup>{}</sup><i class="footnotes">{}</i>'.format(char, relevant_ftnote)
-                    #     pasuk = pasuk.replace(match.group(0),
-                    #                           relevant_ftnote)
-
-                    pasuk = re.sub("-{1,}footnote\d*-{1,}", "", pasuk)
+            else:
+                ftnoteholders = []
+                comment = bleach.clean(comment, tags=allowed, attributes=ALLOWED_ATTRS, strip=True)
+                marker = "$ftnoteholder$"
+                for full_ftnote, char in re.findall("(----footnote\d+----(\S{1,}))", comment):
+                    char = char.strip().replace("<sup>", "").replace("</sup>", "").replace("<u>", "").replace("<b>", "").replace("<i>", "")[:1]
+                    pasuk, ftnote_text = ftnotes[curr_perek][char][0]
+                    ftnotes[curr_perek][char] = ftnotes[curr_perek][char][1:]
+                    ftnoteholders.append(f"<sup class='footnote-marker'>{char}</sup><i class='footnote'>{ftnote_text}</i>")
+                    comment = comment.replace(full_ftnote, marker)
+                for tag in allowed:
+                    m = re.search(f"<{tag}>(\\d+"+chr(160)+f")</{tag}>", comment)
+                    if m:
+                        comment = comment.replace(m.group(0), m.group(1))
+                    for tag in [x for x in allowed if x != tag]:
+                        m = re.search(f"<{tag}>(\\d+" + chr(160) + f")</{tag}>", comment)
+                        if m:
+                            comment = comment.replace(m.group(0), m.group(1))
+                pasukim = re.split(f"\d+" + chr(160), comment)
+                count = 0
+                for p, pasuk in enumerate(pasukim):
+                    pasuk = pasuk.strip()
+                    if not pasuk:
+                        continue
+                    curr_markers = pasuk.count(marker)
+                    for i in range(curr_markers):
+                        pasuk = pasuk.replace(marker, ftnoteholders[count:][i])
+                    count += curr_markers
+                    assert marker not in pasuk
+                    assert "-footnote" not in pasuk
+                    if pasukim[0].strip() != "" and p == 0:
+                        if len(new_body[book][curr_perek]) == 0:
+                            print(comment)
+                        else:
+                            new_body[book][curr_perek][-1] += "<br/>" + pasuk
+                    else:
+                        new_body[book][curr_perek].append(pasuk)
 
 
 
-
-
-                    new_body[book][perek].append(pasuk)
-
+                assert len(ftnoteholders[count:]) == 0
     return new_body
 
 
-def check_for_ftnotes(body):
-    found = []
-    with open("found_ftnotes.csv", 'r') as f:
-        for row in csv.reader(f):
-            ftnote_found = row[1]
-            found.append(ftnote_found)
-    with open("ftnotes.csv", 'r') as orig_f:
-        for row in csv.reader(orig_f):
-            if len(row) > 1:
-                perek, orig_ftnote_marker, orig_ftnote = row
-                if orig_ftnote not in found:
-                    if len(orig_ftnote) > 2:
-                        print(row)
-                    else:
-                        print("Strange case")
+
+def get_footnotes(document):
+    ftnotes = list(document.footnotes[0][0])
+    new_ftnotes = {}
+    last_ftnote = ""
+    curr = 0
+    prev = ""
+    perek = 0
+    for i, ftnote in enumerate(ftnotes):
+        ftnote = ftnote[0]
+        if not ftnote:
+            continue
+        try:
+            soup = BeautifulSoup(ftnote)
+            ftnote = bleach.clean(soup.find("span").parent, strip=True, tags=["span"]) # ----footnote1----<sup>a</sup>
+            ftnote = ftnote.replace(re.search("^footnote\d+\)", ftnote).group(0), "").strip()
+            spans = ftnote.count("<span>") - 1
+            for span in range(spans):
+                ftnote = ftnote.replace("<span>", "", 1)
+                ftnote = ftnote.replace("</span>", "", 1)
+            assert "<span>" in ftnote and "</span>" in ftnote
+            ftnote = ftnote.replace('–', "-").strip()
+            basic_pattern = re.search("^(.{1})\s?([\d.-]{1,})\.([\d.-]{1,})\s(.{1,})", ftnote)
+            dash_pattern = re.search("([a-z]{1})-[a-z]{1} (.+)", ftnote)
+            pattern = basic_pattern if basic_pattern else dash_pattern
+            if pattern:
+                char = pattern.group(1)
+                perek = int(pattern.group(2).split(".")[0])
+                pasuk = pattern.group(3)
+                comment = "<b>" + pattern.group(4).replace("<span>", "</b>").replace("</span>", "")
+                if perek not in new_ftnotes:
+                    new_ftnotes[perek] = defaultdict(list)
+                new_ftnotes[perek][char[0:1]].append((pasuk, comment))
+                last_ftnote = char
+            else:
+                pass
+                # ftnote = chr(ord(last_ftnote)+1)
+                # last_ftnote = ftnote
+        except:
+            pass
+
+        prev = ftnote
+    return new_ftnotes
+
+x = {}
+for f in os.listdir("RJPS"):
+    if not f.endswith("docx"):
+        continue
+    start_at = 0
+    document = docx2python("RJPS/"+f, html=True)
+    ftnotes = get_footnotes(document)
+    x.update(get_body_html(document, ftnotes))
+
+for b in tqdm(x):
+    diff = len(x[b]) - len(library.get_index(b).all_section_refs())
+    if diff != 0:
+        print(b)
+    for perek in x[b]:
+        diff = len(x[b][perek]) - len(Ref(f"{b} {perek}").all_segment_refs())
+        if diff != 0:
+            print(f"{b} {perek} -> {diff}")
+        for p, pasuk in enumerate(x[b][perek]):
+            tc = TextChunk(Ref(f"{b} {perek}:{p+1}"), lang='en', vtitle='RJPS_1st_pass')
+            tc.text = pasuk
+            #tc.save()
+
+for v in VersionSet({"versionTitle": 'RJPS_1st_pass'}):
+    v.versionSource = "https://www.sefaria.org"
+    v.save()
 
 
-bible_sections = [ref.normal() for el in library.get_indexes_in_category("Tanakh") for ref in library.get_index(el).all_section_refs()]
-start_at = 0
-document = docx2python("JPS.docx", html=True)
-ftnotes = {}
-increment_perek = 0
-heb_uncertain = 0
-with open("ftnotes.csv", 'r') as f:
-    for row in csv.reader(f):
-        heb_uncertain = 0
-        if row[0] == "increment":
-            increment_perek += 1
-        elif row[0] == "decrement":
-            increment_perek -= 1
-        else:
-            perek, ftnote, comm = row
-            perek = int(perek) + increment_perek
-            if perek not in ftnotes:
-                ftnotes[perek] = {}
-            ftnotes[perek][ftnote] = comm
-ftnotes = convertDictToArray(ftnotes)
-body, ftnotes = get_body_html(document, ftnotes)
-body = get_body_insert_ftnotes(body, ftnotes)
-check_for_ftnotes(body)
+    # ftnotes = {}
+    # increment_perek = 0
+    # heb_uncertain = 0
+    # with open("ftnotes.csv", 'r') as f:
+    #     for row in csv.reader(f):
+    #         heb_uncertain = 0
+    #         if row[0] == "increment":
+    #             increment_perek += 1
+    #         elif row[0] == "decrement":
+    #             increment_perek -= 1
+    #         else:
+    #             perek, ftnote, comm = row
+    #             perek = int(perek) + increment_perek
+    #             if perek not in ftnotes:
+    #                 ftnotes[perek] = {}
+    #             ftnotes[perek][ftnote] = comm

@@ -3,7 +3,7 @@ import codecs
 import regex
 from sefaria.model import *
 from sources import functions
-from data_utilities import util
+from parsing_utilities import util
 
 
 def parse_targum_jerusalem_english():

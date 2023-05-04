@@ -12,8 +12,8 @@ from bs4 import BeautifulSoup, Tag
 from collections import namedtuple
 from sefaria.utils.hebrew import strip_nikkud
 import sources.puncutation_project.sefaria_classes as sef
-from data_utilities.util import WeightedLevenshtein
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.dibur_hamatchil_matcher import match_text
 
 Quotation = namedtuple('Quotation', ['word_index', 'type'])
 
@@ -537,41 +537,41 @@ if __name__ == '__main__':
     # partial_punctuation = maps.get_punctuated_talmud()
     # final_punctuation = extract_quotations(partial_punctuation, stein_without_stein)
     # print(base_t, my_t, actual_bleach(my_t), partial_punctuation, final_punctuation, sep='\n\n')
+    for tractate in 'Sotah, Meilah, Kiddushin, Gittin, Bava Batra'.split(", "):
+        simple, elucidated = sef.Ref(f"{tractate}"), sef.Ref(f"Steinsaltz on {tractate}")
+        rows = []
+        for simple_seg in simple.all_segment_refs():
+            print(simple_seg.normal())
+            elucidated_seg = sef.Ref("Steinsaltz on {}".format(simple_seg.normal()))
+            assert simple_seg.sections == elucidated_seg.sections
+            base_t, eluc_t = simple_seg.text('he', base_vtitle).text, elucidated_seg.text('he', elucidated_vtitle).text
 
-    simple, elucidated = sef.Ref(f"{tractate}"), sef.Ref(f"Steinsaltz on {tractate}")
-    rows = []
-    for simple_seg in simple.all_segment_refs():
-        print(simple_seg.normal())
-        elucidated_seg = sef.Ref("Steinsaltz on {}".format(simple_seg.normal()))
-        assert simple_seg.sections == elucidated_seg.sections
-        base_t, eluc_t = simple_seg.text('he', base_vtitle).text, elucidated_seg.text('he', elucidated_vtitle).text
+            # algorithm works better when bold tags are consolidated
+            eluc_t = re.sub(r'</b>(\s*)<b>', r'\g<1>', eluc_t)
 
-        # algorithm works better when bold tags are consolidated
-        eluc_t = re.sub(r'</b>(\s*)<b>', r'\g<1>', eluc_t)
-
-        new_tc = simple_seg.text('he', punctuated_vtitle)
-        if not eluc_t:
-            new_tc.text = base_t
-        else:
-            try:
-                maps = build_maps(base_t, eluc_t)
-                punctuated_text = maps.get_punctuated_talmud()
-                ms = ModeledSegment(eluc_t)
-                stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
-                punctuated_text = extract_quotations(punctuated_text, stein_without_stein)
-                new_tc.text = punctuated_text
-            except ModeledSegmentError:
+            new_tc = simple_seg.text('he', punctuated_vtitle)
+            if not eluc_t:
                 new_tc.text = base_t
+            else:
+                try:
+                    maps = build_maps(base_t, eluc_t)
+                    punctuated_text = maps.get_punctuated_talmud()
+                    ms = ModeledSegment(eluc_t)
+                    stein_without_stein = u' '.join(t.get_talmud() for t in ms.get_ts_objects())
+                    punctuated_text = extract_quotations(punctuated_text, stein_without_stein)
+                    new_tc.text = punctuated_text
+                except ModeledSegmentError:
+                    new_tc.text = base_t
+            if export_as_csv:
+                rows += [{
+                    "Ref": simple_seg.normal(),
+                    "Text": new_tc.text
+                }]
+            else:
+                new_tc.save()
         if export_as_csv:
-            rows += [{
-                "Ref": simple_seg.normal(),
-                "Text": new_tc.text
-            }]
-        else:
-            new_tc.save()
-    if export_as_csv:
-        with open(csv_dir, 'w') as fout:
-            c = csv.DictWriter(fout, ['Ref', 'Text'])
-            c.writeheader()
-            c.writerows(rows)
+            with open(csv_dir, 'w') as fout:
+                c = csv.DictWriter(fout, ['Ref', 'Text'])
+                c.writeheader()
+                c.writerows(rows)
 

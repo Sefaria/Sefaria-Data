@@ -8,9 +8,9 @@ import django
 django.setup()
 from sefaria.model import *
 from sources.functions import getGematria, post_text
-from data_utilities.text_align import CompareBreaks
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from parsing_utilities.text_align import CompareBreaks
+from linking_utilities.parallel_matcher import ParallelMatcher
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 
 
 class Location():

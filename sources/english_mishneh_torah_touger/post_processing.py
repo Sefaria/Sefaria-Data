@@ -107,7 +107,7 @@ def export_cleaned_data_to_csv(mt_list):
     """
     This function writes the cleaned data to a new CSV
     """
-    with open('mishneh_torah_data_cleaned.csv', 'w+') as csvfile:
+    with open('mishneh_torah_data_non_manual_cleaned.csv', 'w+') as csvfile:
         headers = ['ref', 'text']
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         writer.writerows(mt_list)
@@ -127,9 +127,9 @@ def strip_p_for_br(mt_list):
 def fix_unmatched_paren(clean_link, txt, ref):
     """
     Fixes unmatched parenthesis in the resulting text around text citations (error occurs due to regex nuance)
-    :param: clean_link (the link cleaned from the regex
-    :param: txt (the text of the halakha)
-    :returns: txt - with parenthesis added
+    :param clean_link: (the link cleaned from the regex)
+    :param txt: (the text of the halakha)
+    :returns txt: - with parenthesis added
     """
     is_unmatched_paren = txt.find(f"({clean_link}")
     if is_unmatched_paren != -1:
@@ -291,6 +291,24 @@ def generate_img_report(mt_list):
     export_data_to_csv(img_report, 'qa_reports/img_report', ['ref', 'text'])
 
 
+def refs_to_ignore():
+    data = []
+
+    with open('ignore_refs.csv', newline='') as f:
+        reader = csv.reader(f)
+        for line in reader:
+            data.append(line[0])
+    return data
+
+
+def filter_mt_to_non_manual_refs(mt_list):
+    refs_to_ignore_data = refs_to_ignore()
+    filtered_list = []
+    for halakha in mt_list:
+        if halakha['ref'] not in refs_to_ignore_data:
+            filtered_list.append(halakha)
+    return filtered_list
+
 if __name__ == '__main__':
     chabad_book_names, mishneh_torah_list = setup_data()
     name_map = create_book_name_map(chabad_book_names, sefaria_book_names)
@@ -299,4 +317,5 @@ if __name__ == '__main__':
     mishneh_torah_list = img_convert(mishneh_torah_list)
     mishneh_torah_list = html_clean_up(mishneh_torah_list)
     generate_img_report(mishneh_torah_list)
+    mishneh_torah_list = filter_mt_to_non_manual_refs(mishneh_torah_list)
     export_cleaned_data_to_csv(mishneh_torah_list)

@@ -2,7 +2,7 @@
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 from sources.functions import *
 import codecs
 def do_match(line_n, results, current_perek, current_daf, last_daf, lines):

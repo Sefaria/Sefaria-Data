@@ -16,8 +16,9 @@ except ImportError:
 
 
 @spacy.registry.readers("mongo_reader")
-def stream_data(db_host: str, db_port: int, input_collection: str, output_collection: str, random_state: int, train_perc: float, corpus_type: str, min_len: int, unique_by_metadata=True) -> Callable[[Language], Iterator[Example]]:
-    my_db = MongoProdigyDBManager(output_collection, db_host, db_port)
+def stream_data(db_host: str, db_port: int, input_collection: str, output_collection: str, random_state: int,
+                train_perc: float, corpus_type: str, min_len: int, user: str=None, password: str=None, replicaset_name: str=None, unique_by_metadata=True) -> Callable[[Language], Iterator[Example]]:
+    my_db = MongoProdigyDBManager(output_collection, db_host, db_port, user=user, password=password, replicaset_name=replicaset_name)
     data = [d for d in getattr(my_db.db, input_collection).find({}) if len(d['text']) > min_len]
     # make data unique
     if unique_by_metadata:

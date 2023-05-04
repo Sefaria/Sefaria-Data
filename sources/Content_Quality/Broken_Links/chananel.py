@@ -5,8 +5,8 @@ from sources.functions import *
 from sefaria.tracker import add
 from sefaria.model import *
 from sefaria.helper.schema import *
-# from data_utilities.dibur_hamatchil_matcher import match_text
-from research.mesorat_hashas_sefaria.mesorat_hashas import *
+# from linking_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.parallel_matcher import *
 import bleach
 import os
 import time

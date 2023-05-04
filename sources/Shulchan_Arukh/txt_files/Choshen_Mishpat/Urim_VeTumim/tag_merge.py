@@ -3,7 +3,7 @@
 import re
 from bisect import bisect_left
 from collections import namedtuple
-from data_utilities.util import PlaceHolder
+from parsing_utilities.util import PlaceHolder
 
 
 Tag = namedtuple('Tag', ['text', 'index'])

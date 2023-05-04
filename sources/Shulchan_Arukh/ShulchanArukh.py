@@ -4,7 +4,7 @@ import re
 import codecs
 from bs4 import BeautifulSoup, Tag
 from xml.sax.saxutils import escape, unescape
-from data_utilities.util import Singleton, getGematria, numToHeb, he_ord, he_num_to_char, PlaceHolder
+from parsing_utilities.util import Singleton, getGematria, numToHeb, he_ord, he_num_to_char, PlaceHolder
 
 """
 This module describes an object module for parsing the Shulchan Arukh and it's associated commentaries. The classes

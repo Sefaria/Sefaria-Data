@@ -4,8 +4,8 @@ from __future__ import unicode_literals, print_function
 import re
 import unicodecsv
 from functools import partial
-from data_utilities.util import getGematria
-from data_utilities.ParseUtil import Description, ParsedDocument, directed_run_on_list, ParseState
+from parsing_utilities.util import getGematria
+from parsing_utilities.ParseUtil import Description, ParsedDocument, directed_run_on_list, ParseState
 
 import django
 django.setup()

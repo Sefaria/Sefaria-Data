@@ -21,7 +21,7 @@ at the desired location
 
 import re
 import codecs
-from data_utilities.util import getGematria, StructuredDocument
+from parsing_utilities.util import getGematria, StructuredDocument
 
 filenames = {
     'beer_part_1': u'/home/jonathan/sefaria/Sefaria-Data/sources/Shulchan_Arukh/txt_files/Even_Haezer/part_1/באר הגולה אבן העזר חלק א.txt',

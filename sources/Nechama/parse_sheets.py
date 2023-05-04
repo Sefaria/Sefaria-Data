@@ -4,12 +4,12 @@ import django
 django.setup()
 
 from sheets import *
-from research.mesorat_hashas_sefaria.mesorat_hashas import ParallelMatcher
+from linking_utilities.parallel_matcher import ParallelMatcher
 import unicodedata
 from sefaria.utils.hebrew import strip_cantillation
 from collections import OrderedDict
 from segments import *
-from data_utilities.util import WeightedLevenshtein
+from linking_utilities.weighted_levenshtein import WeightedLevenshtein
 
 
 

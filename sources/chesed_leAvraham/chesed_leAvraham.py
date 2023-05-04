@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from sources.functions import post_index, post_text
 from sefaria.datatype.jagged_array import JaggedArray
 from sefaria.model.schema import SchemaNode, JaggedArrayNode
-from data_utilities.util import getGematria, file_to_ja, ja_to_xml
+from parsing_utilities.util import getGematria, file_to_ja, ja_to_xml
 
 
 def get_text(from_disk=True):

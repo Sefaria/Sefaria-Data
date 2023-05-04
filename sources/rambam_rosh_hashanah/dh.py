@@ -2,7 +2,7 @@ import re
 import django
 django.setup()
 from sefaria.model import *
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sources.functions import post_link, add_term
 
 links = []

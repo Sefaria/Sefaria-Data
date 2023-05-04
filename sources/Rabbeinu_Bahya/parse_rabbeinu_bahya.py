@@ -10,7 +10,7 @@ Alternate Structure
 
 from sources.Rabbeinu_Bahya import function
 from sources.Rabbeinu_Bahya import updated_structure_function
-from data_utilities import util
+from parsing_utilities import util
 from sources import functions
 
 en_parsha_names = updated_structure_function.get_english_parsha_names()

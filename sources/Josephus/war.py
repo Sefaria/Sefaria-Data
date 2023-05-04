@@ -5,7 +5,7 @@ import requests
 from sources.functions import convertDictToArray, post_text, post_index
 from bs4 import BeautifulSoup, element
 from sefaria.model import *
-from data_utilities.XML_to_JaggedArray import roman_to_int
+from parsing_utilities.XML_to_JaggedArray import roman_to_int
 import re
 
 def create_index():

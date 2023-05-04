@@ -5,7 +5,7 @@ import codecs
 from sefaria.model.text import Ref
 from bs4 import BeautifulSoup, Tag
 from sources.functions import post_text
-from data_utilities.util import ja_to_xml
+from parsing_utilities.util import ja_to_xml
 from sefaria.datatype.jagged_array import JaggedArray
 
 """

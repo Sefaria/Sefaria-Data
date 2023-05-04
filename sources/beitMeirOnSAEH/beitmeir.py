@@ -6,7 +6,7 @@ from sources import functions
 from sefaria.model.schema import *
 from sefaria.model import *
 import re
-from data_utilities.util import getGematria as gematria
+from parsing_utilities.util import getGematria as gematria
 
 server = 'http://draft.sandbox.sefaria.org'
 #server = 'http://localhost:8000'

@@ -24,8 +24,8 @@ import math
 import codecs
 from functools import partial
 from sources.functions import post_text, post_index, post_link, add_term, add_category
-from data_utilities.util import getGematria, convert_dict_to_array, split_version, split_list, schema_with_default
-from data_utilities.ParseUtil import Description, directed_run_on_list, ParsedDocument, ParseState, ClashError
+from parsing_utilities.util import getGematria, convert_dict_to_array, split_version, split_list, schema_with_default
+from parsing_utilities.ParseUtil import Description, directed_run_on_list, ParsedDocument, ParseState, ClashError
 
 import django
 django.setup()

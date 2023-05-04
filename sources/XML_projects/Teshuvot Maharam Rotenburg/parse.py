@@ -1,6 +1,6 @@
 import django
 django.setup()
-from data_utilities.XML_to_JaggedArray import XML_to_JaggedArray
+from parsing_utilities.XML_to_JaggedArray import XML_to_JaggedArray
 SERVER = "http://proto.sefaria.org"
 import re
 import bleach

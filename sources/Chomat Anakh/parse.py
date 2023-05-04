@@ -4,8 +4,8 @@ import re
 from sefaria.model import *
 from sources.functions import *
 from sefaria.system.exceptions import *
-from data_utilities.link_disambiguator import *
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.citation_disambiguator.citation_disambiguator import *
+from linking_utilities.dibur_hamatchil_matcher import *
 
 SERVER = "http://draft.sefaria.org"
 versionTitle = "Chomat Anakh, Jerusalem 1965"
@@ -248,7 +248,7 @@ def create_fake_schema(en, he):
 def find_verses(text_dict, en, he):
     if en not in verse_find_results.keys():
         verse_find_results[en] = {}
-    ld = Link_Disambiguator()
+    ld = CitationDisambiguator()
     for ch in text_dict[(en, he)].keys():
         if ch not in verse_find_results[en].keys():
             verse_find_results[en][ch] = []

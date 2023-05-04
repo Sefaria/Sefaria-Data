@@ -7,7 +7,7 @@ import requests
 import unicodecsv
 from collections import Counter, namedtuple
 from sources.functions import post_index, post_text
-from data_utilities.util import getGematria, numToHeb, StructuredDocument, file_to_ja_g, ja_to_xml
+from parsing_utilities.util import getGematria, numToHeb, StructuredDocument, file_to_ja_g, ja_to_xml
 
 import django
 django.setup()

@@ -6,7 +6,7 @@ import json
 from sources import functions
 from sefaria.model.schema import *
 from sefaria.model import *
-from data_utilities.util import getGematria as gematria
+from parsing_utilities.util import getGematria as gematria
 import copy
 
 taz = [3, 1, 13, 13,  3, 5, 3, 1, 10, 10, 14, 10, 1]

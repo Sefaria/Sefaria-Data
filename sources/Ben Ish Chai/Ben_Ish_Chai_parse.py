@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# -*- coding: utf-8 -*-
 import sys
 import os
 # for a script located two directories below this file
@@ -12,12 +10,10 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 #from sefaria.model import *
 from sources.functions import *
 import re
-import data_utilities
-import codecs
 import pycurl
 import cStringIO
 from bs4 import BeautifulSoup
-from data_utilities.dibur_hamatchil_matcher import match_ref
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 import pdb
 
 eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach",

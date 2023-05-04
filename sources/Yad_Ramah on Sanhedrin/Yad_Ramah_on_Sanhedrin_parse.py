@@ -9,7 +9,7 @@ post
 import codecs
 import regex
 from sefaria.model import *
-from data_utilities import util
+from parsing_utilities import util
 from sources.Yad_Ramah import function
 from sources import functions
 

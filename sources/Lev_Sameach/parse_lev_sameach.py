@@ -3,7 +3,7 @@ import codecs
 from sefaria.model import *
 import regex
 from sources import functions
-from data_utilities import util
+from parsing_utilities import util
 from sources.Lev_Sameach import ls_functions
 
 """

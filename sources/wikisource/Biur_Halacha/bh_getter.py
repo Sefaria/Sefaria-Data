@@ -8,7 +8,7 @@ from local_settings import *
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 
-from data_utilities.util import numToHeb
+from parsing_utilities.util import numToHeb
 
 reload(sys)
 sys.setdefaultencoding("utf-8")

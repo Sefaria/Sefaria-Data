@@ -1,5 +1,5 @@
 from sources.functions import *
-from data_utilities.dibur_hamatchil_matcher import match_text
+from linking_utilities.dibur_hamatchil_matcher import match_text
 import time
 def dher(x):
     result = re.sub("<b>(.*?)</b>.*", "\g<1>", x).replace(":", "").replace("[", "").replace("]", "").replace(",", "").replace(".", "").replace(";", "")
@@ -56,15 +56,18 @@ with open("The Early Prophets Just Translation.csv", 'r') as f:
             v_only = re.search("^(\d+) (.*)", comm)
             if ch_w_verse:
                 ch = ch_w_verse.group(1)
-                text[books[book]][ch] = {}
+                if ch not in text[books[book]]:
+                    text[books[book]][ch] = {}
                 v = ch_w_verse.group(2)
-                curr_comm = ch_w_verse.group(3)
+                comm = ch_w_verse.group(3)
             elif v_only:
                 v = v_only.group(1)
-                curr_comm = v_only.group(2)
+                comm = v_only.group(2)
             v = int(v)
-            text[books[book]][ch][v] = curr_comm
-        elif ftnotes_parsing:
+            if v in text[books[book]][ch]:
+                comm = text[books[book]][ch][v]+"<br/>"+comm
+            text[books[book]][ch][v] = comm
+        elif ftnotes_parsing and re.search("^\d+:?\d* <b>.*?</b>", comm):
             ch_w_verse = re.search("^(\d+):(\d+) (.*)", comm)
             v_only = re.search("^(\d+) (.*)", comm)
             if ch_w_verse:
@@ -103,6 +106,32 @@ for book in books:
             diff = len(Ref(f"{our_book} {ch}").all_segment_refs()) - len(text[book][ch])
             if diff != 0:
                 print(f"{diff} more verses: {our_book} {ch}")
+                max = 0
+                max_line = -1
+                for l, line in enumerate(convertDictToArray(text[book][ch])):
+                    jps = TextChunk(Ref(f"{book} {ch}:{l + 1}"), lang='en').text.replace("<br>", " ").replace("<br/>", " ").replace("  ", " ")
+                    line = line.replace("<br>", " ").replace("<br/>", " ").replace("  ", " ")
+                    jps = BeautifulSoup(jps)
+                    line = BeautifulSoup(line)
+                    for x in line.findAll('sup'):
+                        x.decompose()
+                    for x in jps.findAll('sup'):
+                        x.decompose()
+                    for x in line.findAll("i", {"class": "footnote"}):
+                        x.decompose()
+                    for x in jps.findAll("i", {"class": "footnote"}):
+                        x.decompose()
+                    line = line.text
+                    jps = jps.text
+                    order = (line, jps) if line.count(" ") > jps.count(" ") else (jps, line)
+                    curr = (order[0].count(" ") - order[1].count(" ")) / float(order[0].count(" "))
+                    if curr > max:
+                        max = curr
+                        max_line = l
+                print("***")
+                print(f"{book} {ch}")
+                print(text[book][ch][max_line])
+                print(TextChunk(Ref(f"{book} {ch}:{max_line + 1}"), lang='en').text)
             text[book][ch] = convertDictToArray(text[book][ch])
             for p, pasuk in enumerate(text[book][ch]):
                 if ch in ftnotes[book] and p+1 in ftnotes[book][ch]:
@@ -175,8 +204,6 @@ for book in text:
         "versionTitle": "The Early Prophets, by Everett Fox",
         "text": text[book]
     }
-    post_text(book.replace("Ii", "II"), send_text,server="https://ste.cauldron.sefaria.org")
-    time.sleep(300)
 
 for x in not_found:
     print(x)

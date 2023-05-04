@@ -3,7 +3,7 @@ import django
 django.setup()
 from collections import OrderedDict
 from sefaria.utils.talmud import section_to_daf
-from data_utilities.util import getGematria, he_char_ord, he_ord, inv_gematria
+from parsing_utilities.util import getGematria, he_char_ord, he_ord, inv_gematria
 from rif_utils import path, tags_map
 
 inv_he_char = {}

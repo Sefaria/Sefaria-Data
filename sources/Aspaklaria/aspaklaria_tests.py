@@ -208,7 +208,7 @@ class Test_Sham_Parsing(object):
         table = Parser.perek_parasha_table()
         assert convert_perk_parasha(ref, table) == u'פרשת ויקרא'
     def test_dh_matcher(self):
-        from data_utilities.dibur_hamatchil_matcher import match_ref
+        from linking_utilities.dibur_hamatchil_matcher import match_ref
         base_tokenizer = lambda x: x.split()
         base_text = Ref(u'גיטין ז').text('he')
         n = 100  # len(''.join(base_text.text).split())

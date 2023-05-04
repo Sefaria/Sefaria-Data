@@ -209,7 +209,7 @@ class FindMissingNames:
         self.save_titles()
 
     def action(self, s, en_tref, he_tref, v):
-        from data_utilities.util import get_window_around_match
+        from parsing_utilities.util import get_window_around_match
         mentions = self.mentions_by_ref.get(en_tref, [])
         snorm = self.normalizer.normalize(s)
         rm = self.normalizer.get_mapping_after_normalization(s, reverse=True)
@@ -248,7 +248,7 @@ class FindMissingNames:
             cout.writerows(self.possible_title_continuations)
 
 def suggest_people_duplicates():
-    from data_utilities.util import WeightedLevenshtein
+    from linking_utilities.weighted_levenshtein import WeightedLevenshtein
     norm2peeps = defaultdict(list)
     letter_counts = defaultdict(int)
     with open('/home/nss/sefaria/datasets/ner/sefaria/temp/yerushalmi_basic_en_titles.json', 'r') as fin:

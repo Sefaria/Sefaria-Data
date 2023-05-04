@@ -4,7 +4,7 @@ import re
 import os
 import codecs
 from sources.functions import post_text, post_index, post_link, add_category
-from data_utilities.util import getGematria, PlaceHolder, convert_dict_to_array, clean_whitespace
+from parsing_utilities.util import getGematria, PlaceHolder, convert_dict_to_array, clean_whitespace
 
 import django
 django.setup()

@@ -11,7 +11,7 @@ Objectives:
 """
 import re
 from functools import partial
-from data_utilities.ParseUtil import ParsedDocument, Description, ParseState
+from parsing_utilities.ParseUtil import ParsedDocument, Description, ParseState
 from sefaria.utils.talmud import section_to_daf
 from sefaria.utils.hebrew import encode_hebrew_daf
 from rif_utils import tags_map, path, netlen, rif_files, netlen2

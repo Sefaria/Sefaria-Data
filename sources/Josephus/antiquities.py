@@ -5,7 +5,7 @@ import re
 from sefaria.model import *
 from bs4 import BeautifulSoup, element
 from sources.functions import convertDictToArray, post_text, post_index
-from data_utilities.XML_to_JaggedArray import int_to_roman, roman_to_int
+from parsing_utilities.XML_to_JaggedArray import int_to_roman, roman_to_int
 import requests
 import os
 

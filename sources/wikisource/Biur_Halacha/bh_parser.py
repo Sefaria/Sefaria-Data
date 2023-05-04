@@ -17,7 +17,7 @@ from sefaria.model import *
 
 from sources.functions import numToHeb, getGematria, post_index, post_text
 from sefaria.datatype import jagged_array
-from data_utilities.util import ja_to_xml, traverse_ja
+from parsing_utilities.util import ja_to_xml, traverse_ja
 
 reload(sys)
 sys.setdefaultencoding("utf-8")

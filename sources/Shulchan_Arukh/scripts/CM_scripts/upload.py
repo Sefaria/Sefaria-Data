@@ -6,7 +6,7 @@ import argparse
 import requests
 import unicodecsv
 from sefaria.model import *
-from data_utilities.util import ja_to_xml
+from parsing_utilities.util import ja_to_xml
 from sources.Shulchan_Arukh.ShulchanArukh import *
 from sources.functions import post_text, get_index_api, post_index, post_link, add_term
 

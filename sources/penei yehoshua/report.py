@@ -5,7 +5,7 @@ from sefaria.model import *
 from sefaria import system
 from sources.functions import *
 import csv
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 import os
 from helper import *
 

@@ -17,7 +17,7 @@ while r < len(rif) - rif_window and g < len(gemara) - gem_window
 
 from sefaria.model import *
 from sefaria.system.exceptions import InputError
-from data_utilities import dibur_hamatchil_matcher
+from linking_utilities import dibur_hamatchil_matcher
 import json, re
 
 mesechtot = ["Berakhot","Shabbat", "Eruvin","Pesachim","Rosh Hashanah","Yoma","Sukkah","Beitzah","Taanit","Megillah"

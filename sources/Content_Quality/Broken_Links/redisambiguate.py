@@ -9,7 +9,7 @@ from sefaria.system.exceptions import InputError
 from collections import *
 import re
 import csv
-from research.link_disambiguator.main import *
+from linking_utilities.citation_disambiguator.citation_disambiguator import *
 
 pesachim_segments = {'Tosafot on Niddah': 17, 'Tosafot on Bekhorot': 12, 'Tosafot on Temurah': 4, 'Mefaresh on Tamid': 4, 'Rashi on Keritot': 3, 'Likutei Moharan': 3, 'Rashi on Meilah': 2, 'Tosafot on Meilah': 2, 'Rashi on Arakhin': 2, 'Rashi on Temurah': 2, 'Tosafot Yeshanim on Keritot': 2, 'Tosafot on Arakhin': 2, 'Shenei Luchot HaBerit, Torah Shebikhtav, Bo, Derekh Chayim': 1, 'Kessef Mishneh on Mishneh Torah, Sabbath': 1, 'Rashi on Niddah': 1}
 found = {}
@@ -19,7 +19,7 @@ def redisambiguate(valid_ref, invalid_ref):
     msg = "disambiguator found no match"
 
     invalid_ref_section = invalid_ref.top_section_ref()
-    ld = Link_Disambiguator()
+    ld = CitationDisambiguator()
     results = ld.disambiguate_segment_by_snippet(valid_ref.normal(), [invalid_ref_section.normal()], with_match_text=True)
     if results[invalid_ref_section.normal()]:
         new_ref = results[invalid_ref_section.normal()]["B Ref"]

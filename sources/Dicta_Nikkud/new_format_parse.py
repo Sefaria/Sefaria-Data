@@ -9,7 +9,7 @@ import sys
 from functools import partial
 from sefaria.utils.talmud import section_to_daf
 from parse_nikkud import create_section, prettify_text
-from data_utilities.ParseUtil import directed_run_on_list
+from parsing_utilities.ParseUtil import directed_run_on_list
 
 import django
 django.setup()

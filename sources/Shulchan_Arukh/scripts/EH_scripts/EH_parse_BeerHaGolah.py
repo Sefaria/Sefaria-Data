@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from data_utilities.util import he_ord
+from parsing_utilities.util import he_ord
 from EH_base import move_special_section
 from sources.Shulchan_Arukh.ShulchanArukh import *
 

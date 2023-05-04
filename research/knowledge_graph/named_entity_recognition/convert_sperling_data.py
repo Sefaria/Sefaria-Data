@@ -3,7 +3,7 @@ import csv, re
 django.setup()
 from sefaria.model import *
 from collections import defaultdict
-from data_utilities.dibur_hamatchil_matcher import match_ref, match_text
+from linking_utilities.dibur_hamatchil_matcher import match_ref, match_text
 from tqdm import tqdm
 
 DATA_LOC = "/home/nss/sefaria/datasets/ner/michael-sperling"
@@ -422,7 +422,7 @@ def convert_to_mentions_file(he_mentions_file, output_file, only_bonayich_rabbis
 def convert_mentions_for_alt_version(nikkud_vtitle, mentions_output, manual_changes_file=None, limit=None):
     import json
     from research.knowledge_graph.named_entity_recognition.ner_tagger import Mention
-    from data_utilities.dibur_hamatchil_matcher import match_text
+    from linking_utilities.dibur_hamatchil_matcher import match_text
     from sefaria.helper.normalization import FunctionNormalizer
     if manual_changes_file is not None:
         changes = srsly.read_json(manual_changes_file)

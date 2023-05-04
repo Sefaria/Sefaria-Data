@@ -14,8 +14,8 @@ sys.path.insert(0, p)
 sys.path.insert(0,p+"/sources")
 os.environ['DJANGO_SETTINGS_MODULE'] = "sefaria.settings"
 from local_settings import *
-sys.path.append(p+"/data_utilities")
-from data_utilities.dibur_hamatchil_matcher import *
+sys.path.append(p+"/linking_utilities")
+from linking_utilities.dibur_hamatchil_matcher import *
 from functions import *
 
 

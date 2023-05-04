@@ -8,13 +8,13 @@ sys.path.insert(0, SEFARIA_PROJECT_PATH)
 os.environ['DJANGO_SETTINGS_MODULE'] = "local_settings"
 from sources.functions import *
 import re
-import data_utilities
+import linking_utilities
 from sources import functions
 import urllib2
 import json
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
-from data_utilities.dibur_hamatchil_matcher import *
+from linking_utilities.dibur_hamatchil_matcher import *
 import pdb
 def get_ch_title_dic():
     ch_dict = json.loads(urllib2.urlopen("https://www.sefaria.org/api/v2/raw/index/Duties_of_the_Heart").read())

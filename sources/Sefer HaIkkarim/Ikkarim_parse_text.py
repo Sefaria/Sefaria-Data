@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-#import data_utilities
+#import linking_utilities
 import codecs
 import chardet
 
