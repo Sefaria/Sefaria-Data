@@ -20,16 +20,16 @@ class Parser():
 
     def parse(self):
         prev_book = ''
-        old_index = library.get_index('Zohar')
+        old_index = library.get_index('Zohar old')
         for i in range(52):
             if i in [17, 44]:
                 continue
             node = old_index.alt_structs['Parasha']['nodes'][i]
             old_ref = [node['wholeRef']]
             if i == 16:
-                old_ref = ['Zohar 2:44a:1-67a:3']
+                old_ref = ['Zohar old 2:44a:1-67a:3']
             elif i == 50:
-                old_ref.append('Zohar 3:296b:9-299b:10')
+                old_ref.append('Zohar old 3:296b:9-299b:10')
             elif i == 51:
                 old_ref[0] = re.sub('\-.*', '-296b:8', old_ref[0])
 
@@ -57,7 +57,7 @@ class Parser():
                 temp_book = self.book
                 if self.book != 'hashmata':
                     start = ' '.join(line.split()[:7])
-                    if ('השלמה מההשמטות' in start and "עי' עליו" not in start) or segment == Ref('Zohar 3:193b:31'):
+                    if ('השלמה מההשמטות' in start and "עי' עליו" not in start) or segment == Ref('Zohar old 3:193b:31'):
                         self.book = 'hashmata'
                         self.sim = getGematria(re.findall('סימן ([א-ת\']{,4})', line)[0]) if 'סימן' in line else 5
                     elif any(x in line for x in ['המדרש הנעלם', 'מדרש הנעלם']) and i not in {12, 13, 20}:
@@ -130,18 +130,20 @@ class Parser():
         self.parashot += self.tosafot
 
     def match(self):
-        name = 'Zohar TNNG'
+        name = 'Zohar'
         nodes_dict = make_nodes_dict()
         self.nones = 0
         map = {}
         for i, par in enumerate(self.parashot):
+            if i<13:continue
             print(i)
             if i > 51:
                 refs = [ref for s in sorted(list(par)) for ref in par[s]]
-                groups = [{'oldrefs': refs, 'newrefs': [f'{name}, Addenda, For Volume {"I"*(i-51)}']}]
+                groups = [{'oldrefs': refs, 'newrefs': [f'{name}, Addenda, Volume {"I"*(i-51)}']}]
             else:
                 done = False
                 node = nodes_dict[i]
+                print(node)
                 if len(par) == 1:
                     if 'refs' in node:
                         newrefs = node['refs']
@@ -151,6 +153,7 @@ class Parser():
                         done = True
                     else:
                         print('one book but more than one node', i)
+                        newrefs = node['nodes'][0]['refs']
                     groups = [{'oldrefs': list(par.values())[0], 'newrefs': newrefs}]
                 if not done:
                     groups = []
@@ -168,17 +171,22 @@ class Parser():
                                 else:
                                     print(f"{book} not in {[sn['titles'][0]['text'] for sn in node['nodes'] if 'titles' in sn]}")
                                     print(f' all bokks in parasha: {list(par)}')
+                                    continue
                             except:
                                 print(5555, node)
                         groups.append({'oldrefs': par[book], 'newrefs': sn['refs']})
             for group in groups:
                 old_texts = [Ref(r).text('he').text for r in group['oldrefs']]
+                if not(old_texts):
+                    print('no text', group)
+                    continue
+                print(2, group)
                 matches = match_ref([Ref(r).text('he', vtitle='Torat Emet') for r in group['newrefs']], old_texts, tokenizer,
                                     dh_extract_method=lambda x: ' '.join(tokenizer(x)[:15]),
                                     place_all=True, place_consecutively=True, chunks_list=True)['matches']
                 new_node_ref = Ref(group['newrefs'][0]).index_node.ref()
                 if i > 51:
-                    new_node_ref = Ref(f'Zohar TNNG, Addenda, For Volume {"I" * (i-51)}')
+                    new_node_ref = Ref(f'Zohar, Addenda, Volume {"I" * (i-51)}')
                 for m, r in zip(matches, group['oldrefs']):
                     if m:
                         map[r] = m.normal()
@@ -195,22 +203,28 @@ class Parser():
                             map[r] = None
                             self.nones += 1
         print('wow', self.nones)
-        with open('map_old_to_new.json', 'w') as fp:
-            json.dump(map, fp)
+        with open('map_old_to_new-new.json') as fp:
+            old = json.load(fp)
+            old.update(map)
+        with open('map_old_to_new-new.json', 'w') as fp:
+            json.dump(old, fp)
 
 
 def make_nodes_dict():
     nodes_dict = {}
     i = 0
-    alt = library.get_index('Zohar TNNG').alt_structs['Pages']['nodes']
-    for x, node in enumerate(alt):
-        if x == 0:
-            nodes_dict[i] = node
-            i += 1
-        else:
-            for sn in node['nodes']:
-                nodes_dict[i] = sn
-                i += 1
+    alt = library.get_index('Zohar').alt_structs['Daf']['nodes']
+    nodes = [node for n in alt for node in n['nodes'][:-1]]
+    nodes += [n['nodes'][-1] for n in alt]
+    nodes_dict = {i: node for i, node in enumerate(nodes)}
+    # for x, node in enumerate(alt):
+    #     if 'nodes' not in node:
+    #         nodes_dict[i] = node
+    #         i += 1
+    #     else:
+    #         for sn in node['nodes']:
+    #             nodes_dict[i] = sn
+    #             i += 1
     return nodes_dict
 
 with open('abbr.csv') as fp:
