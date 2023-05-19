@@ -25,6 +25,8 @@ def make_report(index, fname, add_new_links=False):
     base = index.base_text_titles[0]
     report = []
     for sec in index.all_section_refs():
+        if 'Introduction' in sec.normal():
+            continue
         section = []
         for seg in sec.all_segment_refs():
             segrow = {'ref': seg.normal(), 'text': seg.text('he').text}
@@ -72,8 +74,9 @@ def make_report(index, fname, add_new_links=False):
 
 
 if __name__ == '__main__':
-    path = ['Talmud','Bavli','Rishonim on Talmud','Ritva']
+    path = ['Talmud','Bavli','Rishonim on Talmud','Meiri']
     inds = IndexSet({'categories': {'$all': path}})
     for ind in inds:
+        print(ind)
         make_report(ind, ind.title, add_new_links=True)
 
