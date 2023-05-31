@@ -17,7 +17,7 @@ import docx
 from docx import Document
 import re
 
-seder = "Tahorot"
+# seder = "Tahorot"
 masechtot = ["Berakhot",
              "Peah",
              "Demai",
@@ -414,11 +414,11 @@ if __name__ == '__main__':
     file_path = "lechem_tahorot.docx"
     # post_indices()
     #
-    # docx_text = read_docx(file_path)
-    # parsed_version = parse_text(docx_text)
-    # text_obj = create_text_object(parsed_version)
-    # prettify_version(text_obj)
-    # ingest_version(text_obj)
+    docx_text = read_docx(file_path)
+    parsed_version = parse_text(docx_text)
+    text_obj = create_text_object(parsed_version)
+    prettify_version(text_obj)
+    ingest_version(text_obj)
 
 
 
@@ -429,7 +429,7 @@ if __name__ == '__main__':
     # print(obj)
     # ingest_version(obj)
     # add_new_categories()
-    validate_document(file_path)
+    # validate_document(file_path)
 
 
 
