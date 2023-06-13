@@ -1,7 +1,7 @@
 from sources.functions import *
 from docx2python import docx2python
 from bs4 import BeautifulSoup
-allowed = ('i', 'b', 'br', 'u', 'strong', 'em', 'big', 'small', 'img', 'sup', 'a')
+#allowed = ('i', 'b', 'br', 'u', 'strong', 'em', 'big', 'small', 'img', 'sup', 'a')
 
 def get_body_html(document, ftnotes):
     new_body = {}
@@ -52,22 +52,22 @@ def get_body_html(document, ftnotes):
                 new_body[book][curr_perek] = []
             else:
                 ftnoteholders = []
-                comment = bleach.clean(comment, tags=allowed, attributes=ALLOWED_ATTRS, strip=True)
+                comment = bleach.clean(comment, tags=['sup'], strip=True)
                 marker = "$ftnoteholder$"
-                for full_ftnote, char in re.findall("(----footnote\d+----(\S{1,}))", comment):
-                    char = char.strip().replace("<sup>", "").replace("</sup>", "").replace("<u>", "").replace("<b>", "").replace("<i>", "")[:1]
+                for full_ftnote, char in re.findall("(----footnote\d+----(<sup>.*?</sup>|.{1}))", comment):
+                    if char.startswith("<sup>"):
+                        char = BeautifulSoup(char).text[0]
                     pasuk, ftnote_text = ftnotes[curr_perek][char][0]
                     ftnotes[curr_perek][char] = ftnotes[curr_perek][char][1:]
                     ftnoteholders.append(f"<sup class='footnote-marker'>{char}</sup><i class='footnote'>{ftnote_text}</i>")
                     comment = comment.replace(full_ftnote, marker)
-                for tag in allowed:
-                    m = re.search(f"<{tag}>(\\d+"+chr(160)+f")</{tag}>", comment)
-                    if m:
-                        comment = comment.replace(m.group(0), m.group(1))
-                    for tag in [x for x in allowed if x != tag]:
-                        m = re.search(f"<{tag}>(\\d+" + chr(160) + f")</{tag}>", comment)
-                        if m:
-                            comment = comment.replace(m.group(0), m.group(1))
+                # for tag in allowed:
+                #     m = re.search(f"<{tag}>(\\d+"+chr(160)+f")</{tag}>", comment)
+                #     if m:
+                #         comment = comment.replace(m.group(0), m.group(1))
+                m = re.search(f"<sup>(\\d+" + chr(160) + f")</sup>", comment)
+                if m:
+                    comment = comment.replace(m.group(0), m.group(1))
                 pasukim = re.split(f"\d+" + chr(160), comment)
                 count = 0
                 for p, pasuk in enumerate(pasukim):
@@ -145,7 +145,12 @@ for f in os.listdir("RJPS"):
     start_at = 0
     document = docx2python("RJPS/"+f, html=True)
     ftnotes = get_footnotes(document)
-    x.update(get_body_html(document, ftnotes))
+    data = get_body_html(document, ftnotes)
+    x.update(data)
+    for book in data:
+        for perek in data[book]:
+            send_text = {"language": "en", "versionTitle": "RJPS", "versionSource": "https://www.jps.org", "text": data[book][perek]}
+            post_text(f"{book} {perek}", send_text, server="http://localhost:8000")
 
 for b in tqdm(x):
     diff = len(x[b]) - len(library.get_index(b).all_section_refs())
@@ -158,26 +163,26 @@ for b in tqdm(x):
         for p, pasuk in enumerate(x[b][perek]):
             tc = TextChunk(Ref(f"{b} {perek}:{p+1}"), lang='en', vtitle='RJPS_1st_pass')
             tc.text = pasuk
-            #tc.save()
+            tc.save()
 
 for v in VersionSet({"versionTitle": 'RJPS_1st_pass'}):
     v.versionSource = "https://www.sefaria.org"
     v.save()
 
 
-    # ftnotes = {}
-    # increment_perek = 0
-    # heb_uncertain = 0
-    # with open("ftnotes.csv", 'r') as f:
-    #     for row in csv.reader(f):
-    #         heb_uncertain = 0
-    #         if row[0] == "increment":
-    #             increment_perek += 1
-    #         elif row[0] == "decrement":
-    #             increment_perek -= 1
-    #         else:
-    #             perek, ftnote, comm = row
-    #             perek = int(perek) + increment_perek
-    #             if perek not in ftnotes:
-    #                 ftnotes[perek] = {}
-    #             ftnotes[perek][ftnote] = comm
+ftnotes = {}
+increment_perek = 0
+heb_uncertain = 0
+with open("ftnotes.csv", 'r') as f:
+    for row in csv.reader(f):
+        heb_uncertain = 0
+        if row[0] == "increment":
+            increment_perek += 1
+        elif row[0] == "decrement":
+            increment_perek -= 1
+        else:
+            perek, ftnote, comm = row
+            perek = int(perek) + increment_perek
+            if perek not in ftnotes:
+                ftnotes[perek] = {}
+            ftnotes[perek][ftnote] = comm
