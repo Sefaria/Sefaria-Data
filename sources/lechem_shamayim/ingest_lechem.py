@@ -17,18 +17,18 @@ import docx
 from docx import Document
 import re
 
-# seder = "Tahorot"
-masechtot = ["Berakhot",
-             "Peah",
-             "Demai",
-             "Kilayim",
-             "Sheviit",
-             "Terumot",
-             "Maasrot",
-             "Maaser Sheni",
-             "Challah",
-             "Orlah",
-             "Bikkurim"]
+seder = "Moed"
+# masechtot = ["Berakhot",
+#              "Peah",
+#              "Demai",
+#              "Kilayim",
+#              "Sheviit",
+#              "Terumot",
+#              "Maasrot",
+#              "Maaser Sheni",
+#              "Challah",
+#              "Orlah",
+#              "Bikkurim"]
 masechtot = ["Shabbat",
  "Eruvin",
  "Pesachim",
@@ -42,64 +42,64 @@ masechtot = ["Shabbat",
  "Moed Katan",
  "Chagigah"
 ]
-masechtot = ["Yevamot",
- "Ketubot",
- "Nedarim",
-"Nazir",
- "Sotah",
- "Gittin",
-"Kiddushin",
-]
-masechtot = [
-"Bava Kamma",
- "Bava Metzia",
- "Bava Batra",
- "Sanhedrin",
- "Makkot",
- "Shevuot",
- "Eduyot",
- "Avodah Zarah",
-# "Pirkei Avot",
-"Horayot"
-]
-masechtot = [
-"Zevachim",
- "Menachot",
- "Chullin",
- "Bekhorot",
- "Arakhin",
- "Temurah",
- "Keritot",
- "Meilah",
- "Tamid",
- "Middot",
- "Kinnim"
-]
-masechtot = [
- "Kelim",
- "Oholot",
- "Negaim",
- "Parah",
- "Tahorot",
- "Mikvaot",
- "Niddah",
- "Makhshirin",
- "Zavim",
- "Tevul Yom",
- "Yadayim",
- "Oktzin"
-]
-masechtot_he = ["ברכות",
-             "פאה",
-             "דמאי",
-             "כלאים",
-             "שביעית",
-             "תרומות",
-             "מעשרות",
-             "מעשר שני",
-             "חלה",
-             "ערלה",
-             "ביכורים"]
+# masechtot = ["Yevamot",
+#  "Ketubot",
+#  "Nedarim",
+# "Nazir",
+#  "Sotah",
+#  "Gittin",
+# "Kiddushin",
+# ]
+# masechtot = [
+# "Bava Kamma",
+#  "Bava Metzia",
+#  "Bava Batra",
+#  "Sanhedrin",
+#  "Makkot",
+#  "Shevuot",
+#  "Eduyot",
+#  "Avodah Zarah",
+# # "Pirkei Avot",
+# "Horayot"
+# ]
+# masechtot = [
+# "Zevachim",
+#  "Menachot",
+#  "Chullin",
+#  "Bekhorot",
+#  "Arakhin",
+#  "Temurah",
+#  "Keritot",
+#  "Meilah",
+#  "Tamid",
+#  "Middot",
+#  "Kinnim"
+# ]
+# masechtot = [
+#  "Kelim",
+#  "Oholot",
+#  "Negaim",
+#  "Parah",
+#  "Tahorot",
+#  "Mikvaot",
+#  "Niddah",
+#  "Makhshirin",
+#  "Zavim",
+#  "Tevul Yom",
+#  "Yadayim",
+#  "Oktzin"
+# ]
+# masechtot_he = ["ברכות",
+#              "פאה",
+#              "דמאי",
+#              "כלאים",
+#              "שביעית",
+#              "תרומות",
+#              "מעשרות",
+#              "מעשר שני",
+#              "חלה",
+#              "ערלה",
+#              "ביכורים"]
 masechtot_he = ["שבת",
              "עירובין",
              "פסחים",
@@ -112,52 +112,52 @@ masechtot_he = ["שבת",
              "מגילה",
              "מועד קטן",
                 "חגיגה"]
-masechtot_he = ["יבמות",
-             "כתובות",
-             "נדרים",
-             "נזיר",
-             "סוטה",
-             "גיטין",
-             "קידושין"]
-masechtot_he = [
-"בבא קמא",
- "בבא מציעא",
- "בבא בתרא",
- "סנהדרין",
- "מכות",
- "שבועות",
- "עדיות",
- "עבודה זרה",
-# "אבות",
-"הוריות"
-]
-masechtot_he = [
-"זבחים",
- "מנחות",
- "חולין",
- "בכורות",
- "ערכין",
- "תמורה",
- "כריתות",
- "מעילה",
- "תמיד",
- "מידות",
- "קינים"
-]
-masechtot_he = [
- "כלים",
- "אהלות",
- "נגעים",
- "פרה",
- "טהרות",
- "מקואת",
- "נדה",
- "מכשירין",
- "זבים",
- "טבול יום",
- "ידים",
- "עוקצים"
-]
+# masechtot_he = ["יבמות",
+#              "כתובות",
+#              "נדרים",
+#              "נזיר",
+#              "סוטה",
+#              "גיטין",
+#              "קידושין"]
+# masechtot_he = [
+# "בבא קמא",
+#  "בבא מציעא",
+#  "בבא בתרא",
+#  "סנהדרין",
+#  "מכות",
+#  "שבועות",
+#  "עדיות",
+#  "עבודה זרה",
+# # "אבות",
+# "הוריות"
+# ]
+# masechtot_he = [
+# "זבחים",
+#  "מנחות",
+#  "חולין",
+#  "בכורות",
+#  "ערכין",
+#  "תמורה",
+#  "כריתות",
+#  "מעילה",
+#  "תמיד",
+#  "מידות",
+#  "קינים"
+# ]
+# masechtot_he = [
+#  "כלים",
+#  "אהלות",
+#  "נגעים",
+#  "פרה",
+#  "טהרות",
+#  "מקואת",
+#  "נדה",
+#  "מכשירין",
+#  "זבים",
+#  "טבול יום",
+#  "ידים",
+#  "עוקצים"
+# ]
 
 def compute_gematria(word):
     # Define the numerical values of each letter
@@ -214,7 +214,7 @@ def create_text_object(lines):
 
 
     for line in lines:
-        print(line)
+        # print(line)
         if  "סליקא מסכת" in line:
             continue
         if ('@00' in line or '@88' in line) and "מסכת" in line:
@@ -243,14 +243,6 @@ def create_text_object(lines):
 
 def parse_text(text):
     lines = text.split('\n')
-    data = {}
-    # for line in lines:
-    #     if line.startswith('@'):
-    #         try:
-    #             key, value = re.split("@\d+", line)[1:]
-    #             data[key] = value
-    #         except ValueError:
-    #             print(f"Unable to split line: {line}")
     return lines
 def filter_dictionary_by_string(dictionary, string):
     filtered_dict = {}
@@ -274,6 +266,8 @@ def ingest_version(map_text):
     #     return filtered_dict
 
     for masechet in masechtot:
+        # if masechet == 'Berakhot':
+        #     continue
         masechet_map = filter_dictionary_by_string(map_text, masechet)
         print("ingesting masechet "+ masechet)
 
@@ -331,9 +325,23 @@ def post_indices():
     from sources.functions import post_index, post_text
     for masechet_en, masechet_he in zip(masechtot, masechtot_he):
        index = create_index_dict(masechet_en, masechet_he)
-       # post_index(index)
-       post_index(index, server="https://lechemshamayim.cauldron.sefaria.org")         #, server = "https://piaseczno.cauldron.sefaria.org"
+       post_index(index)
+       # post_index(index, server="https://lechemshamayim.cauldron.sefaria.org")         #, server = "https://piaseczno.cauldron.sefaria.org"
+def post_intro_index():
+    from sources.functions import post_index
 
+    index_dict = {'title': 'Lechem Shamayim, Introduction to Mishnah Commentary',
+                  'categories': ['Mishnah', 'Acharonim on Mishnah', 'Lechem Shamayim'],
+                  "schema": {"nodeType": "JaggedArrayNode", "depth": 1, "addressTypes": ["Integer"], "sectionNames": ["Paragraph"], "titles": [{"primary": True, "lang": "en", "text": "Lechem Shamayim, Introduction to Mishnah Commentary"}, {"primary": True, "lang": "he", "text": "לחם שמים, הקדמה לפירוש המשנה"},], "key": "Lechem Shamayim, Introduction to Mishnah Commentary"},
+                  # 'schema': {'nodeType': 'JaggedArrayNode', 'depth': 3, 'addressTypes': ['Perek', 'Mishnah', 'Integer'], 'sectionNames': ['Chapter', 'Mishnah', 'Comment'],
+                  #            'titles': [{'lang': 'he', 'text': 'לחם שמים על '+ masechet_name_he, 'primary': True},
+                  #                       {'text': 'Lechem Shamayim on ' + masechet_name_en, 'lang': 'en', 'primary': True}],
+                  #            'key': 'Lechem Shamayim on '+ masechet_name_en},
+                  'authors': ['yaakov-emden'],
+                  # 'enDesc': "Commentary of R' Yaakov Emden on Mishnah.", 'heDesc': "ביאור לר' יעקב עמדין על המשנה.",
+                  'pubDate': '1728', 'compDate': '1725', 'pubPlace': 'Altona', 'errorMargin': '3', 'era': 'AH',
+                  'collective_title': 'Lechem Shamayim'}
+    post_index(index_dict,  server="https://lechemshamayim.cauldron.sefaria.org")
 def prettify_version(text_object):
     def add_bold_tags(text):
         # Add <b> tags before @11
@@ -361,15 +369,13 @@ def prettify_version(text_object):
         line = remove_at_and_digits(line)
         text_object[ref] = line
 
+def extract_integers(string):
+    pattern = r'\d+'
+    matches = re.findall(pattern, string)
+    integers = [int(match) for match in matches]
+    return integers
 def validate_document(file_path):
     def find_misplaced_endings(strings):
-        def extract_integers(string):
-            pattern = r'\d+'
-            matches = re.findall(pattern, string)
-            integers = [int(match) for match in matches]
-            return integers
-
-
 
         misplaced_indexes = []
         last_ending = None
@@ -407,18 +413,129 @@ def validate_document(file_path):
             print(ref + " :")
             print(text)
 
-
-if __name__ == '__main__':
-    print("hello world")
-    # add_new_categories()
-    file_path = "lechem_tahorot.docx"
-    # post_indices()
-    #
+def parse_and_ingest_intro(file_path):
     docx_text = read_docx(file_path)
+    lines = docx_text.split('\n')
+    lines = [line for line in lines if line != '']
+    intro_map = {}
+    for index, line in enumerate(lines):
+        # Add <b> tags before @11
+        if '@22' in line:
+            line = '<b>' + line + '</b>'
+        # Add <b> tags before @11
+        line = re.sub(r'(@11)', r'<b>\1', line)
+
+        # Add </b> tags before @33
+        line = re.sub(r'(@33)', r'</b>\1', line)
+
+        # Add <b> tags before @44
+        line = re.sub(r'(@44)', r'<b>\1', line)
+
+        # Add </b> tags before @55
+        line = re.sub(r'(@55)', r'</b>\1', line)
+
+        line = re.sub(r'[@\d]', '', line)
+        intro_map["Lechem Shamayim, Introduction to Mishnah Commentary "+ str(index+1)] = line
+    index = library.get_index('Lechem Shamayim, Introduction to Mishnah Commentary')
+    cur_version = VersionSet({'title': 'Lechem Shamayim, Introduction to Mishnah Commentary'})
+    if cur_version.count() > 0:
+        cur_version.delete()
+        print("deleting existing version")
+    chapter = index.nodes.create_skeleton()
+    version = Version({"versionTitle": "Jerusalem, 1978",
+                       "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH990012730190205171/NLI",
+                       "title": 'Lechem Shamayim, Introduction to Mishnah Commentary',
+                       "language": "he",
+                       "chapter": chapter,
+                       "digitizedBySefaria": True,
+                       "license": "PD",
+                       "status": "locked"
+                       })
+    modify_bulk_text(superuser_id, version, intro_map)
+
+def handle_mishne(file_path_mishne, file_path_lechem):
+    docx_text_mishne = read_docx(file_path_mishne)
+    parsed_version_mishne = parse_text(docx_text_mishne)
+    text_obj_mishne = create_text_object(parsed_version_mishne)
+    prettify_version(text_obj_mishne)
+
+    docx_text = read_docx(file_path_lechem)
     parsed_version = parse_text(docx_text)
     text_obj = create_text_object(parsed_version)
     prettify_version(text_obj)
+
+    def find_key_and_max_last_integer(dictionary, prefix):
+        matched_keys = [key for key in dictionary if key.startswith(prefix)]
+        matched_keys_with_integer = [key for key in matched_keys if key[len(prefix):].split(':')[-1].isdigit()]
+
+        if not matched_keys_with_integer:
+            return None, 0
+
+        max_key = max(matched_keys_with_integer, key=lambda key: int(key[len(prefix):].split(':')[-1]))
+        max_integer = int(max_key[len(prefix):].split(':')[-1])
+        return max_key, max_integer
+
+    for key in text_obj_mishne:
+        prefix = key.split(':')[0]+':'
+        print(prefix)
+        a,b = find_key_and_max_last_integer(text_obj, prefix)
+        mishne_lechem_string = "משנה לחם"
+        text_obj[prefix+str(b+1)] = "<small>" + mishne_lechem_string + "<br>" + text_obj_mishne[key].rstrip() + "</small>"
+
     ingest_version(text_obj)
+
+def add_links():
+    def clean_links():
+        query = {"refs": {"$regex": "Eliyahu Rabbah"}}
+        list_of_links = LinkSet(query).array()
+        for l in list_of_links:
+            print("deleted link!")
+            l.delete()
+    def insert_links_to_db(list_of_links):
+        for l in list_of_links:
+            l.save()
+    def delete_until_last_colon(s):
+        if ':' in s:
+            s = s[:s.rindex(':')]
+        return s
+
+    def delete_until_first_digit(s):
+        for i in range(len(s)):
+            if s[i].isdigit():
+                return s[i:]
+    auto_links = []
+
+    for masechet in masechtot:
+        # masechet_name = get_last_two_words(index)
+        segment_refs = Ref("Lechem Shamayim on Mishnah "+ masechet).all_segment_refs()
+        for seg_ref in segment_refs:
+            auto_links.append(
+                {
+                    "refs": [
+                        seg_ref.tref,
+                        "Mishna " + masechet + ' ' + delete_until_first_digit(delete_until_last_colon(seg_ref.tref))
+                    ],
+                    "type": "Commentary",
+                    "auto": True
+                }
+            )
+
+    auto_links = list_of_dict_to_links(auto_links)
+    insert_links_to_db(auto_links)
+
+
+if __name__ == '__main__':
+    print("hello world")
+    # add_new_categories()ii
+    file_path = "lechem_tahorot.docx"
+    # post_indices()
+    #
+    # docx_text = read_docx(file_path)
+    # parsed_version = parse_text(docx_text)
+    # text_obj = create_text_object(parsed_version)
+    # prettify_version(text_obj)
+    # ingest_version(text_obj)
+    # handle_mishne("mishne_moed.docx", "lechem_moed.docx")
 
 
 
@@ -429,7 +546,14 @@ if __name__ == '__main__':
     # print(obj)
     # ingest_version(obj)
     # add_new_categories()
-    # validate_document(file_path)
+    # validate_document("mishne_moed.docx")
+
+    # post_intro_index()
+    # parse_and_ingest_intro("lechem_intro.docx")
+
+    add_links()
+
+
 
 
 
