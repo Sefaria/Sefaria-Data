@@ -1,9 +1,92 @@
 from sources.functions import *
 from linking_utilities.dibur_hamatchil_matcher import match_text
 import time
+from fuzzywuzzy import fuzz
+import requests
+import base64
+import copy
+from sefaria.system.database import db
+def get_segments(text):
+    if not text:
+        yield []
+    elif type(text) == dict:
+        yield from get_segments(text.values())
+    elif first_type(text) == str:
+        yield text
+    else:
+        for a in text:
+            yield from get_segments(a)
+
+def first_type(array):
+    for x in array:
+        if x:
+            return type(x)
+
+i = 0
+imgs = {}
+# col = db.texts
+# doc_ids = [d['_id'] for d in col.find({})]
+# for idd in doc_ids:
+#     doc = col.find_one({'_id': idd})
+#     new = copy.deepcopy(doc)
+#     for array in get_segments(new['chapter']):
+#         for x in array:
+#             if "<img>" in x:
+#                 print(new['title'])
+# refs = library.get_index("The Five Books of Moses, by Everett Fox").all_segment_refs()
+# for ref in refs:
+#     temp = re.findall("<img.*?>", TextChunk(ref, lang='en').text)
+#     if len(temp) > 0:
+#         imgs[ref] = temp
+#         url = f"https://storage.googleapis.com/sefaria-in-text-images/The%20Five%20Books%20of%20Moses%2C%20by%20Everett%20Fox/Art_P{i + 1}.jpg"
+#         print(url)
+#         data = requests.get(url)
+#         b64 = base64.b64encode(data.content)
+#         tc = TextChunk(ref, lang='en', vtitle='The Five Books of Moses, by Everett Fox. New York, Schocken Books, 1995')
+#         tc.text = tc.text.replace("<img>", f"<img src='data:image/{b64}'/>")
+#         print(tc.text)
+#         tc.save(force_save=True)
+#         i += 1
+#         print(temp[0])
+
+
+def get_phrase(curr_line, k, v):
+    phrase_tuple = match_text(curr_line.split(), [k], dh_extract_method=lambda x: x, lang='en')['match_text'][0]
+    new, old = phrase_tuple
+    phrase = new
+    if phrase != "":
+        v = v.replace("<b>"+re.sub(r'\\(.)', r'\1', old), f"<b>{phrase}")
+        return phrase, v
+    else:
+        max_i = -1
+        max_line = ""
+        k_num_words = k.count(" ")+1
+        line_num_words = curr_line.count(" ")+1
+        words = curr_line.split(" ")
+        for word_pos in range(0, line_num_words, k_num_words):
+            these_words = " ".join(words[word_pos:word_pos+k_num_words])
+            ratio = fuzz.ratio(these_words, k)
+            if ratio > max_i:
+                max_i = ratio
+                max_line = these_words
+
+        if max_i > 85:
+            return max_line, v
+        else:
+            return None, None
+
+
 def dher(x):
     result = re.sub("<b>(.*?)</b>.*", "\g<1>", x).replace(":", "").replace("[", "").replace("]", "").replace(",", "").replace(".", "").replace(";", "")
     return bleach.clean(result, tags=[], strip=True)
+
+
+def dher3(x):
+    result = re.sub("<b>(.*?)</b>.*", "\g<1>", x).replace(":", "")#.replace("[", "").replace("]", "").replace(",", "").replace(".", "").replace(";", "").replac
+    result = re.escape(result)
+    result = result.replace('\\ …\\ ', '.*?').replace('…', '.*?')
+    return bleach.clean(result, tags=ALLOWED_TAGS, strip=True)
+
 
 def dher2(s):
     s = s.replace("… :", "").strip()
@@ -11,11 +94,6 @@ def dher2(s):
     if poss == "":
         return dher(s).split("…")[0].strip()
     return poss
-
-
-def dher3(s):
-    return dher(s).split("…")[-1].strip()
-
 
 book = -1
 books = ["Joshua", "Judges", "I Samuel", "II Samuel", "I Kings", "II Kings"]
@@ -26,7 +104,7 @@ with open("The Early Prophets Just Translation.csv", 'r') as f:
     reader = csv.reader(f)
     text = defaultdict(dict)
     ftnotes = defaultdict(dict)
-    for r, row in enumerate(reader):
+    for r, row in enumerate(reader):#'Have I not commanded you:<br>be strong and courageous!?<br>Do not be terrified, do not be dismayed<sup>•</sup><i class="footnote"><b>be dismayed:</b> Or “be shattered.”</i>,<br>for with you is Y<small>HWH</small> your God, wherever you go!'
         ref, comm = row
         if re.search("^Chapter \d+. ", comm):
             text_parsing = False
@@ -55,7 +133,7 @@ with open("The Early Prophets Just Translation.csv", 'r') as f:
             ch_w_verse = re.search("^(\d+):(\d+) (.*)", comm)
             v_only = re.search("^(\d+) (.*)", comm)
             if ch_w_verse:
-                ch = ch_w_verse.group(1)
+                ch = int(ch_w_verse.group(1))
                 if ch not in text[books[book]]:
                     text[books[book]][ch] = {}
                 v = ch_w_verse.group(2)
@@ -71,12 +149,12 @@ with open("The Early Prophets Just Translation.csv", 'r') as f:
             ch_w_verse = re.search("^(\d+):(\d+) (.*)", comm)
             v_only = re.search("^(\d+) (.*)", comm)
             if ch_w_verse:
-                ftnotes_ch = ch_w_verse.group(1)
+                ftnotes_ch = int(ch_w_verse.group(1))
                 ftnotes[books[book]][ftnotes_ch] = {}
-                ftnotes_v = ch_w_verse.group(2)
+                ftnotes_v = int(ch_w_verse.group(2))
                 curr_comm = ch_w_verse.group(3)
             elif v_only:
-                ftnotes_v = v_only.group(1)
+                ftnotes_v = int(v_only.group(1))
                 curr_comm = v_only.group(2)
             ftnotes_v = int(ftnotes_v)
             if ftnotes_v not in ftnotes[books[book]][ftnotes_ch]:
@@ -94,6 +172,8 @@ not_found = []
 bad = 0
 ITAG_HOLDER = "$#%^!" # characters that dont occur in text hold place of itags during iteration
 total = 0
+probs = []
+consecutives = []
 for book in books:
     our_book = book.replace("Ii", "II")
     diff = len(library.get_index(our_book).all_section_refs()) - len(text[book].keys())
@@ -106,7 +186,7 @@ for book in books:
             diff = len(Ref(f"{our_book} {ch}").all_segment_refs()) - len(text[book][ch])
             if diff != 0:
                 print(f"{diff} more verses: {our_book} {ch}")
-                max = 0
+                max_i = 0
                 max_line = -1
                 for l, line in enumerate(convertDictToArray(text[book][ch])):
                     jps = TextChunk(Ref(f"{book} {ch}:{l + 1}"), lang='en').text.replace("<br>", " ").replace("<br/>", " ").replace("  ", " ")
@@ -125,8 +205,8 @@ for book in books:
                     jps = jps.text
                     order = (line, jps) if line.count(" ") > jps.count(" ") else (jps, line)
                     curr = (order[0].count(" ") - order[1].count(" ")) / float(order[0].count(" "))
-                    if curr > max:
-                        max = curr
+                    if curr > max_i:
+                        max_i = curr
                         max_line = l
                 print("***")
                 print(f"{book} {ch}")
@@ -135,75 +215,119 @@ for book in books:
             text[book][ch] = convertDictToArray(text[book][ch])
             for p, pasuk in enumerate(text[book][ch]):
                 if ch in ftnotes[book] and p+1 in ftnotes[book][ch]:
-                    orig = text[book][ch][p]
-                    base_words = bleach.clean(text[book][ch][p], tags=[], strip=True).replace("\n", "\n ").replace(":", "").replace("[", "").replace("]", "").replace(",", "").replace(".", "").replace(";", "")
-                    base_words = base_words.split()
-                    results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher2, lang='en')
-                    # if (-1, -1) in results["matches"]:
-                    #    results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher2, lang='en', prev_matched_results=results["matches"])
-                    # if (-1, -1) in results["matches"]:
-                    #     results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher3, lang='en', prev_matched_results=results["matches"])
-                    curr = 0
-                    total += len(results["matches"])
+                    ftnote_dict = {dher3(x): x for x in ftnotes[book][ch][p+1]}
+                    pos = 0
+                    br_char = ""
+                    curr_line = text[book][ch][p].replace("<br>", "<br/>").replace("<br/>", " <br/> ")
+                    ftnote_positions = defaultdict(str)
                     i_tags = []
-                    text[book][ch][p] = text[book][ch][p].replace("\n", " <br/>")
-                    words = text[book][ch][p]
-                    text[book][ch][p] = text[book][ch][p].split()
-                    curr = 0
-                    for i, x in enumerate(results["matches"]):
-                        ellipsis = [el.strip() for el in re.search("<b>(.*?)</b>", ftnotes[book][ch][p + 1][i]).group(1).split("…")]
-                        ellipsis_or_not_found = False
-                        if x == (-1, -1):
-                            j = i
-                            while j < len(results["matches"]) - 1 and results["matches"][j] == (-1, -1):
-                                j += 1
-                            end = results["matches"][j][1]
-                            if end != -1:
-                                end += 1
-                            if curr >= 0 and end > curr:
-                                phrase = " ".join(base_words[curr:end])
-                            elif curr >= 0:
-                                phrase = " ".join(base_words[curr:])
-                            else:
-                                phrase = " ".join(base_words)
-                            if len(phrase) > 0 and phrase.find(results["match_text"][i][1]) >= 0:
-                                ellipsis_or_not_found = True
-                            else:
-                                if f"{book} {ch}:{p+1} -- footnote {ftnotes[book][ch][p+1][i]} not found." not in not_found:
-                                    not_found.append(f"{book} {ch}:{p+1} -- footnote {ftnotes[book][ch][p+1][i]} not found.")
-                                bad_results.append(results["match_text"][i][1])
-
-                        if ellipsis_or_not_found and len(results["match_text"][i][1]) > 0:
-                            word_num = phrase.split(results["match_text"][i][1])[0].count(" ")+curr
+                    for k, v in ftnote_dict.items():
+                        orig_v = v
+                        phrase = re.search(k, curr_line)
+                        if phrase is None:
+                            phrase, v = get_phrase(curr_line, k, v)
+                            if phrase == None == v:
+                                probs.append([f"{book} {ch}:{p+1}", orig_v, text[book][ch][p]])
                         else:
-                            word_num = x[1]
-
-                        if x != (-1, -1):
-                            curr = x[1]
-                        if word_num >= 0:
-                            text[book][ch][p][word_num] = text[book][ch][p][word_num]+ITAG_HOLDER
-                            i_tags.append("<sup>•</sup><i class='footnote'>" + ftnotes[book][ch][p + 1][i].strip() + "</i>")
+                            phrase = phrase.group(0)
+                        #         text[book][ch][p][word_num] = text[book][ch][p][word_num]+ITAG_HOLDER
+                        #
+                        if phrase is None:
+                            continue
+                        start = curr_line.find(phrase)
+                        end = len(phrase)+start
+                        if curr_line[end:].startswith(ITAG_HOLDER):
+                            i_tags[-1] = i_tags[-1][:-4]
+                            i_tags[-1] += v+"</i>"
                         else:
-                            if f"{book} {ch}:{p + 1} -- footnote {ftnotes[book][ch][p + 1][i]} not found." not in not_found:
-                                not_found.append(f"{book} {ch}:{p + 1} -- footnote {ftnotes[book][ch][p + 1][i]} not found.")
-                    text[book][ch][p] = " ".join(text[book][ch][p]).replace("\n", "<br/>")
+                            curr_line = curr_line[:end] + ITAG_HOLDER + curr_line[end:]
+                            i_tags.append("<sup class='footnote-marker'>*</sup><i class='footnote'>" + v + "</i>")
+                    curr_line = curr_line.replace(" <br/> ", "<br/>")
                     for i_tag in i_tags:
-                        text[book][ch][p] = text[book][ch][p].replace(ITAG_HOLDER, i_tag, 1)
-    with open(f"ftnotes_{book}.csv", 'w') as f:
-        writer = csv.writer(f)
-        for ch in ftnotes[book]:
-            pasukim = ftnotes[book][ch]
-            for p, pasuk in enumerate(pasukim):
-                writer.writerow([f"{book} {ch}:{p+1}", pasuk])
+                        curr_line = curr_line.replace(ITAG_HOLDER, i_tag, 1)
+                    text[book][ch][p] = curr_line
+                    # orig = text[book][ch][p]
+                    # base_words = bleach.clean(text[book][ch][p], tags=[], strip=True).replace("\n", "\n ").replace(":", "").replace("[", "").replace("]", "").replace(",", "").replace(".", "").replace(";", "")
+                    # base_words = base_words.split()
+                    # results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher2, lang='en')
+                    # # if (-1, -1) in results["matches"]:
+                    # #    results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher2, lang='en', prev_matched_results=results["matches"])
+                    # # if (-1, -1) in results["matches"]:
+                    # #     results = match_text(base_words, ftnotes[book][ch][p+1], dh_extract_method=dher3, lang='en', prev_matched_results=results["matches"])
+                    # curr = 0
+                    # total += len(results["matches"])
+                    # i_tags = []
+                    # text[book][ch][p] = text[book][ch][p].replace("\n", " <br/>")
+                    # words = text[book][ch][p]
+                    # text[book][ch][p] = text[book][ch][p].split()
+                    # curr = 0
+                    # for i, x in enumerate(results["matches"]):
+                    #     ellipsis = [el.strip() for el in re.search("<b>(.*?)</b>", ftnotes[book][ch][p + 1][i]).group(1).split("…")]
+                    #     ellipsis_or_not_found = False
+                    #     if x == (-1, -1):
+                    #         j = i
+                    #         while j < len(results["matches"]) - 1 and results["matches"][j] == (-1, -1):
+                    #             j += 1
+                    #         end = results["matches"][j][1]
+                    #         if end != -1:
+                    #             end += 1
+                    #         if curr >= 0 and end > curr:
+                    #             phrase = " ".join(base_words[curr:end])
+                    #         elif curr >= 0:
+                    #             phrase = " ".join(base_words[curr:])
+                    #         else:
+                    #             phrase = " ".join(base_words)
+                    #         if len(phrase) > 0 and phrase.find(results["match_text"][i][1]) >= 0:
+                    #             ellipsis_or_not_found = True
+                    #         else:
+                    #             if f"{book} {ch}:{p+1} -- footnote {ftnotes[book][ch][p+1][i]} not found." not in not_found:
+                    #                 not_found.append(f"{book} {ch}:{p+1} -- footnote {ftnotes[book][ch][p+1][i]} not found.")
+                    #             bad_results.append(results["match_text"][i][1])
+                    #
+                    #     if ellipsis_or_not_found and len(results["match_text"][i][1]) > 0:
+                    #         word_num = phrase.split(results["match_text"][i][1])[0].count(" ")+curr
+                    #     else:
+                    #         word_num = x[1]
+                    #
+                    #     if x != (-1, -1):
+                    #         curr = x[1]
+                    #     if word_num >= 0:
+                    #         text[book][ch][p][word_num] = text[book][ch][p][word_num]+ITAG_HOLDER
+                    #         i_tags.append("<sup>•</sup><i class='footnote'>" + ftnotes[book][ch][p + 1][i].strip() + "</i>")
+                    #     else:
+                    #         if f"{book} {ch}:{p + 1} -- footnote {ftnotes[book][ch][p + 1][i]} not found." not in not_found:
+                    #             not_found.append(f"{book} {ch}:{p + 1} -- footnote {ftnotes[book][ch][p + 1][i]} not found.")
+                    # text[book][ch][p] = " ".join(text[book][ch][p]).replace("\n", "<br/>")
+                    # for i_tag in i_tags:
+                    #     text[book][ch][p] = text[book][ch][p].replace(ITAG_HOLDER, i_tag, 1)
+
+with open(f"ftnotes.csv", 'w') as f:
+    writer = csv.writer(f)
+    for p in probs:
+        writer.writerow(p)
+        # for ch in ftnotes[book]:
+        #     pasukim = ftnotes[book][ch]
+        #     for p, pasuk in enumerate(pasukim):
+        #         writer.writerow([f"{book} {ch}:{p+1}", pasuk])
 
 for book in text:
-    text[book] = convertDictToArray(text[book])
     send_text = {
         "language": "en",
         "versionSource": "https://www.penguinrandomhouse.com/books/55159/the-early-prophets-joshua-judges-samuel-and-kings-by-everett-fox/",
-        "versionTitle": "The Early Prophets, by Everett Fox",
+        "versionTitle": "The Early Prophets, by Everett Fox. New York, Schocken Books, 1995",
         "text": text[book]
     }
+    for perek in text[book]:
+        tc = TextChunk(Ref(f"{book} {perek}"), vtitle="The Early Prophets, by Everett Fox. New York, Schocken Books, 1995", lang='en')
+        curr_tc = TextChunk(Ref(f"{book} {perek}"), vtitle="Tanakh: The Holy Scriptures, published by JPS", lang='en').text
+        if len(tc.text) != len(curr_tc):
+            print(f"{book} {perek}")
+        tc.text = text[book][perek]
+        tc.save(force_save=True)
+
+for v in VersionSet({"versionTitle": "The Early Prophets, by Everett Fox. New York, Schocken Books, 1995"}):
+    v.formatAsPoetry = True
+    v.save()
 
 for x in not_found:
     print(x)
@@ -301,3 +425,5 @@ for x in not_found:
     #             text[books[book]][ch][-1] += "\n" + comm
     #
     #
+
+

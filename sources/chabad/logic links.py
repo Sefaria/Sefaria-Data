@@ -2,9 +2,133 @@ import csv
 from sources.functions import *
 from collections import Counter
 from sefaria.model.schema import AddressFolio
+from sefaria.helper.schema import *
 from sefaria.utils.hebrew import *
 from sefaria.system.database import db
 from django.contrib.auth.models import User
+
+def fake_change_node_structure(ja_node, section_names, address_types=None, upsize_in_place=False):
+    assert isinstance(ja_node, JaggedArrayNode)
+    assert len(section_names) > 0
+
+    if hasattr(ja_node, 'lengths'):
+        print('WARNING: This node has predefined lengths!')
+        del ja_node.lengths
+
+    # `delta` is difference in depth.  If positive, we're adding depth.
+    delta = len(section_names) - len(ja_node.sectionNames)
+    if upsize_in_place:
+        assert (delta > 0)
+
+    if address_types is None:
+        address_types = ['Integer'] * len(section_names)
+    else:
+        assert len(address_types) == len(section_names)
+
+    def fix_ref(ref_string):
+        """
+        Takes a string from link.refs and updates to reflect the new structure.
+        Uses the delta parameter from the main function to determine how to update the ref.
+        `delta` is difference in depth.  If positive, we're adding depth.
+        :param ref_string: A string which can be interpreted as a valid Ref
+        :return: string
+        """
+        if delta == 0:
+            return ref_string
+
+        d = Ref(ref_string)._core_dict()
+
+        if delta < 0:  # Making node shallower
+            for i in range(-delta):
+                if len(d["sections"]) == 0:
+                    break
+                d["sections"].pop()
+                d["toSections"].pop()
+
+                # else, making node deeper
+        elif upsize_in_place:
+            for i in range(delta):
+                d["sections"].insert(0, 1)
+                d["toSections"].insert(0, 1)
+        else:
+            for i in range(delta):
+                d["sections"].append(1)
+                d["toSections"].append(1)
+
+        return Ref(_obj=d).normal()
+
+    identifier = ja_node.ref().regex(anchored=False)
+
+    def needs_fixing(ref_string, *args):
+        if re.search(identifier, ref_string) is None:
+            return False
+        else:
+            return True
+
+    # For downsizing, refs will become invalidated in their current state, so changes must be made before the
+    # structure change.
+    if delta < 0:
+        cascade(ja_node.ref(), rewriter=fix_ref, needs_rewrite=needs_fixing)
+        # cascade updates the index record, ja_node index gets stale
+        ja_node.index = library.get_index(ja_node.index.title)
+
+    ja_node.sectionNames = section_names
+    ja_node.addressTypes = address_types
+    ja_node.depth = len(section_names)
+    ja_node._regexes = {}
+    ja_node._init_address_classes()
+    index = ja_node.index
+    index.save(override_dependencies=True)
+    print('Index Saved')
+    library.refresh_index_record_in_cache(index)
+    # ensure the index on the ja_node object is updated with the library refresh
+    ja_node.index = library.get_index(ja_node.index.title)
+
+    vs = [v for v in index.versionSet()]
+    print('Updating Versions')
+    for v in vs:
+        assert isinstance(v, Version)
+
+        if v.get_index() == index:
+            chunk = TextChunk(ja_node.ref(), lang=v.language, vtitle=v.versionTitle)
+        else:
+            library.refresh_index_record_in_cache(v.get_index())
+            ref_name = ja_node.ref().normal()
+            ref_name = ref_name.replace(index.title, v.get_index().title)
+            chunk = TextChunk(Ref(ref_name), lang=v.language, vtitle=v.versionTitle)
+        ja = chunk.ja()
+        if ja.get_depth() == 0:
+            continue
+
+        if upsize_in_place:
+            wrapper = chunk.text
+            for i in range(delta):
+                wrapper = [wrapper]
+            chunk.text = wrapper
+            chunk.save()
+
+        else:
+            # we're going to save directly on the version to avoid weird mid change Ref bugs
+            new_text = ja.resize(delta).trim_ending_whitespace().array()
+            if isinstance(v.chapter, dict):  # complex text
+                version_address = ja_node.version_address()
+                parent = traverse_dict_tree(v.chapter, version_address[:-1])
+                parent[version_address[-1]] = new_text
+            else:
+                v.chapter = new_text
+            v.save()
+
+    # # For upsizing, we are editing refs to a structure that would not be valid till after the change, therefore
+    # # cascading must be performed here
+    # if delta > 0:
+    #     cascade(ja_node.ref(), rewriter=fix_ref, needs_rewrite=needs_fixing)
+
+    library.rebuild()
+    refresh_version_state(index.title)
+
+    handle_dependant_indices(index.title)
+
+
 
 def create_logic_links(lines):
     prev_ref = None
@@ -30,7 +154,16 @@ def create_logic_links(lines):
 
 
 if __name__ == "__main__":
-    g
+    # i = library.get_index("Sources and References on Likkutei Torah")
+    # change_node_title(i.nodes.children[-2], i.nodes.children[-2].get_titles('he')[0], 'he', 'שיר השירים')
+    # shemot = i.nodes.children[-1].children[0]
+    # devarim = i.nodes.children[-1].children[2]
+    # remove_branch(shemot)
+    # remove_branch(devarim)
+    # i = library.get_index("Sources and References on Torah Ohr")
+    # for node in i.nodes.children[-1].children:
+    #     if node.depth == 1:
+    #         fake_change_node_structure(node, ["Chapter", "Paragraph"])
 
     already_posted = True
 

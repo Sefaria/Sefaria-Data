@@ -16,15 +16,9 @@ def app():
 
 	run_job(test=False, board_id=BOARD_ID, idList_mapping=idList_mapping)
 
-
 if __name__ == "__main__":
-
-	# importing the module
 	import tracemalloc
 
-
-	# code or function for which memory
-	# has to be monitored
 
 
 	# starting the monitoring
