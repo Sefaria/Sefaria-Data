@@ -16,32 +16,34 @@ import time
 import docx
 from docx import Document
 import re
+import Levenshtein
 
 seder = "Moed"
-# masechtot = ["Berakhot",
-#              "Peah",
-#              "Demai",
-#              "Kilayim",
-#              "Sheviit",
-#              "Terumot",
-#              "Maasrot",
-#              "Maaser Sheni",
-#              "Challah",
-#              "Orlah",
-#              "Bikkurim"]
-masechtot = ["Shabbat",
- "Eruvin",
- "Pesachim",
- "Shekalim",
- "Yoma",
- "Sukkah",
- "Beitzah",
- "Rosh Hashanah",
- "Ta'anit",
- "Megillah",
- "Moed Katan",
- "Chagigah"
-]
+masechtot = [
+"Berakhot",
+             "Peah",
+             "Demai",
+             "Kilayim",
+             "Sheviit",
+             "Terumot",
+             "Maasrot",
+             "Maaser Sheni",
+             "Challah",
+             "Orlah",
+             "Bikkurim"]
+# masechtot = ["Shabbat",
+#  "Eruvin",
+#  "Pesachim",
+#  "Shekalim",
+#  "Yoma",
+#  "Sukkah",
+#  "Beitzah",
+#  "Rosh Hashanah",
+#  "Ta'anit",
+#  "Megillah",
+#  "Moed Katan",
+#  "Chagigah"
+# ]
 # masechtot = ["Yevamot",
 #  "Ketubot",
 #  "Nedarim",
@@ -89,29 +91,31 @@ masechtot = ["Shabbat",
 #  "Yadayim",
 #  "Oktzin"
 # ]
-# masechtot_he = ["ברכות",
-#              "פאה",
-#              "דמאי",
-#              "כלאים",
-#              "שביעית",
-#              "תרומות",
-#              "מעשרות",
-#              "מעשר שני",
-#              "חלה",
-#              "ערלה",
-#              "ביכורים"]
-masechtot_he = ["שבת",
-             "עירובין",
-             "פסחים",
-             "שקלים",
-             "יומא",
-             "סוכה",
-             "ביצה",
-             "ראש השנה",
-             "תענית",
-             "מגילה",
-             "מועד קטן",
-                "חגיגה"]
+masechtot_he = [
+    "ברכות",
+             "פאה",
+             "פאה",
+             "דמאי",
+             "כלאים",
+             "שביעית",
+             "תרומות",
+             "מעשרות",
+             "מעשר שני",
+             "חלה",
+             "ערלה",
+             "ביכורים"]
+# masechtot_he = ["שבת",
+#              "עירובין",
+#              "פסחים",
+#              "שקלים",
+#              "יומא",
+#              "סוכה",
+#              "ביצה",
+#              "ראש השנה",
+#              "תענית",
+#              "מגילה",
+#              "מועד קטן",
+#                 "חגיגה"]
 # masechtot_he = ["יבמות",
 #              "כתובות",
 #              "נדרים",
@@ -485,8 +489,15 @@ def handle_mishne(file_path_mishne, file_path_lechem):
     ingest_version(text_obj)
 
 def add_links():
-    def clean_links():
-        query = {"refs": {"$regex": "Eliyahu Rabbah"}}
+
+    def list_of_dict_to_links(dicts):
+        list_of_dicts = []
+        for d in dicts:
+            list_of_dicts.append(Link(d))
+        return list_of_dicts
+
+    def clean_links(masechet):
+        query = {"refs": {"$regex": "Lechem Shamayim on Mishnah "+ masechet }}
         list_of_links = LinkSet(query).array()
         for l in list_of_links:
             print("deleted link!")
@@ -503,22 +514,158 @@ def add_links():
         for i in range(len(s)):
             if s[i].isdigit():
                 return s[i:]
+
+    def check_bold_period(text):
+        text = text.replace(" ", "")
+        if text.startswith("<b>") and "</b>" in text and text.index("</b>") + len("</b>") < len(text) and text[
+            text.index("</b>") + len("</b>")].strip() == '.':
+            return True
+        if text.startswith("<b>") and "</b>" in text and text.index("</b>") + len("</b>") < len(text) and text[
+            text.index("</b>") -1].strip() == '.':
+            return True
+        else:
+            return False
+
+    # def get_bold_substring(text):
+    #     start_tag = "<b>"
+    #     end_tag = "</b>"
+    #     start_index = text.find(start_tag)
+    #     if start_index != -1:
+    #         start_index += len(start_tag)
+    #         end_index = text.find(end_tag, start_index)
+    #         if end_index != -1:
+    #             return text[start_index:end_index]
+    #     return None
+    def extract_dibbur(input_string):
+        substring = input_string
+        # Find the index of the first period
+        # period_index = input_string.find('.')
+        # if period_index != -1:
+        #     # Extract the substring until the first period
+        #     substring = input_string[:period_index]
+        # etc_index = input_string.find("וכו'")
+        # if etc_index != -1:
+        #     # Extract the substring until the first period
+        #     substring = input_string[:etc_index]
+        # etc_index2 = input_string.find("כו'")
+        # if etc_index2 != -1:
+        #     # Extract the substring until the first period
+        #     substring = input_string[:etc_index2]
+        bold_index = input_string.find('</b>')
+        if bold_index != -1:
+            # Extract the substring until the first period
+            substring = input_string[:bold_index]
+
+
+        # Remove '<b>' and '</b>' from the substring
+        substring = substring.replace('<b>', '').replace('</b>', '')
+
+        return substring
+
+
+    def is_likely_quoted(s1, s2):
+        s1_length = len(s1)
+        s2_length = len(s2)
+        # if s1_length == 0:
+        #     return False
+
+        if s1_length >= s2_length:
+            return False
+
+        for i in range(s2_length - s1_length + 1):
+            sub_s2 = s2[i:i + s1_length]
+
+            distance = Levenshtein.distance(s1, sub_s2)
+            similarity = 1 - (distance / s1_length)
+
+            if similarity >= 0.7:  # Adjust this threshold as needed
+                return True
+
+        return False
+    def start_new_sequence(tref, corresponding_mishnah_tref):
+
+
+        seg_num = extract_integers(tref)[-1]
+        if seg_num == 1:
+            return True
+        text = Ref(tref).text('he').text
+
+        if "אבל מניחה לגת הבאה" in text:
+            a = 8
+
+
+        if "משנה לחם" in text:
+            return True
+        if check_bold_period(text.strip()):
+            return True
+        if not text.startswith('<b>'):
+            False
+        # if "$" in text or text == '':
+        #     return False
+
+        suspected_dibbur = extract_dibbur(text)
+        if suspected_dibbur == None:
+            return False
+        suspected_dibbur = suspected_dibbur.strip()
+        suspected_base_text = Ref(corresponding_mishnah_tref).text('he', "Mishnah, ed. Romm, Vilna 1913").text.strip()
+        if is_likely_quoted(suspected_dibbur, suspected_base_text):
+            return True
+
+        else:
+            return False
+
+
+
+
+
+
     auto_links = []
 
     for masechet in masechtot:
         # masechet_name = get_last_two_words(index)
+        print("Linking Masechet "+ masechet)
+        clean_links(masechet)
+
         segment_refs = Ref("Lechem Shamayim on Mishnah "+ masechet).all_segment_refs()
+        trefs_sequence = []
+        previous_tref_chapter = 0
         for seg_ref in segment_refs:
+            current_tref_chapter = extract_integers(seg_ref.tref)[0]
+            corresponding_mishnah_tref = "Mishnah " + masechet + ' ' + delete_until_first_digit(delete_until_last_colon(seg_ref.tref))
+
+
+            if current_tref_chapter != previous_tref_chapter or start_new_sequence(seg_ref.tref, corresponding_mishnah_tref):
+                if trefs_sequence:
+                    extended_tref = Ref(trefs_sequence[0]).to(Ref(trefs_sequence[-1])).tref
+                    auto_links.append(
+                        {
+                            "refs": [
+                                extended_tref,
+                                "Mishnah " + masechet + ' ' + delete_until_first_digit(delete_until_last_colon(trefs_sequence[-1]))
+                            ],
+                            "type": "Commentary",
+                            "auto": True
+                        }
+                    )
+                trefs_sequence.clear()
+                trefs_sequence.append(seg_ref.tref)
+            else:
+                trefs_sequence.append(seg_ref.tref)
+            previous_tref_chapter = current_tref_chapter
+        if trefs_sequence:
+            extended_tref = Ref(trefs_sequence[0]).to(Ref(trefs_sequence[-1])).tref
             auto_links.append(
                 {
                     "refs": [
-                        seg_ref.tref,
-                        "Mishna " + masechet + ' ' + delete_until_first_digit(delete_until_last_colon(seg_ref.tref))
+                        extended_tref,
+                        corresponding_mishnah_tref
                     ],
                     "type": "Commentary",
                     "auto": True
                 }
             )
+
+
 
     auto_links = list_of_dict_to_links(auto_links)
     insert_links_to_db(auto_links)
@@ -527,7 +674,7 @@ def add_links():
 if __name__ == '__main__':
     print("hello world")
     # add_new_categories()ii
-    file_path = "lechem_tahorot.docx"
+    file_path = "lechem_nashim.docx"
     # post_indices()
     #
     # docx_text = read_docx(file_path)
@@ -535,7 +682,7 @@ if __name__ == '__main__':
     # text_obj = create_text_object(parsed_version)
     # prettify_version(text_obj)
     # ingest_version(text_obj)
-    # handle_mishne("mishne_moed.docx", "lechem_moed.docx")
+    # handle_mishne("mishne_zeraim.docx", "lechem_zeraim.docx")
 
 
 
