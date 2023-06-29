@@ -2,6 +2,7 @@ import django
 django.setup()
 from sefaria.model import *
 from bs4 import BeautifulSoup
+from collections import *
 #{'i', 'p', 'a', 'body', 'html', 'br'}
 ts = TopicSet({'description': {'$exists': True}})
 for t in ts:
@@ -29,7 +30,7 @@ for t in ts:
     if change:
         print(t)
         t.change_description(new_desc)
-        t.save()
+        #t.save()
 
 
 

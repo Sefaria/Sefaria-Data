@@ -1,8 +1,7 @@
 import django
 django.setup()
 from sefaria.model import *
-from sefaria.views import _get_text_version_file
-import csv
+
 # response = _get_text_version_file("csv", "Zohar", 'he', "Torat Emet Zohar")
 # with open("zohar_full.csv", 'w') as f:
 #     f.write(response)
