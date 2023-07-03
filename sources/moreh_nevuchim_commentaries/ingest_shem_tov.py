@@ -241,8 +241,8 @@ def ingest_nodes():
         "collective_title": "Shem Tov"
 
     }
-    # post_index(index, server="https://guide-commentaries.cauldron.sefaria.org")
-    post_index(index)
+    post_index(index, server="https://guide-commentaries.cauldron.sefaria.org")
+    # post_index(index)
 
     # post_index({"title": en_title,
     #             "base_text_titles": ["Proverbs"],

@@ -22,14 +22,14 @@ if __name__ == '__main__':
     index = post_index({"title": "Jerusalem Talmud Niddah"}, method='GET', server='https://www.sefaria.org')
     vilna = index['alt_structs']['Vilna']
 
-    new_chpater = {'nodeType': 'ArrayMapNode', 'depth': 1,
+    new_chapter = {'nodeType': 'ArrayMapNode', 'depth': 1,
                    'wholeRef': 'Jerusalem Talmud Niddah 4:1:1-7:1', 'addressTypes': ['Talmud'], 'sectionNames': ['Daf'],
                    'refs': ['Jerusalem Talmud Niddah 4:1:1-6:1', 'Jerusalem Talmud Niddah 4:6:1-7:1'],
                    'startingAddress': '12b', 'match_templates': [],
                    'titles': [{'text': 'Chapter 4', 'lang': 'en', 'primary': True}, {'text': 'בנות כותים', 'lang': 'he', 'primary': True}]}
-    vilna['nodes'].append(new_chpater)
+    vilna['nodes'].append(new_chapter)
 
-    post_index(index, server='https://www.sefaria.org')
+    # post_index(index, server='https://www.sefaria.org')
 
     print(vilna)
 
