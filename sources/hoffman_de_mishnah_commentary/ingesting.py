@@ -7,38 +7,38 @@ import csv
 from collections import defaultdict
 from sefaria.model import *
 from sefaria.tracker import modify_bulk_text
+from sources.hoffman_de_mishnah_commentary.extract_commentary import create_text_data_dict
 
 def create_mappings():
     mappings = defaultdict(dict)
-    with open('', newline='') as csvfile:
-        hoffman_csv = csv.DictReader(csvfile)
-        for row in hoffman_csv:
-            tref = f"{row['ref']}"
-            mappings[Ref(tref).index.title][tref] = row['text']
+    data_dict = create_text_data_dict()
+    for tref in data_dict:
+        if "Berakhot" in tref: #Todo, temp filter, eventually remove
+            mappings[Ref(tref).index.title][tref] = data_dict[tref]
     return mappings
 
 
 # TODO: Fill in with appropriate details
-def create_version_from_scratch(masechet, versionTitle):
-    cur_version = VersionSet({'title': f'{masechet}',
+def create_version_from_scratch(title, versionTitle):
+    cur_version = VersionSet({'title': f'{title}',
                               'versionTitle': versionTitle})
     if cur_version.count() > 0:
         cur_version.delete()
     version = Version({"versionTitle": versionTitle,
-                       "versionSource": "",
-                       "title": f"{masechet}",
+                       "versionSource": "talmud.de",
+                       "title": f'{title}',
                        "chapter": [],
                        "language": "en",
                        "digitizedBySefaria": True,
-                       "license": "CC-BY-NC",
-                       "status": "locked",
+                       "license": "Public Domain",
+                       # "status": "locked",
                        })
     return version
 
 
 def upload_text(mappings):
     for book, book_map in mappings.items():
-        version = create_version_from_scratch(book)
+        version = create_version_from_scratch(book, "Mischnajot mit deutscher Übersetzung und Erklärung. Berlin 1887-1933 [de]")
         print(f"Uploading text for {book}")
         modify_bulk_text(user=142625,
                          version=version,
@@ -48,7 +48,5 @@ def upload_text(mappings):
 
 
 if __name__ == '__main__':
-    # Uncomment and run line below if first time through
-    # add_chabad_book_names_alt_titles()
     map = create_mappings()
     upload_text(map)
