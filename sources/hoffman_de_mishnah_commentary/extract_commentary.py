@@ -6,12 +6,10 @@ django.setup()
 from sefaria.model import *
 import re
 
-# For each index of Mishnah
-# Extract commentary to CSV with refs
-# Create a LINK csv for future linking?
 
 
 text = {}
+
 
 def action(segment_str, tref, he_tref, version):
     global text
@@ -25,10 +23,9 @@ def retrieve_version_text():
         v.walk_thru_contents(action)
 
 
-
-def create_german_link(mishnah_tref, commentary_tref):
+def create_german_comm_link(mishnah_tref, commentary_tref):
     return {
-        'refs': [mishnah_tref, commentary_tref],
+        'refs': [commentary_tref, mishnah_tref],
         'type': 'commentary',
         'auto': True,
         'generated_by': 'Hoffman linker'
@@ -36,7 +33,6 @@ def create_german_link(mishnah_tref, commentary_tref):
 
 
 def create_text_data_dict():
-
     retrieve_version_text()
     data_dict = {}
     links = []
@@ -48,7 +44,8 @@ def create_text_data_dict():
         if mishnah_tref == "Mishnah Chagigah 3:4" or mishnah_tref == "Mishnah Eruvin 5:4":
             continue
 
-        res = re.findall(r"(.*?)<sup class=\"footnote-marker\">(\d.*?)<\/sup><i class=\"footnote\">(.*?)</i>", mishnah_text)
+        res = re.findall(r"(.*?)<sup class=\"footnote-marker\">(\d.*?)<\/sup><i class=\"footnote\">(.*?)</i>",
+                         mishnah_text)
 
         if res:
             for each_comment in res:
@@ -59,10 +56,7 @@ def create_text_data_dict():
                 commentary_tref = f"German Commentary on {mishnah_tref}:{footnote_num}"  # Use the footnote to create specific segment ref
                 data_dict[commentary_tref] = f"<b>{bolded_main_text}.</b> {footnote_text}"
 
-                new_link = create_german_link(mishnah_tref, commentary_tref)
+                new_link = create_german_comm_link(mishnah_tref, commentary_tref)
                 links.append(new_link)
-                # TODO create links here?
-    return data_dict
 
-
-sample = create_text_data_dict()
+    return data_dict, links

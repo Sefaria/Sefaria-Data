@@ -41,7 +41,7 @@ def add_text_node(record):
     record.append(text_node)
 
 
-if __name__ == '__main__':
+def create_index_main():
     # In theory, eventually wrap in for loop for each Masechet.
     record = create_index_record("Berakhot", "ברכות")
     add_intro_node(record)
