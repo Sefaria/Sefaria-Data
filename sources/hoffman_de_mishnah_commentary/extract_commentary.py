@@ -23,7 +23,7 @@ def retrieve_version_text():
         v.walk_thru_contents(action)
 
 
-def create_german_comm_link(mishnah_tref, commentary_tref):
+def create_link(mishnah_tref, commentary_tref):
     return {
         'refs': [commentary_tref, mishnah_tref],
         'type': 'commentary',
@@ -56,7 +56,7 @@ def create_text_data_dict():
                 commentary_tref = f"German Commentary on {mishnah_tref}:{footnote_num}"  # Use the footnote to create specific segment ref
                 data_dict[commentary_tref] = f"<b>{bolded_main_text}.</b> {footnote_text}"
 
-                new_link = create_german_comm_link(mishnah_tref, commentary_tref)
+                new_link = create_link(mishnah_tref, commentary_tref)
                 links.append(new_link)
 
     return data_dict, links

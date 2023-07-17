@@ -2,6 +2,7 @@ import django
 
 django.setup()
 
+import time
 from sefaria.model import *
 from collections import defaultdict
 from sefaria.model import *
@@ -9,7 +10,7 @@ from sefaria.tracker import modify_bulk_text
 from sources.functions import post_text, post_link
 from sources.hoffman_de_mishnah_commentary.extract_commentary import create_text_data_dict
 from sources.hoffman_de_mishnah_commentary.parse_intro_xml import process_xml
-from sources.hoffman_de_mishnah_commentary.create_index import create_index_main
+from sources.hoffman_de_mishnah_commentary.create_index import create_index_main, create_term_and_category
 
 # Todo - links going both ways
 # Then cauldron
@@ -68,13 +69,18 @@ def pre_local_clean_up(links):
 
 
 if __name__ == '__main__':
-
+    # mishnah = library.get_indexes_in_category("Mishnah", full_records=True)
+    create_term_and_category()
     create_index_main()
 
     map, links = create_mappings()
     pre_local_clean_up(links)
 
+    time.sleep(60)
     upload_text(map)
+
+    time.sleep(60)
     for link in links:
         if 'Berakhot' in link['refs'][0]:
             post_link(link)
+
