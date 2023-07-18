@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # print("UPDATE: Index created")
 
     map, hoffman_links = create_mappings()
-    print("UPDATE: Map and links generated")
-
+    # print("UPDATE: Map and links generated")
+    #
     upload_text(map)
-    print("UPDATE: Text ingest complete")
+    # print("UPDATE: Text ingest complete")

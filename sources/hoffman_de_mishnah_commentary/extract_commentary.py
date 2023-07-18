@@ -38,6 +38,7 @@ def create_text_data_dict():
     links = []
 
     for mishnah_tref in text:
+        commentary_ref_counter = 1
         mishnah_text = text[mishnah_tref]
 
         # Skipping for now, image issues
@@ -53,8 +54,11 @@ def create_text_data_dict():
                 footnote_num = each_comment[1]
                 footnote_text = each_comment[2]
 
-                commentary_tref = f"German Commentary on {mishnah_tref}:{footnote_num}"  # Use the footnote to create specific segment ref
+                commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
                 data_dict[commentary_tref] = f"<b>{bolded_main_text}.</b> {footnote_text}"
+                commentary_ref_counter += 1
+                if "Berakhot" in commentary_tref:
+                    print(commentary_tref)
 
                 new_link = create_link(mishnah_tref, commentary_tref)
                 links.append(new_link)
