@@ -50,17 +50,43 @@ def create_text_data_dict():
 
         if res:
             for each_comment in res:
-                bolded_main_text = each_comment[0]
+                bolded_main_text = f"{each_comment[0]}"
+
+                if bolded_main_text and bolded_main_text[-1] == ")":
+                    dh = re.findall(r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[:;.,?!()«» ]*?[a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«.:]*\))$", bolded_main_text)
+                elif bolded_main_text and bolded_main_text[-1] == "?":
+                    dh = re.findall(r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*\?)$", bolded_main_text)
+                elif bolded_main_text:
+                    bolded_main_text = f"{bolded_main_text}." ## Period added for DH anchor in regex
+                    dh = re.findall(r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*\.)$", bolded_main_text)
+
+                # Case where first phrase etc
+                if dh == []:
+                    dh = bolded_main_text
+
+
+                # Todo - run .strip() on DHs
+
                 footnote_num = each_comment[1]
                 footnote_text = each_comment[2]
 
                 commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
-                data_dict[commentary_tref] = f"<b>{bolded_main_text}.</b> {footnote_text}"
+                data_dict[commentary_tref] = f"<b>{bolded_main_text}</b> {footnote_text}"
                 commentary_ref_counter += 1
-                if "Berakhot" in commentary_tref:
-                    print(commentary_tref)
+                # if "Berakhot" in commentary_tref:
+                #     print(commentary_tref)
+
+                if "Berakhot" in mishnah_tref:
+                    print(f"{mishnah_tref}")
+                    print(f"Main text: {bolded_main_text}")
+                    print(f"Parsed DH: {dh}")
+                    print("\n")
 
                 new_link = create_link(mishnah_tref, commentary_tref)
                 links.append(new_link)
 
     return data_dict, links
+
+
+if __name__ == '__main__':
+    create_text_data_dict()
