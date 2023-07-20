@@ -12,11 +12,10 @@ from sources.hoffman_de_mishnah_commentary.extract_commentary import create_text
 from sources.hoffman_de_mishnah_commentary.parse_intro_xml import process_xml
 from sources.hoffman_de_mishnah_commentary.create_index import create_index_main, create_term_and_category
 
-
-# This is the complete flow for the index creation and text index
-# when running on a cauldron, one has to use the cauldron-specific files
-# in the following order: 1) create_index, 2) post_intro (LOCAL), 3) ingest_text, 4) post_links (LOCAL)
-
+# TODO:
+# - Fix intro XML parse for each masechet
+# - All indices created (done)
+# - Adjust ingest code for ALL masechtot & iterate
 
 def create_mappings():
     mappings = defaultdict(dict)
@@ -43,6 +42,7 @@ def upload_text(mappings):
     for book, book_map in mappings.items():
         print(f"Uploading text for {book}")
 
+        # TODO - add intros
         intro_dict = process_xml()
         tref = "German Commentary on Mishnah Berakhot, Introduction"
         text = generate_text_post_format(intro_dict["Traktat Berachot"], is_intro=True)

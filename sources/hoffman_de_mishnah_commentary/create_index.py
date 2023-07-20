@@ -6,10 +6,10 @@ django.setup()
 from sefaria.model import *
 from sources import functions
 
-def create_term_and_category():
 
+def create_term_and_category():
     # Create Term, if it doesn't yet exist
-    ts = TermSet({'name': 'German Commentary' })
+    ts = TermSet({'name': 'German Commentary'})
     if ts.count() == 0:
         t = Term()
         t.name = "German Commentary"
@@ -31,8 +31,8 @@ def create_index_record(masechet, he_masechet):
     en_title = f"German Commentary on Mishnah {masechet}"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
-    record.key = 'German Commentary on Mishnah Berakhot'
-    record.collective_title="German Commentary" # Must be a term
+    record.key = f"German Commentary on Mishnah {masechet}"
+    record.collective_title = "German Commentary"  # Must be a term
     return record
 
 
@@ -54,29 +54,35 @@ def add_text_node(record):
     text_node.key = "default"
     text_node.default = True
     text_node.depth = 3
-    # text_node.toc_zoom = 2
     text_node.addressTypes = ['Integer', 'Integer', 'Integer']
     text_node.sectionNames = ['Chapter', 'Mishnah', 'Paragraph']
     record.append(text_node)
 
 
 def create_index_main():
-    # In theory, eventually wrap in for loop for each Masechet.
-    # Need to also auto-generate seder?
-    record = create_index_record("Berakhot", "ברכות")
-    add_intro_node(record)
-    add_text_node(record)
-    record.validate()
-    index = {
-        "title": record.primary_title(),
-        "categories": ["Mishnah", "Modern Commentary on Mishnah"],
-        "schema": record.serialize(),
-        "base_text_titles": ["Mishnah Berakhot"],
-        "base_text_mapping": "many_to_one",
-        "is_dependant": True,
-        "dependence":   "Commentary"
-    }
-    # move dep here
-    functions.post_index(index)
-    print(index)
+    mishnayot = library.get_indexes_in_category("Mishnah", full_records=True)
 
+    for mishnah_index in mishnayot:
+        en_title = mishnah_index.nodes.primary_title("en").replace("Mishnah ", "")
+        he_title = mishnah_index.nodes.primary_title("he").replace("משנה ", "")
+
+        record = create_index_record(en_title, he_title)
+        add_intro_node(record)
+        add_text_node(record)
+        record.validate()
+        index = {
+            "title": record.primary_title(),
+            "categories": ["Mishnah", "Modern Commentary on Mishnah"],
+            "schema": record.serialize(),
+            "base_text_titles": [f"Mishnah {en_title}"],
+            "base_text_mapping": "many_to_one",
+            "is_dependant": True,
+            "dependence": "Commentary"
+        }
+
+        functions.post_index(index)
+        print(index)
+
+
+if __name__ == '__main__':
+    create_index_main()

@@ -69,16 +69,13 @@ def create_text_data_dict():
                 dh = dh[0].strip()
                 dh = dh.strip("«» ")
 
-                footnote_num = each_comment[1]
                 footnote_text = each_comment[2]
 
                 commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
                 data_dict[commentary_tref] = f"<b>{dh}</b> {footnote_text}"
                 commentary_ref_counter += 1
-                # if "Berakhot" in commentary_tref:
-                #     print(commentary_tref)
 
-                if "Berakhot" in mishnah_tref:
+                if dh == [] or dh == [""]:
                     print(f"{mishnah_tref}")
                     print(f"Main text: {bolded_main_text}")
                     print(f"Parsed DH: {dh}")
