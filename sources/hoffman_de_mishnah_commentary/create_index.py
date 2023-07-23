@@ -27,11 +27,15 @@ def create_term_and_category():
 
 def create_index_record(masechet, he_masechet):
     record = SchemaNode()
-    he_title = "פירוש גרמני למסכת " + he_masechet  # f-String was not working well with RTL text
-    en_title = f"German Commentary on Mishnah {masechet}"
+    if masechet == "Pirkei Avot":
+        he_title = "פירוש גרמני ל" + he_masechet  # f-String was not working well with RTL text
+        en_title = f"German Commentary on {masechet}"
+    else:
+        he_title = "פירוש גרמני למסכת " + he_masechet  # f-String was not working well with RTL text
+        en_title = f"German Commentary on Mishnah {masechet}"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
-    record.key = f"German Commentary on Mishnah {masechet}"
+    record.key = f"German Commentary on {masechet}" if masechet == "Pirkei Avot" else f"German Commentary on Mishnah {masechet}"
     record.collective_title = "German Commentary"  # Must be a term
     return record
 
@@ -63,8 +67,8 @@ def create_index_main():
     mishnayot = library.get_indexes_in_category("Mishnah", full_records=True)
 
     for mishnah_index in mishnayot:
-        en_title = mishnah_index.nodes.primary_title("en").replace("Mishnah ", "")
-        he_title = mishnah_index.nodes.primary_title("he").replace("משנה ", "")
+        en_title = mishnah_index.get_title("en").replace("Mishnah ", "")
+        he_title = mishnah_index.get_title("he").replace("משנה ", "")
 
         record = create_index_record(en_title, he_title)
         add_intro_node(record)
@@ -74,7 +78,7 @@ def create_index_main():
             "title": record.primary_title(),
             "categories": ["Mishnah", "Modern Commentary on Mishnah"],
             "schema": record.serialize(),
-            "base_text_titles": [f"Mishnah {en_title}"],
+            "base_text_titles": [f"{en_title}"] if en_title == 'Pirkei Avot' else [f"Mishnah {en_title}"],
             "base_text_mapping": "many_to_one",
             "is_dependant": True,
             "dependence": "Commentary"
@@ -86,3 +90,5 @@ def create_index_main():
 
 if __name__ == '__main__':
     create_index_main()
+
+# TODO - fix Ta'anit
