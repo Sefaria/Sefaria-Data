@@ -1,6 +1,6 @@
 # Map masechet names to Sefaria ones
 
-masechet_map = {'Berachot.': 'Mishnah Berkahot',
+masechet_map = {'Berachot.': 'Mishnah Berakhot',
                 'Peah.': 'Mishnah Peah',
                 'Demai.': 'Mishnah Demai',
                 'Kelaim.': 'Mishnah Kilayim',

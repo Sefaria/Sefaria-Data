@@ -31,7 +31,7 @@ def create_mappings():
 
 def generate_text_post_format(intro_text="", is_intro=False):
     if is_intro:
-        intro_text = [text]
+        intro_text = [intro_text]
     return {
         "text": intro_text,
         "versionTitle": "Mischnajot mit deutscher Übersetzung und Erklärung. Berlin 1887-1933 [de]",
@@ -41,12 +41,14 @@ def generate_text_post_format(intro_text="", is_intro=False):
 
 
 def upload_text(mappings):
+    intro_dict = process_xml()
+    print(list(intro_dict.keys()))
+
     for book, book_map in mappings.items():
         print(f"Uploading text for {book}")
 
-        files = ["zeraim.xml", "moed.xml", "naschim.xml", "kodaschim.xml", "toharot.xml"]
-        for f in files:
-            intro_dict = process_xml()
+        # filter for nezikin
+        if book in intro_dict:
             tref = f"{book}, Introduction"
             intro_text = generate_text_post_format(intro_dict[book], is_intro=True)
             post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
