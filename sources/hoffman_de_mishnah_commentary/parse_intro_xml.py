@@ -22,16 +22,30 @@ def remove_hanging_text(text):
     return re.sub(r"\n\n+.*$", "", text)
 
 
-def process_xml():
-    with open('xml/zeraim.xml', 'r') as f:
+def process_xml(file_name, is_nezikin=False):
+    # TODO add a nezikin flag
+    with open(f'xml/{file_name}', 'r') as f:
         data = f.read()
 
     intro_dict = {}
 
-    intros = re.findall(r"<title>Traktat (.*?).<\/title>(.*?)ABSCHNITT", data, flags=re.DOTALL)
+    if is_nezikin:
+        # Handle nezikin here
+        pass
 
-    for masechet, intro in intros:
+    else:
+        intros = re.findall(
+            r"<(h1|title)>[TracktRACKA]{7} (.*?)<\/\1>(.*?)ABSC[H]{0,1}NITT", # Between Tractate and first chapter
+            data,
+            flags=re.DOTALL)
 
+    for tag_name, masechet, intro in intros:
+        # TODO - insert footnotes before cleaning, handle nicely the punct (i.e. Moed Katan = MO&#x2018;ED &#x1E32;A&#x1E6C;AN.), images -- see intro to Erubin?
+        if "<ftnote" in intro:
+            num = intro.count("<ftnote")
+            print(f"Masechet {masechet} has {num} footnotes in its intro")
+            print(intro)
+            print("-------------------------\n")
         clean_text = bleach.clean(intro,
                                   tags=ALLOWED_TAGS,
                                   attributes=ALLOWED_ATTRS,
@@ -44,10 +58,14 @@ def process_xml():
 
 if __name__ == '__main__':
     # Todo handle footnotes
-    # Run code on all sedarim - figure out separateing combined intros, like a bunch in Nezikin
-    d = process_xml()
-    for k in d:
-        print(k)
-        print(d[k])
-        print("-----------------------------------------------")
+    # WORKS for: Zeraim, Moed, Naschim, Kodaschim (Meila has a funny german unicode character in it),
+    # ALERT: Nezikin must be handled differently!
 
+    files = ["zeraim.xml", "moed.xml", "naschim.xml", "kodaschim.xml", "toharot.xml"]
+    for f in files:
+        d = process_xml(file_name=f, is_nezikin=False)
+    # print(d.keys())
+    # for k in d:
+    #     print(k)
+    #     print(d[k])
+    #     print("-----------------------------------------------")
