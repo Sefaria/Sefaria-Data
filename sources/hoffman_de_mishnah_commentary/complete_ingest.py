@@ -14,8 +14,8 @@ from sources.hoffman_de_mishnah_commentary.create_index import create_index_main
 
 
 # TODO:
-# - Fix intro XML parse for each masechet - pretty tricky, struggling to understand the structure / if cohesive
-# - Might need to approach each seder differently. ** Also need to handle footnotes
+# Footnotes: <sup> in two, images, make sure punctuation ok
+# Handle nezikin, remove indices for nezikin and make a new one for the general intro
 # - fix categories so not all under one heading
 # - Work on validations
 
@@ -44,15 +44,16 @@ def upload_text(mappings):
     for book, book_map in mappings.items():
         print(f"Uploading text for {book}")
 
-        # TODO - add intros
-        intro_dict = process_xml()
-        tref = f"{book}, Introduction"
-        intro_text = generate_text_post_format(intro_dict[book], is_intro=True)
-        post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
-
-        for tref in book_map:
-            formatted_text = generate_text_post_format(book_map[tref])
-            post_text(ref=tref, text=formatted_text, server=SEFARIA_SERVER)
+        files = ["zeraim.xml", "moed.xml", "naschim.xml", "kodaschim.xml", "toharot.xml"]
+        for f in files:
+            intro_dict = process_xml()
+            tref = f"{book}, Introduction"
+            intro_text = generate_text_post_format(intro_dict[book], is_intro=True)
+            post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
+        #
+        # for tref in book_map:
+        #     formatted_text = generate_text_post_format(book_map[tref])
+        #     post_text(ref=tref, text=formatted_text, server=SEFARIA_SERVER)
 
 
 if __name__ == '__main__':
@@ -61,8 +62,8 @@ if __name__ == '__main__':
     # create_term_and_category()
     # print("UPDATE: Terms and categories added")
 
-    create_index_main()
-    print("UPDATE: Indices created")
+    # create_index_main()
+    # print("UPDATE: Indices created")
 
     map = create_mappings()
     print("UPDATE: Text map generated")
