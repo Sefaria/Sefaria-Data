@@ -26,7 +26,6 @@ def create_text_data_dict():
     data_dict = {}
 
     for mishnah_tref in text:
-        print(f"mapping {mishnah_tref}")
         commentary_ref_counter = 1
         mishnah_text = text[mishnah_tref]
 

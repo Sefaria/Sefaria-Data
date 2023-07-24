@@ -12,26 +12,28 @@ from sources.hoffman_de_mishnah_commentary.extract_commentary import create_text
 from sources.hoffman_de_mishnah_commentary.parse_intro_xml import process_xml
 from sources.hoffman_de_mishnah_commentary.create_index import create_index_main, create_term_and_category
 
+
 # TODO:
-# - Fix intro XML parse for each masechet
-# - All indices created (done)
-# - Adjust ingest code for ALL masechtot & iterate
+# - Fix intro XML parse for each masechet - pretty tricky, struggling to understand the structure / if cohesive
+# - Might need to approach each seder differently. ** Also need to handle footnotes
+# - fix categories so not all under one heading
+# - Work on validations
 
 def create_mappings():
     mappings = defaultdict(dict)
-    data_dict, hoffman_links = create_text_data_dict()
+    data_dict = create_text_data_dict()
 
     for tref in data_dict:
-        if "Berakhot" in tref:  # Todo, temp filter, eventually remove
-            mappings[Ref(tref).index.title][tref] = data_dict[tref]
-    return mappings, hoffman_links
+        mappings[Ref(tref).index.title][tref] = data_dict[tref]
+
+    return mappings
 
 
-def generate_text_post_format(text, is_intro=False):
+def generate_text_post_format(intro_text="", is_intro=False):
     if is_intro:
-        text = [text]
+        intro_text = [text]
     return {
-        "text": text,
+        "text": intro_text,
         "versionTitle": "Mischnajot mit deutscher Übersetzung und Erklärung. Berlin 1887-1933 [de]",
         "versionSource": "talmud.de",
         "language": "en"
@@ -44,40 +46,26 @@ def upload_text(mappings):
 
         # TODO - add intros
         intro_dict = process_xml()
-        tref = "German Commentary on Mishnah Berakhot, Introduction"
-        text = generate_text_post_format(intro_dict["Traktat Berachot"], is_intro=True)
-        post_text(ref=tref, text=text, server=SEFARIA_SERVER)
+        tref = f"{book}, Introduction"
+        intro_text = generate_text_post_format(intro_dict[book], is_intro=True)
+        post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
 
         for tref in book_map:
             formatted_text = generate_text_post_format(book_map[tref])
             post_text(ref=tref, text=formatted_text, server=SEFARIA_SERVER)
 
 
-def pre_local_clean_up(hoffman_links):
-    cur_version = VersionSet({'title': f'German Commentary on Mishnah Berakhot',
-                              'versionTitle': "Mischnajot mit deutscher Übersetzung und Erklärung. Berlin 1887-1933 [de]"})
-    if cur_version.count() > 0:
-        cur_version.delete()
-
-    for link in hoffman_links:
-        if 'Berakhot' in link['refs'][0]:  # Todo, temp filter, eventually remove
-            l = Link().load({'refs': link['refs']})
-            if l:
-                l.delete()
-
-
 if __name__ == '__main__':
 
-    # mishnah = library.get_indexes_in_category("Mishnah", full_records=True)
-
-    # create_term_and_category()  #TODO - fix to use POST functions?
+    # TODO - fix to use POST functions?
+    # create_term_and_category()
     # print("UPDATE: Terms and categories added")
-    #
-    # create_index_main()
-    # print("UPDATE: Index created")
 
-    map, hoffman_links = create_mappings()
-    # print("UPDATE: Map and links generated")
-    #
+    create_index_main()
+    print("UPDATE: Indices created")
+
+    map = create_mappings()
+    print("UPDATE: Text map generated")
+
     upload_text(map)
-    # print("UPDATE: Text ingest complete")
+    print("UPDATE: Text ingest complete")

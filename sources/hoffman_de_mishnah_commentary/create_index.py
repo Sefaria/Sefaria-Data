@@ -90,5 +90,3 @@ def create_index_main():
 
 if __name__ == '__main__':
     create_index_main()
-
-# TODO - fix Ta'anit
