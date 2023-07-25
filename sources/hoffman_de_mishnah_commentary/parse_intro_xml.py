@@ -38,6 +38,8 @@ def grab_footnote_substring(text):
 
 
 def create_footnote(marker, comment_body):
+    if marker[-1] == ")":
+        marker = marker[0:-1]
     return f"<sup class=\"footnote-marker\">{marker}</sup><i class=\"footnote\">{comment_body}</i>"
 
 
@@ -47,12 +49,16 @@ def convert_to_sefaria_footnote(intro):
     symbol_in_text = grab_footnote_symbol(intro)[0]
     substring = grab_footnote_substring(intro)
     sefaria_footnote_html = create_footnote(symbol_in_text, ftn_text)
-    intro = intro.replace(substring, sefaria_footnote_html)
+
+    ftn_substring_in_sup = f"<sup>{substring}</sup>"
+    if ftn_substring_in_sup in intro:
+        intro = intro.replace(ftn_substring_in_sup, sefaria_footnote_html)
+    else:
+        intro = intro.replace(substring, sefaria_footnote_html)
     return intro
-    # TODO - clean out nested <sup>s if there. (2 cases)
 
 
-def process_text(intro):
+def process_text(intro, masechet):
     if "<ftnote" in intro:
         intro = convert_to_sefaria_footnote(intro)
     clean_text = bleach.clean(intro,
@@ -83,10 +89,9 @@ def process_xml(is_nezikin=False):
             flags=re.DOTALL)
 
         for tag_name, masechet, intro in intros:
-            text = process_text(intro)
+            text = process_text(intro, masechet)
             sefaria_masechet = map_to_sefaria_masechet(masechet)
             intro_dict[sefaria_masechet] = text
-
     return intro_dict
 
 
