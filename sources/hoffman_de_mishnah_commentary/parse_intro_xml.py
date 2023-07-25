@@ -58,7 +58,7 @@ def convert_to_sefaria_footnote(intro):
     return intro
 
 
-def process_text(intro, masechet):
+def process_text(intro):
     if "<ftnote" in intro:
         intro = convert_to_sefaria_footnote(intro)
     clean_text = bleach.clean(intro,
@@ -70,32 +70,34 @@ def process_text(intro, masechet):
     return text
 
 
-def process_xml(is_nezikin=False):
+def process_xml():
     intro_dict = {}
-    files = ["zeraim.xml", "moed.xml", "naschim.xml", "kodaschim.xml", "toharot.xml"]
-
-    if is_nezikin:
-        # TODO Handle nezikin here
-        # return something
-        pass
+    files = ["zeraim.xml", "moed.xml", "naschim.xml", "kodaschim.xml", "toharot.xml", "nezikin.xml"]
 
     for file_name in files:
         with open(f'xml/{file_name}', 'r') as f:
             data = f.read()
 
-        intros = re.findall(
-            r"<(h1|title)>[TracktRACK]{7} (.*?)<\/\1>(.*?)ABSC[H]{0,1}NITT",  # Between Tractate and first chapter
-            data,
-            flags=re.DOTALL)
+        if file_name == "nezikin.xml":
+            intro = re.findall(r"<title>Einleitung\.</title>(.*?)<title>Tractat Baba kama\.</title>", data,
+                                flags=re.DOTALL)[0]
+            text = process_text(intro)
+            intro_dict["German Commentary on Mishnah, Introduction to Nezikin"] = text
 
-        for tag_name, masechet, intro in intros:
-            print(masechet)
-            text = process_text(intro, masechet)
-            sefaria_masechet = map_to_sefaria_masechet(masechet)
-            intro_dict[sefaria_masechet] = text
+        else:
+            intros = re.findall(
+                r"<(h1|title)>[TracktRACK]{7} (.*?)<\/\1>(.*?)ABSC[H]{0,1}NITT",  # Between Tractate and first chapter
+                data,
+                flags=re.DOTALL)
+
+            for tag_name, masechet, intro in intros:
+                text = process_text(intro)
+                sefaria_masechet = map_to_sefaria_masechet(masechet)
+                intro_dict[sefaria_masechet] = text
+
     return intro_dict
 
 
 if __name__ == '__main__':
-    d = process_xml(is_nezikin=False)
+    d = process_xml()
     # print(list(d.keys()))
