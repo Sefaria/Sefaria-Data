@@ -15,7 +15,7 @@ nezikin_masechtot = ['Bava Kamma',
                      'Eduyot',
                      'Avodah Zarah',
                      'Pirkei Avot',
-                     'Horayot', ]
+                     'Horayot']
 
 
 def create_term_and_category():
@@ -75,7 +75,6 @@ def add_text_node(record, is_nezikin=False):
 
 
 def create_nezikin_intro():
-
     # Create record
     record = SchemaNode()
 
