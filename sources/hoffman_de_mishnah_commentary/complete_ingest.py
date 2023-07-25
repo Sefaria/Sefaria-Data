@@ -13,12 +13,8 @@ from sources.hoffman_de_mishnah_commentary.parse_intro_xml import process_xml
 from sources.hoffman_de_mishnah_commentary.create_index import create_index_main, create_term_and_category
 
 
-# TODO: Footnotes Clean up
-# # <sup> in two (Gittin and Niddah)
-# # Footnote not appearing in Kiddushin?
-
 # TODO: General
-# Handle nezikin, remove indices for nezikin and make a new one for the general intro
+# - Handle nezikin, remove indices for nezikin and make a new one for the general intro
 # - fix categories so not all under one heading
 # - Work on validations
 
@@ -55,7 +51,7 @@ def upload_text(mappings):
             tref = f"{book}, Introduction"
             intro_text = generate_text_post_format(intro_dict[book], is_intro=True)
             post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
-        #
+
         # for tref in book_map:
         #     formatted_text = generate_text_post_format(book_map[tref])
         #     post_text(ref=tref, text=formatted_text, server=SEFARIA_SERVER)

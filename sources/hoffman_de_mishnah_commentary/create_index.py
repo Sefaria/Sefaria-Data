@@ -6,6 +6,17 @@ django.setup()
 from sefaria.model import *
 from sources import functions
 
+nezikin_masechtot = ['Bava Kamma',
+                     'Bava Metzia',
+                     'Bava Batra',
+                     'Sanhedrin',
+                     'Makkot',
+                     'Shevuot',
+                     'Eduyot',
+                     'Avodah Zarah',
+                     'Pirkei Avot',
+                     'Horayot', ]
+
 
 def create_term_and_category():
     # Create Term, if it doesn't yet exist
@@ -53,14 +64,50 @@ def add_intro_node(record):
 
 
 # Text node:
-def add_text_node(record):
+def add_text_node(record, is_nezikin=False):
     text_node = JaggedArrayNode()
     text_node.key = "default"
-    text_node.default = True
+    text_node.default = True if not is_nezikin else record.primary_title()
     text_node.depth = 3
     text_node.addressTypes = ['Integer', 'Integer', 'Integer']
     text_node.sectionNames = ['Chapter', 'Mishnah', 'Paragraph']
     record.append(text_node)
+
+
+def create_nezikin_intro():
+
+    # Create record
+    record = SchemaNode()
+
+    he_title = "פירוש גרמני למשנה"
+    en_title = f"German Commentary on Mishnah"
+    record.add_title(en_title, 'en', primary=True, )
+    record.add_title(he_title, "he", primary=True, )
+    record.key = f"German Commentary on Mishnah"
+    record.collective_title = "German Commentary"  # Must be a term
+
+    # add intro node
+    intro_node = JaggedArrayNode()
+    intro_node.add_title("Introduction to Seder Nezikin", 'en', primary=True)
+    intro_node.add_title("הקדמה לסדר נזיקין", 'he', primary=True)
+    intro_node.key = "Introduction"
+    intro_node.depth = 1
+    intro_node.addressTypes = ['Integer']
+    intro_node.sectionNames = ['Paragraph']
+    record.append(intro_node)
+
+    # Post the index
+    record.validate()
+    index = {
+        "title": record.primary_title(),
+        "categories": ["Mishnah", "Modern Commentary on Mishnah"],
+        "schema": record.serialize(),
+        "is_dependant": True,
+        "dependence": "Commentary"
+    }
+
+    print(index)
+    functions.post_index(index)
 
 
 def create_index_main():
@@ -71,8 +118,14 @@ def create_index_main():
         he_title = mishnah_index.get_title("he").replace("משנה ", "")
 
         record = create_index_record(en_title, he_title)
-        add_intro_node(record)
-        add_text_node(record)
+
+        # Nezikin masechtot don't have intros
+        if en_title not in nezikin_masechtot:
+            add_intro_node(record)
+            add_text_node(record)
+        else:
+            add_text_node(record, is_nezikin=True)
+
         record.validate()
         index = {
             "title": record.primary_title(),
@@ -89,4 +142,5 @@ def create_index_main():
 
 
 if __name__ == '__main__':
-    create_index_main()
+    # create_index_main()
+    create_nezikin_intro()

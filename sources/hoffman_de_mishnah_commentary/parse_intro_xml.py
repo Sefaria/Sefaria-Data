@@ -89,6 +89,7 @@ def process_xml(is_nezikin=False):
             flags=re.DOTALL)
 
         for tag_name, masechet, intro in intros:
+            print(masechet)
             text = process_text(intro, masechet)
             sefaria_masechet = map_to_sefaria_masechet(masechet)
             intro_dict[sefaria_masechet] = text
@@ -97,4 +98,4 @@ def process_xml(is_nezikin=False):
 
 if __name__ == '__main__':
     d = process_xml(is_nezikin=False)
-    print(list(d.keys()))
+    # print(list(d.keys()))
