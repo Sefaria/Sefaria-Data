@@ -78,11 +78,11 @@ def create_nezikin_intro():
     # Create record
     record = SchemaNode()
 
-    he_title = "פירוש גרמני למשנה"
-    en_title = f"German Commentary on Mishnah"
+    he_title = "פירוש גרמני הקדמה לנזיקין"
+    en_title = f"German Commentary Introduction to Nezikin"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
-    record.key = f"German Commentary on Mishnah"
+    record.key = f"German Commentary Introduction to Nezikin"
     record.collective_title = "German Commentary"  # Must be a term
 
     # add intro node
@@ -99,7 +99,7 @@ def create_nezikin_intro():
     record.validate()
     index = {
         "title": record.primary_title(),
-        "categories": ["Mishnah", "Modern Commentary on Mishnah"],
+        "categories": ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary'],
         "schema": record.serialize(),
         "is_dependant": True,
         "dependence": "Commentary"
@@ -128,7 +128,7 @@ def create_index_main():
         record.validate()
         index = {
             "title": record.primary_title(),
-            "categories": ["Mishnah", "Modern Commentary on Mishnah"],
+            "categories": ["Mishnah", "Modern Commentary on Mishnah", "German Commentary"],
             "schema": record.serialize(),
             "base_text_titles": [f"{en_title}"] if en_title == 'Pirkei Avot' else [f"Mishnah {en_title}"],
             "base_text_mapping": "many_to_one",
@@ -141,5 +141,6 @@ def create_index_main():
 
 
 if __name__ == '__main__':
-    # create_index_main()
+    create_term_and_category()
+    create_index_main()
     create_nezikin_intro()
