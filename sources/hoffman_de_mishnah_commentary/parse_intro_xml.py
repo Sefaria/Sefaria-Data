@@ -82,7 +82,7 @@ def process_xml():
             intro = re.findall(r"<title>Einleitung\.</title>(.*?)<title>Tractat Baba kama\.</title>", data,
                                 flags=re.DOTALL)[0]
             text = process_text(intro)
-            intro_dict["German Commentary on Mishnah, Introduction to Nezikin"] = text
+            intro_dict["German Commentary, Introduction to Seder Nezikin"] = text
 
         else:
             intros = re.findall(
