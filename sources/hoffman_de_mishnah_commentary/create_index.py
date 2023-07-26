@@ -87,8 +87,8 @@ def create_nezikin_intro():
 
     # add intro node
     intro_node = JaggedArrayNode()
-    intro_node.add_title("Introduction to Seder Nezikin", 'en', primary=True)
-    intro_node.add_title("הקדמה לסדר נזיקין", 'he', primary=True)
+    intro_node.add_title("Introduction", 'en', primary=True)
+    intro_node.add_title("הקדמה", 'he', primary=True)
     intro_node.key = "Introduction"
     intro_node.depth = 1
     intro_node.addressTypes = ['Integer']
@@ -142,5 +142,5 @@ def create_index_main():
 
 if __name__ == '__main__':
     create_term_and_category()
-    create_index_main()
+    # create_index_main()
     create_nezikin_intro()
