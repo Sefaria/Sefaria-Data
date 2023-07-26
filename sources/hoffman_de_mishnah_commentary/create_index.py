@@ -78,22 +78,21 @@ def create_nezikin_intro():
     # Create record
     record = SchemaNode()
 
-    he_title = "פירוש גרמני הקדמה לנזיקין"
-    en_title = f"German Commentary Introduction to Nezikin"
+    he_title = "פירוש גרמני, הקדמה לסדר נזיקין"
+    en_title = f"German Commentary, Introduction to Seder Nezikin"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
-    record.key = f"German Commentary Introduction to Nezikin"
+    record.key = f"German Commentary, Introduction to Seder Nezikin"
     record.collective_title = "German Commentary"  # Must be a term
 
-    # add intro node
-    intro_node = JaggedArrayNode()
-    intro_node.add_title("Introduction", 'en', primary=True)
-    intro_node.add_title("הקדמה", 'he', primary=True)
-    intro_node.key = "Introduction"
-    intro_node.depth = 1
-    intro_node.addressTypes = ['Integer']
-    intro_node.sectionNames = ['Paragraph']
-    record.append(intro_node)
+    # Add text node
+    text_node = JaggedArrayNode()
+    text_node.key = "default"
+    text_node.default = record.primary_title()
+    text_node.depth = 1
+    text_node.addressTypes = ['Integer']
+    text_node.sectionNames = ['Paragraph']
+    record.append(text_node)
 
     # Post the index
     record.validate()
