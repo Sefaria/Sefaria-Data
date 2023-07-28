@@ -393,7 +393,7 @@ if __name__ == '__main__':
     # index_nodes = get_list_of_masechtot_nodes(csv_object, "Sanhedrin")
     # list_of_masechtot_to_db(index_nodes)
     # time.sleep(5)
-    delete_all_existing_versions()
+    # delete_all_existing_versions()
 
     ingest_english_version()
     time.sleep(5)

@@ -254,7 +254,7 @@ if __name__ == '__main__':
     # clean()
     # local_pipeline()
     # create_report()
-    # cauldron_pipeline()
+    cauldron_pipeline()
     add_missing_links()
     print("hi")
 

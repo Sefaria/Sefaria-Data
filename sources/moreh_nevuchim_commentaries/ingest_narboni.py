@@ -248,8 +248,8 @@ def ingest_nodes():
         "base_text_titles": ["Guide for the Perplexed"],
         "collective_title": "Narboni"
     }
-    # post_index(index, server="https://guide-commentaries.cauldron.sefaria.org")
-    post_index(index)
+    post_index(index, server="https://guide-commentaries.cauldron.sefaria.org")
+    #post_index(index)
 
 if __name__ == '__main__':
     print("hello world")
