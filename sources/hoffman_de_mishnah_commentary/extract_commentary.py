@@ -33,13 +33,21 @@ def create_text_data_dict():
         if mishnah_tref == "Mishnah Chagigah 3:4" or mishnah_tref == "Mishnah Eruvin 5:4":
             continue
 
-        res = re.findall(r"(.*?)<sup class=\"footnote-marker\">(\d.*?)<\/sup><i class=\"footnote\">(.*?)</i>",
+        res = re.findall(r"(.*?)<sup class=\"footnote-marker\">(.*?)<\/sup><i class=\"footnote\">(.*?)</i>",
                          mishnah_text)
 
         if res:
             for each_comment in res:
                 bolded_main_text = f"{each_comment[0]}"
+                marker = f"{each_comment[1]}"
+                footnote_text = each_comment[2]
 
+                if marker == "*":
+                    dh = [""] # No Dibbur HaMatchil for Asterisk cases
+                    if "<ftnote>" in footnote_text:
+                        footnote_text = footnote_text.replace("<ftnote>", "")
+
+                # Extract Dibbur HaMatchil based on Punctuation
                 if bolded_main_text and bolded_main_text[-1] == ")":
                     dh = re.findall(
                         r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[:;.,?!()«» ]*?[a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«.:]*\))$",
@@ -53,17 +61,16 @@ def create_text_data_dict():
                                     bolded_main_text)
 
                 # Case where first phrase etc
-                if dh == []:
+                if not dh:
                     dh = [bolded_main_text]
 
                 # Process DH
                 dh = dh[0].strip()
                 dh = dh.strip("«» ")
 
-                footnote_text = each_comment[2]
 
                 commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
-                data_dict[commentary_tref] = f"<b>{dh}</b> {footnote_text}"
+                data_dict[commentary_tref] = f"<b>{dh}</b> {footnote_text}" if dh else f"{footnote_text}"
                 commentary_ref_counter += 1
 
                 if dh == [] or dh == [""]:

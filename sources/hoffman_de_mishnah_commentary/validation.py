@@ -50,13 +50,13 @@ def validator():
     more_cmmt_mishnahs = []
     for m in mishnah_text:
         text = mishnah_text[m]
-        footnote_sups = re.findall(r"<sup class=\"footnote-marker\">\d*?</sup><i class=\"footnote\">", text)
+        footnote_sups = re.findall(r"<sup class=\"footnote-marker\">.*?</sup><i class=\"footnote\">", text)
         num_sups = len(footnote_sups)
         if m in num_commentaries:
             if num_sups != num_commentaries[m]:
                 if num_sups > num_commentaries[m]:
                     print(f"ERROR - MORE FTNS: {m} - {num_sups} footnotes | {num_commentaries[m]} commentaries")
-                    more_ftn_errors +=1
+                    more_ftn_errors += 1
                     more_ftn_mishnahs.append(m)
                 else:
                     print(f"ERROR - MORE COMMENTS: {m} - {num_sups} footnotes | {num_commentaries[m]} commentaries")
@@ -67,9 +67,6 @@ def validator():
     print(f"\nMore Commentary Mishnahs: {more_cmmt_mishnahs}")
 
 
-
-
 if __name__ == '__main__':
     retrieve_version_text()
     validator()
-
