@@ -15,7 +15,8 @@ def action(segment_str, tref, he_tref, version):
 
 
 def retrieve_version_text():
-    version_query = {"versionTitle": "Mischnajot mit deutscher Übersetzung und Erklärung. Berlin 1887-1933 [de]", "title": {"$regex": "^Mishnah"}}
+    version_query = {"versionTitle": "Mischnajot mit deutscher Übersetzung und Erklärung. Berlin 1887-1933 [de]",
+                     "title": {"$regex": "^Mishnah"}}
     hoffman_version = VersionSet(version_query)
     for v in hoffman_version:
         v.walk_thru_contents(action)
@@ -43,7 +44,8 @@ def create_text_data_dict():
                 footnote_text = each_comment[2]
 
                 if marker == "*":
-                    dh = [""] # No Dibbur HaMatchil for Asterisk cases
+                    dh = [""]  # No Dibbur HaMatchil for Asterisk cases
+                    bolded_main_text = ""
                     if "<ftnote>" in footnote_text:
                         footnote_text = footnote_text.replace("<ftnote>", "")
 
@@ -52,7 +54,7 @@ def create_text_data_dict():
                     dh = re.findall(
                         r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[:;.,?!()«» ]*?[a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«.:]*\))$",
                         bolded_main_text)
-                elif bolded_main_text and bolded_main_text[-1] in ["?",".",",",";",":"]:
+                elif bolded_main_text and bolded_main_text[-1] in ["?", ".", ",", ";", ":"]:
                     dh = re.findall(r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[?.,:;])$",
                                     bolded_main_text)
                 elif bolded_main_text:
@@ -67,7 +69,6 @@ def create_text_data_dict():
                 # Process DH
                 dh = dh[0].strip()
                 dh = dh.strip("«» ")
-
 
                 commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
                 data_dict[commentary_tref] = f"<b>{dh}</b> {footnote_text}" if dh else f"{footnote_text}"
