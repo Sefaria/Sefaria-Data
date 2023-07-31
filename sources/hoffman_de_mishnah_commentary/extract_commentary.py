@@ -34,7 +34,7 @@ def create_text_data_dict():
         if mishnah_tref == "Mishnah Chagigah 3:4" or mishnah_tref == "Mishnah Eruvin 5:4":
             continue
 
-        res = re.findall(r"(.*?)<sup class=\"footnote-marker\">(.*?)<\/sup><i class=\"footnote\">(.*?)</i>",
+        res = re.findall(r"(.*?)<sup.*?>(.*?)<\/sup><i class=\"footnote\">(.*?)</i>",
                          mishnah_text)
 
         if res:
