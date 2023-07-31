@@ -82,7 +82,13 @@ def process_xml():
             intro = re.findall(r"<title>Einleitung\.</title>(.*?)<title>Tractat Baba kama\.</title>", data,
                                 flags=re.DOTALL)[0]
             text = process_text(intro)
-            intro_dict["German Commentary, Introduction to Seder Nezikin"] = text
+            text = text.split("\n")
+
+            # TODO - Join the bullet points / and is continuous?
+            # for segment in text:
+            #     is_bullet = re.match(r"^[A-Z]{1,3}[.)]", segment, re.DOTALL)
+            #     if is_bullet:
+            intro_dict["German Commentary, Introduction to Seder Nezikin"] = text[1:]
 
         else:
             intros = re.findall(

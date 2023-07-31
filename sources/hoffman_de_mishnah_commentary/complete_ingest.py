@@ -27,8 +27,8 @@ def create_mappings():
     return mappings
 
 
-def generate_text_post_format(intro_text="", is_intro=False):
-    if is_intro:
+def generate_text_post_format(intro_text="", require_intro_format=False):
+    if require_intro_format:
         intro_text = [intro_text]
     return {
         "text": intro_text,
@@ -41,7 +41,7 @@ def generate_text_post_format(intro_text="", is_intro=False):
 def upload_nezikin_intro(intro_dict):
     tref = f"German Commentary, Introduction to Seder Nezikin"
     intro_text = generate_text_post_format(intro_dict["German Commentary, Introduction to Seder Nezikin"],
-                                           is_intro=True)
+                                           require_intro_format=False) # different structure than other intros
     post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
 
 
@@ -50,17 +50,17 @@ def upload_text(mappings):
 
     upload_nezikin_intro(intro_dict)
 
-    # for book, book_map in mappings.items():
-    #     print(f"Uploading text for {book}")
-    #
-    #     if book in intro_dict:
-    #         tref = f"{book}, Introduction"
-    #         intro_text = generate_text_post_format(intro_dict[book], is_intro=True)
-    #         post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
-    #
-    #     for tref in book_map:
-    #         formatted_text = generate_text_post_format(book_map[tref])
-    #         post_text(ref=tref, text=formatted_text, server=SEFARIA_SERVER)
+    for book, book_map in mappings.items():
+        print(f"Uploading text for {book}")
+
+        if book in intro_dict:
+            tref = f"{book}, Introduction"
+            intro_text = generate_text_post_format(intro_dict[book], require_intro_format=True)
+            post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
+
+        # for tref in book_map:
+        #     formatted_text = generate_text_post_format(book_map[tref])
+        #     post_text(ref=tref, text=formatted_text, server=SEFARIA_SERVER)
 
 
 if __name__ == '__main__':
