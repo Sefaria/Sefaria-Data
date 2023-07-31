@@ -58,8 +58,25 @@ def convert_to_sefaria_footnote(intro):
     return intro
 
 
-def process_text(intro):
-    if "<ftnote" in intro:
+def handle_nezikin_footnotes(intro):
+    matches = re.findall(r"<ftnote id=(.*?)><sup>(.*?)</sup>[);]{1,2}(.*?)</ftnote>", intro, re.DOTALL)
+    for m in matches:
+        xml_id = m[0]
+        symbol = m[1]
+        ftn_text = m[2]
+        substring = f"<sup><xref rid={xml_id}>{symbol}</xref></sup>"
+        remove_substring = f"<ftnote id={xml_id}><sup>{symbol}</sup>){ftn_text}</ftnote>"
+        sefaria_footnote_html = create_footnote(symbol, ftn_text)
+        if substring in intro:
+            intro = intro.replace(substring, sefaria_footnote_html)
+            intro = intro.replace(remove_substring, "")
+    return intro
+
+
+def process_text(intro, is_nezikin=False):
+    if is_nezikin:
+        intro = handle_nezikin_footnotes(intro)
+    elif "<ftnote" in intro:
         intro = convert_to_sefaria_footnote(intro)
     clean_text = bleach.clean(intro,
                               tags=ALLOWED_TAGS,
@@ -80,15 +97,16 @@ def process_xml():
 
         if file_name == "nezikin.xml":
             intro = re.findall(r"<title>Einleitung\.</title>(.*?)<title>Tractat Baba kama\.</title>", data,
-                                flags=re.DOTALL)[0]
-            text = process_text(intro)
+                               flags=re.DOTALL)[0]
+            text = process_text(intro, is_nezikin=True)
             text = text.split("\n")
+            text = [segment for segment in text if segment]  # filter out empty strings
 
             # TODO - Join the bullet points / and is continuous?
             # for segment in text:
             #     is_bullet = re.match(r"^[A-Z]{1,3}[.)]", segment, re.DOTALL)
             #     if is_bullet:
-            intro_dict["German Commentary, Introduction to Seder Nezikin"] = text[1:]
+            intro_dict["German Commentary, Introduction to Seder Nezikin"] = text
 
         else:
             intros = re.findall(
