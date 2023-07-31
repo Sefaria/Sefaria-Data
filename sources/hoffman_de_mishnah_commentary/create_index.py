@@ -141,5 +141,5 @@ def create_index_main():
 
 if __name__ == '__main__':
     create_term_and_category()
-    # create_index_main()
+    create_index_main()
     create_nezikin_intro()
