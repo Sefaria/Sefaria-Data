@@ -30,6 +30,10 @@ def create_text_data_dict():
         commentary_ref_counter = 1
         mishnah_text = text[mishnah_tref]
 
+        # Patching Mishnahs missing </i> at the end
+        if mishnah_tref in ["Mishnah Eruvin 7:3", "Mishnah Niddah 6:14", "Mishnah Bava Metzia 4:1"]:
+            mishnah_text = f"{mishnah_text}</i>"
+
         # TODO - unskip, deal with image issues
         if mishnah_tref == "Mishnah Chagigah 3:4" or mishnah_tref == "Mishnah Eruvin 5:4":
             continue
