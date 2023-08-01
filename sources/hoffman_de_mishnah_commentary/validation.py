@@ -81,7 +81,7 @@ def count_validator():
 def dh_validator():
     bad_dhs = []
     for tref in bold_text:
-        if "Introduction" not in tref and len(bold_text[tref]) < 3:
+        if "Introduction" not in tref and bold_text[tref] != "" and len(bold_text[tref]) < 3:
             print(f"{tref}: {bold_text[tref]}")
             bad_dhs.append(tref)
     print(len(bad_dhs))
