@@ -10,6 +10,7 @@ import re
 
 mishnah_text = {}
 num_commentaries = {}
+bold_text = {}
 
 
 def retrieve_mishnah_action(segment_str, tref, he_tref, version):
@@ -28,6 +29,14 @@ def retrieve_comm_action(segment_str, tref, he_tref, version):
         num_commentaries[mishnah_key] = 1
 
 
+# A check for bolded text that is just a comma or a period
+def retrieve_bold_action(segment_str, tref, he_tref, version):
+    global bold_text
+
+    bold_dh = re.findall(r"<b>(.*?)</b>", segment_str)
+    bold_text[tref] = bold_dh[0] if bold_dh else ""
+
+
 def retrieve_version_text():
     version_query = {"versionTitle": "Mischnajot mit deutscher Übersetzung und Erklärung. Berlin 1887-1933 [de]",
                      "title": {"$regex": "^Mishnah"}}
@@ -39,9 +48,10 @@ def retrieve_version_text():
     comm_version = VersionSet(version_query)
     for v in comm_version:
         v.walk_thru_contents(retrieve_comm_action)
+        v.walk_thru_contents(retrieve_bold_action)
 
 
-def validator():
+def count_validator():
     # For each mishnah
     # Check with count of commentary segments for that Mishnah
     more_ftn_errors = 0
@@ -65,8 +75,19 @@ def validator():
     print(f"TOTAL: {more_ftn_errors} Mishnayot had more footnotes\n{more_cmmt_errors} Mishnayot had more comments")
     print(f"More Footnote Mishnahs: {more_ftn_mishnahs}")
     print(f"\nMore Commentary Mishnahs: {more_cmmt_mishnahs}")
+    print(f"Makkot 1:5 is supposed to throw an error based on its odd nested footnote structure.")
+
+
+def dh_validator():
+    bad_dhs = []
+    for tref in bold_text:
+        if "Introduction" not in tref and len(bold_text[tref]) < 3:
+            print(f"{tref}: {bold_text[tref]}")
+            bad_dhs.append(tref)
+    print(len(bad_dhs))
 
 
 if __name__ == '__main__':
     retrieve_version_text()
-    validator()
+    # count_validator()
+    dh_validator()
