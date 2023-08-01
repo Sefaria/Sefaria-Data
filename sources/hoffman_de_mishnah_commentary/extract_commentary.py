@@ -54,14 +54,16 @@ def create_text_data_dict():
                         footnote_text = footnote_text.replace("<ftnote>", "")
 
                 # Extract Dibbur HaMatchil based on Punctuation
-                if bolded_main_text and bolded_main_text[-1] == ")":
+                if bolded_main_text and re.search(r"\)[^A-Za-z]?$", bolded_main_text):
                     dh = re.findall(
-                        r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[:;.,?!()«» ]*?[a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«.:]*\))$",
+                        r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[:;.,?!()«» ]*?[a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«.:]*)$",
                         bolded_main_text)
                 elif bolded_main_text and bolded_main_text[-1] in ["?", ".", ",", ";", ":"]:
                     dh = re.findall(r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[?.,:;])$",
                                     bolded_main_text)
-                elif bolded_main_text:
+                elif bolded_main_text == "":
+                    dh = ""
+                else:
                     bolded_main_text = f"{bolded_main_text}."  ## Period added for DH anchor in regex
                     dh = re.findall(r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*\.)$",
                                     bolded_main_text)
