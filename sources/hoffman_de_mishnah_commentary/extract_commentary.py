@@ -34,9 +34,9 @@ def create_text_data_dict():
         if mishnah_tref in ["Mishnah Eruvin 7:3", "Mishnah Niddah 6:14", "Mishnah Bava Metzia 4:1"]:
             mishnah_text = f"{mishnah_text}</i>"
 
-        # TODO - unskip, deal with image issues
+        # TODO - These two Mishnayot, with images, will be handled manually
         if mishnah_tref == "Mishnah Chagigah 3:4" or mishnah_tref == "Mishnah Eruvin 5:4":
-            continue
+            pass
 
         res = re.findall(r"(.*?)<sup.*?>(.*?)<\/sup><i class=\"footnote\">(.*?)</i>",
                          mishnah_text)
@@ -78,7 +78,7 @@ def create_text_data_dict():
 
                 # Process DH
                 dh = dh[0].strip()
-                dh = dh.strip("«»,. ")
+                dh = dh.strip("«»,.:;— ")
 
                 commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
                 data_dict[commentary_tref] = f"<b>{dh}</b> {footnote_text}" if dh else f"{footnote_text}"

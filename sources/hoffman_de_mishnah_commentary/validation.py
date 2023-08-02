@@ -89,6 +89,7 @@ def dh_validator():
             bad_dhs.append(tref)
     print(len(bad_dhs))
     print(f"Total commentaries {num_mishnahs}")
+    print(f"Disregard errors in Mishnah Oktzin 1:2")
     print(f"Percent of unvalidated mishnahs: {len(bad_dhs)/num_mishnahs}")
 
 
