@@ -34,9 +34,9 @@ def create_text_data_dict():
         if mishnah_tref in ["Mishnah Eruvin 7:3", "Mishnah Niddah 6:14", "Mishnah Bava Metzia 4:1"]:
             mishnah_text = f"{mishnah_text}</i>"
 
-        # TODO - These two Mishnayot, with images, will be handled manually
+        # These two Mishnayot, with images, will be handled manually
         if mishnah_tref == "Mishnah Chagigah 3:4" or mishnah_tref == "Mishnah Eruvin 5:4":
-            pass
+            continue
 
         res = re.findall(r"(.*?)<sup.*?>(.*?)<\/sup><i class=\"footnote\">(.*?)</i>",
                          mishnah_text)
@@ -65,7 +65,7 @@ def create_text_data_dict():
                     dh = re.findall(r"([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]{2,}[?.,:;«!]{0,2})$",
                                     bolded_main_text)
                 # Initial footnote (i.e. at start, before text)
-                elif bolded_main_text == "" or " ":
+                elif bolded_main_text == "" or bolded_main_text == " ":
                     dh = ""
                 else:
                     bolded_main_text = f"{bolded_main_text}."  ## Period added for DH anchor in regex
