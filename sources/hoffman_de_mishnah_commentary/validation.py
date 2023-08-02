@@ -80,14 +80,19 @@ def count_validator():
 
 def dh_validator():
     bad_dhs = []
+    num_mishnahs = 0
     for tref in bold_text:
-        if "Introduction" not in tref and bold_text[tref] != "" and len(bold_text[tref]) < 3:
+        num_mishnahs += 1
+        dh = bold_text[tref]
+        if "Introduction" not in tref and bold_text[tref] != "" and len(dh) < 3 and not dh.isalpha():
             print(f"{tref}: {bold_text[tref]}")
             bad_dhs.append(tref)
     print(len(bad_dhs))
+    print(f"Total commentaries {num_mishnahs}")
+    print(f"Percent of unvalidated mishnahs: {len(bad_dhs)/num_mishnahs}")
 
 
 if __name__ == '__main__':
     retrieve_version_text()
-    # count_validator()
+    count_validator()
     dh_validator()
