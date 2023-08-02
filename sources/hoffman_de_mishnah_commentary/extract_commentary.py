@@ -54,14 +54,18 @@ def create_text_data_dict():
                         footnote_text = footnote_text.replace("<ftnote>", "")
 
                 # Extract Dibbur HaMatchil based on Punctuation
+
+                # Parenthesis
                 if bolded_main_text and re.search(r"\)[^A-Za-z]?$", bolded_main_text):
                     dh = re.findall(
-                        r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[:;.,?!()«» ]*?[a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«.:]*)$",
+                        r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[:;.,?!()«» ]*?[a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«.:“!]*)$",
                         bolded_main_text)
-                elif bolded_main_text and bolded_main_text[-1] in ["?", ".", ",", ";", ":"]:
-                    dh = re.findall(r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[?.,:;])$",
+                # End Punctuation
+                elif bolded_main_text and bolded_main_text[-1] in ["?", ".", ",", ";", ":", "«", "»", "!"]:
+                    dh = re.findall(r"([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]{2,}[?.,:;«!]{0,2})$",
                                     bolded_main_text)
-                elif bolded_main_text == "":
+                # Initial footnote (i.e. at start, before text)
+                elif bolded_main_text == "" or " ":
                     dh = ""
                 else:
                     bolded_main_text = f"{bolded_main_text}."  ## Period added for DH anchor in regex
@@ -74,7 +78,7 @@ def create_text_data_dict():
 
                 # Process DH
                 dh = dh[0].strip()
-                dh = dh.strip("«» ")
+                dh = dh.strip("«»,. ")
 
                 commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
                 data_dict[commentary_tref] = f"<b>{dh}</b> {footnote_text}" if dh else f"{footnote_text}"
