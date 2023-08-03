@@ -4,6 +4,7 @@ import django
 django.setup()
 
 from sefaria.model import *
+from sefaria.helper import category
 from sources import functions
 
 nezikin_masechtot = ['Bava Kamma',
@@ -30,10 +31,11 @@ def create_term_and_category():
     # Create a Category, if it doesn't yet exist
     cs = CategorySet({'sharedTitle': 'German Commentary'})
     if cs.count() == 0:
-        c = Category()
-        c.path = ["Mishnah", "Modern Commentary on Mishnah", "German Commentary"]
-        c.add_shared_term("German Commentary")
-        c.save()
+        category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary"])
+        sedarim = ["Seder Zeraim", "Seder Moed", "Seder Nashim", "Seder Nezikin", "Seder Kodashim", "Seder Tahorot"]
+        for seder in sedarim:
+            category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary", seder])
+
 
 
 def create_index_record(masechet, he_masechet):
@@ -50,6 +52,11 @@ def create_index_record(masechet, he_masechet):
     record.collective_title = "German Commentary"  # Must be a term
     return record
 
+
+def get_seder(masechet):
+    if masechet != "Pirkei Avot":
+        return library.get_index(f'Mishnah {masechet}').categories[-1]
+    return library.get_index(f'{masechet}').categories[-1]
 
 # Introduction node:
 def add_intro_node(record):
@@ -117,6 +124,8 @@ def create_index_main():
 
         record = create_index_record(en_title, he_title)
 
+        seder = get_seder(en_title)
+
         # Nezikin masechtot don't have intros
         if en_title not in nezikin_masechtot:
             add_intro_node(record)
@@ -127,7 +136,7 @@ def create_index_main():
         record.validate()
         index = {
             "title": record.primary_title(),
-            "categories": ["Mishnah", "Modern Commentary on Mishnah", "German Commentary"],
+            "categories": ["Mishnah", "Modern Commentary on Mishnah", "German Commentary", seder],
             "schema": record.serialize(),
             "base_text_titles": [f"{en_title}"] if en_title == 'Pirkei Avot' else [f"Mishnah {en_title}"],
             "base_text_mapping": "many_to_one",
