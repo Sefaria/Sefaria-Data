@@ -105,7 +105,7 @@ def create_nezikin_intro():
     record.validate()
     index = {
         "title": record.primary_title(),
-        "categories": ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary'],
+        "categories": ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary', 'Seder Nezikin'],
         "schema": record.serialize(),
         "is_dependant": True,
         "dependence": "Commentary"
