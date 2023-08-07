@@ -118,6 +118,8 @@ def create_nezikin_intro():
 def create_index_main():
     mishnayot = library.get_indexes_in_category("Mishnah", full_records=True)
 
+    create_nezikin_intro()
+
     for mishnah_index in mishnayot:
         en_title = mishnah_index.get_title("en").replace("Mishnah ", "")
         he_title = mishnah_index.get_title("he").replace("משנה ", "")
@@ -151,4 +153,3 @@ def create_index_main():
 if __name__ == '__main__':
     create_term_and_category()
     create_index_main()
-    create_nezikin_intro()
