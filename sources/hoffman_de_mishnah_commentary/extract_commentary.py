@@ -105,7 +105,7 @@ def create_text_data_dict():
                 dh = dh.strip("«»,.:;— ")
 
                 # commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
-                ftn_text = f"<b>{dh}</b> {footnote_text}" if dh else f"{footnote_text}"
+                ftn_text = f"<b>{dh}.</b> {footnote_text}" if dh else f"{footnote_text}"
 
 
                 if cur_mishnah_title in data_dict:
