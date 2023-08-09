@@ -12,7 +12,7 @@ indices = []
 
 # Change the following according to your specific needs
 SEFARIA_SERVER = "https://www.sefaria.org"
-api_key = "kAEw7OKw5IjZIG4lFbrYxpSdu78Jsza67HgR0gRBOdg"
+api_key = ""
 
 # Specify which indices you need, and which version.
 indices = ["Torah Ohr", "Likkutei Torah"]
