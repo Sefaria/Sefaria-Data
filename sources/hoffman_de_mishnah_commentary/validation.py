@@ -84,7 +84,12 @@ def dh_validator():
     for tref in bold_text:
         num_mishnahs += 1
         dh = bold_text[tref]
+        # Too short
         if "Introduction" not in tref and bold_text[tref] != "" and len(dh) < 3 and not dh.isalpha():
+            print(f"{tref}: {bold_text[tref]}")
+            bad_dhs.append(tref)
+        # Too long
+        if "Introduction" not in tref and bold_text[tref] != "" and len(dh) > 50:
             print(f"{tref}: {bold_text[tref]}")
             bad_dhs.append(tref)
     print(len(bad_dhs))
