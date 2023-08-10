@@ -22,31 +22,12 @@ def retrieve_version_text():
         v.walk_thru_contents(action)
 
 
-def get_chapter_from_tref(tref):
-    oref = Ref(tref)
-    chapter = oref.sections[0]
-    return chapter
-
-
 def create_text_data_dict():
     retrieve_version_text()
     data_dict = {}
 
-    prev_chapter = 1
-    prev_mishnah_title = "Mishnah Berakhot"
     for mishnah_tref in text:
-
-        cur_chapter = get_chapter_from_tref(mishnah_tref)
-        cur_mishnah_title = Ref(mishnah_tref).index.title
-
-        if prev_chapter != cur_chapter and prev_mishnah_title == cur_mishnah_title:
-            data_dict[cur_mishnah_title].append([])
-
-
-        chapter_index = cur_chapter-1
-        # commentary_ref_counter = 1
-
-        # TODO - is new chapter? If so, nest appropriately
+        commentary_ref_counter = 1
         mishnah_text = text[mishnah_tref]
 
         # Patching Mishnahs missing </i> at the end
@@ -60,12 +41,7 @@ def create_text_data_dict():
         res = re.findall(r"(.*?)<sup.*?>(.*?)<\/sup><i class=\"footnote\">(.*?)</i>",
                          mishnah_text)
 
-        if not res: # no commentary
-            if cur_mishnah_title in data_dict:
-                data_dict[cur_mishnah_title][chapter_index] = []
-            else:
-                data_dict[cur_mishnah_title] = [[]]
-        else:
+        if res:
             for each_comment in res:
                 bolded_main_text = f"{each_comment[0]}"
                 marker = f"{each_comment[1]}"
@@ -93,7 +69,7 @@ def create_text_data_dict():
                     dh = ""
                 else:
                     bolded_main_text = f"{bolded_main_text}."  ## Period added for DH anchor in regex
-                    dh = re.findall(r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*\.)$",
+                    dh = re.findall(r"[:;.,?!()«»„—]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/=\- \"« ]*\.)$",
                                     bolded_main_text)
 
                 # Case where first phrase etc
@@ -103,29 +79,20 @@ def create_text_data_dict():
                 # Process DH
                 dh = dh[0].strip()
                 dh = dh.strip("«»,.:;— ")
+                dh = re.sub(r"[^A-Za-z]{1,2}$", "", dh)
 
-                # commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
-                ftn_text = f"<b>{dh}.</b> {footnote_text}" if dh else f"{footnote_text}"
+                commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
+                data_dict[commentary_tref] = f"<b>{dh}.</b> {footnote_text}" if dh else f"{footnote_text}"
+                commentary_ref_counter += 1
 
-
-                if cur_mishnah_title in data_dict:
-                    data_dict[cur_mishnah_title][chapter_index].append(ftn_text)
-                else:
-                    data_dict[cur_mishnah_title] = [[ftn_text]]
-
-                # commentary_ref_counter += 1
-
-                # if dh == [] or dh == [""]:
-                #     print(f"{mishnah_tref}")
-                #     print(f"Main text: {bolded_main_text}")
-                #     print(f"Parsed DH: {dh}")
-                #     print("\n")
-        prev_chapter = cur_chapter
-        prev_mishnah_title = cur_mishnah_title
+                if dh == [] or dh == [""]:
+                    print(f"{mishnah_tref}")
+                    print(f"Main text: {bolded_main_text}")
+                    print(f"Parsed DH: {dh}")
+                    print("\n")
 
     return data_dict
 
 
 if __name__ == '__main__':
-    mdict = create_text_data_dict()
-    print(len(mdict["Mishnah Berakhot"]))
+    create_text_data_dict()
