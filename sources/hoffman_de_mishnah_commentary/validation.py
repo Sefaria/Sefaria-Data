@@ -51,6 +51,11 @@ def retrieve_version_text():
         v.walk_thru_contents(retrieve_bold_action)
 
 
+def contains_punct(text):
+    text = text[:-1]
+    return re.match(r"[,.?'\"!]", text)
+
+
 def count_validator():
     # For each mishnah
     # Check with count of commentary segments for that Mishnah
@@ -89,7 +94,7 @@ def dh_validator():
             print(f"{tref}: {bold_text[tref]}")
             bad_dhs.append(tref)
         # Too long
-        if "Introduction" not in tref and bold_text[tref] != "" and len(dh) > 50:
+        if "Introduction" not in tref and bold_text[tref] != "" and len(dh) > 50 and contains_punct(dh):
             print(f"{tref}: {bold_text[tref]}")
             bad_dhs.append(tref)
     print(len(bad_dhs))

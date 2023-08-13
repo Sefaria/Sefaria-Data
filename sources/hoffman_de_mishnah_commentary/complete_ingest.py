@@ -13,10 +13,6 @@ from sources.hoffman_de_mishnah_commentary.parse_intro_xml import process_xml
 from sources.hoffman_de_mishnah_commentary.create_index import create_index_main, create_term_and_category
 
 
-# TODO: General
-# - fix categories so not all under one heading
-# - Work on validations
-
 def create_mappings():
     mappings = defaultdict(dict)
     data_dict = create_text_data_dict()
@@ -66,8 +62,8 @@ def upload_text(mappings):
 if __name__ == '__main__':
     # TODO - Run Term/Category cauldron script
 
-    # create_index_main()
-    # print("UPDATE: Indices created")
+    create_index_main()
+    print("UPDATE: Indices created")
 
     map = create_mappings()
     print("UPDATE: Text map generated")
