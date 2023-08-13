@@ -58,18 +58,18 @@ def create_text_data_dict():
                 # Parenthesis
                 if bolded_main_text and re.search(r"\)[^A-Za-z]?$", bolded_main_text):
                     dh = re.findall(
-                        r"[:;.,?!()«»]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[:;.,?!()«» ]*?[a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«.:“!]*)$",
+                        r"[:;.,?!()«»„—…·]([a-zA-ZäöüÄÖÜßáéíóúàèëìòùâäêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]*[:;.,?!()«»„—… ]*?[a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/=\- ’‘\"« \[\] \":;.,?!()«»„—…]*)$",
                         bolded_main_text)
                 # End Punctuation
-                elif bolded_main_text and bolded_main_text[-1] in ["?", ".", ",", ";", ":", "«", "»", "!"]:
-                    dh = re.findall(r"([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/= \"«]{2,}[?.,:;«!]{0,2})$",
+                elif bolded_main_text and bolded_main_text[-1] in ["?", ".", ",", ";", ":", "«", "»", "!", "“", "„"]:
+                    dh = re.findall(r"([a-zA-ZäöüÄÖÜßáéíóúàèëìòùâäêîôûÂÊÎÔÛ\u0590-\u05FF<>\/=\- ’‘\"« \[\]]{2,}[:;.,?!()«»„—…“]{0,2})$",
                                     bolded_main_text)
                 # Initial footnote (i.e. at start, before text)
                 elif bolded_main_text == "" or bolded_main_text == " ":
                     dh = ""
                 else:
                     bolded_main_text = f"{bolded_main_text}."  ## Period added for DH anchor in regex
-                    dh = re.findall(r"[:;.,?!()«»„—]([a-zA-ZäöüÄÖÜßáéíóúàèìòùâêîôûÂÊÎÔÛ\u0590-\u05FF<>\/=\- \"« ]*\.)$",
+                    dh = re.findall(r"[:;.,?!()«»„—…·“]([a-zA-ZäöüÄÖÜßáéíóúàèëìòùâäêîôûÂÊÎÔÛ\u0590-\u05FF<>\/=\- ’‘\"« \[\]]*)\.$",
                                     bolded_main_text)
 
                 # Case where first phrase etc
@@ -79,7 +79,7 @@ def create_text_data_dict():
                 # Process DH
                 dh = dh[0].strip()
                 dh = dh.strip("«»,.:;— ")
-                dh = re.sub(r"[^A-Za-z]{1,2}$", "", dh)
+                dh = re.sub(r"[^A-Za-z>]{1,2}$", "", dh)
 
                 commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"  # Use the footnote to create specific segment ref
                 data_dict[commentary_tref] = f"<b>{dh}.</b> {footnote_text}" if dh else f"{footnote_text}"
