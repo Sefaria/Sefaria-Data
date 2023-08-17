@@ -1,10 +1,9 @@
-import re
-
 import django
 
 django.setup()
 
 import csv
+import re
 from sefaria.model import *
 from parsing_utilities.text_align import CompareBreaks
 
