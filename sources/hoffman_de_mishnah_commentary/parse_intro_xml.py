@@ -102,11 +102,7 @@ def process_xml():
             text = text.split("\n")
             text = [segment for segment in text if segment]  # filter out empty strings
 
-            # TODO - Join the bullet points / and is continuous?
-            # for segment in text:
-            #     is_bullet = re.match(r"^[A-Z]{1,3}[.)]", segment, re.DOTALL)
-            #     if is_bullet:
-            intro_dict["German Commentary, Introduction to Seder Nezikin"] = text
+            intro_dict["German Commentary on Mishnah, Introduction to Seder Nezikin"] = text
 
         else:
             intros = re.findall(

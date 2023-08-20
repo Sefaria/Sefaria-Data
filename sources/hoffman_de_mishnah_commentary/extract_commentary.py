@@ -95,4 +95,5 @@ def create_text_data_dict():
 
 
 if __name__ == '__main__':
-    create_text_data_dict()
+    d = create_text_data_dict()
+    print(d.keys())

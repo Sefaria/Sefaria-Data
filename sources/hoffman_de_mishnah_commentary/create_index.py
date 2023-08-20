@@ -21,35 +21,34 @@ nezikin_masechtot = ['Bava Kamma',
 
 def create_term_and_category():
     # Create Term, if it doesn't yet exist
-    ts = TermSet({'name': 'German Commentary'})
+    ts = TermSet({'name': '/German Commentary/'})
     if ts.count() == 0:
         t = Term()
-        t.name = "German Commentary"
-        t.add_primary_titles("German Commentary", "פירוש גרמני")
+        t.name = "German Commentary on Mishnah"
+        t.add_primary_titles("German Commentary on Mishnah", "פירוש גרמני על המשנה")
         t.save()
 
     # Create a Category, if it doesn't yet exist
-    cs = CategorySet({'sharedTitle': 'German Commentary'})
+    cs = CategorySet({'sharedTitle': 'German Commentary on Mishnah'})
     if cs.count() == 0:
-        category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary"])
+        category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary on Mishnah"])
         sedarim = ["Seder Zeraim", "Seder Moed", "Seder Nashim", "Seder Nezikin", "Seder Kodashim", "Seder Tahorot"]
         for seder in sedarim:
-            category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary", seder])
-
+            category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary on Mishnah", seder])
 
 
 def create_index_record(masechet, he_masechet):
     record = SchemaNode()
     if masechet == "Pirkei Avot":
-        he_title = "פירוש גרמני ל" + he_masechet  # f-String was not working well with RTL text
+        he_title = "פירוש גרמני על " + he_masechet  # f-String was not working well with RTL text
         en_title = f"German Commentary on {masechet}"
     else:
-        he_title = "פירוש גרמני למסכת " + he_masechet  # f-String was not working well with RTL text
+        he_title = "פירוש גרמני על משנה " + he_masechet  # f-String was not working well with RTL text
         en_title = f"German Commentary on Mishnah {masechet}"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
     record.key = f"German Commentary on {masechet}" if masechet == "Pirkei Avot" else f"German Commentary on Mishnah {masechet}"
-    record.collective_title = "German Commentary"  # Must be a term
+    record.collective_title = "German Commentary on Mishnah"  # Must be a term
     return record
 
 
@@ -57,6 +56,7 @@ def get_seder(masechet):
     if masechet != "Pirkei Avot":
         return library.get_index(f'Mishnah {masechet}').categories[-1]
     return library.get_index(f'{masechet}').categories[-1]
+
 
 # Introduction node:
 def add_intro_node(record):
@@ -85,12 +85,12 @@ def create_nezikin_intro():
     # Create record
     record = SchemaNode()
 
-    he_title = "פירוש גרמני, הקדמה לסדר נזיקין"
+    he_title = "פירוש גרמני על המשנה, הקדמה לסדר נזיקין"
     en_title = f"German Commentary, Introduction to Seder Nezikin"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
     record.key = f"German Commentary, Introduction to Seder Nezikin"
-    record.collective_title = "German Commentary"  # Must be a term
+    record.collective_title = "German Commentary on Mishnah"  # Must be a term
 
     # Add text node
     text_node = JaggedArrayNode()
@@ -105,7 +105,7 @@ def create_nezikin_intro():
     record.validate()
     index = {
         "title": record.primary_title(),
-        "categories": ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary', 'Seder Nezikin'],
+        "categories": ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah', 'Seder Nezikin'],
         "schema": record.serialize(),
         "is_dependant": True,
         "dependence": "Commentary"
@@ -138,7 +138,7 @@ def create_index_main():
         record.validate()
         index = {
             "title": record.primary_title(),
-            "categories": ["Mishnah", "Modern Commentary on Mishnah", "German Commentary", seder],
+            "categories": ["Mishnah", "Modern Commentary on Mishnah", "German Commentary on Mishnah", seder],
             "schema": record.serialize(),
             "base_text_titles": [f"{en_title}"] if en_title == 'Pirkei Avot' else [f"Mishnah {en_title}"],
             "base_text_mapping": "many_to_one",

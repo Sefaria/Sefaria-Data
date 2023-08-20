@@ -66,6 +66,9 @@ if __name__ == '__main__':
     # create_index_main()
     # print("UPDATE: Indices created")
 
+    # If errors before mapping, trying running admin/reset/cache, then admin/reset/toc, then admin/reset/cache
+    # and run just from the stage below.
+
     map = create_mappings()
     print("UPDATE: Text map generated")
 
