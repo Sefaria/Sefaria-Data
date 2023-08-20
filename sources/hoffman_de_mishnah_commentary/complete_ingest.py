@@ -29,14 +29,15 @@ def generate_text_post_format(intro_text="", require_intro_format=False):
     return {
         "text": intro_text,
         "versionTitle": "Mischnajot mit deutscher Übersetzung und Erklärung. Berlin 1887-1933 [de]",
-        "versionSource": "talmud.de",
+        "versionSource": "https://www.nli.org.il/he/books/NNL_ALEPH002378149/NLI",
+        "versionNotes": "Ordnung Seraïm, übers. und erklärt von Ascher Samter. 1887.<br>Ordnung Moed, von Eduard Baneth. 1887-1927.<br>Ordnung Naschim, von Marcus Petuchowski u. Simon Schlesinger. 1896-1933.<br>Ordnung Nesikin, von David Hoffmann. 1893-1898.<br>Ordnung Kodaschim, von John Cohn. 1910-1925.<br>Ordnung Toharot, von David Hoffmann, John Cohn und Moses Auerbach. 1910-1933.",
         "language": "en"
     }
 
 
 def upload_nezikin_intro(intro_dict):
-    tref = f"German Commentary, Introduction to Seder Nezikin"
-    intro_text = generate_text_post_format(intro_dict["German Commentary, Introduction to Seder Nezikin"],
+    tref = f"German Commentary on Mishnah, Introduction to Seder Nezikin"
+    intro_text = generate_text_post_format(intro_dict["German Commentary on Mishnah, Introduction to Seder Nezikin"],
                                            require_intro_format=False) # different structure than other intros
     post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
 
@@ -62,8 +63,8 @@ def upload_text(mappings):
 if __name__ == '__main__':
     # TODO - Run Term/Category cauldron script
 
-    create_index_main()
-    print("UPDATE: Indices created")
+    # create_index_main()
+    # print("UPDATE: Indices created")
 
     map = create_mappings()
     print("UPDATE: Text map generated")
