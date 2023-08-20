@@ -69,14 +69,14 @@ def upload_text(mappings):
 if __name__ == '__main__':
     # TODO - Run Term/Category cauldron script
 
-    # create_index_main()
-    # print("UPDATE: Indices created")
+    create_index_main()
+    print("UPDATE: Indices created")
 
     # If errors before mapping, trying running admin/reset/cache, then admin/reset/toc, then admin/reset/cache
     # and run just from the stage below.
 
-    map = create_mappings()
+    mapper = create_mappings()
     print("UPDATE: Text map generated")
 
-    upload_text(map)
+    upload_text(mapper)
     print("UPDATE: Text ingest complete")

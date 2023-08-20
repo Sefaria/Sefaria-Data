@@ -16,7 +16,7 @@ def action(segment_str, tref, he_tref, version):
 
 def retrieve_version_text():
     version_query = {"versionTitle": "Mischnajot mit deutscher Übersetzung und Erklärung. Berlin 1887-1933 [de]",
-                     "title": {"$regex": "^Mishnah"}}
+                     "title": {"$regex": "^Mishnah|Pirkei"}}
     hoffman_version = VersionSet(version_query)
     for v in hoffman_version:
         v.walk_thru_contents(action)
@@ -81,7 +81,7 @@ def create_text_data_dict():
                 dh = dh.strip("«»,.:;— ")
                 dh = re.sub(r"[^A-Za-z>]{1,2}$", "", dh)
 
-                if "Pirkei Avot" in mishnah_tref:
+                if "Avot" in mishnah_tref:
                     commentary_tref = f"German Commentary on Mishnah {mishnah_tref}:{commentary_ref_counter}"
                 else:
                     commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"
