@@ -81,15 +81,19 @@ def add_text_node(record, is_nezikin=False):
     record.append(text_node)
 
 
-def create_nezikin_intro():
+def create_intros(type="nezikin"):
     # Create record
     record = SchemaNode()
 
-    he_title = "פירוש גרמני על המשנה, הקדמה לסדר נזיקין"
-    en_title = f"German Commentary, Introduction to Seder Nezikin"
+    if type == "nezikin":
+        he_title = "פירוש גרמני על המשנה, הקדמה לסדר נזיקין"
+        en_title = f"German Commentary on Mishnah, Introduction to Seder Nezikin"
+    elif type == "general":
+        he_title = "פירוש גרמני על המשנה, הקדמה"
+        en_title = f"German Commentary on Mishnah, Introduction"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
-    record.key = f"German Commentary, Introduction to Seder Nezikin"
+    record.key = f"German Commentary on Mishnah, Introduction to Seder Nezikin" if type == "nezikin" else f"German Commentary on Mishnah, Introduction"
     record.collective_title = "German Commentary on Mishnah"  # Must be a term
 
     # Add text node
@@ -105,20 +109,27 @@ def create_nezikin_intro():
     record.validate()
     index = {
         "title": record.primary_title(),
-        "categories": ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah', 'Seder Nezikin'],
         "schema": record.serialize(),
         "is_dependant": True,
         "dependence": "Commentary"
     }
+    if type == "nezikin":
+        index["categories"]= ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah', 'Seder Nezikin']
+    elif type == "general":
+        index["categories"]= ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah']
 
     print(index)
     functions.post_index(index)
 
 
+
+
+
 def create_index_main():
     mishnayot = library.get_indexes_in_category("Mishnah", full_records=True)
 
-    create_nezikin_intro()
+    create_intros(type="nezikin")
+    create_intros(type="general")
 
     for mishnah_index in mishnayot:
         en_title = mishnah_index.get_title("en").replace("Mishnah ", "")
