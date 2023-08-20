@@ -39,12 +39,8 @@ def create_term_and_category():
 
 def create_index_record(masechet, he_masechet):
     record = SchemaNode()
-    if masechet == "Pirkei Avot":
-        he_title = "פירוש גרמני על " + he_masechet  # f-String was not working well with RTL text
-        en_title = f"German Commentary on {masechet}"
-    else:
-        he_title = "פירוש גרמני על משנה " + he_masechet  # f-String was not working well with RTL text
-        en_title = f"German Commentary on Mishnah {masechet}"
+    he_title = "פירוש גרמני על משנה " + he_masechet  # f-String was not working well with RTL text
+    en_title = f"German Commentary on Mishnah {masechet}"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
     record.key = f"German Commentary on {masechet}" if masechet == "Pirkei Avot" else f"German Commentary on Mishnah {masechet}"
@@ -114,15 +110,13 @@ def create_intros(type="nezikin"):
         "dependence": "Commentary"
     }
     if type == "nezikin":
-        index["categories"]= ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah', 'Seder Nezikin']
+        index["categories"] = ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah',
+                               'Seder Nezikin']
     elif type == "general":
-        index["categories"]= ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah']
+        index["categories"] = ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah']
 
     print(index)
     functions.post_index(index)
-
-
-
 
 
 def create_index_main():

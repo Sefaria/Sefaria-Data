@@ -35,17 +35,23 @@ def generate_text_post_format(intro_text="", require_intro_format=False):
     }
 
 
-def upload_nezikin_intro(intro_dict):
+def upload_intros(intro_dict):
     tref = f"German Commentary on Mishnah, Introduction to Seder Nezikin"
     intro_text = generate_text_post_format(intro_dict["German Commentary on Mishnah, Introduction to Seder Nezikin"],
                                            require_intro_format=False) # different structure than other intros
+    post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
+
+    tref="German Commentary on Mishnah, Introduction"
+    with open("general_intro_to_mishnah.txt", "r") as f:
+        general_text = f.read()
+    intro_text = generate_text_post_format(general_text, require_intro_format=True) # different structure than other intros
     post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
 
 
 def upload_text(mappings):
     intro_dict = process_xml()
 
-    upload_nezikin_intro(intro_dict)
+    upload_intros(intro_dict)
 
     for book, book_map in mappings.items():
         print(f"Uploading text for {book}")
