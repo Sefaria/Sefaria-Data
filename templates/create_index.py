@@ -12,11 +12,10 @@ def create_term_and_category():
     # Create Term, if it doesn't yet exist
     ts = TermSet({'name': '/German Commentary/'})
     if ts.count() == 0:
-
-        # Term for the Collective Title
+        # Term for the Collective Title and the Category
         t = Term()
-        t.name = "New Index"
-        t.add_primary_titles("New Index", "אינ")
+        t.name = "German Commentary"
+        t.add_primary_titles("German Commentary", "פירוש גרמני")
         t.save()
 
     # Create a Category, if it doesn't yet exist
@@ -28,22 +27,18 @@ def create_term_and_category():
             category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary", seder])
 
 
-def create_index_record(masechet, he_masechet):
+def create_index_record(en_title, he_title):
     record = SchemaNode()
-    he_title = "פירוש גרמני על " + he_masechet  # f-String was not working well with RTL text
-    en_title = f"German Commentary on {masechet}"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
-    record.key = f"German Commentary on {masechet}" if masechet == "Pirkei Avot" else f"German Commentary on {masechet}"
-    record.collective_title = "German Commentary"  # Must be a term
+    record.key = f"Commentary on {en_title}"
     return record
 
 
 # Text node:
-def add_text_node(record, is_nezikin=False):
+def add_text_node(record):
     text_node = JaggedArrayNode()
-    text_node.key = "default"
-    text_node.default = True if not is_nezikin else record.primary_title()
+    text_node.key = record.primary_title()
     text_node.depth = 3
     text_node.addressTypes = ['Integer', 'Integer', 'Integer']
     text_node.sectionNames = ['Chapter', 'Mishnah', 'Paragraph']
@@ -51,27 +46,26 @@ def add_text_node(record, is_nezikin=False):
 
 
 def create_index_main():
-    mishnayot = library.get_indexes_in_category("Mishnah", full_records=True)
+    en_title = "My Book"
+    he_title = "הספר שלי"
 
-    for mishnah_index in mishnayot:
-        en_title = mishnah_index.get_title("en")
-        he_title = mishnah_index.get_title("he")
+    record = create_index_record(en_title, he_title)
+    add_text_node(record)
+    record.validate()
 
-        record = create_index_record(en_title, he_title)
+    index = {
+        "title": record.primary_title(),
+        "categories": ["Mishnah", "Modern Commentary on Mishnah", "German Commentary"],
+        "schema": record.serialize(),
+        "base_text_titles": [en_title],
+        "base_text_mapping": "many_to_one",
+        "is_dependant": True,
+        "dependence": "Commentary",
+        "collective_title": "German Commentary"
+    }
 
-        record.validate()
-        index = {
-            "title": record.primary_title(),
-            "categories": ["Mishnah", "Modern Commentary on Mishnah", "German Commentary", seder],
-            "schema": record.serialize(),
-            "base_text_titles": [en_title],
-            "base_text_mapping": "many_to_one",
-            "is_dependant": True,
-            "dependence": "Commentary"
-        }
-
-        functions.post_index(index)
-        print(index)
+    functions.post_index(index)
+    print(index)
 
 
 if __name__ == '__main__':
