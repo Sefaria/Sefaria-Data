@@ -36,12 +36,12 @@ def generate_text_post_format(intro_text="", require_intro_format=False):
 
 
 def upload_intros(intro_dict):
-    tref = f"German Commentary on Mishnah, Introduction to Seder Nezikin"
-    intro_text = generate_text_post_format(intro_dict["German Commentary on Mishnah, Introduction to Seder Nezikin"],
+    tref = f"German Commentary, Introduction to Seder Nezikin"
+    intro_text = generate_text_post_format(intro_dict["German Commentary, Introduction to Seder Nezikin"],
                                            require_intro_format=False) # different structure than other intros
     post_text(ref=tref, text=intro_text, server=SEFARIA_SERVER)
 
-    tref="German Commentary on Mishnah, Introduction"
+    tref="German Commentary, Introduction"
     with open("general_intro_to_mishnah.txt", "r") as f:
         general_text = f.read()
     intro_text = generate_text_post_format(general_text, require_intro_format=True) # different structure than other intros
@@ -69,8 +69,8 @@ def upload_text(mappings):
 if __name__ == '__main__':
     # TODO - Run Term/Category cauldron script
 
-    create_index_main()
-    print("UPDATE: Indices created")
+    # create_index_main()
+    # print("UPDATE: Indices created")
 
     # If errors before mapping, trying running admin/reset/cache, then admin/reset/toc, then admin/reset/cache
     # and run just from the stage below.

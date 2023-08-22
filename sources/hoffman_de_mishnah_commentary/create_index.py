@@ -7,51 +7,51 @@ from sefaria.model import *
 from sefaria.helper import category
 from sources import functions
 
-nezikin_masechtot = ['Bava Kamma',
-                     'Bava Metzia',
-                     'Bava Batra',
-                     'Sanhedrin',
-                     'Makkot',
-                     'Shevuot',
-                     'Eduyot',
-                     'Avodah Zarah',
+nezikin_masechtot = ['Mishnah Bava Kamma',
+                     'Mishnah Bava Metzia',
+                     'Mishnah Bava Batra',
+                     'Mishnah Sanhedrin',
+                     'Mishnah Makkot',
+                     'Mishnah Shevuot',
+                     'Mishnah Eduyot',
+                     'Mishnah Avodah Zarah',
                      'Pirkei Avot',
-                     'Horayot']
+                     'Mishnah Horayot']
 
 
 def create_term_and_category():
     # Create Term, if it doesn't yet exist
     ts = TermSet({'name': '/German Commentary/'})
     if ts.count() == 0:
+
+        # Term for the Collective Title
         t = Term()
-        t.name = "German Commentary on Mishnah"
-        t.add_primary_titles("German Commentary on Mishnah", "פירוש גרמני על המשנה")
+        t.name = "German Commentary"
+        t.add_primary_titles("German Commentary", "פירוש גרמני")
         t.save()
 
     # Create a Category, if it doesn't yet exist
-    cs = CategorySet({'sharedTitle': 'German Commentary on Mishnah'})
+    cs = CategorySet({'sharedTitle': 'German Commentary'})
     if cs.count() == 0:
-        category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary on Mishnah"])
+        category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary"])
         sedarim = ["Seder Zeraim", "Seder Moed", "Seder Nashim", "Seder Nezikin", "Seder Kodashim", "Seder Tahorot"]
         for seder in sedarim:
-            category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary on Mishnah", seder])
+            category.create_category(["Mishnah", "Modern Commentary on Mishnah", "German Commentary", seder])
 
 
 def create_index_record(masechet, he_masechet):
     record = SchemaNode()
-    he_title = "פירוש גרמני על משנה " + he_masechet  # f-String was not working well with RTL text
-    en_title = f"German Commentary on Mishnah {masechet}"
+    he_title = "פירוש גרמני על " + he_masechet  # f-String was not working well with RTL text
+    en_title = f"German Commentary on {masechet}"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
-    record.key = f"German Commentary on {masechet}" if masechet == "Pirkei Avot" else f"German Commentary on Mishnah {masechet}"
-    record.collective_title = "German Commentary on Mishnah"  # Must be a term
+    record.key = f"German Commentary on {masechet}" if masechet == "Pirkei Avot" else f"German Commentary on {masechet}"
+    record.collective_title = "German Commentary"  # Must be a term
     return record
 
 
 def get_seder(masechet):
-    if masechet != "Pirkei Avot":
-        return library.get_index(f'Mishnah {masechet}').categories[-1]
-    return library.get_index(f'{masechet}').categories[-1]
+    return library.get_index(masechet).categories[-1]
 
 
 # Introduction node:
@@ -83,14 +83,14 @@ def create_intros(type="nezikin"):
 
     if type == "nezikin":
         he_title = "פירוש גרמני על המשנה, הקדמה לסדר נזיקין"
-        en_title = f"German Commentary on Mishnah, Introduction to Seder Nezikin"
+        en_title = f"German Commentary, Introduction to Seder Nezikin"
     elif type == "general":
-        he_title = "פירוש גרמני על המשנה, הקדמה"
-        en_title = f"German Commentary on Mishnah, Introduction"
+        he_title = "פירוש גרמני, הקדמה"
+        en_title = f"German Commentary, Introduction"
     record.add_title(en_title, 'en', primary=True, )
     record.add_title(he_title, "he", primary=True, )
-    record.key = f"German Commentary on Mishnah, Introduction to Seder Nezikin" if type == "nezikin" else f"German Commentary on Mishnah, Introduction"
-    record.collective_title = "German Commentary on Mishnah"  # Must be a term
+    record.key = f"German Commentary, Introduction to Seder Nezikin" if type == "nezikin" else f"German Commentary, Introduction"
+    record.collective_title = "German Commentary"  # Must be a term
 
     # Add text node
     text_node = JaggedArrayNode()
@@ -110,10 +110,10 @@ def create_intros(type="nezikin"):
         "dependence": "Commentary"
     }
     if type == "nezikin":
-        index["categories"] = ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah',
+        index["categories"] = ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary',
                                'Seder Nezikin']
     elif type == "general":
-        index["categories"] = ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary on Mishnah']
+        index["categories"] = ['Mishnah', 'Modern Commentary on Mishnah', 'German Commentary']
 
     print(index)
     functions.post_index(index)
@@ -126,8 +126,8 @@ def create_index_main():
     create_intros(type="general")
 
     for mishnah_index in mishnayot:
-        en_title = mishnah_index.get_title("en").replace("Mishnah ", "")
-        he_title = mishnah_index.get_title("he").replace("משנה ", "")
+        en_title = mishnah_index.get_title("en")
+        he_title = mishnah_index.get_title("he")
 
         record = create_index_record(en_title, he_title)
 
@@ -143,9 +143,9 @@ def create_index_main():
         record.validate()
         index = {
             "title": record.primary_title(),
-            "categories": ["Mishnah", "Modern Commentary on Mishnah", "German Commentary on Mishnah", seder],
+            "categories": ["Mishnah", "Modern Commentary on Mishnah", "German Commentary", seder],
             "schema": record.serialize(),
-            "base_text_titles": [f"{en_title}"] if en_title == 'Pirkei Avot' else [f"Mishnah {en_title}"],
+            "base_text_titles": [en_title],
             "base_text_mapping": "many_to_one",
             "is_dependant": True,
             "dependence": "Commentary"
@@ -156,5 +156,5 @@ def create_index_main():
 
 
 if __name__ == '__main__':
-    create_term_and_category()
+    # create_term_and_category()
     create_index_main()

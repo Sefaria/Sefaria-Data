@@ -81,10 +81,7 @@ def create_text_data_dict():
                 dh = dh.strip("«»,.:;— ")
                 dh = re.sub(r"[^A-Za-z>]{1,2}$", "", dh)
 
-                if "Avot" in mishnah_tref:
-                    commentary_tref = f"German Commentary on Mishnah {mishnah_tref}:{commentary_ref_counter}"
-                else:
-                    commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"
+                commentary_tref = f"German Commentary on {mishnah_tref}:{commentary_ref_counter}"
                 data_dict[commentary_tref] = f"<b>{dh}.</b> {footnote_text}" if dh else f"{footnote_text}"
                 commentary_ref_counter += 1
 

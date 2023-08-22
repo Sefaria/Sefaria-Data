@@ -102,7 +102,7 @@ def process_xml():
             text = text.split("\n")
             text = [segment for segment in text if segment]  # filter out empty strings
 
-            intro_dict["German Commentary on Mishnah, Introduction to Seder Nezikin"] = text
+            intro_dict["German Commentary, Introduction to Seder Nezikin"] = text
 
         else:
             intros = re.findall(
