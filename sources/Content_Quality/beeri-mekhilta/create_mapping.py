@@ -80,6 +80,10 @@ def write_to_csv(masechet, map):
     print(map)
 
 
+def normalize_string(text_segment):
+    return ''.join(letter for letter in text_segment if letter.isalnum())
+
+
 if __name__ == "__main__":
     csv_file = "beeri_version.csv"
     beeri_text_strs, beeri_tref_to_index_map = convert_csv()
@@ -88,56 +92,57 @@ if __name__ == "__main__":
     print(len(prod_text_strs))
     print(len(beeri_text_strs))
 
+    normalized_prod_text_strs = {}
+    normalized_beeri_text_strs = {}
+
+    for masechet in beeri_text_strs:
+        for seg in prod_text_strs[masechet]:
+            if masechet in normalized_prod_text_strs:
+                normalized_prod_text_strs[masechet].append(normalize_string(seg))
+            else:
+                normalized_prod_text_strs[masechet] = [normalize_string(seg)]
+        for seg in beeri_text_strs[masechet]:
+            if masechet in normalized_beeri_text_strs:
+                normalized_beeri_text_strs[masechet].append(normalize_string(seg))
+            else:
+                normalized_beeri_text_strs[masechet] = [normalize_string(seg)]
+
+
     # for masechet in beeri_text_strs:
-    #     cb = CompareBreaks(beeri_text_strs[masechet], prod_text_strs[masechet])
-    #     map = cb.create_mapping()
     #
-    #     expanded_mapping = []
     #     if masechet not in ["Tractate Nezikin", "Tractate Shirah", "Tractate Vayehi Beshalach"]:
+    #         cb = CompareBreaks(beeri_text_strs[masechet], prod_text_strs[masechet])
+    #         map = cb.create_mapping()
+    #
+    #         expanded_mapping = []
+    #
     #         for beeri_idx in map:
     #             prod_idx = list(map[beeri_idx])  # TODO - iterate through if ever spanning more
     #             if prod_idx:
     #                 prod_idx = prod_idx[0]
-    #                 print(f"len:{len(prod_tref_to_index_map[masechet])}, idx: {prod_idx}")
+    #                 # print(f"len:{len(prod_tref_to_index_map[masechet])}, idx: {prod_idx}")
     #                 expanded_mapping.append({"Beeri Ref": beeri_tref_to_index_map[masechet][beeri_idx-1],
     #                                          "Wiki Ref": prod_tref_to_index_map[masechet][prod_idx-1]})
     #         print(f"Writing {masechet} to CSV")
     #         write_to_csv(masechet, expanded_mapping)
-    #
+
 
     ####################
-    #
-    # for i in range(len(beeri_text_strs['Tractate Vayehi Beshalach'])):
-    #     beeri_segment = beeri_text_strs['Tractate Vayehi Beshalach'][i]
-    #     if not beeri_segment:
-    #         continue
-    #     for j in range(len(prod_text_strs['Tractate Vayehi Beshalach'])):
-    #         prod_segment = prod_text_strs['Tractate Vayehi Beshalach'][j]
-    #
-    #         if beeri_segment in prod_segment:
-    #             print(f"MATCH Beeri {beeri_tref_to_index_map['Tractate Vayehi Beshalach'][i]} to Prod {prod_tref_to_index_map['Tractate Vayehi Beshalach'][j]}")
-    #
 
-############### BARD
+    for masechet  in ["Tractate Nezikin", "Tractate Shirah", "Tractate Vayehi Beshalach"]:
+        expanded_mapping = []
+        prod_list = normalized_prod_text_strs[masechet]
+        for i in range(len(normalized_beeri_text_strs[masechet])):
+            beeri_segment = normalized_beeri_text_strs[masechet][i]
+            if not beeri_segment:
+                continue
+            for j, prod_seg in enumerate(prod_list):  # cut down by match, check first 3-5 words, normalizing
+                prod_segment = normalized_prod_text_strs[masechet][j]
 
-import pandas as pd
+                if beeri_segment[:100] in prod_segment:
+                    beeri_ref = beeri_tref_to_index_map[masechet][i]
+                    prod_ref = prod_tref_to_index_map[masechet][j]
+                    expanded_mapping.append({"Beeri Ref": beeri_ref, "Prod Ref": prod_ref})
+                    prod_list[j:]
 
-# Read the CSV files into DataFrames
-df_a = pd.read_csv("csv_a.csv")
-df_b = pd.read_csv("csv_b.csv")
-
-# Create a new DataFrame with the mapped data
-df_mapped = pd.DataFrame(columns=["A", "B"])
-
-# Iterate over the rows in DataFrame `df_a`
-for index, row in df_a.iterrows():
-
-    # Find the corresponding row in DataFrame `df_b`
-    row_b = df_b[df_b["reference"] == row["reference"]]
-
-    # If the row exists, add the row to DataFrame `df_mapped`
-    if row_b.size > 0:
-        df_mapped.loc[index] = {"A": row["reference"], "B": row_b.iloc[0]["value"]}
-
-# Write the mapped data to a new CSV file
-df_mapped.to_csv("mapped_data.csv")
+        write_to_csv(f"manual_eval {masechet}2", expanded_mapping)
