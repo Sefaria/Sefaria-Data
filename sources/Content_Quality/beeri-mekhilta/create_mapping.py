@@ -8,9 +8,6 @@ from sefaria.model import *
 from parsing_utilities.text_align import CompareBreaks
 
 
-# Todo
-# Add comments
-
 def convert_csv():
     tref_to_index_map = {}
     text_str_by_masechet = {}
@@ -77,21 +74,33 @@ def write_to_csv(masechet, map):
         # Write the data rows
         for row in map:
             writer.writerow(row.values())
-    print(map)
+    print(f"Wrote {masechet} to CSV")
 
 
 def normalize_string(text_segment):
     return ''.join(letter for letter in text_segment if letter.isalnum())
 
 
-if __name__ == "__main__":
-    csv_file = "beeri_version.csv"
-    beeri_text_strs, beeri_tref_to_index_map = convert_csv()
-    prod_text_strs, prod_tref_to_index_map = get_prod_list_of_strs()
+def compare_text_approach(beeri_text_strs, beeri_tref_to_index_map, prod_text_strs, prod_tref_to_index_map):
+    """Note: This only worked for 6/9 of the Masechtot, which is why we filter the "breaking" masechtot on top."""
+    for masechet in beeri_text_strs:
 
-    print(len(prod_text_strs))
-    print(len(beeri_text_strs))
+        if masechet not in ["Tractate Nezikin", "Tractate Shirah", "Tractate Vayehi Beshalach"]:
+            cb = CompareBreaks(beeri_text_strs[masechet], prod_text_strs[masechet])
+            map = cb.create_mapping()
 
+            expanded_mapping = []
+
+            for beeri_idx in map:
+                prod_idx = list(map[beeri_idx])
+                if prod_idx:
+                    prod_idx = prod_idx[0]
+                    expanded_mapping.append({"Beeri Ref": beeri_tref_to_index_map[masechet][beeri_idx - 1],
+                                             "Wiki Ref": prod_tref_to_index_map[masechet][prod_idx - 1]})
+            write_to_csv(masechet, expanded_mapping)
+
+
+def normalize_text(beeri_text_strs, prod_text_strs):
     normalized_prod_text_strs = {}
     normalized_beeri_text_strs = {}
 
@@ -106,38 +115,21 @@ if __name__ == "__main__":
                 normalized_beeri_text_strs[masechet].append(normalize_string(seg))
             else:
                 normalized_beeri_text_strs[masechet] = [normalize_string(seg)]
+    return normalized_beeri_text_strs, normalized_prod_text_strs
 
 
-    # for masechet in beeri_text_strs:
-    #
-    #     if masechet not in ["Tractate Nezikin", "Tractate Shirah", "Tractate Vayehi Beshalach"]:
-    #         cb = CompareBreaks(beeri_text_strs[masechet], prod_text_strs[masechet])
-    #         map = cb.create_mapping()
-    #
-    #         expanded_mapping = []
-    #
-    #         for beeri_idx in map:
-    #             prod_idx = list(map[beeri_idx])  # TODO - iterate through if ever spanning more
-    #             if prod_idx:
-    #                 prod_idx = prod_idx[0]
-    #                 # print(f"len:{len(prod_tref_to_index_map[masechet])}, idx: {prod_idx}")
-    #                 expanded_mapping.append({"Beeri Ref": beeri_tref_to_index_map[masechet][beeri_idx-1],
-    #                                          "Wiki Ref": prod_tref_to_index_map[masechet][prod_idx-1]})
-    #         print(f"Writing {masechet} to CSV")
-    #         write_to_csv(masechet, expanded_mapping)
-
-
-    ####################
-
-    for masechet  in ["Tractate Nezikin", "Tractate Shirah", "Tractate Vayehi Beshalach"]:
+def brute_force_mapping(normalized_beeri, normalized_prod, beeri_tref_to_index_map, prod_tref_to_index_map):
+    """Brute force approach to get a quasi-map for the failing masechtot (Nezikin, Vayehi Beshalach, and Shirah) -
+    which failed the compare breaks approach. The generated CSV will need some manual work. """
+    for masechet in ["Tractate Nezikin", "Tractate Shirah", "Tractate Vayehi Beshalach"]:
         expanded_mapping = []
-        prod_list = normalized_prod_text_strs[masechet]
-        for i in range(len(normalized_beeri_text_strs[masechet])):
-            beeri_segment = normalized_beeri_text_strs[masechet][i]
+        prod_list = normalized_prod[masechet]
+        for i in range(len(normalized_beeri[masechet])):
+            beeri_segment = normalized_beeri[masechet][i]
             if not beeri_segment:
                 continue
-            for j, prod_seg in enumerate(prod_list):  # cut down by match, check first 3-5 words, normalizing
-                prod_segment = normalized_prod_text_strs[masechet][j]
+            for j, prod_seg in enumerate(prod_list):
+                prod_segment = normalized_prod[masechet][j]
 
                 if beeri_segment[:100] in prod_segment:
                     beeri_ref = beeri_tref_to_index_map[masechet][i]
@@ -145,4 +137,60 @@ if __name__ == "__main__":
                     expanded_mapping.append({"Beeri Ref": beeri_ref, "Prod Ref": prod_ref})
                     prod_list[j:]
 
-        write_to_csv(f"manual_eval {masechet}2", expanded_mapping)
+        write_to_csv(f"manual_report_{masechet}", expanded_mapping)
+
+
+def generate_report_beeri():
+    # Set up "all" list
+    beeri_refs_all = []
+    with open('beeri_version.csv', newline='') as csvfile:
+        beeri_csv = csv.reader(csvfile)
+        for row in beeri_csv:
+            tref = row[0]
+            masechet = re.findall(r"Mekhilta DeRabbi Yishmael Beeri, (.*) [^A-Za-z]*$", tref)[0]
+            if masechet in ["Tractate Nezikin", "Tractate Shirah", "Tractate Vayehi Beshalach"]:
+                beeri_refs_all.append(tref)
+
+    # Set up "processed" list
+    beeri_refs_processed = []
+    with open('manual_report_Tractate Vayehi Beshalach_mapping.csv', newline='') as csvfile:
+        beeri_csv = csv.reader(csvfile)
+        for row in beeri_csv:
+            tref = row[0]
+            beeri_refs_processed.append(tref)
+
+    with open('manual_report_Tractate Shirah_mapping.csv', newline='') as csvfile:
+        beeri_csv = csv.reader(csvfile)
+        for row in beeri_csv:
+            tref = row[0]
+            beeri_refs_processed.append(tref)
+
+    with open('manual_report_Tractate Nezikin_mapping.csv', newline='') as csvfile:
+        beeri_csv = csv.reader(csvfile)
+        for row in beeri_csv:
+            tref = row[0]
+            beeri_refs_processed.append(tref)
+
+    unreported_refs = set(beeri_refs_all) - set(beeri_refs_processed)
+    for ref in unreported_refs:
+        print(ref)
+
+
+if __name__ == "__main__":
+    csv_file = "beeri_version.csv"
+    beeri_text_strs, beeri_tref_to_index_map = convert_csv()
+    prod_text_strs, prod_tref_to_index_map = get_prod_list_of_strs()
+
+    # Compare Text Approach to map Masechtot Pischa, Vayassa, Amalek, Bachodesh, Kaspa and Shabbata
+    compare_text_approach(beeri_text_strs, beeri_tref_to_index_map, prod_text_strs, prod_tref_to_index_map)
+
+    # Approach for "breaking" masechtot: Vayehi Beshalach, Shirah and Nezikin
+
+    # Step One: Normalize English text
+    normalized_beeri, normalized_prod = normalize_text(beeri_text_strs, prod_text_strs)
+
+    # Step Two: Apply a Brute Force mapping algorithm
+    brute_force_mapping(normalized_beeri, normalized_prod, beeri_tref_to_index_map, prod_tref_to_index_map)
+
+    # Step Three: Generate a report of missing segments to aid manual work
+    generate_report_beeri()
