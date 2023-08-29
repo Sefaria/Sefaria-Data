@@ -22,9 +22,9 @@ def dh_extract_method(text, clean=True):
 def tokenizer(string):
     return re.sub('<.*?>|\(.*?\)', '', string).split()
 
-def match(ref):
-    base_tref = ':'.join(ref.normal().replace("Haggahot Ya'avetz on ", '').split(':')[:-1])
-    matches = match_ref(Ref(base_tref).text('he', vtitle='Wikisource Talmud Bavli'), ref.text('he'),
+def match(ref, title="Haggahot Ya'avetz", vtitle='Wikisource Talmud Bavli'):
+    base_tref = ':'.join(ref.normal().replace(f"{title} on ", '').split(':')[:-1])
+    matches = match_ref(Ref(base_tref).text('he', vtitle=vtitle), ref.text('he'),
                         base_tokenizer=tokenizer, dh_extract_method=dh_extract_method)['matches']
     if matches:
         return matches[0]
@@ -107,7 +107,7 @@ def find_bavli_commntrator(text):
     elif mefaresh is commentrator:
         return 'Mefaresh on '
 
-def link_bavli(title):
+def link_bavli(title, server='https://new-shmuel.cauldron.sefaria.org'):
     print(title)
     masechet = title.split(" on ")[1]
     y,n = 0,0
@@ -142,7 +142,7 @@ def link_bavli(title):
                 else:
                     n+=1
             else:
-                base_ref = match(comment)
+                base_ref = match(comment, title=title.split(" on ")[0])
                 if base_ref:
                     y+=1
                 else:
@@ -166,8 +166,6 @@ def link_bavli(title):
                         'generated_by': 'yaavetz parser'
                     })
     print(y/(y+n))
-    server = 'https://new-shmuel.cauldron.sefaria.org'
-    # server = 'http://localhost:9000'
     post_link(links, server=server, skip_lang_check=False)
 
 
