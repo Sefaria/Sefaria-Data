@@ -44,5 +44,9 @@ for book in tanakh_commentaries:
     for r in library.get_index(book).all_segment_refs():
         en = r.text('en').text
         en = get_dh(en)
+
+        when you cant find DH you could use precomputed 3 word phrase or 3 topics
+        could hardcode these topics for elastic search or filter in sidebar
+        synonyms in elastic search - "https://www.google.com/search?q=elastic+search+use+synonyms&rlz=1C5CHFA_enUS968US972&oq=elastic+search+use+synonyms&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIICAEQABgWGB4yCggCEAAYhgMYigUyCggDEAAYhgMYigUyCggEEAAYhgMYigUyCggFEAAYhgMYigXSAQgzMTczajBqMagCALACAA&sourceid=chrome&ie=UTF-8"
 # idea.  take first sentence of all commentaries they should be bold italics or capitalized,
 # if not, look for phrases that are in quotes or italics

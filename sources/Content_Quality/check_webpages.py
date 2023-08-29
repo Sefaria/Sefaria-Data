@@ -102,6 +102,17 @@ def add_links_manually_to_db(list_of_ref_pairs): #first crescas second guide
     links = list_of_dict_to_links(links)
     insert_links_to_db(links)
 if __name__ == '__main__':
+    from tqdm import tqdm
+
+    from sefaria.helper.link import rebuild_links_from_text, add_links_from_text
+    book = library.get_index("Mishnat Eretz Yisrael on Pirkei Avot")
+    for oref in tqdm(library.get_index("Mishnat Eretz Yisrael on Pirkei Avot").all_segment_refs()):
+        tc = TextChunk(oref, lang='he')
+        try:
+        except Exception as e:
+            print(f"{e} => {oref}")
+
+    assert 5 == 6
     # post_playground_index()
     # img_title_html_str = '<p class="mishna_project_image_title">Lorem ipsum dolor sit amet</p>'
     img_title_html_str_en = "this is a marvelous image"

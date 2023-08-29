@@ -64,7 +64,7 @@ p_style_dict = {"q2": '<span class="poetry indentAllDouble">', "pmr": '<span cla
 p_styles = set()
 other_tags = set()
 start = ""
-for f in os.listdir("../Second USX Output for Sefaria 4-17-23/RJPS4-USX-2023-04-17"):
+for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX format - July 2023"):
     place = False
     poss_find = None
     if not f.endswith("usx"):
@@ -74,14 +74,14 @@ for f in os.listdir("../Second USX Output for Sefaria 4-17-23/RJPS4-USX-2023-04-
     start = ""
     lines = ""
     title = f.replace(".usx", "")
-    if not "Prophets" in library.get_index(title).categories:
+    if not "Writings" in library.get_index(title).categories:
         continue
     # if title != "Isaiah":
     #     continue
     text_dict = {}
     curr_ch = 0
     curr_seg = 0
-    with open("../Second USX Output for Sefaria 4-17-23/RJPS4-USX-2023-04-17/"+f, 'r') as f:
+    with open("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX format - July 2023/"+f, 'r') as f:
         lines = "\n".join(list(f))
         special_span = False
         xml = BeautifulSoup(lines, parser='lxml')
@@ -93,6 +93,22 @@ for f in os.listdir("../Second USX Output for Sefaria 4-17-23/RJPS4-USX-2023-04-
             if p.name == "para" and p.attrs['style'] != 'rem':
                 verses_bool = len([x for x in p.contents if isinstance(x, Tag)]) > 0
                 if (len(p) > 1 or len(p.attrs) > 1):
+                    for r in p.find_all('ref'):
+                        r.attrs['loc'] = r.attrs['loc'].replace("EZK", "Ezekiel").replace("CH", " Chronicles").replace("1SA", "1 Samuel").replace("2SA", "2 Samuel")
+                        r.attrs['loc'] = r.attrs['loc'].replace("ZEC", "Zechariah").replace("1KI", "1 Kings").replace("2KI", "2 Kings").replace("JOL", "Joel").replace("ZEP", "Zephaniah")
+                        r.attrs['loc'] = r.attrs['loc'].replace("SNG", "Song of Songs").replace("NAM", "Nehemiah").replace("PSA", "Psalms").replace("NUM", "Numbers")
+                        r.attrs['loc'] = r.attrs['loc'].replace("ISA", "Isaiah").replace("LEV", "Leviticus").replace("PRO", "Proverbs").replace("HOS", "Hoshea").replace("ECC", "Ecclesiastes")
+                        r.attrs['loc'] = r.attrs['loc'].replace("EZR", "Ezra")
+                        try:
+                            loc = Ref(r.attrs['loc'].title().replace(" Of", " of")).normal()
+                        except Exception as e:
+                            print(f"PROBLEM WITH {r.attrs}")
+                            continue
+                        t = Tag(name='a')
+                        t.attrs['href'] = loc
+                        t.string = r.text
+                        r.replace_with(t)
+
                     styles[p["style"]].append(p)
                     if p['style'] == 'pi3':
                         if pi3:
@@ -108,8 +124,6 @@ for f in os.listdir("../Second USX Output for Sefaria 4-17-23/RJPS4-USX-2023-04-
                         text_dict[curr_ch][curr_seg] += "<br>"
                     if p["style"].startswith("q") or p['style'] == 'pmr':
                         msg = p_style_dict[p['style']]
-
-
                         if 'vid' in p.attrs:
                             vid = p.attrs['vid']
                         else:
@@ -126,9 +140,10 @@ for f in os.listdir("../Second USX Output for Sefaria 4-17-23/RJPS4-USX-2023-04-
                             text_dict[curr_ch][curr_seg] += "</small><br>"
                         curr_ch = poss_ch
                         curr_seg = poss_seg
-                        if len(text_dict[curr_ch][curr_seg]) > 0:
-                            text_dict[curr_ch][curr_seg] += "<br>"
-                        text_dict[curr_ch][curr_seg] += msg
+                        if not text_dict[curr_ch][curr_seg].endswith(msg):
+                            if len(text_dict[curr_ch][curr_seg]) > 0:
+                                text_dict[curr_ch][curr_seg] += "<br>"
+                            text_dict[curr_ch][curr_seg] += msg
                         special_span = True
                     else:
                         try:
@@ -181,7 +196,7 @@ for f in os.listdir("../Second USX Output for Sefaria 4-17-23/RJPS4-USX-2023-04-
                             if p.attrs.get('style', "").startswith("q") and 'vid' in p.attrs:
                                 p_ch, p_v = [int(x) for x in p.attrs.get('vid').split(" ")[-1].split(":")]
                                 if p_ch != curr_ch or p_v != curr_seg:
-                                    print(f"{title} {p_ch}:{p_v}")
+                                    #print(f"{title} {p_ch}:{p_v}")
                                     text_dict[curr_ch][curr_seg] += p_style_dict[p['style']]
                                     special_span = True
                             place = False
@@ -219,7 +234,8 @@ for f in os.listdir("../Second USX Output for Sefaria 4-17-23/RJPS4-USX-2023-04-
                                 elif ft.attrs["style"] == 'fr':
                                     ft_ref = ft.text.replace(".", ":").strip()
                                     if "–" not in ft_ref:
-                                        assert ft_ref in curr_ref
+                                        if ft_ref not in curr_ref:
+                                            print(f"Problem in {ft_ref} vs {curr_ref}")
                                     else:
                                         pass
                                 elif ft.attrs["style"] in ["fq", "fv"]:
@@ -333,5 +349,5 @@ details = {
 for version in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition"}):
     print(version)
     for k, value in details.items():
-        print(getattr(version, k))
-        #version.save()
+        setattr(version, k, value)
+        version.save()

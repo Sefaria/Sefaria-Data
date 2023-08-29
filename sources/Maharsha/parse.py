@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import django
+django.setup()
 import urllib
 import json 
 import pdb
@@ -36,7 +38,7 @@ class Maharsha:
         self.missing_ones = []
         self.heb_numbers = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "ששי", "שביעי", "שמיני", "תשיעי", "עשירי", "אחד עשר", "שנים עשר", "שלשה עשר", "ארבעה עשר", "חמשה", "ששה"]
         self.comm_dict = {}
-        self.dh1_dict = {}
+        self.dh1_dict = defaultdict(list)
         self.rashi ='רש"י'
         self.rashbam = 'פרשב"ם'
         self.ran = 'ר"ן'
@@ -51,14 +53,14 @@ class Maharsha:
         self.current_perek = 0
         self.categories = ['rashi', 'tosafot', 'gemara', 'ran', 'rosh', 'rashbam']
         self.dh_by_cat = {}
-        self.dh_by_cat = {cat: {} for cat in self.categories}
+        self.dh_by_cat = {cat: defaultdict(list) for cat in self.categories}
         self.links_to_post = []
         self.category = "gemara"
         self.prev_dh = ""
         self.comm_by_perek = {}
-        self.dh_by_perek = {}
+        self.dh_by_perek = defaultdict(list)
         self.rosh_line = 0
-        self.looking_for_perakim = False
+        self.looking_for_perakim = True
 
 
 
@@ -109,11 +111,11 @@ class Maharsha:
         post_comment = post_comment.strip()
         first_word = post_comment.split(" ")[0]
         post_comment = u"<b>{}</b> {}".format(first_word, " ".join(post_comment.split(" ")[1:]))
-        self.comm_dict[self.current_daf].append(post_comment)
+        #self.comm_dict[self.current_daf].append(post_comment)
         self.dh_by_cat[category][self.current_daf].append(dh)
         if self.looking_for_perakim:
             self.dh_by_perek[self.current_perek].append((category, dh, self.current_daf))
-            self.comm_by_perek[self.current_perek].append(post_comment)
+            #self.comm_by_perek[self.current_perek].append(post_comment)
 
     def dh_extract_method(self, str):
         str = str
@@ -324,6 +326,17 @@ class Maharsha:
                 "generated_by": self.title+self.masechet+" linker"
             })
 
+    def texty(self, actual_text):
+        comments = actual_text.split(": ")
+        for count, comment in enumerate(comments):
+            if len(comment.replace(" ", "")) < 3:
+                continue
+            if comment[0] == ' ':
+                comment = comment[1:]
+            comment += ':'
+            same_dh = self.determineCategory(count, comment)
+            self.parseDH(comment, self.category, same_dh)
+
     def getGemaraRef(self, ref):
         ref = Ref(ref)
         assert len(ref.sections) == 3 ^ (not ref.is_segment_level())
@@ -379,7 +392,7 @@ class Maharsha:
         rosh_results = []
         perek_key = {}
         for perek in sorted(self.dh_by_perek.keys()):
-            tuples = filter(lambda x: x[0] is 'rosh', self.dh_by_perek[perek])
+            tuples = list(filter(lambda x: x[0] is 'rosh', self.dh_by_perek[perek]))
             if len(tuples) > 0:
                 cats, dhs, dappim = zip(*tuples)
                 #for each daf and dh pair, that's the key to get the perek
@@ -645,11 +658,6 @@ def check_for_other_daf(comment):
     return text_list
 
 
-
-
-
-
-
 if __name__ == "__main__":
     done = []
     #split_lines_into_amudim(["מהרשא יבמות.txt"])
@@ -666,35 +674,50 @@ if __name__ == "__main__":
     dont_start = True
 
 
-    add_category("Seder Nezikin", ["Talmud", "Bavli", "Commentary", "Chidushei Halachot", "Seder Nezikin"], server="http://ste.sefaria.org")
+    #add_category("Seder Nezikin", ["Talmud", "Bavli", "Commentary", "Chidushei Halachot", "Seder Nezikin"], server="http://localhost:8000")
+    title = "Chidushei Agadot"
+    heTitle = u"חידושי אגדות"
+    obj = Maharsha("Sotah", title, heTitle, server="http://localhost:8000")
+    chapters = []
+    for i in range(9):
+        chapters.append(Ref(f"Sotah, Chapter {i+1}"))
+    refs = library.get_index("Chidushei Agadot on Sotah").all_segment_refs()
+    for s, seg in enumerate(refs):
+        obj.current_daf = seg.section_ref().sections[0]
+        for i, c in enumerate(chapters):
+            if c.contains(Ref(seg.section_ref().normal().replace("Chidushei Agadot on ", ""))):
+                obj.current_perek = i + 1
+        txt = seg.text('he').text
+        obj.texty(txt)
 
-
-    for file in files:
-        if "Pesachim" not in file:
-            continue
-        masechet = file.split(".txt")[0].replace("chidushei_agadot_", "").replace("chidushei_halachot_","").title()
-        print(file)
-        len_masechet = len(Ref(masechet).text('he').text)
-        if file.startswith("chidushei_ag"):
-            title = "Chidushei Agadot"
-            heTitle = u"חידושי אגדות"
-            obj = Maharsha(masechet, title, heTitle, server="http://ste.sefaria.org")
-        elif file.startswith("chidushei_ha"):
-            title = "Chidushei Halachot"
-            heTitle = u"חדושי הלכות"
-            obj = Maharsha(masechet, title, heTitle, server="http://ste.sefaria.org")
-        obj.parseText(open("./"+file), len_masechet)
-
-        if len(obj.comm_dict) > 0 and obj.dont_post is False:
-            obj.create_index(masechet)
-            text_to_post = convertDictToArray(obj.comm_dict)
-            send_text = {
-                                "versionTitle": "Vilna Edition",
-                                "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
-                                "language": "he",
-                                "text": text_to_post,
-                        }
-            post_text("{} on {}".format(title, masechet), send_text, "on", server="http://ste.sefaria.org")
-            obj.postLinks(masechet)
-
+    obj.postLinks("Sotah")
+    #
+    # for file in files:
+    #     masechet = file.split(".txt")[0].replace("chidushei_agadot_", "").replace("chidushei_halachot_","").title()
+    #     print(file)
+    #     try:
+    #         len_masechet = len(Ref(masechet).text('he').text)
+    #         if file.startswith("chidushei_ag"):
+    #             title = "Chidushei Agadot"
+    #             heTitle = u"חידושי אגדות"
+    #             obj = Maharsha(masechet, title, heTitle, server="http://localhost:8000")
+    #         elif file.startswith("chidushei_ha"):
+    #             title = "Chidushei Halachot"
+    #             heTitle = u"חדושי הלכות"
+    #             obj = Maharsha(masechet, title, heTitle, server="http://localhost:8000")
+    #         obj.parseText(open("./"+file), len_masechet)
+    #
+    #         if len(obj.comm_dict) > 0 and obj.dont_post is False:
+    #             #obj.create_index(masechet)
+    #             text_to_post = convertDictToArray(obj.comm_dict)
+    #             send_text = {
+    #                                 "versionTitle": "Vilna Edition",
+    #                                 "versionSource": "http://primo.nli.org.il/primo_library/libweb/action/dlDisplay.do?vid=NLI&docId=NNL_ALEPH001300957",
+    #                                 "language": "he",
+    #                                 "text": text_to_post,
+    #                         }
+    #             #post_text("{} on {}".format(title, masechet), send_text, "on", server="http://localhost:8000")
+    #             #obj.postLinks(masechet)
+    #     except:
+    #         pass
 
