@@ -81,7 +81,6 @@ def create_index_record(en_title, he_title):
     return record
 
 
-# Text node:
 def add_text_node(record):
     """
     Helper function which created a JaggedArrayNode() for the text, and appends it
@@ -101,7 +100,8 @@ def add_text_node(record):
     text_node.depth = 3
 
     # Set the addressTypes and the corresponding sectionNames, the number of items in the list
-    # will correspond to the depth of the text.
+    # will correspond to the depth of the text. For example, a depth-2 text like the Tanakh
+    # would have addressTypes = ["Integer", "Integer"] and sectionNames = ["Perek", "Pasuk"]
     text_node.addressTypes = ['Integer', 'Integer', 'Integer']
     text_node.sectionNames = ['Chapter', 'Mishnah', 'Paragraph']
 
@@ -137,12 +137,12 @@ def create_index_main():
         # Add a text node to the record
         add_text_node(record)
 
-        # Validate the Index record
+        # Validate the SchemaNode record
         record.validate()
 
         # Create the Index
         # (Everything until this point was creating the SCHEMA for the index. Below, we will
-        # actually create the index itself, by appropriately filling out the necessary fields.
+        # actually create the index itself, by appropriately filling out the necessary fields.)
         index = {
             # The primary title of the SchemaNode record
             "title": record.primary_title(),
