@@ -12,11 +12,11 @@ from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.helper.category import create_category
 from sefaria.system.database import db
-import time
+# import time
 import docx
 from docx import Document
 import re
-import Levenshtein
+
 
 from collections import defaultdict
 
@@ -115,7 +115,7 @@ all_masechtot = [
     "Sukkah",
     "Beitzah",
     "Rosh Hashanah",
-    "Ta'anit",
+    "Taanit",
     "Megillah",
     "Moed Katan",
     "Chagigah",
@@ -299,7 +299,30 @@ def print_dict_list_lengths(list_of_dicts):
         for key, value in dictionary.items():
             if isinstance(value, list):
                 key = key.replace("@11", '')
-                print(f"Masechet and Chapter: {key}, Number of Mishnayot: {len(value)}")
+                # print(f"Masechet and Chapter: {key}, Number of Mishnayot: {len(value)}")
+                # print(f"{key}, Number of Mishnayot: {len(value)}")
+                print(f"{len(value)}")
+def extract_substring_until_after_perek(input_string):
+    # Find the position of "פרק"
+    index = input_string.find("פרק") + 4
+
+    # If "פרק" is found, find the position of the next space after it
+    if index != -1:
+        space_index = input_string.find(" ", index)
+
+        # Extract the substring from the beginning of the string until the space after "פרק"
+        if space_index != -1:
+            extracted_substring = input_string[:space_index + 1].strip()
+        else:
+            # Handle the case where no space is found after "פרק"
+            extracted_substring = input_string
+    else:
+        # Handle the case where "פרק" is not found
+        extracted_substring = input_string
+    return(extracted_substring)
+
+
+
 
 if __name__ == '__main__':
     print("hello world")
@@ -312,31 +335,46 @@ if __name__ == '__main__':
         # Create a defaultdict with a default factory of list
         mas_chapters = defaultdict(list)
         for mishna in mas:
-            input_string = mishna
-            # Find the position of "פרק"
-            index = input_string.find("פרק") + 4
-
-            # If "פרק" is found, find the position of the next space after it
-            if index != -1:
-                space_index = input_string.find(" ", index)
-
-                # Extract the substring from the beginning of the string until the space after "פרק"
-                if space_index != -1:
-                    extracted_substring = input_string[:space_index + 1].strip()
-                else:
-                    # Handle the case where no space is found after "פרק"
-                    extracted_substring = input_string
-            else:
-                # Handle the case where "פרק" is not found
-                extracted_substring = input_string
-
+            # input_string = mishna
+            extracted_substring = extract_substring_until_after_perek(mishna)
             # Print the extracted substring
             if '@11מסכת ' in extracted_substring and ' פרק ' in extracted_substring:
                 mas_chapters[extracted_substring].append(mishna)
-            print(extracted_substring)
+            # print(extracted_substring)
 
         shas.append(mas_chapters)
     print_dict_list_lengths(shas)
+    num_of_mish_every_chap = {}
+    for masechet in all_masechtot:
+        r = Ref("Mishna " + masechet)
+        ranged = r.as_ranged_segment_ref()
+        num_of_chapters  = ranged.toSections[0]
+        segments = r.all_segment_refs()
+
+
+        for perek in range (1, num_of_chapters + 1):
+            tref = "Mishna " + masechet +  ' ' + str(perek)
+            num_of_mish = len(Ref("Mishna " + masechet +  ' ' + str(perek)).all_segment_refs())
+            num_of_mish_every_chap[tref] = num_of_mish
+
+    # Specify the CSV file path
+    csv_file = "output.csv"
+
+    # Open the CSV file for writing
+    with open(csv_file, 'w', newline='') as file:
+        # Create a CSV writer object
+        writer = csv.writer(file)
+
+        # Write the key-value pairs as rows with two columns each
+        for key, value in num_of_mish_every_chap.items():
+            writer.writerow([key, value])
+
+    print(f"CSV file '{csv_file}' has been created.")
+
+
+
+
+
     print('hi')
 
 
