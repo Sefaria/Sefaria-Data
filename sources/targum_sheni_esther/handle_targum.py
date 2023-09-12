@@ -16,12 +16,14 @@ from sefaria.system.database import db
 
 def post_indices():
     from sources.functions import post_index, add_term
+    add_term("Targum Sheni", "תרגום שני", server="https://new-shmuel.cauldron.sefaria.org")
+    # add_term("Targum Sheni", "תרגום שני")
     # add_term("Targum Sheni", "תרגום שני", server="https://new-shmuel.cauldron.sefaria.org")
-    index = post_index({'title': 'Targum_Sheni_on_Esther'}, server="https://new-shmuel.cauldron.sefaria.org", method="GET")
-    index["dependence"] = "targum"
-    index["base_text_titles"] = ["Esther"]
-    index["collective_title"] = "Targum Sheni"
-    post_index(index, server="https://new-shmuel.cauldron.sefaria.org")
+    # index = post_index({'title': 'Targum_Sheni_on_Esther'}, server="https://new-shmuel.cauldron.sefaria.org", method="GET")
+    # index["dependence"] = "targum"
+    # index["base_text_titles"] = ["Esther"]
+    # index["collective_titpsqlle"] = "Targum Sheni"
+    # post_index(index, server="https://new-shmuel.cauldron.sefaria.org")
 
 
 
