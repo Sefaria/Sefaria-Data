@@ -1,4 +1,5 @@
 from sources.local_settings import OPEN_AI_API_KEY
+import langchain
 from langchain.text_splitter import Language
 from langchain.document_loaders.generic import GenericLoader
 from langchain.document_loaders.parsers import LanguageParser
@@ -8,6 +9,9 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationSummaryMemory
 from langchain.chains import ConversationalRetrievalChain
+
+from langchain.cache import InMemoryCache
+langchain.llm_cache = InMemoryCache()
 
 
 def chain_llm():
@@ -55,6 +59,5 @@ if __name__ == '__main__':
 # - Chunks make sense? Too large...
 # - Examples need to be very similar to the question asked
 # - Expect more of eng, give details about the text. We expect engineers to invest in the prompt.
-# - Caching (LangChain) - two liner at beginning of file.
 # - VectorDB in RAM vs persisting to DISC, so can pull from there for LLM initializing (if chunks shift etc, clear db).
 # - Content eng guide / give it documentation / couple of Steve/Yishai well-written projects, bring that in too.
