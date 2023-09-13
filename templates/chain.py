@@ -14,7 +14,7 @@ from langchain.cache import InMemoryCache
 langchain.llm_cache = InMemoryCache()
 
 
-def chain_llm():
+def chain_llm(new_persist_to_db=True):
     repo_path = "/Users/sefaria/Sefaria-Data/templates"
 
     # Load
@@ -33,7 +33,11 @@ def chain_llm():
     texts = python_splitter.split_documents(documents)
     print(len(texts))
 
-    db = Chroma.from_documents(texts, OpenAIEmbeddings(disallowed_special=(), openai_api_key=OPEN_AI_API_KEY))
+    if new_persist_to_db:
+        db = Chroma.from_documents(texts, OpenAIEmbeddings(disallowed_special=(), openai_api_key=OPEN_AI_API_KEY), persist_directory="./chroma_db")
+
+    # Pull from disc:
+    db = Chroma(persist_directory="./chroma_db", embedding_function=OpenAIEmbeddings(disallowed_special=(), openai_api_key=OPEN_AI_API_KEY))
     retriever = db.as_retriever(
         search_type="mmr",  # Also test "similarity"
         search_kwargs={"k": 8},
@@ -52,12 +56,13 @@ def ask(qa, question):
 
 
 if __name__ == '__main__':
-    qa = chain_llm()
+    # Note: must be true on first run to persist
+    qa = chain_llm(new_persist_to_db=False)
     question = "Write me sample code for creating a new Index for the book of \"Bereshit\"?"
     ask(qa, question)
 
 # - Chunks make sense? Too large...
 # - Examples need to be very similar to the question asked
 # - Expect more of eng, give details about the text. We expect engineers to invest in the prompt.
-# - VectorDB in RAM vs persisting to DISC, so can pull from there for LLM initializing (if chunks shift etc, clear db).
+
 # - Content eng guide / give it documentation / couple of Steve/Yishai well-written projects, bring that in too.
