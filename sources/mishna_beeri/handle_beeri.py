@@ -334,8 +334,6 @@ def beeri_to_structured():
     return shas
 
 def format_mishna(mishna_string):
-    if "רַשַּׁי" in mishna_string:
-        a = 8
     # Split the string into lines, filter, and join back
     lines = mishna_string.splitlines()
     filtered_lines = [line for line in lines if not (line.startswith('@') or
@@ -362,6 +360,25 @@ def format_mishna(mishna_string):
     # output_string = re.sub(pattern, r'<small>\1</small>', mishna_string).replace('\n', ' ')
     if mishna_string.startswith("<br>"):
         mishna_string = output_string[4:]
+
+    def find_quoted_substrings(text):
+        pattern = r'"(.*?)"'  # Regular expression to match text within double quotes
+        matches = re.findall(pattern, text)
+        return matches
+
+    result = find_quoted_substrings(mishna_string)
+
+
+    for item in result:
+        if 'בפרמה' in item:
+            continue
+        if item.startswith(' '):
+            # print(mishna_string)
+            # print("redundant space in " + item)
+            mishna_string = mishna_string.replace(item, item[1:])
+            # print(mishna_string)
+
+
     return(mishna_string)
 
 def ingest_masechet_version(masechet_name ,map_text):
