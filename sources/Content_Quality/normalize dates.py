@@ -30,19 +30,6 @@ def parse_years(years_string):
         else:
             end = int(end_str)
         return [start, end]
-    # elif len(years) == 4:
-    #     start = -int(years[1])
-    #     end_str = years[4]
-    #
-    #     start_str = str(start)
-    #
-    #     if len(end_str) < len(start_str):
-    #         end = int(start_str[:-len(end_str)] + end_str)
-    #     else:
-    #         end = -int(end_str)
-    #     return [-start, end]
-    # else:
-    #     return None
 
 def convert(x, error, o):
     if "," in x:
@@ -106,7 +93,7 @@ authors = TopicSet({"subclass": 'author'})
 book_data = defaultdict()
 error_margins = {}
 topic_data = defaultdict()
-
+dropping_error_margin = False
 
 for k in ['pubDate', 'compDate', 'errorMargin']:
     book_data[k] = {"ints": 0, "string ints": 0, "others": {}}
@@ -114,10 +101,6 @@ for b in tqdm(books):
     changed = False
     for k in ['pubDate', 'compDate', 'errorMargin']:
         changed = process(book_data, b, k, lambda x: x.title, book_setter) or changed
-    if hasattr(b, 'errorMargin'):
-        del b.errorMargin
-        b.hasErrorMargin = True
-        changed = True
     if changed:
         try:
             b.save(override_dependencies=True)
@@ -135,3 +118,10 @@ for b in tqdm(authors):
         curr = b.properties['deathYear']['value']
         b.properties['deathYear']['value'] = int(curr)
     b.save(override_dependencies=True)
+
+if dropping_error_margin:
+    for b in tqdm(books):
+        if hasattr(b, 'errorMargin'):
+            del b.errorMargin
+            b.hasErrorMargin = True
+            changed = True

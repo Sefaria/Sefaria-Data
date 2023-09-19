@@ -75,11 +75,15 @@ Numbers 21:14
 Numbers 33:8
 Numbers 18:16
 Numbers 21:6""".splitlines()
-issues = """Numbers 18:15
-Numbers 21:5""".splitlines()
+issues = """Leviticus 4:35
+Numbers 1:4""".splitlines()
 places = {}
 allowed_attrs = ['class', 'data-ref', 'href']
-p_style_dict = {"q2": '<span class="poetry indentAllDouble">', "pmr": '<span class="poetry indentAllDouble">', 'q1': '<span class="poetry indentAll">',
+p_style_dict = {"q2": '<span class="poetry indentAllDouble">',
+                "pmr": '<span class="poetry indentAllDouble">',
+                'mi': '<span class="poetry indentAll">',
+                'lim1': '<span class="poetry indentAll">',
+                'q1': '<span class="poetry indentAll">',
                          'qc': '<span class="poetry indentAll">'}
 p_styles = set()
 other_tags = set()
@@ -141,8 +145,12 @@ for f in os.listdir(f"../RJPS_for_Sefaria.11Jul23/{dir}"):
                         poss_ch, poss_seg = [int(x) for x in vid.split(" ")[-1].split(":")]
                         assert poss_ch == curr_ch and poss_seg == curr_seg
                         text_dict[curr_ch][curr_seg] += "<br>"
-                    if p["style"].startswith("q") or p['style'] == 'pmr':
-                        msg = p_style_dict[p['style']]
+                    new_msg = ""
+                    for k in p_style_dict:
+                        if p["style"] == k:
+                            new_msg = p_style_dict[p["style"]]
+                    if new_msg != "":
+                        msg = new_msg
                         if 'vid' in p.attrs:
                             vid = p.attrs['vid']
                         else:
@@ -267,8 +275,10 @@ for f in os.listdir(f"../RJPS_for_Sefaria.11Jul23/{dir}"):
                                     ft_txt += "<b>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)+"</b>"
                                 elif ft.attrs["style"] == "ft":
                                     ft_txt += bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True).strip()
+                            full_i_tag = f'<sup class="footnote-marker">{caller}</sup><i class="footnote">{ft_txt}</i>'
                             text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
-                            text_dict[curr_ch][curr_seg] += add_text(f'<sup class="footnote-marker">{caller}</sup><i class="footnote">{ft_txt}</i> ', string=True)
+                            full_i_tag += ' '
+                            text_dict[curr_ch][curr_seg] += add_text(full_i_tag, string=True)
                             prev_was_lord = True
                         elif v.name == "char":
                             if not check_str(text_dict[curr_ch][curr_seg], "ending"):
