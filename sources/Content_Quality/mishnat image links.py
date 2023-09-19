@@ -1,10 +1,10 @@
 import django
 django.setup()
 from sefaria.model import *
-from sources.functions import *
+import re
 img_locs = {}
 def replace_img(r, img_loc, whole):
-    link = f"<a href='/{img_loc.url()}' data-ref='{img_loc.normal()}' class='refLink'>{whole}</a>"
+    link = f"<a href='/{img_loc.url()}' data-ref='{img_loc.normal()}' class='refLink' data-scroll-link='true'>{whole}</a>"
     tc = TextChunk(r, lang='he', vtitle='Mishnat Eretz Yisrael, Seder Nezikin, Jerusalem, 2013')
     if link not in tc.text:
         print(r)

@@ -19,13 +19,16 @@ def modify_small(x):
 
 
 def check_str(v, pos='ending'):
+    v = bleach.clean(v, strip=True, tags=[])
     if pos == 'ending':
-        poss_endings = ['”', '“', '‘', '‘']
+        # if v.endswith(" "):
+        #     return False
+        poss_endings = ['”', '“', '‘', '‘', ' ', '[', '—', '(']
         for p in poss_endings:
             if v.endswith(p):
                 return True
     else:
-        poss_starts = [",", ";", ".", ":", "'", "’"]
+        poss_starts = [",", ";", ".", ":", "'", "’", '—', '?', '!', ']', ')']
         for p in poss_starts:
             if v.startswith(p):
                 return True
@@ -49,7 +52,7 @@ def add_text(el, string=False):
                 x.string = x.text.upper()
             if found:
                 x.attrs = {}
-        txt = bleach.clean(el, tags=ALLOWED_TAGS, attributes=['class'], strip=True) + " "
+        txt = bleach.clean(el, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True) + " "
     if prev_span_closed:
         prev_span_closed = False
     if special_span:
@@ -58,13 +61,31 @@ def add_text(el, string=False):
         txt += "</span>"
     return txt
 
+
+issues = """Exodus 4:11
+Exodus 10:24
+Leviticus 8:21
+Deuteronomy 2:22
+Leviticus 1:1
+Deuteronomy 10:4
+Genesis 2:12
+Exodus 3:5
+Leviticus 23:20
+Numbers 21:14
+Numbers 33:8
+Numbers 18:16
+Numbers 21:6""".splitlines()
+issues = """Numbers 18:15
+Numbers 21:5""".splitlines()
 places = {}
+allowed_attrs = ['class', 'data-ref', 'href']
 p_style_dict = {"q2": '<span class="poetry indentAllDouble">', "pmr": '<span class="poetry indentAllDouble">', 'q1': '<span class="poetry indentAll">',
                          'qc': '<span class="poetry indentAll">'}
 p_styles = set()
 other_tags = set()
 start = ""
-for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX format - July 2023"):
+dir = "RJPS Torah for Sefaria, USX format - July 2023"
+for f in os.listdir(f"../RJPS_for_Sefaria.11Jul23/{dir}"):
     place = False
     poss_find = None
     if not f.endswith("usx"):
@@ -74,14 +95,10 @@ for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX 
     start = ""
     lines = ""
     title = f.replace(".usx", "")
-    if not "Writings" in library.get_index(title).categories:
-        continue
-    # if title != "Isaiah":
-    #     continue
     text_dict = {}
     curr_ch = 0
     curr_seg = 0
-    with open("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX format - July 2023/"+f, 'r') as f:
+    with open(f"../RJPS_for_Sefaria.11Jul23/{dir}/"+f, 'r') as f:
         lines = "\n".join(list(f))
         special_span = False
         xml = BeautifulSoup(lines, parser='lxml')
@@ -100,12 +117,14 @@ for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX 
                         r.attrs['loc'] = r.attrs['loc'].replace("ISA", "Isaiah").replace("LEV", "Leviticus").replace("PRO", "Proverbs").replace("HOS", "Hoshea").replace("ECC", "Ecclesiastes")
                         r.attrs['loc'] = r.attrs['loc'].replace("EZR", "Ezra")
                         try:
-                            loc = Ref(r.attrs['loc'].title().replace(" Of", " of")).normal()
+                            loc = Ref(r.attrs['loc'].title().replace(" Of", " of"))
                         except Exception as e:
                             print(f"PROBLEM WITH {r.attrs}")
                             continue
                         t = Tag(name='a')
-                        t.attrs['href'] = loc
+                        t.attrs['href'] = loc.url()
+                        t.attrs['class'] = 'refLink'
+                        t.attrs['data-ref'] = loc.normal()
                         t.string = r.text
                         r.replace_with(t)
 
@@ -138,6 +157,9 @@ for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX 
                             text_dict[poss_ch][poss_seg] = ""
                         if pi3:
                             text_dict[curr_ch][curr_seg] += "</small><br>"
+                        if f"{title} {curr_ch}:{curr_seg}" in issues:
+                            print(f"\nISSUE: {title} {curr_ch}:{curr_seg}")
+                            print(text_dict[curr_ch][curr_seg])
                         curr_ch = poss_ch
                         curr_seg = poss_seg
                         if not text_dict[curr_ch][curr_seg].endswith(msg):
@@ -160,7 +182,8 @@ for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX 
                                 continue
                             if prev_was_lord and check_str(v, "start"):
                                 text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
-                            if v.startswith("s ") or v == "s" or (v.startswith('s') and len(v) == 2 and re.search("[a-z]{2}", v) is None):
+                            s_start = v.startswith("s. ") or v.startswith("s ") or v == "s"
+                            if s_start:
                                 text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
                                 place = True
                             text_dict[curr_ch][curr_seg] += add_text(v, string=True)
@@ -184,8 +207,10 @@ for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX 
                             prev_seg = curr_seg
                             if pi3:
                                 text_dict[curr_ch][curr_seg] += "</small><br>"
+                            if f"{title} {curr_ch}:{curr_seg}" in issues:
+                                print(f"\nISSUE: {title} {curr_ch}:{curr_seg}")
+                                print(text_dict[curr_ch][curr_seg])
                             curr_ch, curr_seg = [int(x) for x in ref.split(":")]
-
                             curr_ch = int(curr_ch)
                             curr_seg = int(curr_seg)
                             if curr_ch not in text_dict:
@@ -230,7 +255,7 @@ for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX 
                                         ft_txt += ft
                                 elif ft.attrs["style"] in ["tl", "it"]:
                                     place = True
-                                    ft_txt += "<i>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=['class'], strip=True)+"</i>"
+                                    ft_txt += "<i>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)+"</i>"
                                 elif ft.attrs["style"] == 'fr':
                                     ft_ref = ft.text.replace(".", ":").strip()
                                     if "–" not in ft_ref:
@@ -239,13 +264,16 @@ for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX 
                                     else:
                                         pass
                                 elif ft.attrs["style"] in ["fq", "fv"]:
-                                    ft_txt += "<b>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=['class'], strip=True)+"</b>"
+                                    ft_txt += "<b>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)+"</b>"
                                 elif ft.attrs["style"] == "ft":
-                                    ft_txt += bleach.clean(ft, tags=ALLOWED_TAGS, attributes=['class'], strip=True).strip()
+                                    ft_txt += bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True).strip()
+                            text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
                             text_dict[curr_ch][curr_seg] += add_text(f'<sup class="footnote-marker">{caller}</sup><i class="footnote">{ft_txt}</i> ', string=True)
+                            prev_was_lord = True
                         elif v.name == "char":
                             if not check_str(text_dict[curr_ch][curr_seg], "ending"):
-                                text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip() + " "
+                                if len(bleach.clean(text_dict[curr_ch][curr_seg], tags=[], strip=True)) > 0:
+                                    text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip() + " "
                             found = False
                             if v.attrs["style"] in ["tl", "it"]:
                                 v.name = "i"
@@ -310,13 +338,13 @@ for f in os.listdir("../RJPS_for_Sefaria.11Jul23/RJPS Kethuvim for Sefaria, USX 
             #     print(new)
 
     text_dict = convertDictToArray(text_dict)
-    tc = TextChunk(Ref(title), lang='en', vtitle="THE JPS TANAKH: Gender-Sensitive Edition")
+    tc = TextChunk(Ref(title), lang='en', vtitle="THE JPS TANAKH: Gender-Sensitive Edition (new batch)")
     if tc.text != text_dict:
         tc.text = text_dict
         tc.save()
 
 print(other_tags)
-for v in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition"}):
+for v in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition (new batch)"}):
     v.versionSource = "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
     v.save()
 
@@ -346,7 +374,7 @@ for v in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition"}
 details = {
     "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
     "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"}
-for version in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition"}):
+for version in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition (new batch)"}):
     print(version)
     for k, value in details.items():
         setattr(version, k, value)
