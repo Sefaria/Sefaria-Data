@@ -55,13 +55,16 @@ def add_text(el, string=False):
         txt = bleach.clean(el, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True) + " "
     if prev_span_closed:
         prev_span_closed = False
-    if special_span:
-        special_span = False
-        prev_span_closed = True
-        txt += "</span>"
+    # if special_span:
+    #     special_span = False
+    #     prev_span_closed = True
+    #     txt += "</span>"
     return txt
 
-
+# I had assumed that there is one and only one span per p.  In actuality, within one verse, you can
+# have multiple ps and one p can have multiple verses.  Three diff cases
+# one verse across multiple ps: dont add a msg if there's already in this p by checking the string itself
+# one p with multiple verses: when verse changes add </span>
 issues = """Exodus 4:11
 Exodus 10:24
 Leviticus 8:21
@@ -75,8 +78,7 @@ Numbers 21:14
 Numbers 33:8
 Numbers 18:16
 Numbers 21:6""".splitlines()
-issues = """Leviticus 4:35
-Numbers 1:4""".splitlines()
+issues = """Deuteronomy 11:1""".splitlines()
 places = {}
 allowed_attrs = ['class', 'data-ref', 'href']
 p_style_dict = {"q2": '<span class="poetry indentAllDouble">',
@@ -88,270 +90,282 @@ p_style_dict = {"q2": '<span class="poetry indentAllDouble">',
 p_styles = set()
 other_tags = set()
 start = ""
-dir = "RJPS Torah for Sefaria, USX format - July 2023"
-for f in os.listdir(f"../RJPS_for_Sefaria.11Jul23/{dir}"):
-    place = False
-    poss_find = None
-    if not f.endswith("usx"):
-        continue
-    if start not in f:
-        continue
-    start = ""
-    lines = ""
-    title = f.replace(".usx", "")
-    text_dict = {}
-    curr_ch = 0
-    curr_seg = 0
-    with open(f"../RJPS_for_Sefaria.11Jul23/{dir}/"+f, 'r') as f:
-        lines = "\n".join(list(f))
-        special_span = False
-        xml = BeautifulSoup(lines, parser='lxml')
-        segment = ""
-        curr_ref = ""
-        prev_was_lord = False
-        pi3 = False
-        for p_num, p in enumerate(xml.find_all("para")):
-            if p.name == "para" and p.attrs['style'] != 'rem':
-                verses_bool = len([x for x in p.contents if isinstance(x, Tag)]) > 0
-                if (len(p) > 1 or len(p.attrs) > 1):
-                    for r in p.find_all('ref'):
-                        r.attrs['loc'] = r.attrs['loc'].replace("EZK", "Ezekiel").replace("CH", " Chronicles").replace("1SA", "1 Samuel").replace("2SA", "2 Samuel")
-                        r.attrs['loc'] = r.attrs['loc'].replace("ZEC", "Zechariah").replace("1KI", "1 Kings").replace("2KI", "2 Kings").replace("JOL", "Joel").replace("ZEP", "Zephaniah")
-                        r.attrs['loc'] = r.attrs['loc'].replace("SNG", "Song of Songs").replace("NAM", "Nehemiah").replace("PSA", "Psalms").replace("NUM", "Numbers")
-                        r.attrs['loc'] = r.attrs['loc'].replace("ISA", "Isaiah").replace("LEV", "Leviticus").replace("PRO", "Proverbs").replace("HOS", "Hoshea").replace("ECC", "Ecclesiastes")
-                        r.attrs['loc'] = r.attrs['loc'].replace("EZR", "Ezra")
-                        try:
-                            loc = Ref(r.attrs['loc'].title().replace(" Of", " of"))
-                        except Exception as e:
-                            print(f"PROBLEM WITH {r.attrs}")
-                            continue
-                        t = Tag(name='a')
-                        t.attrs['href'] = loc.url()
-                        t.attrs['class'] = 'refLink'
-                        t.attrs['data-ref'] = loc.normal()
-                        t.string = r.text
-                        r.replace_with(t)
-
-                    styles[p["style"]].append(p)
-                    if p['style'] == 'pi3':
-                        if pi3:
-                            text_dict[curr_ch][curr_seg] += "</small><br>"
-                        text_dict[curr_ch][curr_seg] += "<small>"
-                        pi3 = True
-                    if p["style"].startswith("q"):
-                        other_tags.add(p["style"])
-                    if p["style"] == "p" and 'vid' in p.attrs:
-                        vid = p.attrs['vid']
-                        poss_ch, poss_seg = [int(x) for x in vid.split(" ")[-1].split(":")]
-                        assert poss_ch == curr_ch and poss_seg == curr_seg
-                        text_dict[curr_ch][curr_seg] += "<br>"
-                    new_msg = ""
-                    for k in p_style_dict:
-                        if p["style"] == k:
-                            new_msg = p_style_dict[p["style"]]
-                    if new_msg != "":
-                        msg = new_msg
-                        if 'vid' in p.attrs:
-                            vid = p.attrs['vid']
-                        else:
-                            vid = p.find("verse").attrs['sid']
-
-                        poss_ch, poss_seg = [int(x) for x in vid.split(" ")[-1].split(":")]
-                        if poss_ch not in text_dict:
-                            text_dict[poss_ch] = {}
-                        if poss_seg not in text_dict[poss_ch]:
-                            if special_span:
-                                text_dict[curr_ch][curr_seg] += "</span>"
-                            text_dict[poss_ch][poss_seg] = ""
-                        if pi3:
-                            text_dict[curr_ch][curr_seg] += "</small><br>"
-                        if f"{title} {curr_ch}:{curr_seg}" in issues:
-                            print(f"\nISSUE: {title} {curr_ch}:{curr_seg}")
-                            print(text_dict[curr_ch][curr_seg])
-                        curr_ch = poss_ch
-                        curr_seg = poss_seg
-                        if not text_dict[curr_ch][curr_seg].endswith(msg):
-                            if len(text_dict[curr_ch][curr_seg]) > 0:
-                                text_dict[curr_ch][curr_seg] += "<br>"
-                            text_dict[curr_ch][curr_seg] += msg
-                        special_span = True
-                    else:
-                        try:
-                            if text_dict[curr_ch][curr_seg].endswith("</span>"):
-                                text_dict[curr_ch][curr_seg] += "<br>"
-                        except KeyError as e:
-                            pass
-                        special_span = False
-
-
-                    for v_num, v in enumerate(p.contents):
-                        if isinstance(v, NavigableString):
-                            if len(v.strip()) == 0:
+for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for Sefaria, USX format - July 2023"]:
+    for f in os.listdir(f"../RJPS_for_Sefaria.11Jul23/{dir}"):
+        place = False
+        poss_find = None
+        if not f.endswith("usx"):
+            continue
+        if start not in f:
+            continue
+        start = ""
+        lines = ""
+        title = f.replace(".usx", "")
+        print(title)
+        text_dict = {}
+        curr_ch = 0
+        curr_seg = 0
+        with open(f"../RJPS_for_Sefaria.11Jul23/{dir}/"+f, 'r') as f:
+            lines = "\n".join(list(f))
+            special_span = False
+            xml = BeautifulSoup(lines, parser='lxml')
+            segment = ""
+            curr_ref = ""
+            prev_was_lord = False
+            pi3 = False
+            for p_num, p in enumerate(xml.find_all("para")):
+                if p.name == "para" and p.attrs['style'] != 'rem':
+                    verses_bool = len([x for x in p.contents if isinstance(x, Tag)]) > 0
+                    if (len(p) > 1 or len(p.attrs) > 1):
+                        for r in p.find_all('ref'):
+                            r.attrs['loc'] = r.attrs['loc'].replace("EZK", "Ezekiel").replace("CH", " Chronicles").replace("1SA", "1 Samuel").replace("2SA", "2 Samuel")
+                            r.attrs['loc'] = r.attrs['loc'].replace("ZEC", "Zechariah").replace("1KI", "1 Kings").replace("2KI", "2 Kings").replace("JOL", "Joel").replace("ZEP", "Zephaniah")
+                            r.attrs['loc'] = r.attrs['loc'].replace("SNG", "Song of Songs").replace("NAM", "Nehemiah").replace("PSA", "Psalms").replace("NUM", "Numbers")
+                            r.attrs['loc'] = r.attrs['loc'].replace("ISA", "Isaiah").replace("LEV", "Leviticus").replace("PRO", "Proverbs").replace("HOS", "Hoshea").replace("ECC", "Ecclesiastes")
+                            r.attrs['loc'] = r.attrs['loc'].replace("EZR", "Ezra")
+                            try:
+                                loc = Ref(r.attrs['loc'].title().replace(" Of", " of"))
+                            except Exception as e:
+                                print(f"PROBLEM WITH {r.attrs}")
                                 continue
-                            if prev_was_lord and check_str(v, "start"):
-                                text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
-                            s_start = v.startswith("s. ") or v.startswith("s ") or v == "s"
-                            if s_start:
-                                text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
-                                place = True
-                            text_dict[curr_ch][curr_seg] += add_text(v, string=True)
-                            prev_was_lord = False
+                            t = Tag(name='a')
+                            t.attrs['href'] = loc.url()
+                            t.attrs['class'] = 'refLink'
+                            t.attrs['data-ref'] = loc.normal()
+                            t.string = r.text
+                            r.replace_with(t)
 
-                        elif v.name == "verse" and "sid" in v.attrs:
-                            if place:
-                                m = re.findall("<sup>.{1}</sup><sup>.{1}</sup>", text_dict[curr_ch][curr_seg])
-                                changed = len(m) > 0
-                                for x in m:
-                                    text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace(x, "<sup>*</sup>", 1)
-                                places[f"{f.name[:-4]} {curr_ch}:{curr_seg}"] = text_dict[curr_ch][curr_seg]
-                            segment = v.attrs["number"]
-                            ref = v.attrs["sid"].split()[-1]
-                            ref_sec, ref_seg = ref.split(":")
-                            assert segment == ref_seg
-                            curr_ref = "{} {}".format(title, ref)
-                            if curr_ch in text_dict and curr_seg in text_dict[curr_ch]:
-                                text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace("  ", " ")
-                            prev_ch = curr_ch
-                            prev_seg = curr_seg
+                        styles[p["style"]].append(p)
+                        if p['style'] == 'pi3':
+                            if pi3:
+                                text_dict[curr_ch][curr_seg] += "</small><br>"
+                            text_dict[curr_ch][curr_seg] += "<small>"
+                            pi3 = True
+                        if p["style"].startswith("q"):
+                            other_tags.add(p["style"])
+                        if p["style"] == "p" and 'vid' in p.attrs:
+                            vid = p.attrs['vid']
+                            poss_ch, poss_seg = [int(x) for x in vid.split(" ")[-1].split(":")]
+                            assert poss_ch == curr_ch and poss_seg == curr_seg
+                            text_dict[curr_ch][curr_seg] += "<br>"
+                        # one verse across multiple ps: dont add a msg if there's already in this p by checking the string itself
+                        new_msg = ""
+                        for k in p_style_dict:
+                            if p["style"] == k:
+                                new_msg = p_style_dict[p["style"]]
+                        if new_msg != "":
+                            msg = new_msg
+                            if 'vid' in p.attrs:
+                                vid = p.attrs['vid']
+                            else:
+                                vid = p.find("verse").attrs['sid']
+
+                            poss_ch, poss_seg = [int(x) for x in vid.split(" ")[-1].split(":")]
+                            if poss_ch == curr_ch and poss_seg == curr_seg:
+                                if new_msg in text_dict.get(curr_ch, {}).get(curr_seg, ''):
+                                    new_msg = ""
+                            if poss_ch not in text_dict:
+                                text_dict[poss_ch] = {}
+                            if poss_seg not in text_dict[poss_ch]:
+                                if special_span:
+                                    text_dict[curr_ch][curr_seg] += "</span>"
+                                text_dict[poss_ch][poss_seg] = ""
                             if pi3:
                                 text_dict[curr_ch][curr_seg] += "</small><br>"
                             if f"{title} {curr_ch}:{curr_seg}" in issues:
                                 print(f"\nISSUE: {title} {curr_ch}:{curr_seg}")
                                 print(text_dict[curr_ch][curr_seg])
-                            curr_ch, curr_seg = [int(x) for x in ref.split(":")]
-                            curr_ch = int(curr_ch)
-                            curr_seg = int(curr_seg)
-                            if curr_ch not in text_dict:
-                                text_dict[curr_ch] = {}
-                            if curr_seg not in text_dict[curr_ch]:
-                                text_dict[curr_ch][curr_seg] = ""
+                            curr_ch = poss_ch
+                            curr_seg = poss_seg
+                            if not text_dict[curr_ch][curr_seg].endswith(msg):
+                                if special_span:
+                                    text_dict[curr_ch][curr_seg] += "</span>"
+                                if len(text_dict[curr_ch][curr_seg]) > 0:
+                                    text_dict[curr_ch][curr_seg] += "<br>"
+                                text_dict[curr_ch][curr_seg] += msg
+                            special_span = True
+                        else:
+                            try:
+                                if text_dict[curr_ch][curr_seg].endswith("</span>"):
+                                    text_dict[curr_ch][curr_seg] += "<br>"
+                            except KeyError as e:
+                                pass
+                            special_span = False
 
-                            if p.attrs.get('style', "").startswith("q") and 'vid' in p.attrs:
-                                p_ch, p_v = [int(x) for x in p.attrs.get('vid').split(" ")[-1].split(":")]
-                                if p_ch != curr_ch or p_v != curr_seg:
-                                    #print(f"{title} {p_ch}:{p_v}")
-                                    text_dict[curr_ch][curr_seg] += p_style_dict[p['style']]
-                                    special_span = True
-                            place = False
-                        elif v.name == "verse":
-                            ref = v.attrs["eid"].split()[-1]
-                            ref_sec, ref_seg = ref.split(":")
-                            assert segment == ref_seg
-                            poss_ref = "{} {}".format(title, ref)
-                            assert poss_ref == curr_ref
-                        elif v.name == "note":
-                            caller = v.attrs["caller"]
-                            assert v.attrs["style"] == "f"
-                            ft_txt = ""
-                            for ft in v:
-                                if isinstance(ft, Tag):
-                                    for x in ft.find_all("char", {"style": "tl"}):
-                                        x.name = "i"
-                                        x.attrs = {}
-                                        place = True
-                                    for x in ft.find_all("char", {"style": "it"}):
-                                        x.name = "i"
-                                        x.attrs = {}
-                                        place = True
-                                    for x in ft.find_all("char", {"style": "sc"}):
-                                        x.name = "small"
-                                        x.attrs = {}
-                                        x.string = x.text.upper()
-                                        place = True
-                                if isinstance(ft, NavigableString):
-                                    if len(ft.strip()) > 0:
-                                        ft_txt += ft
-                                elif ft.attrs["style"] in ["tl", "it"]:
+
+                        for v_num, v in enumerate(p.contents):
+                            if isinstance(v, NavigableString):
+                                if len(v.strip()) == 0:
+                                    continue
+                                if prev_was_lord and check_str(v, "start"):
+                                    text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
+                                s_start = v.startswith("s. ") or v.startswith("s ") or v == "s"
+                                if s_start:
+                                    text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
                                     place = True
-                                    ft_txt += "<i>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)+"</i>"
-                                elif ft.attrs["style"] == 'fr':
-                                    ft_ref = ft.text.replace(".", ":").strip()
-                                    if "–" not in ft_ref:
-                                        if ft_ref not in curr_ref:
-                                            print(f"Problem in {ft_ref} vs {curr_ref}")
-                                    else:
-                                        pass
-                                elif ft.attrs["style"] in ["fq", "fv"]:
-                                    ft_txt += "<b>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)+"</b>"
-                                elif ft.attrs["style"] == "ft":
-                                    ft_txt += bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True).strip()
-                            full_i_tag = f'<sup class="footnote-marker">{caller}</sup><i class="footnote">{ft_txt}</i>'
-                            text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
-                            full_i_tag += ' '
-                            text_dict[curr_ch][curr_seg] += add_text(full_i_tag, string=True)
-                            prev_was_lord = True
-                        elif v.name == "char":
-                            if not check_str(text_dict[curr_ch][curr_seg], "ending"):
-                                if len(bleach.clean(text_dict[curr_ch][curr_seg], tags=[], strip=True)) > 0:
-                                    text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip() + " "
-                            found = False
-                            if v.attrs["style"] in ["tl", "it"]:
-                                v.name = "i"
-                                found = True
-                                place = True
+                                text_dict[curr_ch][curr_seg] += add_text(v, string=True)
+                                prev_was_lord = False
 
-                            if v.attrs["style"] in ["sc"]:
-                                v.name = "small"
-                                found = True
-                                place = True
+                            elif v.name == "verse" and "sid" in v.attrs:
+                                if place:
+                                    m = re.findall("<sup>.{1}</sup><sup>.{1}</sup>", text_dict[curr_ch][curr_seg])
+                                    changed = len(m) > 0
+                                    for x in m:
+                                        text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace(x, "<sup>*</sup>", 1)
+                                    places[f"{f.name[:-4]} {curr_ch}:{curr_seg}"] = text_dict[curr_ch][curr_seg]
+                                segment = v.attrs["number"]
+                                ref = v.attrs["sid"].split()[-1]
+                                ref_sec, ref_seg = ref.split(":")
+                                assert segment == ref_seg
+                                curr_ref = "{} {}".format(title, ref)
+                                if curr_ch in text_dict and curr_seg in text_dict[curr_ch]:
+                                    text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace("  ", " ")
+                                prev_ch = curr_ch
+                                prev_seg = curr_seg
+                                if pi3:
+                                    text_dict[curr_ch][curr_seg] += "</small><br>"
+                                if f"{title} {curr_ch}:{curr_seg}" in issues:
+                                    print(f"\nISSUE: {title} {curr_ch}:{curr_seg}")
+                                    print(text_dict[curr_ch][curr_seg])
+                                curr_ch, curr_seg = [int(x) for x in ref.split(":")]
+                                curr_ch = int(curr_ch)
+                                curr_seg = int(curr_seg)
+                                if curr_ch not in text_dict:
+                                    text_dict[curr_ch] = {}
+                                if curr_seg not in text_dict[curr_ch]:
+                                    text_dict[curr_ch][curr_seg] = ""
 
-                            if found:
-                                v.attrs = {}
+                                if p.attrs.get('style', "") in p_style_dict and 'vid' in p.attrs:
+                                    p_ch, p_v = [int(x) for x in p.attrs.get('vid').split(" ")[-1].split(":")]
+                                    if p_ch != curr_ch or p_v != curr_seg:
+                                        #print(f"{title} {p_ch}:{p_v}")
+                                        text_dict[p_ch][p_v] += "</span>"
+                                        text_dict[curr_ch][curr_seg] += p_style_dict[p['style']]
+                                        special_span = True
+                                place = False
+                            elif v.name == "verse":
+                                ref = v.attrs["eid"].split()[-1]
+                                ref_sec, ref_seg = ref.split(":")
+                                assert segment == ref_seg
+                                poss_ref = "{} {}".format(title, ref)
+                                assert poss_ref == curr_ref
+                            elif v.name == "note":
+                                caller = v.attrs["caller"]
+                                assert v.attrs["style"] == "f"
+                                ft_txt = ""
+                                for ft in v:
+                                    if isinstance(ft, Tag):
+                                        for x in ft.find_all("char", {"style": "tl"}):
+                                            x.name = "i"
+                                            x.attrs = {}
+                                            place = True
+                                        for x in ft.find_all("char", {"style": "it"}):
+                                            x.name = "i"
+                                            x.attrs = {}
+                                            place = True
+                                        for x in ft.find_all("char", {"style": "sc"}):
+                                            x.name = "small"
+                                            x.attrs = {}
+                                            x.string = x.text.upper()
+                                            place = True
+                                    if isinstance(ft, NavigableString):
+                                        if len(ft.strip()) > 0:
+                                            ft_txt += ft
+                                    elif ft.attrs["style"] in ["tl", "it"]:
+                                        place = True
+                                        ft_txt += "<i>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)+"</i>"
+                                    elif ft.attrs["style"] == 'fr':
+                                        ft_ref = ft.text.replace(".", ":").strip()
+                                        if "–" not in ft_ref:
+                                            if ft_ref not in curr_ref:
+                                                print(f"Problem in {ft_ref} vs {curr_ref}")
+                                        else:
+                                            pass
+                                    elif ft.attrs["style"] in ["fq", "fv"]:
+                                        ft_txt += "<b>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)+"</b>"
+                                    elif ft.attrs["style"] == "ft":
+                                        ft_txt += bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True).strip()
+                                full_i_tag = f'<sup class="footnote-marker">{caller}</sup><i class="footnote">{ft_txt}</i>'
+                                text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
+                                full_i_tag += ' '
+                                text_dict[curr_ch][curr_seg] += add_text(full_i_tag, string=True)
+                                prev_was_lord = True
+                            elif v.name == "char":
+                                if not check_str(text_dict[curr_ch][curr_seg], "ending"):
+                                    if len(bleach.clean(text_dict[curr_ch][curr_seg], tags=[], strip=True)) > 0:
+                                        text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip() + " "
+                                found = False
+                                if v.attrs["style"] in ["tl", "it"]:
+                                    v.name = "i"
+                                    found = True
+                                    place = True
 
-                            text_dict[curr_ch][curr_seg] += add_text(v, string=False)
-                            prev_was_lord = True
-                    text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace("  ", " ")
-                    if place:
-                        m = re.findall("<sup>.{1}</sup><sup>.{1}</sup>", text_dict[curr_ch][curr_seg])
-                        changed = len(m) > 0
-                        for x in m:
-                            text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace(x, "<sup>*</sup>", 1)
-                        places[f"{f.name[:-4]} {curr_ch}:{curr_seg}"] = text_dict[curr_ch][curr_seg]
-        if pi3:
-            text_dict[curr_ch][curr_seg] += "</small><br>"
+                                if v.attrs["style"] in ["sc"]:
+                                    v.name = "small"
+                                    found = True
+                                    place = True
+
+                                if found:
+                                    v.attrs = {}
+
+                                text_dict[curr_ch][curr_seg] += add_text(v, string=False)
+                                prev_was_lord = True
+                        text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace("  ", " ")
+                        if place:
+                            m = re.findall("<sup>.{1}</sup><sup>.{1}</sup>", text_dict[curr_ch][curr_seg])
+                            changed = len(m) > 0
+                            for x in m:
+                                text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace(x, "<sup>*</sup>", 1)
+                            places[f"{f.name[:-4]} {curr_ch}:{curr_seg}"] = text_dict[curr_ch][curr_seg]
+            if pi3:
+                text_dict[curr_ch][curr_seg] += "</small><br>"
 
 
-    for ch in text_dict:
-        orig = len(Ref("{} {}".format(title, ch)).all_segment_refs())
-        text_dict[ch] = [modify_small(x.replace("'", "\u2019")) for x in convertDictToArray(text_dict[ch])]
-        if orig != len(text_dict[ch]):
-            print("Verses in Ch {} are off: {} vs {}".format(ch, orig, len(text_dict[ch])))
-        for v, verse in enumerate(text_dict[ch]):
-            text = re.sub("<sup>.{1}</sup>", "", text_dict[ch][v])
-            text = "<html><body>{}</body></html>".format(text)
-            soup = BeautifulSoup(text)
-            for i_tag in soup.find_all('i', {"class": "footnote"}):
-                if 'class' in i_tag.attrs:
-                    i_tag.decompose()
+        for ch in text_dict:
+            orig = len(Ref("{} {}".format(title, ch)).all_segment_refs())
+            text_dict[ch] = [modify_small(x.replace("'", "\u2019")) for x in convertDictToArray(text_dict[ch])]
+            if orig != len(text_dict[ch]):
+                print("Verses in Ch {} are off: {} vs {}".format(ch, orig, len(text_dict[ch])))
+            for v, verse in enumerate(text_dict[ch]):
+                text = re.sub("<sup>.{1}</sup>", "", text_dict[ch][v])
+                text = "<html><body>{}</body></html>".format(text)
+                soup = BeautifulSoup(text)
+                for i_tag in soup.find_all('i', {"class": "footnote"}):
+                    if 'class' in i_tag.attrs:
+                        i_tag.decompose()
 
-            orig = bleach.clean(Ref("{} {}:{}".format(title, ch, v+1)).text('en').text, tags=[], strip=True)
-            new = ""
-            tag = "p" if soup.find("p") is not None else "body"
-            for el in soup.find(tag).contents:
-                if isinstance(el, NavigableString):
-                    new += el + " "
+                orig = bleach.clean(Ref("{} {}:{}".format(title, ch, v+1)).text('en').text, tags=[], strip=True)
+                new = ""
+                tag = "p" if soup.find("p") is not None else "body"
+                for el in soup.find(tag).contents:
+                    if isinstance(el, NavigableString):
+                        new += el + " "
+                    else:
+                        new += " "
+                new = new.replace("  ", " ").strip()
+                orig = orig.replace("  ", " ").strip()
+                verse_length[new.count(" ")] += 1
+                if new.count(" ") < 15:
+                    diff = 3
+                elif new.count(" ") < 30:
+                    diff = 5
                 else:
-                    new += " "
-            new = new.replace("  ", " ").strip()
-            orig = orig.replace("  ", " ").strip()
-            verse_length[new.count(" ")] += 1
-            if new.count(" ") < 15:
-                diff = 3
-            elif new.count(" ") < 30:
-                diff = 5
-            else:
-                diff = 10
-            # if abs(len(orig.split()) - len(new.split())) > diff:
-            #     print("****")
-            #     print("{} {}:{}".format(title, ch, v+1))
-            #     print(orig)
-            #     print(new)
+                    diff = 10
+                # if abs(len(orig.split()) - len(new.split())) > diff:
+                #     print("****")
+                #     print("{} {}:{}".format(title, ch, v+1))
+                #     print(orig)
+                #     print(new)
 
-    text_dict = convertDictToArray(text_dict)
-    tc = TextChunk(Ref(title), lang='en', vtitle="THE JPS TANAKH: Gender-Sensitive Edition (new batch)")
-    if tc.text != text_dict:
-        tc.text = text_dict
-        tc.save()
+        for p in text_dict:
+            for v, verse in enumerate(text_dict[p]):
+                if verse.startswith("<br>"):
+                    text_dict[p][v] = verse.replace("<br>", "", 1)
+        text_dict = convertDictToArray(text_dict)
+        tc = TextChunk(Ref(title), lang='en', vtitle="THE JPS TANAKH: Gender-Sensitive Edition (new batch)")
+        if tc.text != text_dict:
+            tc.text = text_dict
+            tc.save()
 
 print(other_tags)
 for v in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition (new batch)"}):
