@@ -78,10 +78,18 @@ Numbers 21:14
 Numbers 33:8
 Numbers 18:16
 Numbers 21:6""".splitlines()
-issues = """Deuteronomy 11:1""".splitlines()
+issues = """Numbers 21:13
+II Chronicles 9:1
+Lamentations 3:50
+Proverbs 31:9
+Lamentations 5:21
+Ecclesiastes 12:13
+Esther 9:6
+Daniel 5:25""".splitlines()
 places = {}
 allowed_attrs = ['class', 'data-ref', 'href']
 p_style_dict = {"q2": '<span class="poetry indentAllDouble">',
+                'pi': '<br>',
                 "pmr": '<span class="poetry indentAllDouble">',
                 'mi': '<span class="poetry indentAll">',
                 'lim1': '<span class="poetry indentAll">',
@@ -101,6 +109,8 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
         start = ""
         lines = ""
         title = f.replace(".usx", "")
+        if title not in str(issues):
+            continue
         print(title)
         text_dict = {}
         curr_ch = 0
@@ -178,10 +188,11 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
                             curr_ch = poss_ch
                             curr_seg = poss_seg
                             if not text_dict[curr_ch][curr_seg].endswith(msg):
-                                if special_span:
-                                    text_dict[curr_ch][curr_seg] += "</span>"
                                 if len(text_dict[curr_ch][curr_seg]) > 0:
-                                    text_dict[curr_ch][curr_seg] += "<br>"
+                                    if special_span:
+                                        text_dict[curr_ch][curr_seg] += "</span>"
+                                    if len(text_dict[curr_ch][curr_seg]) > 0:
+                                        text_dict[curr_ch][curr_seg] += "<br>"
                                 text_dict[curr_ch][curr_seg] += msg
                             special_span = True
                         else:
@@ -235,11 +246,13 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
                                 if curr_seg not in text_dict[curr_ch]:
                                     text_dict[curr_ch][curr_seg] = ""
 
-                                if p.attrs.get('style', "") in p_style_dict and 'vid' in p.attrs:
-                                    p_ch, p_v = [int(x) for x in p.attrs.get('vid').split(" ")[-1].split(":")]
-                                    if p_ch != curr_ch or p_v != curr_seg:
+                                if p.attrs.get('style', "") in p_style_dict: # and 'vid' in p.attrs:
+                                    this_p_verses = [x.attrs.get('sid', '').split(' ')[-1] for x in p.find_all('verse') if len(x.attrs.get('sid', '').split(' ')[-1]) > 0]
+                                    #p_ch, p_v = [int(x) for x in p.attrs.get('vid').split(" ")[-1].split(":")]
+                                    if prev_ch != curr_ch or prev_seg != curr_seg:
                                         #print(f"{title} {p_ch}:{p_v}")
-                                        text_dict[p_ch][p_v] += "</span>"
+                                        assert "<span" in text_dict[prev_ch][prev_seg]
+                                        text_dict[prev_ch][prev_seg] += "</span>"
                                         text_dict[curr_ch][curr_seg] += p_style_dict[p['style']]
                                         special_span = True
                                 place = False
@@ -365,7 +378,7 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
         tc = TextChunk(Ref(title), lang='en', vtitle="THE JPS TANAKH: Gender-Sensitive Edition (new batch)")
         if tc.text != text_dict:
             tc.text = text_dict
-            tc.save()
+            #tc.save()
 
 print(other_tags)
 for v in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition (new batch)"}):

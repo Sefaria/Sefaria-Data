@@ -98,24 +98,19 @@ dropping_error_margin = False
 for k in ['pubDate', 'compDate', 'errorMargin']:
     book_data[k] = {"ints": 0, "string ints": 0, "others": {}}
 for b in tqdm(books):
-    # changed = False
-    # for k in ['pubDate', 'compDate', 'errorMargin']:
-    #     print(process(book_data, b, k, lambda x: x.title, book_setter))
-    #     changed = process(book_data, b, k, lambda x: x.title, book_setter) or changed
-    #     if hasattr(b, k):
-    #         print(getattr(b, k))
-    # print(changed)
-    if hasattr(b, 'compDate'):
-        compDate = getattr(b, 'compDate')
-        if len(compDate) > 1:
-            b.hasErrorMargin = True
-            try:
-                b.save(override_dependencies=True)
-            except:
-                print(b)
+    changed = False
+    for k in ['pubDate', 'compDate', 'errorMargin']:
+        changed = process(book_data, b, k, lambda x: x.title, book_setter) or changed
+    if hasattr(b, 'errorMargin'):
+        del b.errorMargin
+        b.hasErrorMargin = True
+        changed = True
+    if changed:
+        try:
+            b.save(override_dependencies=True)
+        except:
+            print(b)
 
-print(library.get_index("Rashi on Genesis").compDate)
-print(library.get_index("Rashi on Genesis").hasErrorMargin)
 for k in ['birthYear', 'deathYear']:
     topic_data[k] = {"ints": 0, "string ints": 0, "others": {}}
 for b in tqdm(authors):
