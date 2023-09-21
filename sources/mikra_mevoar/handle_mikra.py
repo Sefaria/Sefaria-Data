@@ -58,7 +58,7 @@ def get_mikra_text_and_bold_titles(soup_object):
         final_strings.append(matching_elements2[0].text)
     for previous, current in zip(matching_elements2, matching_elements2[1:]):
         if previous.name == 'span':
-            element_string = '<b>' + previous.text + '</b>' + current.text
+            element_string = '<b>' + previous.text + '</b>' + '<br>' + current.text
             final_strings.append(element_string)
         else:
             if current.name != "span":
@@ -88,6 +88,30 @@ def partition_dictionary(input_dict):
 
     return result_list
 
+def ingest_mikra(parsed_books):
+    for book in parsed_books:
+        book_name = next(iter(book)).split()[0]
+        if book_name == "Song":
+            book_name = "Song of Songs"
+        print("ingesting the book of " + book_name)
+        index = library.get_index(book_name)
+        cur_version = VersionSet({'title': book_name,
+                                  "versionTitle" : "Miqra Mevoar, trans. and edited by David Kokhav, Jerusalem 2020"})
+
+        if cur_version.count() > 0:
+            cur_version.delete()
+            print("deleted existing version")
+        chapter = index.nodes.create_skeleton()
+        version = Version({"versionTitle": "Miqra Mevoar, trans. and edited by David Kokhav, Jerusalem 2020",
+                           "versionSource": "https://he.wikisource.org/wiki/%D7%9E%D7%A7%D7%A8%D7%90_%D7%9E%D7%91%D7%95%D7%90%D7%A8",
+                           "title": book_name,
+                           "language": "he",
+                           "chapter": chapter,
+                           "digitizedBySefaria": True,
+                           "license": "PD",
+                           "status": "locked"
+                           })
+        modify_bulk_text(superuser_id, version, book)
 
 if __name__ == '__main__':
     print("hello world")
@@ -120,6 +144,7 @@ if __name__ == '__main__':
         # parsed_books.append(ref_and_text_dict)
 
     parsed_books = partition_dictionary(ref_and_text_dict)
+    ingest_mikra(parsed_books)
 
 
     print("end")
