@@ -2,7 +2,6 @@ import django
 
 django.setup()
 
-django.setup()
 superuser_id = 171118
 # import statistics
 import csv
@@ -17,6 +16,8 @@ import os
 
 
 # import time
+
+mikra_mevoar_books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Song of Songs", "Ruth", "Lamentations", "Ecclesiastes", "Esther"]
 
 def post_indices():
     from sources.functions import post_index, add_term
@@ -40,7 +41,7 @@ def get_mikra_text_and_bold_titles(soup_object):
     matching_elements = []
 
     # Iterate through the document to find matching elements
-    for element in soup.descendants:
+    for element in soup_object.descendants:
         if element.name and element.get("style", "").strip() == "background:Gainsboro":
             matching_elements.append(element)
         elif element.name == "b":
@@ -113,8 +114,7 @@ def ingest_mikra(parsed_books):
                            })
         modify_bulk_text(superuser_id, version, book)
 
-if __name__ == '__main__':
-    print("hello world")
+def parse_and_ingest():
     # List all files in the folder
     folder_path = "htmls"
     html_files = [f for f in os.listdir(folder_path) if f.endswith(".html")]
@@ -145,6 +145,35 @@ if __name__ == '__main__':
 
     parsed_books = partition_dictionary(ref_and_text_dict)
     ingest_mikra(parsed_books)
+
+def validate():
+    # Create or open a CSV file for writing
+    with open('output.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        # Define the CSV writer
+        csvwriter = csv.writer(csvfile)
+
+        # Write the header row to the CSV file
+        csvwriter.writerow(['Ref', 'Original Text', 'Mevoar Text'])
+
+        for book in mikra_mevoar_books:
+            r = Ref(book)
+            verses_refs = r.all_segment_refs()
+            for verse_ref in verses_refs:
+                original_text = verse_ref.text(lang="he").text
+                mevoar_text = verse_ref.text(lang="he", vtitle="Miqra Mevoar, trans. and edited by David Kokhav, Jerusalem 2020").text
+
+                print(original_text)
+                print(mevoar_text)
+                print("\n")
+                # Write the data to the CSV file
+                csvwriter.writerow([verse_ref.tref, original_text, mevoar_text])
+
+
+if __name__ == '__main__':
+    validate()
+    # parse_and_ingest()
+    print("hello world")
+
 
 
     print("end")
