@@ -6,7 +6,7 @@ base = library.get_index(index.base_text_titles[0])
 if 'Mishnah' in base.categories:
     link_misnah(title)
 elif 'Bavli' in base.categories:
-    link_bavli(title, server="https://editingtools2.cauldron.sefaria.org")
+    link_bavli(title, server="http://www.sefaria.org")
 #
 # from linking_utilities.dibur_hamatchil_matcher import *
 #
