@@ -13,6 +13,7 @@ from sefaria.helper.category import create_category
 from sefaria.system.database import db
 from bs4 import BeautifulSoup
 import os
+import re
 
 
 # import time
@@ -168,10 +169,50 @@ def validate():
                 # Write the data to the CSV file
                 csvwriter.writerow([verse_ref.tref, original_text, mevoar_text])
 
+def produce_inner_division_report():
+    with open('mikra_mevoar_sections.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        # Define the CSV writer
+        csvwriter = csv.writer(csvfile)
+
+        # Write the header row to the CSV file
+        csvwriter.writerow(['Start Ref', 'End Ref', 'Title'])
+
+        book_with_inner_division = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]
+
+        for book in book_with_inner_division:
+            start_new_section = []
+            r = Ref(book)
+            verses_refs = r.all_segment_refs()
+
+            for verse_ref in verses_refs:
+                mevoar_text = verse_ref.text(lang="he",
+                                             vtitle="Miqra Mevoar, trans. and edited by David Kokhav, Jerusalem 2020").text
+                if mevoar_text.startswith('<b'):
+                    # print (mevoar_text)
+                    start_new_section.append(verse_ref)
+
+
+            for index, start_ref in enumerate(start_new_section):
+                if index == len(start_new_section) - 1:
+                    break
+                else:
+                    next_ref = start_new_section[index + 1]
+                    end_ref = next_ref.prev_segment_ref()
+
+                mevoar_text = start_ref.text(lang="he",
+                               vtitle="Miqra Mevoar, trans. and edited by David Kokhav, Jerusalem 2020").text
+                match = re.search(r'<b>(.*?)</b>', mevoar_text)
+
+                if match:
+                    extracted_text = match.group(1)
+                    print(start_ref.tref + " - " + end_ref.tref + extracted_text)
+                    csvwriter.writerow([start_ref.tref, end_ref.tref, extracted_text])
+
 
 if __name__ == '__main__':
-    validate()
+    # validate()
     # parse_and_ingest()
+    produce_inner_division_report()
     print("hello world")
 
 
