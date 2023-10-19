@@ -7,7 +7,7 @@ from tqdm import tqdm
 def is_num(x):
     if isinstance(x, dict):
         x = x.get('value')
-    return x is not None and (isinstance(x, (int, float)) or (isinstance(x, str) and x.isdigit())
+    return x is not None and (isinstance(x, (int, float)) or (isinstance(x, str) and x.isdigit()))
 
 def year_range_in_string(years_string):
     start, end = years_string.split('-')
