@@ -62,7 +62,7 @@ def process(data, b, k, title_func, setter_func):
         return False
     elif temp:
         if is_num(temp):
-            if isinstance(temp, int):
+            if isinstance(temp, (float, int)):
                 data[k]['ints'] += 1
             elif temp.isdigit():
                 data[k]['string ints'] += 1
