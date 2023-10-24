@@ -18,34 +18,44 @@ import re
 
 # import time
 
-mikra_mevoar_books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Song of Songs", "Ruth", "Lamentations", "Ecclesiastes", "Esther"]
 
 def post_indices():
     from sources.functions import post_index, post_term
     yahel_or_term = {"name": "Yahel Ohr", "titles": [{"lang": "en", "text": "Yahel Ohr", "primary": True},
                                         {"lang": "he", "text": "יהל אור", "primary": True}], "scheme": "toc_categories"}
-    post_term(yahel_or_term)
+    # post_term(yahel_or_term, server="https://yahel-ohr.cauldron.sefaria.org")
     nefesh_david_index = post_index({'title': 'Nefesh David on Zohar'}, server="https://www.sefaria.org.il", method="GET")
     yahel_or_index = nefesh_david_index
     yahel_or_index["title"] = "Yahel Ohr on Zohar"
-    yahel_or_index["schema"]["titles"] = [{'lang': 'en', 'text': 'Yahel Ohr'}, {'lang': 'he', 'primary': True, 'text': 'יהל אור על ספר הזוהר'}, {'lang': 'he', 'text': 'יהל אור על הזוהר'}, {'lang': 'he', 'text': 'יהל אור'}, {'lang': 'en', 'primary': True, 'text': 'Yahel Ohr on Zohar'}]
+    yahel_or_index["schema"]["titles"] = [{'lang': 'en', 'text': 'Yahel Ohr'}, {'lang': 'he', 'primary': True, 'text': 'יהל אור על ספר הזהר'}, {'lang': 'he', 'text': 'יהל אור על הזהר'}, {'lang': 'he', 'text': 'יהל אור'}, {'lang': 'en', 'primary': True, 'text': 'Yahel Ohr on Zohar'}]
     yahel_or_index["schema"]["key"] = 'Yahel Ohr on Zohar'
     del yahel_or_index['enDesc']
     del yahel_or_index['heDesc']
     del yahel_or_index["enShortDesc"]
     del yahel_or_index["heShortDesc"]
     yahel_or_index['collective_title'] = "Yahel Ohr"
-    post_index(yahel_or_index)
-    # print(nefesh_david_index)
+    post_index(yahel_or_index, server="https://yahel-ohr.cauldron.sefaria.org")
+    # post_index(yahel_or_index)
 
-    # add_term("Targum Sheni", "תרגום שני", server="https://new-shmuel.cauldron.sefaria.org")
+def ingest_yahel(book_map):
+    index = library.get_index("Yahel Ohr on Zohar")
+    cur_version = VersionSet({'title': "Yahel Ohr on Zohar",
+                              "versionTitle" : "Vilna 1882"})
 
-    # index = post_index({'title': 'Targum_Sheni_on_Esther'}, server="https://new-shmuel.cauldron.sefaria.org", method="GET")
-    # index["dependence"] = "targum"
-    # index["base_text_titles"] = ["Esther"]
-    # index["collective_titpsqlle"] = "Targum Sheni"
-    # post_index(index, server="https://new-shmuel.cauldron.sefaria.org")
-
+    if cur_version.count() > 0:
+        cur_version.delete()
+        print("deleted existing version")
+    chapter = index.nodes.create_skeleton()
+    version = Version({"versionTitle": "Vilna 1882",
+                       "versionSource": "https://he.wikisource.org/wiki/%D7%99%D7%94%D7%9C_%D7%90%D7%95%D7%A8",
+                       "title": "Yahel Ohr on Zohar",
+                       "language": "he",
+                       "chapter": chapter,
+                       "digitizedBySefaria": True,
+                       "license": "PD",
+                       "status": "locked"
+                       })
+    modify_bulk_text(superuser_id, version, book_map)
 def compute_gematria(word):
     # Define the numerical values of each letter
     gematria = {'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5, 'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9, 'י': 10, 'כ': 20, 'ל': 30, 'מ': 40, 'נ': 50, 'ס': 60, 'ע': 70, 'פ': 80, 'צ': 90, 'ק': 100, 'ר': 200, 'ש': 300, 'ת': 400}
@@ -93,13 +103,13 @@ def a_tag_text_to_tref(a_tag_text, prefix):
     amud = a_tag_text.split()[-1]
     if amud is None:
         halt = True
-    if "א" in amud:
+    if "א" in amud or "." in amud:
         amud = 'a'
-    elif "ב" in amud:
+    elif "ב" in amud or ":" in amud:
         amud = 'b'
     else:
         print("Discrepancy!")
-    return prefix + " " + daf + ":" + amud
+    return prefix + " " + daf + amud
 
 def modify_dict_keys(map, prefix):
     new_dict = {}
@@ -131,8 +141,26 @@ def get_text_with_bold_tags(element):
     result = result.replace("<p>", '').replace("</p>",'')
     return result
 
+def clean_html_except_b_and_small(element):
+
+    # Find all tags except for <b> and <small> and extract their contents
+    allowed_tags = ['b', 'small', 'br']
+    for tag in element.find_all(True):
+        if tag.name not in allowed_tags:
+            tag.unwrap()  # Remove the tag but keep its contents
+
+    # Get the cleaned HTML string
+    cleaned_html = str(element).replace("<p>",'').replace("</p>",'')
+    if "הנצנים דא" in cleaned_html:
+        halt = True
+    cleaned_html = cleaned_html[len("<br>"):] if cleaned_html.startswith("<br>") else cleaned_html
+    cleaned_html = cleaned_html[len("<br/>"):] if cleaned_html.startswith("<br/>") else cleaned_html
+
+
+    return cleaned_html
+
 def eliminate_extra_spaces_after_dibur_hamatchil(s):
-    return s.replace(" ", "")
+    return s.replace("   ", " ")
 def apply_function_to_values(input_dict, foo):
     result_dict = {}
 
@@ -140,20 +168,19 @@ def apply_function_to_values(input_dict, foo):
         result_dict[key] = foo(value)
 
     return result_dict
-def handle_bereshit():
-    with open('htmls/ספר_בראשית.html', 'r', encoding='utf-8') as file:
+def general_parse(html_path, prefix):
+    with open(html_path, 'r', encoding='utf-8') as file:
         html_content = file.read()
     soup = BeautifulSoup(html_content, 'html.parser')
-    prefix = "Yahel Ohr on Zohar 1"
     elements = []
     for element in soup.find_all(['p', 'a']):
-        elements.append(element if (element.name == 'p' and not element.get_text().isspace()) or (element.name == 'a' and element.get_text().startswith('דף')) else None)
+        elements.append(element if (element.name == 'p' and not element.get_text().isspace()) or (element.name == 'a' and element.get_text().startswith('דף') and "דף השיחה" not in element.get_text() and element.get_text() not in {"דף", "דף אקראי"}) else None)
     elements = list(filter(lambda x: x is not None, elements))
 
-    map = generate_sublists(elements, lambda x: (x.name == 'a' and not (x.get_text() in {"דף", "דף אקראי"})), lambda x: x.get_text())
+    map = generate_sublists(elements, lambda x: (x.name == 'a'), lambda x: x.get_text())
     # Create a new dictionary with modified keys
     map = flatten_dictionary(modify_dict_keys(map, prefix))
-    map = apply_function_to_values(map, get_text_with_bold_tags)
+    map = apply_function_to_values(map, clean_html_except_b_and_small)
     map = apply_function_to_values(map, eliminate_extra_spaces_after_dibur_hamatchil)
 
     halt = True
@@ -161,9 +188,19 @@ def handle_bereshit():
 
 if __name__ == '__main__':
     print("hello world")
-    # post_indices()
+    post_indices()
     text_map = {}
-    text_map = {**text_map, **handle_bereshit()}
+    text_map = {**text_map, **general_parse('htmls/ספר_בראשית.html', "Yahel Ohr on Zohar 1")}
+    text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_א.html', "Yahel Ohr on Zohar 2")}
+    text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ב.html', "Yahel Ohr on Zohar 2")}
+    text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ג.html', "Yahel Ohr on Zohar 2")}
+    text_map = {**text_map, **general_parse('htmls/ספר_ויקרא.html', "Yahel Ohr on Zohar 3")}
+    text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_א.html', "Yahel Ohr on Zohar 3")}
+    text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_ב.html', "Yahel Ohr on Zohar 3")}
+    text_map = {**text_map, **general_parse('htmls/ספר_דברים.html', "Yahel Ohr on Zohar 3")}
+    text_map = {**text_map, **general_parse('htmls/הקדמת_הזהר.html', "Yahel Ohr on Zohar 1")}
+    text_map = {**text_map, **general_parse('htmls/ספר_בראשית_-_השמטות.html', "Yahel Ohr on Zohar 1")}
+    ingest_yahel(text_map)
 
 
 
