@@ -155,6 +155,8 @@ def clean_html_except_b_and_small(element):
         halt = True
     cleaned_html = cleaned_html[len("<br>"):] if cleaned_html.startswith("<br>") else cleaned_html
     cleaned_html = cleaned_html[len("<br/>"):] if cleaned_html.startswith("<br/>") else cleaned_html
+    if "$HERE SHOULD COME THE IMAGES$" in cleaned_html:
+        cleaned_html = '<img class="image-in-text" src="https://storage.googleapis.com/textimages.sefaria.org/yahel_ohr/500px-YAHEL_OR_PAGE_140.png">'
 
 
     return cleaned_html
@@ -188,7 +190,7 @@ def general_parse(html_path, prefix):
 
 if __name__ == '__main__':
     print("hello world")
-    post_indices()
+    # post_indices()
     text_map = {}
     text_map = {**text_map, **general_parse('htmls/ספר_בראשית.html', "Yahel Ohr on Zohar 1")}
     text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_א.html', "Yahel Ohr on Zohar 2")}
