@@ -6,15 +6,24 @@ from collections import Counter
 import re
 special_span = False
 prev_span_closed = False
+place = False
+acrostics = ""
+next_acrostics = ""
 endings = set()
 styles = defaultdict(list)
 startings = set()
 verse_length = Counter()
 def modify_small(x):
     for el in re.findall('<small>(.*?)</small>', x):
-        x = x.replace(f"<small>{el}</small>", el[0] + f"<small>{el[1:]}</small>", 1)
+        if el in ["GOD", "ETERNAL", "LORD"]:
+            x = x.replace(f"<small>{el}</small>", el[0] + f"<small>{el[1:]}</small>", 1)
     while "<br><br>" in x:
         x = x.replace("<br><br>", "<br>", 1)
+    x = x.replace('<span class="poetry indentAllDouble"> </span>', '').replace('<span class="poetry indentAllDouble"></span>', '')
+    if x.strip().endswith("<br>"):
+        x = x[:-4]
+    if x.strip().endswith("<br/>"):
+        x = x[:-5]
     return x
 
 
@@ -28,33 +37,83 @@ def check_str(v, pos='ending'):
             if v.endswith(p):
                 return True
     else:
-        poss_starts = [",", ";", ".", ":", "'", "’", '—', '?', '!', ']', ')']
+        poss_starts = [",", ";", ".", ":", "'", "’", '—', '?', '!', ']', ')', '-']
         for p in poss_starts:
             if v.startswith(p):
                 return True
     return False
 
+def modify_char(v_num, brothers, is_char=False):
+    global place, acrostics, next_acrostics
+    v = brothers[v_num]
+    meta_chars = []
+    regular_chars = v.find_all('char') if not is_char else v.find_all('char')+[v]
+    for c in regular_chars:
+        if c.attrs["style"] == 'tl':
+            c.name = "i"
+            c.attrs = {}
+            place = True
+        elif c.attrs['style'] == 'qac':
+            c.name = 'b'
+            c.attrs = {}
+            place = True
+            brother_end_of_line = False
+            for bro in brothers[v_num+1:]:
+                if isinstance(bro, Tag) and bro.name == 'verse' and 'eid' in bro.attrs:
+                    brother_end_of_line = True
+                    break
+                elif isinstance(bro, Tag):
+                    break
+            if c.text == 'א' and not brother_end_of_line:
+                pass
+            else:
+                if next_acrostics != "":
+                    next_acrostics += " "+str(c)
+                else:
+                    next_acrostics = str(c)
+                c.decompose()
+        elif c.attrs["style"] in ["it", "tl"]:
+            c.name = "i"
+            c.attrs = {}
+            place = True
+        elif c.attrs["style"] == "sc":
+            c.name = "small"
+            c.attrs = {}
+            c.string = c.text.upper()
+            place = True
+        elif c.attrs["style"] == 'fr':
+            c.string = c.text.replace(".", ":").strip()
+            if "–" not in c.text:
+                if c.text not in curr_ref:
+                    print(f"Problem in {c.text} vs {curr_ref}")
+            c.extract()
+        elif c.attrs["style"] in ["fq"]:
+            c.name = 'b'
+            c.attrs = {}
+        elif c.attrs["style"] in ["fv"]:
+            c.name = 'sup'
+            c.attrs = {}
+        elif c.attrs['style'] == 'ft':
+            meta_chars.append(c)
+        elif c.attrs['style'] == 'qs':
+            c.name = 'i'
+            c.attrs = {}
+            c.string = f"\u00a0\u00a0\u00a0{c.text}"
+    # for c in meta_chars:
+    #     c.string = bleach.clean(str(c), tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)
 
 def add_text(el, string=False):
-    global special_span
-    global prev_span_closed
+    global special_span, prev_span_closed, acrostics, next_acrostics
     if string:
         txt = el
     else:
-        for x in v.find_all('char'):
-            found = False
-            if x.attrs["style"] in ["tl", "it"]:
-                x.name = "i"
-                found = True
-            if x.attrs["style"] in ["sc"]:
-                x.name = "small"
-                found = True
-                x.string = x.text.upper()
-            if found:
-                x.attrs = {}
+        assert v.find_all('char') == []
         txt = bleach.clean(el, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True) + " "
     if prev_span_closed:
         prev_span_closed = False
+    if acrostics != "":
+        txt = acrostics + " " + txt
+        acrostics = ""
     # if special_span:
     #     special_span = False
     #     prev_span_closed = True
@@ -65,27 +124,7 @@ def add_text(el, string=False):
 # have multiple ps and one p can have multiple verses.  Three diff cases
 # one verse across multiple ps: dont add a msg if there's already in this p by checking the string itself
 # one p with multiple verses: when verse changes add </span>
-issues = """Exodus 4:11
-Exodus 10:24
-Leviticus 8:21
-Deuteronomy 2:22
-Leviticus 1:1
-Deuteronomy 10:4
-Genesis 2:12
-Exodus 3:5
-Leviticus 23:20
-Numbers 21:14
-Numbers 33:8
-Numbers 18:16
-Numbers 21:6""".splitlines()
-issues = """Numbers 21:13
-II Chronicles 9:1
-Lamentations 3:50
-Proverbs 31:9
-Lamentations 5:21
-Ecclesiastes 12:13
-Esther 9:6
-Daniel 5:25""".splitlines()
+issues = """Psalms 3:2""".splitlines()
 places = {}
 allowed_attrs = ['class', 'data-ref', 'href']
 p_style_dict = {"q2": '<span class="poetry indentAllDouble">',
@@ -109,8 +148,8 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
         start = ""
         lines = ""
         title = f.replace(".usx", "")
-        if title not in str(issues):
-            continue
+        # if title not in str(issues):
+        #     continue
         print(title)
         text_dict = {}
         curr_ch = 0
@@ -124,7 +163,7 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
             prev_was_lord = False
             pi3 = False
             for p_num, p in enumerate(xml.find_all("para")):
-                if p.name == "para" and p.attrs['style'] != 'rem':
+                if len(p.text) > 0 and p.name == "para" and p.attrs['style'] != 'rem':
                     verses_bool = len([x for x in p.contents if isinstance(x, Tag)]) > 0
                     if (len(p) > 1 or len(p.attrs) > 1):
                         for r in p.find_all('ref'):
@@ -148,8 +187,9 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
                         styles[p["style"]].append(p)
                         if p['style'] == 'pi3':
                             if pi3:
-                                text_dict[curr_ch][curr_seg] += "</small><br>"
-                            text_dict[curr_ch][curr_seg] += "<small>"
+                                text_dict[curr_ch][curr_seg] += "</small><br><small>"
+                            else:
+                                text_dict[curr_ch][curr_seg] += "<br><br><small>"
                             pi3 = True
                         if p["style"].startswith("q"):
                             other_tags.add(p["style"])
@@ -205,6 +245,8 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
 
 
                         for v_num, v in enumerate(p.contents):
+                            if not isinstance(v, NavigableString):
+                                modify_char(v_num, p.contents)
                             if isinstance(v, NavigableString):
                                 if len(v.strip()) == 0:
                                     continue
@@ -218,6 +260,9 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
                                 prev_was_lord = False
 
                             elif v.name == "verse" and "sid" in v.attrs:
+                                if next_acrostics == 'א':
+                                    text_dict[curr_ch][curr_seg] += next_acrostics + " "
+                                    next_acrostics = ""
                                 if place:
                                     m = re.findall("<sup>.{1}</sup><sup>.{1}</sup>", text_dict[curr_ch][curr_seg])
                                     changed = len(m) > 0
@@ -257,6 +302,8 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
                                         special_span = True
                                 place = False
                             elif v.name == "verse":
+                                acrostics = next_acrostics
+                                next_acrostics = ""
                                 ref = v.attrs["eid"].split()[-1]
                                 ref_sec, ref_seg = ref.split(":")
                                 assert segment == ref_seg
@@ -265,39 +312,7 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
                             elif v.name == "note":
                                 caller = v.attrs["caller"]
                                 assert v.attrs["style"] == "f"
-                                ft_txt = ""
-                                for ft in v:
-                                    if isinstance(ft, Tag):
-                                        for x in ft.find_all("char", {"style": "tl"}):
-                                            x.name = "i"
-                                            x.attrs = {}
-                                            place = True
-                                        for x in ft.find_all("char", {"style": "it"}):
-                                            x.name = "i"
-                                            x.attrs = {}
-                                            place = True
-                                        for x in ft.find_all("char", {"style": "sc"}):
-                                            x.name = "small"
-                                            x.attrs = {}
-                                            x.string = x.text.upper()
-                                            place = True
-                                    if isinstance(ft, NavigableString):
-                                        if len(ft.strip()) > 0:
-                                            ft_txt += ft
-                                    elif ft.attrs["style"] in ["tl", "it"]:
-                                        place = True
-                                        ft_txt += "<i>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)+"</i>"
-                                    elif ft.attrs["style"] == 'fr':
-                                        ft_ref = ft.text.replace(".", ":").strip()
-                                        if "–" not in ft_ref:
-                                            if ft_ref not in curr_ref:
-                                                print(f"Problem in {ft_ref} vs {curr_ref}")
-                                        else:
-                                            pass
-                                    elif ft.attrs["style"] in ["fq", "fv"]:
-                                        ft_txt += "<b>"+bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True)+"</b>"
-                                    elif ft.attrs["style"] == "ft":
-                                        ft_txt += bleach.clean(ft, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True).strip()
+                                ft_txt = bleach.clean(v, tags=ALLOWED_TAGS, attributes=allowed_attrs, strip=True).strip()
                                 full_i_tag = f'<sup class="footnote-marker">{caller}</sup><i class="footnote">{ft_txt}</i>'
                                 text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip()
                                 full_i_tag += ' '
@@ -308,19 +323,7 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
                                     if len(bleach.clean(text_dict[curr_ch][curr_seg], tags=[], strip=True)) > 0:
                                         text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].strip() + " "
                                 found = False
-                                if v.attrs["style"] in ["tl", "it"]:
-                                    v.name = "i"
-                                    found = True
-                                    place = True
-
-                                if v.attrs["style"] in ["sc"]:
-                                    v.name = "small"
-                                    found = True
-                                    place = True
-
-                                if found:
-                                    v.attrs = {}
-
+                                modify_char(v_num, p.contents, is_char=True)
                                 text_dict[curr_ch][curr_seg] += add_text(v, string=False)
                                 prev_was_lord = True
                         text_dict[curr_ch][curr_seg] = text_dict[curr_ch][curr_seg].replace("  ", " ")
@@ -374,15 +377,23 @@ for dir in ['RJPS Kethuvim for Sefaria, USX format - July 2023', "RJPS Torah for
             for v, verse in enumerate(text_dict[p]):
                 if verse.startswith("<br>"):
                     text_dict[p][v] = verse.replace("<br>", "", 1)
+                text_dict[p][v] = text_dict[p][v].replace("<br><br>", "<br>")
         text_dict = convertDictToArray(text_dict)
-        tc = TextChunk(Ref(title), lang='en', vtitle="THE JPS TANAKH: Gender-Sensitive Edition (new batch)")
+        tc = TextChunk(Ref(title), lang='en', vtitle="THE JPS TANAKH: Gender-Sensitive Edition")
         if tc.text != text_dict:
             tc.text = text_dict
-            #tc.save()
+            tc.save()
 
 print(other_tags)
-for v in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition (new batch)"}):
+for v in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition"}):
     v.versionSource = "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
+    v.shortVersionTitle = "JPS, 2023"
+    v.versionTitle = 'THE JPS TANAKH: Gender-Sensitive Edition'
+    v.versionNotes = """<a href="http://purl.org/jps/rjps-preface">Read the Preface to the Revised JPS Edition</a>
+<br><br>
+<a href="http://purl.org/jps/gender">Read the Notes on Gender in Translation for the Revised JPS Edition</a>
+<br><br>
+<a href="https://www.sefaria.org/collections/commentary-on-the-usage-and-rendering-of-%D7%90%D7%99%D7%A9?tab=sheets">Read a Commentary on the Hebrew word 'ish in the Revised JPS Edition</a>"""
     v.save()
 
 # vtitle = "The Contemporary Torah, Jewish Publication Society, 2006"
@@ -411,7 +422,7 @@ for v in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition (
 details = {
     "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
     "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"}
-for version in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition (new batch)"}):
+for version in VersionSet({"versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition"}):
     print(version)
     for k, value in details.items():
         setattr(version, k, value)
