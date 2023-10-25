@@ -7,7 +7,7 @@ from tqdm import tqdm
 def is_num(x):
     if isinstance(x, dict):
         x = x.get('value')
-    return x is not None and (isinstance(x, int) or x.isdigit())
+    return x is not None and (isinstance(x, (int, float)) or (isinstance(x, str) and x.isdigit()))
 
 def parse_years(years_string):
     years = years_string.split('-')
@@ -55,7 +55,7 @@ def process(data, b, k, title_func, setter_func):
         return False
     elif temp:
         if is_num(temp):
-            if isinstance(temp, int):
+            if isinstance(temp, (float, int)):
                 data[k]['ints'] += 1
             elif temp.isdigit():
                 data[k]['string ints'] += 1
