@@ -1,7 +1,45 @@
 from sources.functions import *
 import string
+tanakh_books = """Steinsaltz on Joshua
+                Steinsaltz on Judges
+                Steinsaltz on I Samuel
+                Steinsaltz on II Samuel
+                Steinsaltz on I Kings
+                Steinsaltz on II Kings
+                Steinsaltz on Isaiah
+                Steinsaltz on Jeremiah
+                Steinsaltz on Ezekiel
+                Steinsaltz on Hosea
+                Steinsaltz on Joel
+                Steinsaltz on Amos
+                Steinsaltz on Obadiah
+                Steinsaltz on Jonah
+                Steinsaltz on Micah
+                Steinsaltz on Nahum
+                Steinsaltz on Habakkuk
+                Steinsaltz on Zephaniah
+                Steinsaltz on Haggai
+                Steinsaltz on Zechariah
+                Steinsaltz on Malachi
+                Steinsaltz on Psalms
+                Steinsaltz on Proverbs
+                Steinsaltz on Job
+                Steinsaltz on Song of Songs
+                Steinsaltz on Ruth
+                Steinsaltz on Lamentations
+                Steinsaltz on Ecclesiastes
+                Steinsaltz on Esther
+                Steinsaltz on Daniel
+                Steinsaltz on Ezra
+                Steinsaltz on Nehemiah
+                Steinsaltz on I Chronicles
+                Steinsaltz on II Chronicles"""
 
 punctuation_regex = re.compile('[%s]' % re.escape(string.punctuation))
+steinsaltz = 'ביאור שטיינזלץ'
+t = Term().load({"titles.text": steinsaltz})
+t.add_title("Steinsaltz Commentary", 'en')
+t.save()
 
 
 def create_intros(book):
@@ -15,49 +53,67 @@ def create_intros(book):
 intro_links = defaultdict(list)
 intro_text = defaultdict(list)
 he_intro_text = defaultdict(list)
-
+para_intro_text = defaultdict(list)
+para_he_intro_text = defaultdict(list)
 def save_text_and_links():
     for ref in intro_text.keys():
-        tc = TextChunk(Ref(ref), vtitle='Steinsaltz en', lang='en')
+        diff = len(intro_text[ref]) - len(he_intro_text[ref])
+        if diff != 0:
+            print(f"{ref} diff {diff}")
+        tc = TextChunk(Ref(ref+", Section Preface"), vtitle='The Steinsaltz Tanakh - English', lang='en')
         tc.text = intro_text[ref]
         tc.save(force_save=True)
-        tc = TextChunk(Ref(ref), vtitle='Steinsaltz he', lang='he')
+        tc = TextChunk(Ref(ref + ", Book Introduction"), vtitle='The Steinsaltz Tanakh - English', lang='en')
+        tc.text = para_intro_text[ref]
+        tc.save(force_save=True)
+        for l, line in enumerate(he_intro_text[ref]):
+            for f in re.findall('(([א-ת])\.([א-ת]))', line):
+                he_intro_text[ref][l] = he_intro_text[ref][l].replace(f[0], f"{f[1]}. {f[2]}")
+            for f in re.findall('(([א-ת]):([א-ת]))', line):
+                he_intro_text[ref][l] = he_intro_text[ref][l].replace(f[0], f"{f[1]}: {f[2]}")
+
+        tc = TextChunk(Ref(ref+", Book Introduction"), vtitle='The Koren Steinsaltz Tanakh HaMevoar - Hebrew', lang='he')
+        tc.text = para_he_intro_text[ref]
+        tc.save(force_save=True)
+
+        tc = TextChunk(Ref(ref+", Section Preface"), vtitle='The Koren Steinsaltz Tanakh HaMevoar - Hebrew', lang='he')
         tc.text = he_intro_text[ref]
         tc.save(force_save=True)
-        for l, link in enumerate(intro_links[ref]):
-            obj = {"generated_by": "steinsaltz intro", "type": "Commentary", "auto": True,
-              "refs": [f"{ref} {l+1}", link]}
-            try:
-                Link(obj).save()
-                obj = {"generated_by": "steinsaltz intro", "type": "Commentary", "auto": True,
-                       "refs": [f"{ref} {l + 1}", f"Steinsaltz Commentary on {link}"]}
-                Link(obj).save()
-            except:
-                pass
 
 
-def parse_book_sections(node, sections):
+def parse_book_sections(node, sections, book_data):
     for sec in sections:
         if sec.book == node.get_primary_title('en'):
             if node.get_primary_title('en') == "Psalms":
                 sec.title_en = Ref(sec.title_en.replace("PSALM", "Psalms")).normal()
                 sec.title_he = Ref(sec.title_en).he_normal()
 
-            ref = f"Introduction to Tanakh, {node.get_primary_title('en')}"
-            intro_links[ref].append(sec.ref)
+            ref = f"Steinsaltz Introductions to Tanakh, {node.get_primary_title('en')}"
+
             for p in ["<footnote.*?>", "<notes.*?>"]:
                 for m in re.findall(p, sec.comm_en):
                     sec.comm_en = sec.comm_en.replace(m, "")
                 for m in re.findall(p, sec.comm_he):
                     sec.comm_he = sec.comm_he.replace(m, "")
+            if len(intro_text[ref]) == 0 and len(book_data) > 0:
+                for p in ["<footnote.*?>", "<notes.*?>"]:
+                    book_data = list(book_data)
+                    for i, d in enumerate(book_data):
+                        for m in re.findall(p, book_data[i]):
+                            book_data[i] = book_data[i].replace(m, "")
+                para_intro_text[ref].append(book_data[0])
+                para_he_intro_text[ref].append(book_data[1])
+            intro_links[ref].append(sec.ref)
+            intro_text[ref].append(f'({sec.ref})')
+            he_intro_text[ref].append(f'({Ref(sec.ref).he_normal()})')
             if sec.comm_en != "":
-                intro_text[ref].append(f"<b>{sec.title_en}</b><br/>{sec.comm_en}")
+                intro_text[ref][-1] += f"<br><b>{sec.title_en}</b><br/>{sec.comm_en}"
             else:
-                intro_text[ref].append(f"<b>{sec.title_en}</b>")
+                intro_text[ref][-1] += f"<br><b>{sec.title_en}</b>"
             if sec.comm_he != "":
-                he_intro_text[ref].append(sec.comm_he)
+                he_intro_text[ref][-1] += f"<br><b>{sec.title_he}</b><br/>{sec.comm_he}"
             else:
-                he_intro_text[ref].append(f"<b>{sec.title_en}</b>")
+                he_intro_text[ref][-1] += f"<br><b>{sec.title_he}</b>"
 
 class Section:
     def __init__(self, book, range_eng, sec, title_en, title_he, comm_en, comm_he):
@@ -79,32 +135,20 @@ with open("nach_section_export - nach_section_export.csv", 'r') as f:
     for row in rows[1:]:
         sec, sefer, title_en, title_he, comm_en, comm_he, range_eng, range_heb,	range_start,	range_end,	parent_id = row
         if range_eng == 'NULL':
-            print(row)
             continue
         range_eng = range_eng.replace("chaps. ", "").replace("The Song of", "Song of")
         book = Ref(range_eng).index.title
         if book not in books:
             books.append(book)
         sections.append(Section(book, range_eng, sec, title_en, title_he, comm_en, comm_he))
-creating_intro = True
-if creating_intro:
-    intro = SchemaNode()
-    intro.add_primary_titles("Introduction to Tanakh", 'הקדמה לתנ״ך')
-    intro.key = "Introduction to Tanakh"
-    for b in books:
-        node = create_intros(b)
-        parse_book_sections(node, sections)
-        intro.append(node)
-    intro.validate()
-    intro = {"schema": intro.serialize(),
-           "title": intro.key,
-           "categories": ["Tanakh", "Modern Commentary on Tanakh", "Steinsaltz"]}
-    try:
-        library.get_index(intro['title'])
-    except:
-        Index(intro).save()
-    save_text_and_links()
-perakim = [len(library.get_index(b).all_section_refs()) for b in books]
+
+_all = False
+creating_intro = False
+linking = False
+parsing = True
+if _all:
+    linking = parsing = creating_intro = True
+
 cats = ["Tanakh", "Modern Commentary on Tanakh", "Steinsaltz"]
 c = Category()
 c.path = cats
@@ -117,136 +161,266 @@ try:
     c.save()
 except:
     pass
-#
-# for b in library.get_indexes_in_category("Steinsaltz", include_dependant=True):
-#     b = library.get_index(b)
-#     if "Tanakh" not in b.categories:
-#         continue
-#     if "I Samuel" not in b.title:
-#         continue
-#     b.versionState().refresh()
-#     base = library.get_index(b.title.replace("Steinsaltz Commentary on ", "")).all_section_refs()
-#     comm = b.all_section_refs()
-#     #assert len(comm) == len(base), f"{len(comm)} vs {len(base)}"
-#     for r in b.all_section_refs():
-#         base = Ref(r.normal().replace("Steinsaltz Commentary on ", "")).all_segment_refs()
-#         comm = r.all_segment_refs()
-#         if len(comm) != len(base):
-#             print(r)
-#             print(f"{len(comm)} vs {len(base)}")
-# print()
+
+perakim = [len(library.get_index(b).all_section_refs()) for b in books]
+
 def get_substrings(input_string, length=5):
     return [input_string[i: i + length] for i in range(len(input_string) - length + 1)]
 
+def get_corrected():
+    corrected = {}
+    with open("actual issues - corrected (1).csv", 'r') as f:
+        rows = csv.reader(f)
+        for r in rows:
+            ref, t1, t2 = r[0], r[1], r[2]
+
+            corrected[ref] = t1
+    return corrected
+
+corrected = get_corrected()
 steinsaltz_longer = []
 steinsaltz_shorter = []
-with open("nach_content_export - nach_content_export (2).csv", 'r') as f:
-    rows = csv.reader(f)
-    rows = list(rows)
-    steinsaltz = 'ביאור שטיינזלץ'
-    curr_book = prev_book = ""
-    ref_in_section = Counter()
-    for r, row in enumerate(rows[1:]):
-        id,	perek_id,	section_id,	posuk_num, text_orig, text_ftnote, text_en = row
-        for s, sec in enumerate(sections):
-            if sec.id == section_id:
-                if Ref(sec.ref).index.title != curr_book:
-                    prev_book = curr_book
-                    curr_book = Ref(sec.ref).index.title
-                curr_range = Ref(sec.ref).normal()
-                ref_in_section[curr_range] += 1
-                seg_refs = Ref(curr_range).all_segment_refs()
-                if ref_in_section[curr_range] > len(seg_refs):
-                    print(f"{curr_book} => {r}")
-                    section_id = str(int(sec.id) + 1)
-                    continue
-                curr_ref = seg_refs[ref_in_section[curr_range]-1]
-                #if curr_ref.normal() == "Joshua 21:36":
-                #    curr_ref = curr_ref.next_segment_ref().next_segment_ref()
-                while curr_ref.sections[1] < int(posuk_num):
-                    print(f'Difference in length: {curr_ref}')
-                    curr_ref = curr_ref.next_segment_ref()
+if parsing:
+    for b in tanakh_books.splitlines():
+        try:
+            library.get_index(b).delete()
+        except:
+            pass
+    with open("nach_content_export - nach_content_export (4).csv", 'r') as f:
+        rows = csv.reader(f)
+        rows = list(rows)
+        curr_book = prev_book = ""
+        ref_in_section = Counter()
+        for r, row in enumerate(rows[1:]):
+            id,	perek_id,	section_id,	posuk_num, text_orig, text_ftnote, text_en = row
+            for s, sec in enumerate(sections):
+                if sec.id == section_id:
+                    if Ref(sec.ref).index.title != curr_book:
+                        prev_book = curr_book
+                        curr_book = Ref(sec.ref).index.title
+                    curr_range = Ref(sec.ref).normal()
                     ref_in_section[curr_range] += 1
-                while curr_ref.sections[1] > int(posuk_num):
-                    print(f'Difference in length: {curr_ref}')
-                    curr_ref = Ref(curr_ref.prev_segment_ref().normal().replace(":" + prev_posuk_num, ":" + posuk_num))
-                    ref_in_section[curr_range] -= 1
-                prev_posuk_num = posuk_num
-                break
-        if prev_book != curr_book:
-            root = JaggedArrayNode()
-            root.add_primary_titles(f"Steinsaltz Commentary on {curr_book}",
-                                    f"{steinsaltz} על {library.get_index(curr_book).get_title('he')}")
-            root.add_structure(["Chapter", "Verse"])
-            root.key = f"Steinsaltz Commentary on {curr_book}"
-            root.validate()
+                    seg_refs = Ref(curr_range).all_segment_refs()
+                    if ref_in_section[curr_range] > len(seg_refs):
+                        section_id = str(int(sec.id) + 1)
+                        continue
+                    curr_ref = seg_refs[ref_in_section[curr_range]-1]
+                    #if curr_ref.normal() == "Joshua 21:36":
+                    #    curr_ref = curr_ref.next_segment_ref().next_segment_ref()
+                    while curr_ref.sections[1] < int(posuk_num):
+                        curr_ref = curr_ref.next_segment_ref()
+                        ref_in_section[curr_range] += 1
+                    while curr_ref.sections[1] > int(posuk_num):
+                        curr_ref = Ref(curr_ref.prev_segment_ref().normal().replace(":" + prev_posuk_num, ":" + posuk_num))
+                        ref_in_section[curr_range] -= 1
+                    prev_posuk_num = posuk_num
+                    break
 
-            cats = ["Tanakh", "Modern Commentary on Tanakh", "Steinsaltz", library.get_index(curr_book).categories[1]]
-            if Category().load({"path": cats}) is None:
-                c = Category()
-                c.path = cats
-                c.add_shared_term(cats[-1])
-                c.save()
-            indx = {'title': root.key, 'categories': cats, "schema": root.serialize(), "dependence": "Commentary",
-                    "base_text_titles": [curr_book],
-                    "base_text_mapping": "one_to_one"}
-            prev_book = curr_book
+            if prev_book != curr_book:
+                root = JaggedArrayNode()
+                root.add_primary_titles(f"Steinsaltz on {curr_book}",
+                                        f"{steinsaltz} על {library.get_index(curr_book).get_title('he')}")
+                root.add_structure(["Chapter", "Verse"])
+                root.key = f"Steinsaltz on {curr_book}"
+                root.validate()
+                print(f"Steinsaltz on {curr_book}")
+
+                cats = ["Tanakh", "Modern Commentary on Tanakh", "Steinsaltz", library.get_index(curr_book).categories[1]]
+                if Category().load({"path": cats}) is None:
+                    c = Category()
+                    c .path = cats
+                    c.add_shared_term(cats[-1])
+                    c.save()
+                indx = {'title': root.key, 'categories': cats, "schema": root.serialize(), "dependence": "Commentary",
+                        "base_text_titles": [curr_book], 'collective_title': "Steinsaltz",
+                        "base_text_mapping": "one_to_one"}
+                prev_book = curr_book
+                try:
+                    Index(indx).save()
+                except:
+                    pass
+            if curr_ref.normal() in corrected:
+                text_ftnote = corrected[curr_ref.normal()]
+            else:
+                for x in re.findall(":[א-ת]{1}", text_ftnote):
+                    text_ftnote = text_ftnote.replace(x, f": {x[1]}")
+                for p in ["<footnote.*?>", "<notes.*?>"]:
+                    for m in re.findall(p, text_ftnote):
+                        text_ftnote = text_ftnote.replace(m, "")
+                    for m in re.findall(p, text_en):
+                        text_en = text_en.replace(m, "")
+
+            tc = TextChunk(Ref(f"Steinsaltz on {curr_ref.normal()}"), lang='he', vtitle="The Koren Steinsaltz Tanakh HaMevoar - Hebrew")
+            for f in re.findall('(([א-ת])\.([א-ת]))', text_ftnote):
+                text_ftnote = text_ftnote.replace(f[0], f"{f[1]}. {f[2]}")
+            for f in re.findall('(([א-ת]):([א-ת]))', text_ftnote):
+                text_ftnote = text_ftnote.replace(f[0], f"{f[1]}: {f[2]}")
+            tc.text = text_ftnote
+            heb_words += text_ftnote.count(" ")
+            base_heb += curr_ref.text('he').text.count(" ")
+            tc.save(force_save=True)
+            tc = TextChunk(Ref(f"Steinsaltz on {curr_ref.normal()}"), lang='en', vtitle="The Steinsaltz Tanakh - English")
+            tc.text = text_en
+            tc.save(force_save=True)
+        for v in VersionSet({"versionTitle": "The Steinsaltz Tanakh - English"}).array():
+            library.get_index(v.title).versionState().refresh()
+            v.versionSource = "https://korenpub.com/collections/the-steinsaltz-tanakh/products/steinsaltz-tanakh"
+            v.save()
+        for v in VersionSet({"versionTitle": "The Koren Steinsaltz Tanakh HaMevoar - Hebrew"}).array():
+            library.get_index(v.title).versionState().refresh()
+            v.versionSource = "https://korenpub.com/collections/tanakh/products/the-koren-steinsaltz-tanakh-hamevoar-sethardcoverlarge"
+            v.save()
+
+if creating_intro:
+    try:
+        library.get_index("Steinsaltz Introductions to Tanakh").delete()
+    except:
+        pass
+    sefer = {}
+    with open("nach_sefer_export - nach_sefer_export.csv", 'r') as f:
+        rows = list(csv.reader(f))
+        for row in rows:
+            r_id,  name_eng,  name_heb,  intro_eng,  intro_heb, pereks = row
+            if name_eng.endswith(" II"):
+                continue
+            elif name_eng.endswith(" I"):
+                name_eng = name_eng.replace(" I", "")
+            sefer[name_eng] = (intro_eng, intro_heb)
+    intro = SchemaNode()
+    intro.add_primary_titles("Steinsaltz Introductions to Tanakh", 'ביאור שטיינזלץ, הקדמות לתנ"ך')
+    intro.key = "Steinsaltz Introductions to Tanakh"
+
+    for b in books:
+        node = create_intros(b)
+        m = re.search("I{1,2} ", b)
+        if b.startswith("I "):
+            b = b.replace("I ", "", 1)
+        if "II " in b:
+            sefer[b] = []
+        parse_book_sections(node, sections, sefer[b])
+        one_para = JaggedArrayNode()
+        one_para.add_primary_titles("Book Introduction", "הקדמה לספר")
+        one_para.add_structure(["Paragraph"])
+        node.append(one_para)
+        content = JaggedArrayNode()
+        content.add_primary_titles("Section Preface", "מבוא לקטע")
+        content.add_structure(["Paragraph"])
+        node.append(content)
+        intro.append(node)
+    intro.validate()
+    intro = {"schema": intro.serialize(),
+           "title": intro.key,
+           "categories": ["Tanakh", "Modern Commentary on Tanakh", "Steinsaltz"]}
+    try:
+        library.get_index(intro['title'])
+    except:
+        Index(intro).save()
+    save_text_and_links()
+
+if linking:
+    try:
+        LinkSet({"generated_by": "steinsaltz intro"}).delete()
+    except:
+        pass
+    try:
+        LinkSet({"generated_by": "steinsaltz_essay_links"}).delete()
+    except:
+        pass
+    try:
+        LinkSet({"generated_by": "steinsaltz_commentary"}).delete()
+    except:
+        pass
+    for ref in intro_text.keys():
+        amt = 0 if ref.startswith("II ") else 1
+        for l, link in enumerate(intro_links[ref]): # Steinsaltz Introductions to Tanakh, Joshua, Section Preface
+            en_stein = "Steinsaltz Introductions to Tanakh, "+ref.split(",")[-1].strip()+", Section Preface"
+            he_stein = Ref("Steinsaltz Introductions to Tanakh, "+ref.split(",")[-1].strip()+", Section Preface").he_normal()
+            obj = {"refs": [link, f"{ref}, Section Preface {l+amt}"],
+                 "auto": True, "type": "essay", "generated_by": "steinsaltz_essay_links",
+                 "versions": [{"title": "ALL",
+                               "language": "en"},
+                              {"title": "ALL",
+                               "language": "en"}],
+                 "displayedText": [{"en": Ref(link).book,
+                                    "he": Ref(link).he_book()},
+                                   {"en": en_stein, "he": he_stein}]}
             try:
-                Index(indx).save()
+                Link(obj).save()
+            except:
+                pass
+            obj = {"type": "essay", "generated_by": "steinsaltz_essay_links",
+                 "versions": [{"title": "ALL",
+                               "language": "en"},
+                              {"title": "ALL",
+                               "language": "en"}], "auto": True,
+                   "displayedText": [{"en": en_stein, "he": he_stein},
+                                       {"en": "Steinsaltz on "+Ref(link).book,
+                                         "he": Ref(link).he_book()}],
+                   "refs": [f"{ref}, Section Preface {l + amt}", f"Steinsaltz on {link}"]}
+            try:
+                Link(obj).save()
             except:
                 pass
 
-        for x in re.findall(":[א-ת]{1}", text_ftnote):
-            text_ftnote = text_ftnote.replace(x, f": {x[1]}")
-        for p in ["<footnote.*?>", "<notes.*?>"]:
-            for m in re.findall(p, text_ftnote):
-                text_ftnote = text_ftnote.replace(m, "")
-            for m in re.findall(p, text_en):
-                text_en = text_en.replace(m, "")
-
-        tc = TextChunk(Ref(f"Steinsaltz Commentary on {curr_ref.normal()}"), lang='he', vtitle="Steinsaltz he")
-        tc.text = text_ftnote
-        heb_words += text_ftnote.count(" ")
-        base_heb += curr_ref.text('he').text.count(" ")
-        #tc.save(force_save=True)
-        tc = TextChunk(Ref(f"Steinsaltz Commentary on {curr_ref.normal()}"), lang='en', vtitle="Steinsaltz en")
-        tc.text = text_en
-        for lang, k in [('he', text_ftnote)]:  # , ('en', text_en)]:
-            # for word in k.split():
-            #     if word.find("<b>") > 0 and word[3+word.find("<b>"):] != "":
-            #         print(word)
-            from sefaria.utils.hebrew import strip_nikkud
-
-            real_words_list = re.findall("<b>(.*?)</b>", k)
-            outside_words = [x for x in re.findall("</b>(.*?)<b>", k) if x != strip_nikkud(strip_cantillation(x))]
-            more_than_one_letter = 0
-            streaks = False
-            for words in outside_words:
-                if not streaks:
-                    substrings = get_substrings(words, length=7)
-                    for s in substrings:
-                        if len(s) == 7 and punctuation_regex.sub('', s) in str(real_words_list):
-                            streaks = True
-                            break
-                for char in words:
-                    if strip_nikkud(strip_cantillation(char)) != char:
-                        more_than_one_letter += 1
-
-            if streaks:
-                steinsaltz_shorter.append([curr_ref.normal(), k, curr_ref.text(lang).text])
-            if more_than_one_letter > 2: steinsaltz_longer.append([curr_ref.normal(), k, curr_ref.text(lang).text])
-        #tc.save(force_save=True)
-    for v in VersionSet({"versionTitle": "Steinsaltz en"}).array()+VersionSet({"versionTitle": "Steinsaltz he"}).array():
-        library.get_index(v.title).versionState().refresh()
-        v.versionSource = "https://www.sefaria.org"
-        v.save()
-
-with open("issues.csv", 'w') as f:
-    writer = csv.writer(f)
-    writer.writerows(steinsaltz_longer)
-
-
-print(steinsaltz_longer)
-with open("streaks.csv", 'w') as f:
-    writer = csv.writer(f)
-    writer.writerows(steinsaltz_shorter)
+    for x in ["Prophets", "Writings"]:
+        books = library.get_indexes_in_category(["Tanakh", "Modern Commentary on Tanakh", "Steinsaltz", x], include_dependant=True)
+        for b in books:
+            print(b)
+            if b.startswith("Int"):
+                continue
+            for r in library.get_index(b).all_segment_refs():
+                # for v in VersionSet({"versionTitle": "The Steinsaltz Tanakh - English"}).array() + VersionSet(
+                #         {"versionTitle": "The Koren Steinsaltz Tanakh HaMevoar - Hebrew"}).array():
+                r = r.normal()
+                en_stein = " ".join(r.split()[:-1])
+                he_stein = library.get_index(en_stein).get_title('he')
+                en_tanakh = " ".join(r.replace("Steinsaltz on ", "").split()[:-1])
+                he_tanakh = library.get_index(en_tanakh).get_title('he')
+                l = {"refs": [r.replace("Steinsaltz on ", ""), r],
+                     "auto": True, "type": "commentary", "generated_by": "steinsaltz_commentary"}
+                try:
+                    Link(l).save()
+                except:
+                    print(l)
+            for r in library.get_index(b).all_section_refs():
+                # for v in VersionSet({"versionTitle": "The Steinsaltz Tanakh - English"}).array() + VersionSet(
+                #         {"versionTitle": "The Koren Steinsaltz Tanakh HaMevoar - Hebrew"}).array():
+                r = r.normal()
+                en_stein = " ".join(r.split()[:-1])
+                he_stein = library.get_index(en_stein).get_title('he')
+                en_tanakh = " ".join(r.replace("Steinsaltz on ", "").split()[:-1])
+                he_tanakh = library.get_index(en_tanakh).get_title('he')
+                actual_book = " ".join(r.replace("Steinsaltz on ", "").split()[:-1])
+                he_actual_book = library.get_index(actual_book).get_title('he')
+                stein_node = f"Steinsaltz Introductions to Tanakh, {actual_book}, Book Introduction"
+                he_stein_node = Ref(stein_node).he_normal()
+                l2 = {"refs": [Ref(r.replace("Steinsaltz on ", "")).as_ranged_segment_ref().normal(),
+                               f"{stein_node} 1"],
+                     "auto": True, "type": "essay", "generated_by": "steinsaltz_essay_links",
+                     "versions": [{"title": "ALL",
+                                     "language": "en"},
+                                    {"title": "ALL",
+                                     "language": "en"}],
+                     "displayedText": [{"en": actual_book, "he": he_actual_book},
+                                       {"en": stein_node, "he": he_stein_node}]
+                     }
+                try:
+                    Link(l2).save()
+                except:
+                    print(l2)
+                r = Ref(r)
+                l2 = {"refs": [r.as_ranged_segment_ref().normal(),
+                               f"{stein_node} 1"],
+                      "auto": True, "type": "essay", "generated_by": "steinsaltz_essay_links",
+                      "versions": [{"title": "ALL",
+                                    "language": "en"},
+                                   {"title": "ALL",
+                                    "language": "en"}],
+                      "displayedText": [{"en": r.book, "he": r.he_book()},
+                                        {"en": stein_node, "he": he_stein_node}]
+                      }
+                try:
+                    Link(l2).save()
+                except:
+                    print(l2)
+    "steinsaltz_commentary", "steinsaltz intro", "steinsaltz_essay_links"
