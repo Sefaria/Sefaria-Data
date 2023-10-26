@@ -22,9 +22,9 @@ def ingest_map():
 
 
 def rewriter_function(prod_ref):
+    print(prod_ref)
     mapper = ingest_map()
     ranged_ref_list = []
-    # print(prod_ref)
     if prod_ref in mapper:
         cur_beeri_ref_list = mapper[prod_ref]
         if len(cur_beeri_ref_list) > 1:
@@ -108,24 +108,37 @@ if __name__ == '__main__':
 
     print(ls.count())
 
-    # TODO - read in CSV here. 
-
+    # TODO - read in CSV here.
+    # old_ref,link_ref,link_type,generated_by,all,status
+    # Read in ref, map to new one, ouput all values to create new (but identical minus one column) csv
+    print("old_mekhilta_ref, beeri_ref, link_ref, link_type, generated_by, all, status")
     old_ref_list = []
-    print("linked_ref, old_mekhilta_ref, beeri_ref, is_auto_linked, from_mekhilta_to_external")
-    for link in ls:
-        other_ref, mekhilta_old_ref, from_mekhilta = order_links(link.refs)
-        beeri_mekhilta_ref = rewriter_function(mekhilta_old_ref)
+    with open('mekhilta_all_links.csv', newline='') as csvfile:
+        all_links = csv.reader(csvfile)
+        for row in all_links:
+            old_ref = row[0]
+            link_ref = row[1]
+            link_type = row[2]
+            generated_by = row[3]
+            all = row[4]
+            status = row[5]
 
-        # post_link({'refs': [other_ref, beeri_mekhilta_ref]})
-        generated_by_list_set.append(link.generated_by)
-        # exclude automatic
-        if link.generated_by == "add_links_from_text":
-            print(f"\"{other_ref}\", \"{mekhilta_old_ref}\", \"{beeri_mekhilta_ref}\", True, {from_mekhilta}")
-        elif beeri_mekhilta_ref:
-            print(f"\"{other_ref}\", \"{mekhilta_old_ref}\", \"{beeri_mekhilta_ref}\", False, {from_mekhilta}")
-        if not beeri_mekhilta_ref:
-            old_ref_list.append(mekhilta_old_ref)
-    print(f"{len(old_ref_list)} refs need to be dealt with")
-    print(old_ref_list)
-    print(set(generated_by_list_set))
+            # other_ref, mekhilta_old_ref, from_mekhilta = order_links(link.refs)
+            beeri_mekhilta_ref = rewriter_function(old_ref)
+
+            # post_link({'refs': [other_ref, beeri_mekhilta_ref]})
+            # generated_by_list_set.append(link.generated_by)
+            # exclude automatic
+            # if link.generated_by == "add_links_from_text":
+            #     print(f"\"{other_ref}\", \"{mekhilta_old_ref}\", \"{beeri_mekhilta_ref}\", True, {from_mekhilta}")
+            # elif beeri_mekhilta_ref:
+            #     print(f"\"{other_ref}\", \"{mekhilta_old_ref}\", \"{beeri_mekhilta_ref}\", False, {from_mekhilta}")
+            if not beeri_mekhilta_ref:
+                old_ref_list.append(old_ref)
+            else:
+                print(f"\"{old_ref}\",\"{beeri_mekhilta_ref}\",\"{link_ref}\",\"{link_type}\",\"{generated_by}\",\"{all}\",\"{status}\"")
+
+        print(f"{len(old_ref_list)} refs need to be dealt with")
+        print(old_ref_list)
+            # print(set(generated_by_list_set))
 
