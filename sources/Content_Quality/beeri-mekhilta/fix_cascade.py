@@ -4,9 +4,7 @@ django.setup()
 
 from sefaria.model import *
 from sefaria.helper.schema import cascade
-from sources.functions import post_text, post_index, post_link, add_category
 import csv
-import re
 
 
 def rename_books():
@@ -14,7 +12,7 @@ def rename_books():
     index_query = {"title": "Mekhilta DeRabbi Yishmael"}
     index = Index().load(index_query)
     print(f"Retrieved {index.title}")
-    index.set_title("Mekhilta d'Rabbi Yishmael Old")
+    index.set_title("Old Mekhilta d'Rabbi Yishmael")
     index.save()
     print(f"Saved and renamed {index.title}")
 
@@ -75,7 +73,7 @@ def rewriter_function(prod_ref):
 
 
 if __name__ == '__main__':
-    # Run the following function once on DB refresh, make sure Mekhilta copied from Piaczena DB
+    # Run the following function once on DB refresh, make sure Mekhilta copied from Piaczena DB (index & text)
     rename_books()
 
-    cascade("Mekhilta d'Rabbi Yishmael Old", rewriter=rewriter_function, skip_history=False)
+    # cascade("Mekhilta d'Rabbi Yishmael Old", rewriter=rewriter_function, skip_history=False)
