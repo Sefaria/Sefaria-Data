@@ -170,9 +170,28 @@ def apply_function_to_values(input_dict, foo):
         result_dict[key] = foo(value)
 
     return result_dict
+
+def preprocess_html(html_string):
+
+    pattern_start_list = re.compile(r'</p>\s*<ul>')
+    pattern_end_list = re.compile(r'\s*</ul>')
+    pattern_start_dl = re.compile(r'</p>\s*<ul>')
+    pattern_end_list = re.compile(r'\s*</ul>')
+    # Perform the find and replace
+    modified_text = re.sub(pattern_start_list, '', html_string)
+    modified_text = re.sub(pattern_end_list, '</p>', modified_text)
+    modified_text = re.sub(r'<dl><dt>\[ליקוט\]<\/dt><\/dl>\s*<p>', '<p>[ליקוט]<br>', modified_text)
+    modified_text = re.sub(r'</p>\s*<dl><dt>\[עד כאן הליקוט\]</dt></dl>', '[עד כאן הליקוט]<br>' +'</p>', modified_text)
+
+    modified_text = re.sub(r'<dl><dt><span style="font-size:83%;">\[מה"ב\]</span></dt></dl>\s*<p>', '<p>[מה"ב]<br>', modified_text)
+    modified_text = re.sub(r'</p>\s*<dl><dt><span style="font-size:83%;">\[ע"כ מה"ב\]</span></dt></dl>', '[ע"כ מה"ב]<br>'+ "</p>", modified_text)
+    modified_text = re.sub(r'</p>\s*<dl><dt><span style="font-size:83%;">\[עד כאן מה"ב\]</span></dt></dl>',
+                           "<br>" + '[עד כאן מה"ב]' + "</p>", modified_text)
+    return modified_text
 def general_parse(html_path, prefix):
     with open(html_path, 'r', encoding='utf-8') as file:
         html_content = file.read()
+    html_content = preprocess_html(html_content)
     soup = BeautifulSoup(html_content, 'html.parser')
     elements = []
     for element in soup.find_all(['p', 'a']):
