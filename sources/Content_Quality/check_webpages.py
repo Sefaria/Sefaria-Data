@@ -1,5 +1,31 @@
 import django
 django.setup()
+import csv
+from sefaria.model import *
+from tqdm import tqdm
+from sefaria.export import import_versions_from_stream, _import_versions_from_csv
+message = ""
+count = 0
+with open("GevurotHashem 63-72/GevurotHashemMainText.csv", 'r') as f:
+    lines = list(csv.reader(list(f)))
+    #import_versions_from_stream(lines, [1], 1)
+    for x in tqdm(lines[5:]):
+        count += 1
+        vtitle = lines[1][1]+" new"
+        # if 1570 > count > 1567:
+        #     continue
+        print(count)
+        r, text = x
+        tc = TextChunk(Ref(r), vtitle=vtitle, lang='he')
+        tc.text = text
+        try:
+            tc.save()
+        except Exception as e:
+            print(e)
+    #_import_versions_from_csv(lines, [1], 1)
+    message += "Imported: {}.  ".format(f.name)
+print()
+raise Exception
 from sefaria.model.webpage import *
 from sefaria.utils.hebrew import *
 import csv
@@ -108,9 +134,6 @@ if __name__ == '__main__':
     book = library.get_index("Mishnat Eretz Yisrael on Pirkei Avot")
     for oref in tqdm(library.get_index("Mishnat Eretz Yisrael on Pirkei Avot").all_segment_refs()):
         tc = TextChunk(oref, lang='he')
-        try:
-        except Exception as e:
-            print(f"{e} => {oref}")
 
     assert 5 == 6
     # post_playground_index()
