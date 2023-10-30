@@ -9,6 +9,13 @@ if __name__ == '__main__':
         langs = {getattr(v, 'actualLanguage', '') for v in versions}
         for version in versions:
             if not hasattr(version, 'actualLanguage'):
+                if index.title == 'Pele Yoetz':
+                    if version.versionTitle == 'Torat Emet':
+                        version.actualLanguage = 'he'
+                        continue
+                    elif version.versionTitle in ['Sefaria Community Translation', 'itorah.com/pele-yoetz']:
+                        version.actualLanguage = 'en'
+                        continue
                 print(f'version {version} of index {index} has no actualLanguage')
                 continue
 
@@ -47,31 +54,31 @@ if __name__ == '__main__':
                     # version.versionTitle = re.sub(regex, '', version.versionTitle)
 
 
-            # add isSource and isDefault
+            # add isSource and isPrimary
 
             # original is hebrew but we don't have it
             if index.title in ['Teshuvot HaRitva', 'Musafia Teshuvot HaGeonim', 'Yismach Yisrael on Pesach Haggadah',
                                'Minchat Ani on Pesach Haggadah', 'From Sinai to Ethiopia']:
-                version.isDefault = True
+                version.isPrimary = True
                 version.isSource = False
 
             #original is a third language that we don't have
             elif index.title in ['Legends of the Jews', 'Kol Dodi Dofek', 'Saadia Gaon on Deuteronomy',
                                        'Saadia Gaon on Exodus', 'Saadia Gaon on Numbers', 'Commentary on Selected Paragraphs of Arpilei Tohar']:
                 if version.versionTitle in ['The Legends of the Jews by Louis Ginzberg [1909]', 'Eliyahu Munk, HaChut Hameshulash', 'Selected Paragraphs from Arfilei Tohar, comm. Pinchas Polonsky']:
-                    version.isDefault = True
+                    version.isPrimary = True
                     version.isSource = False
 
             #second temple
             elif 'Philo' in index.categories:
-                version.isDefault = True
+                version.isPrimary = True
                 if index.title == 'The Midrash of Philo':
                     version.isSource = True # this is arguable
                 else:
                     version.isSource = False
             elif 'Josephus' in index.categories:
                 if version.actualLanguage == 'he':
-                    version.isDefault = True
+                    version.isPrimary = True
                     version.isSource = False
             elif 'Apocrypha' in index.categories:
                 if index.title == 'Megillat Antiochus':
@@ -80,10 +87,10 @@ if __name__ == '__main__':
                 elif index.title == 'Ben Sira':
                     if version.versionTitle == 'Ben Sira, David Kahana ed. -- Wikisource':
                         version.isSource = True
-                        version.isDefault = True
+                        version.isPrimary = True
                 else:
                     if version.actualLanguage == 'he':
-                        version.isDefault = True
+                        version.isPrimary = True
 
             #original is a third landuage we have
             elif index.title in ['Rav Hirsch on Torah', 'What is the Talmud']:  # original German we have
@@ -101,16 +108,16 @@ if __name__ == '__main__':
                 if index.title == 'Zohar':
                     if version.versionTitle in ['Vocalized Zohar, Israel 2013', 'Sulam Edition, Jerusalem 1945']:
                         version.isSource = True
-                        version.isDefault = True
+                        version.isPrimary = True
                 else:
                     if version.actualLanguage == 'he':
                         version.isSource = True
-                        version.isDefault = True
+                        version.isPrimary = True
 
             elif 'en' in langs:
                 if version.actualLanguage == 'en':
                     version.isSource = True
-                    version.isDefault = True
+                    version.isPrimary = True
 
             else:
                 print('no hebrew and english', index.title, version.versionTitle)
@@ -125,5 +132,5 @@ if __name__ == '__main__':
                     print(f'error with saveing {version}: {e}')
 
 for index in IndexSet():
-    if not [v for v in index.versionSet() if hasattr(v, 'isDefault')]:
+    if not [v for v in index.versionSet() if hasattr(v, 'isPrimary')]:
         print(f'no default for {index}')
