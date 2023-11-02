@@ -180,13 +180,20 @@ def preprocess_html(html_string):
     # Perform the find and replace
     modified_text = re.sub(pattern_start_list, '', html_string)
     modified_text = re.sub(pattern_end_list, '</p>', modified_text)
-    modified_text = re.sub(r'<dl><dt>\[ליקוט\]<\/dt><\/dl>\s*<p>', '<p>[ליקוט]<br>', modified_text)
-    modified_text = re.sub(r'</p>\s*<dl><dt>\[עד כאן הליקוט\]</dt></dl>', '[עד כאן הליקוט]<br>' +'</p>', modified_text)
+
+    # modified_text = re.sub(r'<dl><dt>\[ליקוט\]<\/dt><\/dl>\s*<p>', '<p>[ליקוט]<br>', modified_text)
+    modified_text = re.sub(r'<dl><dt>(\[.*?ליקוט.*?\])<\/dt><\/dl>\s*<p>', r'<p>\1<br>', modified_text)
+
+    modified_text = re.sub(r'</p>\s*<dl><dt>(\[.*?עד כאן.*?\])</dt></dl>', r'<br>\1' +'</p>', modified_text)
+    modified_text = re.sub(r'</p>\s*<dl><dt>(\[.*?ע"כ.*?\])</dt></dl>', r'<br>\1' + '</p>', modified_text)
 
     modified_text = re.sub(r'<dl><dt><span style="font-size:83%;">\[מה"ב\]</span></dt></dl>\s*<p>', '<p>[מה"ב]<br>', modified_text)
-    modified_text = re.sub(r'</p>\s*<dl><dt><span style="font-size:83%;">\[ע"כ מה"ב\]</span></dt></dl>', '[ע"כ מה"ב]<br>'+ "</p>", modified_text)
+    modified_text = re.sub(r'</p>\s*<dl><dt><span style="font-size:83%;">\[ע"כ מה"ב\]</span></dt></dl>','<br>'+'[ע"כ מה"ב]'+ "</p>", modified_text)
     modified_text = re.sub(r'</p>\s*<dl><dt><span style="font-size:83%;">\[עד כאן מה"ב\]</span></dt></dl>',
                            "<br>" + '[עד כאן מה"ב]' + "</p>", modified_text)
+
+    modified_text = re.sub(r'<dl><dt>(\[.*?\])<\/dt><\/dl>\s*<p>', r'<p>\1<br>', modified_text)
+
     return modified_text
 def general_parse(html_path, prefix):
     with open(html_path, 'r', encoding='utf-8') as file:
@@ -220,7 +227,7 @@ if __name__ == '__main__':
     text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_ב.html', "Yahel Ohr on Zohar 3")}
     text_map = {**text_map, **general_parse('htmls/ספר_דברים.html', "Yahel Ohr on Zohar 3")}
     text_map = {**text_map, **general_parse('htmls/הקדמת_הזהר.html', "Yahel Ohr on Zohar 1")}
-    text_map = {**text_map, **general_parse('htmls/ספר_בראשית_-_השמטות.html', "Yahel Ohr on Zohar 1")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_בראשית_-_השמטות.html', "Yahel Ohr on Zohar 1")}
     ingest_yahel(text_map)
 
 
