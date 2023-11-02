@@ -143,9 +143,9 @@ with open("nach_section_export - nach_section_export.csv", 'r') as f:
         sections.append(Section(book, range_eng, sec, title_en, title_he, comm_en, comm_he))
 
 _all = False
-creating_intro = False
-linking = False
-parsing = True
+creating_intro = True
+linking = True
+parsing = False
 if _all:
     linking = parsing = creating_intro = True
 
@@ -153,15 +153,15 @@ cats = ["Tanakh", "Modern Commentary on Tanakh", "Steinsaltz"]
 c = Category()
 c.path = cats
 c.add_shared_term("Steinsaltz")
-base_heb = 0
-base_en = 0
-heb_words = 0
-en_words = 0
+
 try:
     c.save()
 except:
     pass
-
+base_heb = 0
+base_en = 0
+heb_words = 0
+en_words = 0
 perakim = [len(library.get_index(b).all_section_refs()) for b in books]
 
 def get_substrings(input_string, length=5):
@@ -333,6 +333,7 @@ if linking:
     for ref in intro_text.keys():
         amt = 0 if ref.startswith("II ") else 1
         for l, link in enumerate(intro_links[ref]): # Steinsaltz Introductions to Tanakh, Joshua, Section Preface
+            link = link[0].capitalize()+link[1:]
             en_stein = "Steinsaltz Introductions to Tanakh, "+ref.split(",")[-1].strip()+", Section Preface"
             he_stein = Ref("Steinsaltz Introductions to Tanakh, "+ref.split(",")[-1].strip()+", Section Preface").he_normal()
             obj = {"refs": [link, f"{ref}, Section Preface {l+amt}"],
@@ -354,8 +355,8 @@ if linking:
                               {"title": "ALL",
                                "language": "en"}], "auto": True,
                    "displayedText": [{"en": en_stein, "he": he_stein},
-                                       {"en": "Steinsaltz on "+Ref(link).book,
-                                         "he": Ref(link).he_book()}],
+                                       {"en": "Steinsaltz Commentary",
+                                         "he": steinsaltz}],
                    "refs": [f"{ref}, Section Preface {l + amt}", f"Steinsaltz on {link}"]}
             try:
                 Link(obj).save()
@@ -395,7 +396,7 @@ if linking:
                 stein_node = f"Steinsaltz Introductions to Tanakh, {actual_book}, Book Introduction"
                 he_stein_node = Ref(stein_node).he_normal()
                 l2 = {"refs": [Ref(r.replace("Steinsaltz on ", "")).as_ranged_segment_ref().normal(),
-                               f"{stein_node} 1"],
+                               f"{stein_node}"],
                      "auto": True, "type": "essay", "generated_by": "steinsaltz_essay_links",
                      "versions": [{"title": "ALL",
                                      "language": "en"},
@@ -410,7 +411,7 @@ if linking:
                     print(l2)
                 r = Ref(r)
                 l2 = {"refs": [r.as_ranged_segment_ref().normal(),
-                               f"{stein_node} 1"],
+                               f"{stein_node}"],
                       "auto": True, "type": "essay", "generated_by": "steinsaltz_essay_links",
                       "versions": [{"title": "ALL",
                                     "language": "en"},
