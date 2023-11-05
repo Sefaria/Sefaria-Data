@@ -37,14 +37,9 @@ def convert_index(node):
 
 
 if __name__ == '__main__':
-    indices = [
-        "Rambam on Mishnah Horayot",
-        "Rambam on Mishnah Yadayim",
-        "Rambam on Mishnah Oktzin",
-        "Rambam on Mishnah Tevul Yom",
-        "Rambam on Mishnah Makhshirin"]
+    indices = ["Horayot", "Yadayim", "Oktzin", "Tevul Yom", "Makhshirin"]
 
     for index_title in indices:
-        index = Index().load({"title": index_title})
+        index = Index().load({"title": f"Rambam on Mishnah {index_title}"})
         print(f"Adding an introduction to {index.title}")
         convert_index(index)
