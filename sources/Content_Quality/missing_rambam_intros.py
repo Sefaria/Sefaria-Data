@@ -40,6 +40,6 @@ if __name__ == '__main__':
     indices = ["Horayot", "Yadayim", "Oktzin", "Tevul Yom", "Makhshirin"]
 
     for index_title in indices:
-        index = Index().load({"title": f"Rambam on Mishnah {index_title}"})
+        index = library.get_index(f"Rambam on Mishnah {index_title}")
         print(f"Adding an introduction to {index.title}")
         convert_index(index)
