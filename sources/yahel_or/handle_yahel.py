@@ -27,6 +27,37 @@ def post_indices():
     nefesh_david_index = post_index({'title': 'Nefesh David on Zohar'}, server="https://www.sefaria.org.il", method="GET")
     yahel_or_index = nefesh_david_index
     yahel_or_index["title"] = "Yahel Ohr on Zohar"
+    yahel_ohr_first_node = yahel_or_index["schema"]
+    yahel_or_index["schema"] = {"nodes":[{},{}], "titles": '', "key": ''}
+    yahel_or_index["schema"]["nodes"][0] = yahel_ohr_first_node
+    del yahel_ohr_first_node["titles"]
+    del yahel_ohr_first_node['key']
+    yahel_ohr_first_node["default"] = True
+    yahel_ohr_first_node["key"] = "default"
+    yahel_or_index["schema"]["nodes"][1] =  {
+                "nodeType" : "JaggedArrayNode",
+                "depth" : 1,
+                "addressTypes" : [
+                    "Integer"
+                ],
+                "sectionNames" : [
+                    "Paragraph"
+                ],
+                "titles" : [
+                    {
+                        "text" : "Addenda",
+                        "lang" : "en",
+                        "primary" : True
+                    },
+                    {
+                        "text" : "ליקוטים",
+                        "lang" : "he",
+                        "primary" : True
+                    }
+                ],
+                "key" : "Addenda",
+                # "default" : False
+            }
     yahel_or_index["schema"]["titles"] = [{'lang': 'en', 'text': 'Yahel Ohr'}, {'lang': 'he', 'primary': True, 'text': 'יהל אור על ספר הזהר'}, {'lang': 'he', 'text': 'יהל אור על הזהר'}, {'lang': 'he', 'text': 'יהל אור'}, {'lang': 'en', 'primary': True, 'text': 'Yahel Ohr on Zohar'}]
     yahel_or_index["schema"]["key"] = 'Yahel Ohr on Zohar'
     del yahel_or_index['enDesc']
@@ -34,8 +65,8 @@ def post_indices():
     del yahel_or_index["enShortDesc"]
     del yahel_or_index["heShortDesc"]
     yahel_or_index['collective_title'] = "Yahel Ohr"
-    post_index(yahel_or_index, server="https://yahel-ohr.cauldron.sefaria.org")
-    # post_index(yahel_or_index)
+    # post_index(yahel_or_index, server="https://yahel-ohr.cauldron.sefaria.org")
+    post_index(yahel_or_index)
 
 def ingest_yahel(book_map):
     index = library.get_index("Yahel Ohr on Zohar")
@@ -193,6 +224,10 @@ def preprocess_html(html_string):
                            "<br>" + '[עד כאן מה"ב]' + "</p>", modified_text)
 
     modified_text = re.sub(r'<dl><dt>(\[.*?\])<\/dt><\/dl>\s*<p>', r'<p>\1<br>', modified_text)
+    soup = BeautifulSoup(modified_text, 'html.parser')
+    for span_tag in soup.find_all('span', class_='TooltipSpan'):
+        span_tag.decompose()
+    modified_text = str(soup)
 
     return modified_text
 def general_parse(html_path, prefix):
