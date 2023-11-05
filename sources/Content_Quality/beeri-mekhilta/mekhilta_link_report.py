@@ -5,6 +5,7 @@ django.setup()
 from sefaria.model import *
 import csv
 
+
 def rename_books():
     # Todo - cascade name change? Index should cascade...
     # index_query = {"title": "Mekhilta DeRabbi Yishmael"}
@@ -34,9 +35,8 @@ def ingest_map():
     return map
 
 
-def rewriter_function(prod_ref):
-    mapper = ingest_map()
-
+def rewriter_function(prod_ref, mapper):
+    sum = 1 + 1  # silly debug
     # If a segment-level ref
     if prod_ref in mapper:
         cur_beeri_ref_list = mapper[prod_ref]
@@ -53,20 +53,18 @@ def rewriter_function(prod_ref):
             return cur_beeri_ref_list[0]
 
     # If a section or book level ref, determine the mapping based on the segment refs within
-    elif not Ref(prod_ref).is_segment_level():
+    elif not Ref(prod_ref).is_segment_level() or Ref(prod_ref).is_range():
         segment_ranged_ref = Ref(prod_ref).as_ranged_segment_ref()
-        if segment_ranged_ref.starting_ref() in mapper and segment_ranged_ref.ending_ref() in mapper:
-            first_ref = Ref(mapper[segment_ranged_ref.starting_ref()])
-            last_ref = Ref(mapper[segment_ranged_ref.ending_ref()])
-            ranged_ref = first_ref.to(last_ref)
+        start_tref = segment_ranged_ref.starting_ref().normal()
+        end_tref = segment_ranged_ref.ending_ref().normal()
+        if start_tref in mapper and end_tref in mapper:
+            first_oref = Ref(mapper[start_tref][0])
+            last_oref = Ref(mapper[end_tref][0])
+            ranged_ref = first_oref.to(last_oref)
             return ranged_ref.normal()
-        else:
-            # Catches weird/wrong refs, like Mekhilta 1, which does not exist - but according to the code will become Mekhilta 1:1:1
-            return  f"ERROR: {prod_ref} was not handled by rewriter"
+        return f"ERROR: {prod_ref}"
 
-    else:
-        return f"ERROR: {prod_ref} was not handled by rewriter"
-
+    return f"ERROR: {prod_ref}"
 
 
 if __name__ == '__main__':
@@ -74,7 +72,10 @@ if __name__ == '__main__':
     # Can't both be d', one needs to be De, because of the way the regex search works
     # rename_books()
 
+    print("old_mekhilta_ref,beeri_mekhilta_ref,other_text_ref,type,generated_by,all,status")
+
     errors = []
+    mapper = ingest_map()
 
     with open("mekhilta_all_links.csv", "r") as f:
         reader = csv.DictReader(f)
@@ -82,13 +83,23 @@ if __name__ == '__main__':
         for row in reader:
             mlink = row["mlink"]
             olink = row["other_link"]
-            new_link = rewriter_function(mlink)
+            new_link = rewriter_function(mlink, mapper)
+            link_type = row["type"]
+            generated_by = row["generated_by"]
+            link_all = row["all"]
+            status=row["status"]
+
             if "ERROR" in new_link:
-                errors.append(new_link)
+                errors.append(row)
             else:
-                print(f"{mlink}, {new_link} <<>> {olink} ")
+                # print(f"\"{mlink}\",\"{new_link}\",\"{olink}\",{link_type},{generated_by},{link_all},{status}")
+                print("*", end="")
 
     print(f"Error count: {len(errors)}")
-    print(errors)
-            
 
+    print("old_mekhilta_ref,other_text_ref,type,generated_by,all,status")
+    for e in errors:
+        print(f"{e['mlink']},{e['other_link']},{e['type']},{e['generated_by']},{e['all']},{e['status']}")
+    # print(errors)
+    # print(f"Number unique errors: {len(set(errors))}")
+    # print(set(errors))
