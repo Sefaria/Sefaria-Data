@@ -22,11 +22,15 @@ def create_intro_complex_text(node):
 
 def convert_index(index):
     convert_simple_index_to_complex(index)
-    create_intro_complex_text(Ref(index_title).index_node)
+    create_intro_complex_text(Ref(index.title).index_node)
 
 
 if __name__ == '__main__':
-    indices = ["Horayot", "Yadayim", "Oktzin", "Tevul Yom", "Makhshirin"]
+    indices = [  "Tevul Yom", "Makhshirin",
+                "Horayot",
+                "Yadayim",
+                 "Oktzin"
+                ]
 
     for index_title in indices:
         idx = library.get_index(f"Rambam on Mishnah {index_title}")
