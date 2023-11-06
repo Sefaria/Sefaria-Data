@@ -14,7 +14,7 @@ from sefaria.system.database import db
 from bs4 import BeautifulSoup
 import os
 import re
-
+import copy
 
 # import time
 
@@ -162,6 +162,17 @@ def flatten_dictionary(original_dict):
 
     return new_dict
 
+def flatten_dictionary_omissions(omissions_dict, accumulated_dict):
+    new_dict = {}
+
+    for key, value_list in omissions_dict.items():
+        offset = find_greatest_number(key, accumulated_dict)
+        for index, element in enumerate(value_list):
+            new_key = f"{key}:{index+1+offset}"
+            new_dict[new_key] = BeautifulSoup("<small>" + "השמטות בראשית" + "<br>" + str(element) + "</small>", 'html.parser')
+
+    return new_dict
+
 def get_text_with_bold_tags(element):
     result = ''
     for item in element.contents:
@@ -248,6 +259,108 @@ def general_parse(html_path, prefix):
 
     halt = True
     return map
+def preprocess_addedna_html(html_string):
+    # Parse the HTML content
+    soup = BeautifulSoup(html_string, 'html.parser')
+
+    # Find all elements with the specified class
+    headlines = soup.find_all('span', class_='mw-headline')
+
+    # Iterate through each headline
+    for headline in headlines:
+        # Create a new <b> tag and wrap the content of the current headline
+        bold_tag = soup.new_tag('b')
+        bold_tag.string = headline.get_text()
+        # Create a new <br> tag
+        br_tag = soup.new_tag('br')
+
+        # Append the <br> tag after the text of the <b> element
+        bold_tag.append(br_tag)
+
+        # Find the next <p> element after the current headline
+        next_paragraph = headline.find_next('p')
+
+        # If a next <p> element is found, prepend the <b> tag to its content
+        if next_paragraph:
+            next_paragraph.insert(0, bold_tag)
+    return str(soup)
+
+def parse_addenda(html_path, prefix):
+    with open(html_path, 'r', encoding='utf-8') as file:
+        html_content = file.read()
+    html_content = preprocess_html(html_content)
+    html_content = preprocess_addedna_html(html_content)
+    soup = BeautifulSoup(html_content, 'html.parser')
+    elements = []
+    for element in soup.find_all(['p', 'a']):
+        elements.append(element if (element.name == 'p' and not element.get_text().isspace()) or (element.name == 'a' and element.get_text().startswith('דף') and "דף השיחה" not in element.get_text() and element.get_text() not in {"דף", "דף אקראי"}) else None)
+    elements = list(filter(lambda x: x is not None, elements))
+
+    map = {}
+    for index, el in enumerate(elements):
+        map[prefix + " " + str(index+1)] = el
+
+
+    # map = generate_sublists(elements, lambda x: (x.name == 'a'), lambda x: x.get_text())
+    # # Create a new dictionary with modified keys
+    # map = flatten_dictionary(modify_dict_keys(map, prefix))
+    map = apply_function_to_values(map, clean_html_except_b_and_small)
+    map = apply_function_to_values(map, eliminate_extra_spaces_after_dibur_hamatchil)
+
+    halt = True
+    return map
+
+def extract_last_number(input_string):
+    # Use regular expression to find all numbers in the string
+    numbers = re.findall(r'\d+', input_string)
+
+    # Check if any numbers were found
+    if numbers:
+        # Return the last number found in the string
+        return int(numbers[-1])
+    else:
+        # Return None if no numbers are found
+        return None
+
+def find_greatest_number(prefix, my_dict):
+    greatest_number = None
+
+    for key in my_dict.keys():
+        if key.startswith(prefix):
+            # Extract the numeric part of the key
+            numeric_part = extract_last_number(key[len(prefix):])
+
+            try:
+                # Convert the numeric part to an integer
+                current_number = int(numeric_part)
+
+                # Update greatest_number if the current_number is greater
+                if greatest_number is None or current_number > greatest_number:
+                    greatest_number = current_number
+            except ValueError:
+                # Ignore keys with non-numeric suffixes
+                pass
+
+    return greatest_number if greatest_number is not None else 0
+
+def parse_omissions(html_path, prefix, accumulated_dict):
+    with open(html_path, 'r', encoding='utf-8') as file:
+        html_content = file.read()
+    html_content = preprocess_html(html_content)
+    soup = BeautifulSoup(html_content, 'html.parser')
+    elements = []
+    for element in soup.find_all(['p', 'a']):
+        elements.append(element if (element.name == 'p' and not element.get_text().isspace()) or (element.name == 'a' and element.get_text().startswith('דף') and "דף השיחה" not in element.get_text() and element.get_text() not in {"דף", "דף אקראי"}) else None)
+    elements = list(filter(lambda x: x is not None, elements))
+
+    map = generate_sublists(elements, lambda x: (x.name == 'a'), lambda x: x.get_text())
+    # Create a new dictionary with modified keys
+    map = flatten_dictionary_omissions(modify_dict_keys(map, prefix), accumulated_dict)
+    map = apply_function_to_values(map, clean_html_except_b_and_small)
+    map = apply_function_to_values(map, eliminate_extra_spaces_after_dibur_hamatchil)
+
+    halt = True
+    return map
 
 if __name__ == '__main__':
     print("hello world")
@@ -262,7 +375,8 @@ if __name__ == '__main__':
     text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_ב.html', "Yahel Ohr on Zohar 3")}
     text_map = {**text_map, **general_parse('htmls/ספר_דברים.html', "Yahel Ohr on Zohar 3")}
     text_map = {**text_map, **general_parse('htmls/הקדמת_הזהר.html', "Yahel Ohr on Zohar 1")}
-    # text_map = {**text_map, **general_parse('htmls/ספר_בראשית_-_השמטות.html', "Yahel Ohr on Zohar 1")}
+    text_map = {**text_map, **parse_addenda('htmls/ליקוטים.html', "Yahel Ohr on Zohar, Addenda")}
+    text_map = {**text_map, **parse_omissions('htmls/ספר_בראשית_-_השמטות.html', "Yahel Ohr on Zohar 1", copy.copy(text_map))}
     ingest_yahel(text_map)
 
 
