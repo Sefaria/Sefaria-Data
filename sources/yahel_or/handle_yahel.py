@@ -6,17 +6,17 @@ superuser_id = 171118
 # import statistics
 import csv
 from sefaria.model import *
-from sefaria.helper.schema import insert_last_child, reorder_children
-from sefaria.helper.schema import remove_branch
+# from sefaria.helper.schema import insert_last_child, reorder_children
+# from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.helper.category import create_category
 from sefaria.system.database import db
+from sefaria.utils.talmud import daf_to_section, section_to_daf
 from bs4 import BeautifulSoup
-import os
 import re
 import copy
 
-# import time
+
 
 
 def post_indices():
@@ -65,8 +65,8 @@ def post_indices():
     del yahel_or_index["enShortDesc"]
     del yahel_or_index["heShortDesc"]
     yahel_or_index['collective_title'] = "Yahel Ohr"
-    # post_index(yahel_or_index, server="https://yahel-ohr.cauldron.sefaria.org")
-    post_index(yahel_or_index)
+    post_index(yahel_or_index, server="https://yahel-ohr.cauldron.sefaria.org")
+    # post_index(yahel_or_index)
 
 def ingest_yahel(book_map):
     index = library.get_index("Yahel Ohr on Zohar")
@@ -240,6 +240,7 @@ def preprocess_html(html_string):
         span_tag.decompose()
     modified_text = str(soup)
 
+    modified_text = re.sub(r'\[\d+\]', '', modified_text)
     return modified_text
 def general_parse(html_path, prefix):
     with open(html_path, 'r', encoding='utf-8') as file:
@@ -362,22 +363,114 @@ def parse_omissions(html_path, prefix, accumulated_dict):
     halt = True
     return map
 
+def get_rows(prefix, node):
+    temp_rows = []
+    starting_int = daf_to_section(node.startingAddress)
+    for i, tref in enumerate(node.refs):
+        curr_daf = section_to_daf(starting_int+i)
+        # temp_rows += [{"Daf": f"{prefix}, {curr_daf}", "URL": "https://sefaria.org/" + Ref(tref).url()}]
+        temp_rows += [{"Daf": f"{prefix}, {curr_daf}", "Siman": tref}]
+    return temp_rows
+
+
+def get_daf_key(row):
+    daf = row['Daf']
+    volume_num = len(re.search(r"Volume (I+),", daf).group(1))
+    daf_num = daf_to_section(re.search(r", (\d+[ab])$", daf).group(1))
+    return volume_num*1000 + daf_num
+
+def simple_tokenizer(text):
+    """
+    A simple tokenizer that splits text into tokens by whitespace,
+    and removes apostrophes and periods from the tokens.
+    """
+    # Replace apostrophes and periods with empty strings
+    text = text.replace("'", "")
+    text = text.replace(".", "")
+    text = text.replace("׳", "")
+    text = text.replace("–", "")
+    text = text.replace(";", "")
+    # Split the text into tokens by whitespace
+    tokens = text.split()
+    return tokens
+def dher(text):
+    return dh
+
+
+def create_daf_siman_map():
+    rows = []
+    i = library.get_index("Zohar")
+    assert isinstance(i, Index)
+    alt = i.get_alt_structure("Daf")
+    for volume in alt.children:
+        prefix = f"{i.title}, {volume.primary_title('en')}"
+        for child in volume.children:
+            if isinstance(child, schema.ArrayMapNode):
+                rows += get_rows(prefix, child)
+            else:
+                for grandchild in child.children:
+                    temp_prefix = prefix
+                    if len(grandchild.primary_title('en')) > 0:
+                        temp_prefix = f"{prefix}, {grandchild.primary_title('en')}"
+                    rows += get_rows(temp_prefix, grandchild)
+    # organize by daf
+    rows.sort(key=get_daf_key)
+    #     mapping_dict = {(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar")): item['Siman'] for item in rows}
+    mapping_dict = {re.sub(r"Siman (\d+), ", '',(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar").replace("Ra'ya Mehemna, ", "").replace("Saba DeMishpatim, ", ""))): item['Siman'] for item in rows}
+    # mapping_dict["": "Zohar, Kedoshim 19:127-"]
+    return mapping_dict
+def slice_string_until_last_colon(input_string):
+    # Find the index of the last ':' in the string
+    last_colon_index = input_string.rfind(':')
+
+    # If ':' is not found, return the original string
+    if last_colon_index == -1:
+        return input_string
+
+    # Slice the string from the beginning to the last ':' (excluding the last ':')
+    result = input_string[:last_colon_index]
+
+    return result
+def remove_duplicates_ordered(input_list):
+    seen = set()
+    result_list = []
+
+    for item in input_list:
+        if item not in seen:
+            seen.add(item)
+            result_list.append(item)
+
+    return result_list
+def match_commentary():
+    from sources.functions import match_ref_interface
+    daf_siman_map = create_daf_siman_map()
+    yahel_seg_refs = Ref("Yahel Ohr on Zohar").all_segment_refs()
+    yahel_sec_trefs = remove_duplicates_ordered([slice_string_until_last_colon(r.normal()) for r in yahel_seg_refs])
+    for yahel_sec_tref in yahel_sec_trefs:
+        print(yahel_sec_tref, daf_siman_map[yahel_sec_tref])
+    # links += match_ref_interface(r_string_base_spec, r_string_comm_spec,
+    #                              comments, simple_tokenizer, dher)
 if __name__ == '__main__':
     print("hello world")
     # post_indices()
-    text_map = {}
-    text_map = {**text_map, **general_parse('htmls/ספר_בראשית.html', "Yahel Ohr on Zohar 1")}
-    text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_א.html', "Yahel Ohr on Zohar 2")}
-    text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ב.html', "Yahel Ohr on Zohar 2")}
-    text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ג.html', "Yahel Ohr on Zohar 2")}
-    text_map = {**text_map, **general_parse('htmls/ספר_ויקרא.html', "Yahel Ohr on Zohar 3")}
-    text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_א.html', "Yahel Ohr on Zohar 3")}
-    text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_ב.html', "Yahel Ohr on Zohar 3")}
-    text_map = {**text_map, **general_parse('htmls/ספר_דברים.html', "Yahel Ohr on Zohar 3")}
-    text_map = {**text_map, **general_parse('htmls/הקדמת_הזהר.html', "Yahel Ohr on Zohar 1")}
-    text_map = {**text_map, **parse_addenda('htmls/ליקוטים.html', "Yahel Ohr on Zohar, Addenda")}
-    text_map = {**text_map, **parse_omissions('htmls/ספר_בראשית_-_השמטות.html', "Yahel Ohr on Zohar 1", copy.copy(text_map))}
-    ingest_yahel(text_map)
+    # text_map = {}
+    # text_map = {**text_map, **general_parse('htmls/ספר_בראשית.html', "Yahel Ohr on Zohar 1")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_א.html', "Yahel Ohr on Zohar 2")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ב.html', "Yahel Ohr on Zohar 2")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ג.html', "Yahel Ohr on Zohar 2")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_ויקרא.html', "Yahel Ohr on Zohar 3")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_א.html', "Yahel Ohr on Zohar 3")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_ב.html', "Yahel Ohr on Zohar 3")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_דברים.html', "Yahel Ohr on Zohar 3")}
+    # text_map = {**text_map, **general_parse('htmls/הקדמת_הזהר.html', "Yahel Ohr on Zohar 1")}
+    # text_map = {**text_map, **parse_addenda('htmls/ליקוטים.html', "Yahel Ohr on Zohar, Addenda")}
+    # text_map = {**text_map, **parse_omissions('htmls/ספר_בראשית_-_השמטות.html', "Yahel Ohr on Zohar 1", copy.copy(text_map))}
+    # ingest_yahel(text_map)
+
+    match_commentary()
+
+
+
 
 
 
