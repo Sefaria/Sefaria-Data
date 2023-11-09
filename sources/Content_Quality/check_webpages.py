@@ -2,19 +2,29 @@ import django
 django.setup()
 import csv
 from sefaria.model import *
+from sefaria.helper.schema import *
+hs = UserHistorySet({'uid': 1, 'saved': True})
+# temp = UserHistory().load(
+#     {"uid": attrs["uid"], "ref": attrs["ref"], "versions": attrs["versions"], "secondary": attrs['secondary']})
+
+b = library.get_index("Redeeming Relevance; Exodus")
+ft = b.nodes.children[-1]
+print(ft)
+remove_branch(ft)
+
+
 from tqdm import tqdm
 from sefaria.export import import_versions_from_stream, _import_versions_from_csv
 message = ""
 count = 0
-with open("GevurotHashem 63-72/GevurotHashemMainText.csv", 'r') as f:
+with open("./Notes by Rabbi Yehoshua Hartman on Gevurot Hashem - he - Gevurot Hashem, with footnotes and annotations by Rabbi Yehoshua D. Hartman, Machon Yerushalyim, 2015-2020 (1) - for upload (1).csv", 'r') as f:
     lines = list(csv.reader(list(f)))
     #import_versions_from_stream(lines, [1], 1)
     for x in tqdm(lines[5:]):
         count += 1
-        vtitle = lines[1][1]+" new"
+        vtitle = lines[1][1]+" Part II"
         # if 1570 > count > 1567:
         #     continue
-        print(count)
         r, text = x
         tc = TextChunk(Ref(r), vtitle=vtitle, lang='he')
         tc.text = text
