@@ -6,17 +6,17 @@ superuser_id = 171118
 # import statistics
 import csv
 from sefaria.model import *
-from sefaria.helper.schema import insert_last_child, reorder_children
-from sefaria.helper.schema import remove_branch
+# from sefaria.helper.schema import insert_last_child, reorder_children
+# from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
 from sefaria.helper.category import create_category
 from sefaria.system.database import db
+from sefaria.utils.talmud import daf_to_section, section_to_daf
 from bs4 import BeautifulSoup
-import os
 import re
+import copy
 
 
-# import time
 
 
 def post_indices():
@@ -27,6 +27,37 @@ def post_indices():
     nefesh_david_index = post_index({'title': 'Nefesh David on Zohar'}, server="https://www.sefaria.org.il", method="GET")
     yahel_or_index = nefesh_david_index
     yahel_or_index["title"] = "Yahel Ohr on Zohar"
+    yahel_ohr_first_node = yahel_or_index["schema"]
+    yahel_or_index["schema"] = {"nodes":[{},{}], "titles": '', "key": ''}
+    yahel_or_index["schema"]["nodes"][0] = yahel_ohr_first_node
+    del yahel_ohr_first_node["titles"]
+    del yahel_ohr_first_node['key']
+    yahel_ohr_first_node["default"] = True
+    yahel_ohr_first_node["key"] = "default"
+    yahel_or_index["schema"]["nodes"][1] =  {
+                "nodeType" : "JaggedArrayNode",
+                "depth" : 1,
+                "addressTypes" : [
+                    "Integer"
+                ],
+                "sectionNames" : [
+                    "Paragraph"
+                ],
+                "titles" : [
+                    {
+                        "text" : "Addenda",
+                        "lang" : "en",
+                        "primary" : True
+                    },
+                    {
+                        "text" : "ליקוטים",
+                        "lang" : "he",
+                        "primary" : True
+                    }
+                ],
+                "key" : "Addenda",
+                # "default" : False
+            }
     yahel_or_index["schema"]["titles"] = [{'lang': 'en', 'text': 'Yahel Ohr'}, {'lang': 'he', 'primary': True, 'text': 'יהל אור על ספר הזהר'}, {'lang': 'he', 'text': 'יהל אור על הזהר'}, {'lang': 'he', 'text': 'יהל אור'}, {'lang': 'en', 'primary': True, 'text': 'Yahel Ohr on Zohar'}]
     yahel_or_index["schema"]["key"] = 'Yahel Ohr on Zohar'
     del yahel_or_index['enDesc']
@@ -131,6 +162,17 @@ def flatten_dictionary(original_dict):
 
     return new_dict
 
+def flatten_dictionary_omissions(omissions_dict, accumulated_dict):
+    new_dict = {}
+
+    for key, value_list in omissions_dict.items():
+        offset = find_greatest_number(key, accumulated_dict)
+        for index, element in enumerate(value_list):
+            new_key = f"{key}:{index+1+offset}"
+            new_dict[new_key] = BeautifulSoup("<small>" + "השמטות בראשית" + "<br>" + str(element) + "</small>", 'html.parser')
+
+    return new_dict
+
 def get_text_with_bold_tags(element):
     result = ''
     for item in element.contents:
@@ -180,13 +222,25 @@ def preprocess_html(html_string):
     # Perform the find and replace
     modified_text = re.sub(pattern_start_list, '', html_string)
     modified_text = re.sub(pattern_end_list, '</p>', modified_text)
-    modified_text = re.sub(r'<dl><dt>\[ליקוט\]<\/dt><\/dl>\s*<p>', '<p>[ליקוט]<br>', modified_text)
-    modified_text = re.sub(r'</p>\s*<dl><dt>\[עד כאן הליקוט\]</dt></dl>', '[עד כאן הליקוט]<br>' +'</p>', modified_text)
+
+    # modified_text = re.sub(r'<dl><dt>\[ליקוט\]<\/dt><\/dl>\s*<p>', '<p>[ליקוט]<br>', modified_text)
+    modified_text = re.sub(r'<dl><dt>(\[.*?ליקוט.*?\])<\/dt><\/dl>\s*<p>', r'<p>\1<br>', modified_text)
+
+    modified_text = re.sub(r'</p>\s*<dl><dt>(\[.*?עד כאן.*?\])</dt></dl>', r'<br>\1' +'</p>', modified_text)
+    modified_text = re.sub(r'</p>\s*<dl><dt>(\[.*?ע"כ.*?\])</dt></dl>', r'<br>\1' + '</p>', modified_text)
 
     modified_text = re.sub(r'<dl><dt><span style="font-size:83%;">\[מה"ב\]</span></dt></dl>\s*<p>', '<p>[מה"ב]<br>', modified_text)
-    modified_text = re.sub(r'</p>\s*<dl><dt><span style="font-size:83%;">\[ע"כ מה"ב\]</span></dt></dl>', '[ע"כ מה"ב]<br>'+ "</p>", modified_text)
+    modified_text = re.sub(r'</p>\s*<dl><dt><span style="font-size:83%;">\[ע"כ מה"ב\]</span></dt></dl>','<br>'+'[ע"כ מה"ב]'+ "</p>", modified_text)
     modified_text = re.sub(r'</p>\s*<dl><dt><span style="font-size:83%;">\[עד כאן מה"ב\]</span></dt></dl>',
                            "<br>" + '[עד כאן מה"ב]' + "</p>", modified_text)
+
+    modified_text = re.sub(r'<dl><dt>(\[.*?\])<\/dt><\/dl>\s*<p>', r'<p>\1<br>', modified_text)
+    soup = BeautifulSoup(modified_text, 'html.parser')
+    for span_tag in soup.find_all('span', class_='TooltipSpan'):
+        span_tag.decompose()
+    modified_text = str(soup)
+
+    modified_text = re.sub(r'\[\d+\]', '', modified_text)
     return modified_text
 def general_parse(html_path, prefix):
     with open(html_path, 'r', encoding='utf-8') as file:
@@ -206,22 +260,217 @@ def general_parse(html_path, prefix):
 
     halt = True
     return map
+def preprocess_addedna_html(html_string):
+    # Parse the HTML content
+    soup = BeautifulSoup(html_string, 'html.parser')
 
+    # Find all elements with the specified class
+    headlines = soup.find_all('span', class_='mw-headline')
+
+    # Iterate through each headline
+    for headline in headlines:
+        # Create a new <b> tag and wrap the content of the current headline
+        bold_tag = soup.new_tag('b')
+        bold_tag.string = headline.get_text()
+        # Create a new <br> tag
+        br_tag = soup.new_tag('br')
+
+        # Append the <br> tag after the text of the <b> element
+        bold_tag.append(br_tag)
+
+        # Find the next <p> element after the current headline
+        next_paragraph = headline.find_next('p')
+
+        # If a next <p> element is found, prepend the <b> tag to its content
+        if next_paragraph:
+            next_paragraph.insert(0, bold_tag)
+    return str(soup)
+
+def parse_addenda(html_path, prefix):
+    with open(html_path, 'r', encoding='utf-8') as file:
+        html_content = file.read()
+    html_content = preprocess_html(html_content)
+    html_content = preprocess_addedna_html(html_content)
+    soup = BeautifulSoup(html_content, 'html.parser')
+    elements = []
+    for element in soup.find_all(['p', 'a']):
+        elements.append(element if (element.name == 'p' and not element.get_text().isspace()) or (element.name == 'a' and element.get_text().startswith('דף') and "דף השיחה" not in element.get_text() and element.get_text() not in {"דף", "דף אקראי"}) else None)
+    elements = list(filter(lambda x: x is not None, elements))
+
+    map = {}
+    for index, el in enumerate(elements):
+        map[prefix + " " + str(index+1)] = el
+
+
+    # map = generate_sublists(elements, lambda x: (x.name == 'a'), lambda x: x.get_text())
+    # # Create a new dictionary with modified keys
+    # map = flatten_dictionary(modify_dict_keys(map, prefix))
+    map = apply_function_to_values(map, clean_html_except_b_and_small)
+    map = apply_function_to_values(map, eliminate_extra_spaces_after_dibur_hamatchil)
+
+    halt = True
+    return map
+
+def extract_last_number(input_string):
+    # Use regular expression to find all numbers in the string
+    numbers = re.findall(r'\d+', input_string)
+
+    # Check if any numbers were found
+    if numbers:
+        # Return the last number found in the string
+        return int(numbers[-1])
+    else:
+        # Return None if no numbers are found
+        return None
+
+def find_greatest_number(prefix, my_dict):
+    greatest_number = None
+
+    for key in my_dict.keys():
+        if key.startswith(prefix):
+            # Extract the numeric part of the key
+            numeric_part = extract_last_number(key[len(prefix):])
+
+            try:
+                # Convert the numeric part to an integer
+                current_number = int(numeric_part)
+
+                # Update greatest_number if the current_number is greater
+                if greatest_number is None or current_number > greatest_number:
+                    greatest_number = current_number
+            except ValueError:
+                # Ignore keys with non-numeric suffixes
+                pass
+
+    return greatest_number if greatest_number is not None else 0
+
+def parse_omissions(html_path, prefix, accumulated_dict):
+    with open(html_path, 'r', encoding='utf-8') as file:
+        html_content = file.read()
+    html_content = preprocess_html(html_content)
+    soup = BeautifulSoup(html_content, 'html.parser')
+    elements = []
+    for element in soup.find_all(['p', 'a']):
+        elements.append(element if (element.name == 'p' and not element.get_text().isspace()) or (element.name == 'a' and element.get_text().startswith('דף') and "דף השיחה" not in element.get_text() and element.get_text() not in {"דף", "דף אקראי"}) else None)
+    elements = list(filter(lambda x: x is not None, elements))
+
+    map = generate_sublists(elements, lambda x: (x.name == 'a'), lambda x: x.get_text())
+    # Create a new dictionary with modified keys
+    map = flatten_dictionary_omissions(modify_dict_keys(map, prefix), accumulated_dict)
+    map = apply_function_to_values(map, clean_html_except_b_and_small)
+    map = apply_function_to_values(map, eliminate_extra_spaces_after_dibur_hamatchil)
+
+    halt = True
+    return map
+
+def get_rows(prefix, node):
+    temp_rows = []
+    starting_int = daf_to_section(node.startingAddress)
+    for i, tref in enumerate(node.refs):
+        curr_daf = section_to_daf(starting_int+i)
+        # temp_rows += [{"Daf": f"{prefix}, {curr_daf}", "URL": "https://sefaria.org/" + Ref(tref).url()}]
+        temp_rows += [{"Daf": f"{prefix}, {curr_daf}", "Siman": tref}]
+    return temp_rows
+
+
+def get_daf_key(row):
+    daf = row['Daf']
+    volume_num = len(re.search(r"Volume (I+),", daf).group(1))
+    daf_num = daf_to_section(re.search(r", (\d+[ab])$", daf).group(1))
+    return volume_num*1000 + daf_num
+
+def simple_tokenizer(text):
+    """
+    A simple tokenizer that splits text into tokens by whitespace,
+    and removes apostrophes and periods from the tokens.
+    """
+    # Replace apostrophes and periods with empty strings
+    text = text.replace("'", "")
+    text = text.replace(".", "")
+    text = text.replace("׳", "")
+    text = text.replace("–", "")
+    text = text.replace(";", "")
+    # Split the text into tokens by whitespace
+    tokens = text.split()
+    return tokens
+def dher(text):
+    return dh
+
+
+def create_daf_siman_map():
+    rows = []
+    i = library.get_index("Zohar")
+    assert isinstance(i, Index)
+    alt = i.get_alt_structure("Daf")
+    for volume in alt.children:
+        prefix = f"{i.title}, {volume.primary_title('en')}"
+        for child in volume.children:
+            if isinstance(child, schema.ArrayMapNode):
+                rows += get_rows(prefix, child)
+            else:
+                for grandchild in child.children:
+                    temp_prefix = prefix
+                    if len(grandchild.primary_title('en')) > 0:
+                        temp_prefix = f"{prefix}, {grandchild.primary_title('en')}"
+                    rows += get_rows(temp_prefix, grandchild)
+    # organize by daf
+    rows.sort(key=get_daf_key)
+    #     mapping_dict = {(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar")): item['Siman'] for item in rows}
+    mapping_dict = {re.sub(r"Siman (\d+), ", '',(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar").replace("Ra'ya Mehemna, ", "").replace("Saba DeMishpatim, ", ""))): item['Siman'] for item in rows}
+    # mapping_dict["": "Zohar, Kedoshim 19:127-"]
+    return mapping_dict
+def slice_string_until_last_colon(input_string):
+    # Find the index of the last ':' in the string
+    last_colon_index = input_string.rfind(':')
+
+    # If ':' is not found, return the original string
+    if last_colon_index == -1:
+        return input_string
+
+    # Slice the string from the beginning to the last ':' (excluding the last ':')
+    result = input_string[:last_colon_index]
+
+    return result
+def remove_duplicates_ordered(input_list):
+    seen = set()
+    result_list = []
+
+    for item in input_list:
+        if item not in seen:
+            seen.add(item)
+            result_list.append(item)
+
+    return result_list
+def match_commentary():
+    from sources.functions import match_ref_interface
+    daf_siman_map = create_daf_siman_map()
+    yahel_seg_refs = Ref("Yahel Ohr on Zohar").all_segment_refs()
+    yahel_sec_trefs = remove_duplicates_ordered([slice_string_until_last_colon(r.normal()) for r in yahel_seg_refs])
+    for yahel_sec_tref in yahel_sec_trefs:
+        print(yahel_sec_tref, daf_siman_map[yahel_sec_tref])
+    # links += match_ref_interface(r_string_base_spec, r_string_comm_spec,
+    #                              comments, simple_tokenizer, dher)
 if __name__ == '__main__':
     print("hello world")
     # post_indices()
-    text_map = {}
-    text_map = {**text_map, **general_parse('htmls/ספר_בראשית.html', "Yahel Ohr on Zohar 1")}
-    text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_א.html', "Yahel Ohr on Zohar 2")}
-    text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ב.html', "Yahel Ohr on Zohar 2")}
-    text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ג.html', "Yahel Ohr on Zohar 2")}
-    text_map = {**text_map, **general_parse('htmls/ספר_ויקרא.html', "Yahel Ohr on Zohar 3")}
-    text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_א.html', "Yahel Ohr on Zohar 3")}
-    text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_ב.html', "Yahel Ohr on Zohar 3")}
-    text_map = {**text_map, **general_parse('htmls/ספר_דברים.html', "Yahel Ohr on Zohar 3")}
-    text_map = {**text_map, **general_parse('htmls/הקדמת_הזהר.html', "Yahel Ohr on Zohar 1")}
-    text_map = {**text_map, **general_parse('htmls/ספר_בראשית_-_השמטות.html', "Yahel Ohr on Zohar 1")}
-    ingest_yahel(text_map)
+    # text_map = {}
+    # text_map = {**text_map, **general_parse('htmls/ספר_בראשית.html', "Yahel Ohr on Zohar 1")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_א.html', "Yahel Ohr on Zohar 2")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ב.html', "Yahel Ohr on Zohar 2")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_שמות_חלק_ג.html', "Yahel Ohr on Zohar 2")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_ויקרא.html', "Yahel Ohr on Zohar 3")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_א.html', "Yahel Ohr on Zohar 3")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_במדבר_חלק_ב.html', "Yahel Ohr on Zohar 3")}
+    # text_map = {**text_map, **general_parse('htmls/ספר_דברים.html', "Yahel Ohr on Zohar 3")}
+    # text_map = {**text_map, **general_parse('htmls/הקדמת_הזהר.html', "Yahel Ohr on Zohar 1")}
+    # text_map = {**text_map, **parse_addenda('htmls/ליקוטים.html', "Yahel Ohr on Zohar, Addenda")}
+    # text_map = {**text_map, **parse_omissions('htmls/ספר_בראשית_-_השמטות.html', "Yahel Ohr on Zohar 1", copy.copy(text_map))}
+    # ingest_yahel(text_map)
+
+    match_commentary()
+
+
+
 
 
 
