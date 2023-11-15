@@ -109,6 +109,15 @@ def selenium_get_url(driver_path, url, name=None, driver_options=None):
             f.write(pageSource)
     return pageSource
 
+def flatten_list(lst):
+    result = []
+    for item in lst:
+        if isinstance(item, list):
+            result.extend(flatten_list(item))
+        else:
+            result.append(item)
+    return result
+
 def create_intro():
     intro = JaggedArrayNode()
     intro.add_structure(["Paragraph"])

@@ -91,18 +91,21 @@ dropping_error_margin = False
 for k in ['pubDate', 'compDate', 'errorMargin']:
     book_data[k] = {"ints": 0, "string ints": 0, "others": {}}
 for b in tqdm(books):
-    changed = False
-    for k in ['pubDate', 'compDate', 'errorMargin']:
-        changed = process(book_data, b, k, lambda x: x.title, book_setter) or changed
-    if hasattr(b, 'errorMargin'):
-        del b.errorMargin
-        b.hasErrorMargin = True
-        changed = True
-    if changed:
-        try:
-            b.save(override_dependencies=True)
-        except:
-            print(b)
+    try:
+        changed = False
+        for k in ['pubDate', 'compDate', 'errorMargin']:
+            changed = process(book_data, b, k, lambda x: x.title, book_setter) or changed
+        if hasattr(b, 'errorMargin'):
+            del b.errorMargin
+            b.hasErrorMargin = True
+            changed = True
+        if changed:
+            try:
+                b.save(override_dependencies=True)
+            except:
+                print(b)
+    except:
+        print(b)
 
 for k in ['birthYear', 'deathYear']:
     topic_data[k] = {"ints": 0, "string ints": 0, "others": {}}
@@ -115,3 +118,39 @@ for b in tqdm(authors):
         curr = b.properties['deathYear']['value']
         b.properties['deathYear']['value'] = int(curr)
     b.save(override_dependencies=True)
+
+b = library.get_index("Nicomachean Ethics")
+b.compDate = [-384, -322]
+b.save()
+
+b = library.get_index("Essays of Brutus I through XVI")
+b.compDate = [1786, 1790]
+b.save()
+
+b = library.get_index("Letters of Agrippa I through IX")
+b.compDate = [1786, 1788]
+b.save()
+
+b = library.get_index("Essays of Brutus I through XVI")
+b.compDate = [1786, 1790]
+b.save()
+
+b = library.get_index("Cato's Letters, or Essays on Liberty, Civil and Religious, and Other Important Subjects")
+b.compDate = []
+b.save()
+
+b = library.get_index("John Dickinson, The Letters from a Farmer in Pennsylvania")
+b.compDate = [1766, 1768]
+b.save()
+
+b = library.get_index("A Defense of the Constitutions of Government of the United States")
+b.compDate = [1786, 1790]
+b.save()
+
+b = library.get_index("Abraham Lincoln, Autobiographies of 1858 through 60")
+b.compDate = [1858, 1860]
+b.save()
+
+b = library.get_index("Exchange between Thomas Jefferson and James Madison on a Bill of Rights")
+b.compDate = [1787, 1791]
+b.save()

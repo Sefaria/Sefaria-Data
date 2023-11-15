@@ -12,6 +12,8 @@ for v in VersionSet({"versionTitle": "The Steinsaltz Tanakh - English"}).array()
     books.append((library.get_index(v.title), v.versionTitle))
 for bt in tqdm(books):
     b, v = bt
+    # if not b.title == "Steinsaltz on Judges":
+    #     continue
     if len(b.all_segment_refs()) < 10:
         b.versionState().refresh()
         raise Exception
@@ -33,6 +35,11 @@ for bt in tqdm(books):
                         c_bool = True
             both = c_bool and both
             text = f"{c}".join(text_ftnotes)
+
+        for p in ["&lt;footnote.*?&gt;", "&lt;notes.*?&gt;"]:
+            for m in re.findall(p, text):
+                print(r)
+                text = text.replace(m, "")
         if orig != text:
             tc = TextChunk(r, lang=lang, vtitle=v)
             tc.text = text
