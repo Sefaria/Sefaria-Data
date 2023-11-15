@@ -7,9 +7,12 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 from sefaria.helper.category import rename_category
 from scripts.search_for_indexes_that_use_term import *
-old_name = "Nekudat HaKesef"
-new_name = new_title = "Nekudot HaKesef"
-
+# old_name = "Nekudat HaKesef"
+# new_name = new_title = "Nekudot HaKesef"
+old_name = "Hasagot HaRaavad"
+new_name = "Hasagot HaRa'avad"
+# old_name = "Raavad"
+# new_name = "Ra'avad"
 def create_new_term(old_name, new_name):
     old_t = Term().load({"name": old_name})
     old_he = old_t.get_primary_title('he')+'2'
@@ -40,24 +43,24 @@ def change_collective_titles(old_name, new_name):
                 inline_ref = getattr(l, 'inline_reference', None)
                 if inline_ref:
                     inline_links.append(l)
-            print(f"{len(inline_links)} inline links")
-            for l in tqdm(inline_links):
-                base_ref = l.refs[0] if l.refs[1].startswith(old_name) else l.refs[1]
-                found = False
-                for v in Ref(base_ref).versionset():
-                    tc = TextChunk(Ref(base_ref), vtitle=v.versionTitle, lang=v.language)
-                    if 'data-commentator' in tc.text:
-                        found = True
-                        new_text = tc.text.replace(f"""data-commentator='{old_name}'""", f"data-commentator='{new_name}'")
-                        new_text = new_text.replace(f'data-commentator="{old_name}"', f'data-commentator="{new_name}"')
-                        if new_text != tc.text:
-                            tc.text = new_text
-                            tc.save()
-                if not found:
-                    print(f"Warning: No data-commentator {old_name} found in {base_ref}")
-                else:
-                    l.inline_reference['data-commentator'] = new_name
-                    l.save()
+            if len(inline_links) > 0:
+                for l in tqdm(inline_links):
+                    base_ref = l.refs[0] if l.refs[1].startswith(old_name) else l.refs[1]
+                    found = False
+                    for v in Ref(base_ref).versionset():
+                        tc = TextChunk(Ref(base_ref), vtitle=v.versionTitle, lang=v.language)
+                        if 'data-commentator' in tc.text:
+                            found = True
+                            new_text = tc.text.replace(f"""data-commentator='{old_name}'""", f"data-commentator='{new_name}'")
+                            new_text = new_text.replace(f'data-commentator="{old_name}"', f'data-commentator="{new_name}"')
+                            if new_text != tc.text:
+                                tc.text = new_text
+                                tc.save()
+                    if not found:
+                        print(f"Warning: No data-commentator {old_name} found in {base_ref}")
+                    else:
+                        l.inline_reference['data-commentator'] = new_name
+                        l.save()
 
 def change_book_titles(old_name, new_name):
     for comm in IndexSet({'dependence': "Commentary"}):
@@ -72,11 +75,20 @@ def change_book_titles(old_name, new_name):
 
 indices = library.all_index_records()
 iterateNodes(indices, searchTerm=old_name)
+handle_topic_title
 new_term = create_new_term(old_name, new_name)
-for c in CategorySet({"path": old_name}):
-    rename_category(c, new_name, new_term.get_primary_title('he'))
+library.rebuild(include_toc=True)
+change_book_titles(old_name, new_name)
+
+
+
+old_cats = CategorySet({"path": old_name})
+for path_len in list(range(7, 0, -1)):
+    for c in CategorySet({"$and": [{"path": {"$size": path_len}}, {"path": old_name}]}):
+        rename_category(c, new_name, new_term.get_primary_title('he'))
 library.rebuild(include_toc=True)
 change_collective_titles(old_name, new_name)
+library.rebuild(include_toc=True)
 change_book_titles(old_name, new_name)
 modify_new_term()
 
