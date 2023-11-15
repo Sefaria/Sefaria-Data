@@ -394,6 +394,10 @@ def simple_tokenizer(text):
     tokens = text.split()
     return tokens
 def dher(text):
+    dh = "$$$$$$$$$$$$$$$$$$"
+    match = re.search(r'<b>(.*?)</b>', text)
+    if match:
+        dh = match.group(1)
     return dh
 
 
@@ -416,7 +420,25 @@ def create_daf_siman_map():
     # organize by daf
     rows.sort(key=get_daf_key)
     #     mapping_dict = {(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar")): item['Siman'] for item in rows}
-    mapping_dict = {re.sub(r"Siman (\d+), ", '',(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar").replace("Ra'ya Mehemna, ", "").replace("Saba DeMishpatim, ", ""))): item['Siman'] for item in rows}
+    # mapping_dict = {re.sub(r"Siman (\d+), ", '',(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar").replace("Ra'ya Mehemna, ", "").replace("Saba DeMishpatim, ", ""))): item['Siman'] for item in rows}
+    mapping_dict = {
+        re.sub(
+            r"Siman (\d+), ",
+            '',
+            (
+                item['Daf']
+                .replace("Volume I, ", "1:")
+                .replace("Volume II, ", "2:")
+                .replace("Volume III, ", "3:")
+                .replace("Zohar,", "Yahel Ohr on Zohar")
+                .replace("Ra'ya Mehemna, ", "")
+                .replace("Saba DeMishpatim, ", "")
+                .replace("Rav Metivta, ", "")
+                .replace("Ra'ya Mehemna, ", "")
+            )
+        ): item['Siman']
+        for item in rows
+    }
     # mapping_dict["": "Zohar, Kedoshim 19:127-"]
     return mapping_dict
 def slice_string_until_last_colon(input_string):
@@ -441,15 +463,37 @@ def remove_duplicates_ordered(input_list):
             result_list.append(item)
 
     return result_list
+
+def links_to_csv(list_of_links):
+    tuples = []
+    tuples.append(("Yahel Ref", "Zohar Ref", "Yahel Text", "Zohar Text"))
+    for link in list_of_links:
+        tuples += [(link["refs"][0], link["refs"][1], Ref(link["refs"][0]).text("he").text, Ref(link["refs"][1]).text("he").text)]
+    with open('output.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(tuples)
+
+
 def match_commentary():
     from sources.functions import match_ref_interface
     daf_siman_map = create_daf_siman_map()
     yahel_seg_refs = Ref("Yahel Ohr on Zohar").all_segment_refs()
     yahel_sec_trefs = remove_duplicates_ordered([slice_string_until_last_colon(r.normal()) for r in yahel_seg_refs])
+    yahel_dafXzohar_tref_list = []
     for yahel_sec_tref in yahel_sec_trefs:
-        print(yahel_sec_tref, daf_siman_map[yahel_sec_tref])
-    # links += match_ref_interface(r_string_base_spec, r_string_comm_spec,
-    #                              comments, simple_tokenizer, dher)
+        try:
+            yahel_dafXzohar_tref_list += [(yahel_sec_tref, daf_siman_map[yahel_sec_tref])]
+            yahel_sec_tref, daf_siman_map[yahel_sec_tref]
+        except Exception as e:
+            print(e)
+    print("hi")
+    links = []
+    for daf, tref in yahel_dafXzohar_tref_list[:100]:
+        segs = Ref(daf).all_segment_refs()
+        comments = [seg.text("he").text for seg in segs]
+        links += match_ref_interface(tref, daf,
+                                 comments, simple_tokenizer, dher)
+    links_to_csv(links)
 if __name__ == '__main__':
     print("hello world")
     # post_indices()
