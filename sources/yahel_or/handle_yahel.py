@@ -17,7 +17,19 @@ import re
 import copy
 
 
+def list_of_dict_to_links(dicts):
+    list_of_dicts = []
+    for d in dicts:
+        list_of_dicts.append(Link(d))
+    return list_of_dicts
 
+def insert_links_to_db(list_of_dict_links):
+    list_of_links = list_of_dict_to_links(list_of_dict_links)
+    for l in list_of_links:
+        try:
+            l.save()
+        except Exception as e:
+            print(e)
 
 def post_indices():
     from sources.functions import post_index, post_term
@@ -561,7 +573,7 @@ def match_commentary():
 
     print("hi")
     links = []
-    for daf, tref in yahel_dafXzohar_tref_list[:100]:
+    for daf, tref in yahel_dafXzohar_tref_list:
         segs = Ref(daf).all_segment_refs()
         comments = [seg.text("he").text for seg in segs]
         links += match_ref_interface(tref, daf,
@@ -570,6 +582,7 @@ def match_commentary():
     # print("second iteration:")
     # links = infer_logical_links(links)
     links_to_csv(links)
+    insert_links_to_db(links)
 if __name__ == '__main__':
     print("hello world")
     # post_indices()
