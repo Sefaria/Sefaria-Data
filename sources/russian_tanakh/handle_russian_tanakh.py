@@ -118,8 +118,8 @@ parashot_urls = {"Genesis":
         "https://dadada.live/books/chapter/bemidbar-shlah",
         "https://dadada.live/books/chapter/bemidbar-korah",
         "https://dadada.live/books/chapter/bemidbar-hukat",
-        "https://dadada.live/books/chapter/bemidbar-pinhas",
         "https://dadada.live/books/chapter/bemidbar-balak",
+        "https://dadada.live/books/chapter/bemidbar-pinhas",
         "https://dadada.live/books/chapter/bemidbar-matot",
         "https://dadada.live/books/chapter/bemidbar-maseei",
         ],
@@ -192,6 +192,32 @@ parashot_urls = {"Genesis":
         "https://dadada.live/books/chapter/smuel-i-pobeda-davida-nad-amalekityanami",
         "https://dadada.live/books/chapter/smuel-i-smert-saulya",
     ],
+    "II_Samuel": [
+        "https://dadada.live/books/chapter/smuel-ii-posle-gibeli-saulya-314",
+        "https://dadada.live/books/chapter/smuel-ii-dva-carya",
+        "https://dadada.live/books/chapter/smuel-ii-ubiistvo-avnera",
+        "https://dadada.live/books/chapter/smuel-ii-ubiistvo-is-boseta",
+        "https://dadada.live/books/chapter/smuel-ii-david-car-nad-izrailem",
+        "https://dadada.live/books/chapter/smuel-ii-perenos-kovcega",
+        "https://dadada.live/books/chapter/smuel-ii-soyuz-s-davidom",
+        "https://dadada.live/books/chapter/smuel-ii-voiny-davida",
+        "https://dadada.live/books/chapter/smuel-ii-david-i-mefivoset",
+        "https://dadada.live/books/chapter/smuel-ii-voina-s-ammonityanami",
+        "https://dadada.live/books/chapter/smuel-ii-david-i-bat-seva",
+        "https://dadada.live/books/chapter/smuel-ii-oblicenie-natana",
+        "https://dadada.live/books/chapter/smuel-ii-amnon-i-tamar",
+        "https://dadada.live/books/chapter/smuel-ii-mudraya-zenshhina-iz-tekoa",
+        "https://dadada.live/books/chapter/smuel-ii-zagovor-avsaloma",
+        "https://dadada.live/books/chapter/smuel-ii-david-v-puti",
+        "https://dadada.live/books/chapter/smuel-ii-sovet-axitofelya",
+        "https://dadada.live/books/chapter/smuel-ii-gibel-avsaloma",
+        "https://dadada.live/books/chapter/smuel-ii-vozvrashhenie-davida-na-carstvo",
+        "https://dadada.live/books/chapter/smuel-ii-bunt-sevy-syna-bixri",
+        "https://dadada.live/books/chapter/smuel-ii-vydaca-potomkov-saulya",
+        "https://dadada.live/books/chapter/smuel-ii-pesn-davida",
+        "https://dadada.live/books/chapter/smuel-ii-voiny-davida-314",
+        "https://dadada.live/books/chapter/smuel-ii-podscet-naroda",
+    ],
     "I_Kings": [
         "https://dadada.live/books/chapter/mlaxim-i-pomazanie-selomo",
         "https://dadada.live/books/chapter/mlaxim-i-vocarenie-selomo",
@@ -219,8 +245,8 @@ parashot_urls = {"Genesis":
     "II_Kings":[
         "https://dadada.live/books/chapter/mlaxim-ii-axazyau-i-eliiau",
         "https://dadada.live/books/chapter/mlaxim-ii-eliiau-i-elisa",
-        "https://dadada.live/books/chapter/mlaxim-ii-cudesa-elisy",
         "https://dadada.live/books/chapter/mlaxim-ii-voina-s-moavom",
+        "https://dadada.live/books/chapter/mlaxim-ii-cudesa-elisy",
         "https://dadada.live/books/chapter/mlaxim-ii-elisa-i-naaman",
         "https://dadada.live/books/chapter/mlaxim-ii-elisa-i-arameicy",
         "https://dadada.live/books/chapter/mlaxim-ii-stan-arameicev",
@@ -269,6 +295,7 @@ parashot_urls = {"Genesis":
 
 def ingest_version(book_map):
     book_name = next(iter(book_map)).split(" ")[0]
+    book_name = book_name.replace("_", " ")
     index = library.get_index(book_name)
     cur_version = VersionSet({'title': book_name,
                               "versionTitle" : "Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky [ru]"})
@@ -315,7 +342,8 @@ def edge_cases_cleaner(text_content):
     text_content = text_content.replace("События царствований Йаровеама и Рехавеама (14: 1-31)", "")
     text_content = text_content.replace("14: 1-20", "")
     text_content = text_content.replace("Элийау живет у вдовы в Царефате (17: 1-24)", "")
-    text_content = text_content.replace("А  арамейский царь    Бен-Адад   собрал все свое войско,", "1 А  арамейский царь    Бен-Адад   собрал все свое войско,")
+    # text_content = text_content.replace("А  арамейский царь    Бен-Адад   собрал все свое войско,", "1 А  арамейский царь    Бен-Адад   собрал все свое войско,")
+    text_content = text_content.replace("арамейский царь    Бен-Адад   собрал все свое войско,", "1 арамейский царь    Бен-Адад   собрал все свое войско,")
     text_content = text_content.replace("В это время   заболел  Авия,   сын Йаровеама.", "1 В это время   заболел  Авия,   сын Йаровеама.")
 
     text_content = text_content.replace("После смерти Ахава   моавитяне восстали против Израиля.", "1 После смерти Ахава   моавитяне восстали против Израиля.")
@@ -348,6 +376,8 @@ def edge_cases_cleaner(text_content):
     text_content = text_content.replace("Мордехай пишет указ от имени Ахашвероша (8: 1-17)", "")
     text_content = text_content.replace("Победа иудеев и повеления отмечать праздник Пурим (9: 1-32)", "")
     text_content = text_content.replace("Мордехай второй после царя Ахашвероша      (10: 1-3)", "")
+
+    text_content = text_content.replace("Он убил своим [cm id='19625']копьем   триста человек[/cm]", "Он убил своим копьем   триста человек")
 
 
     return text_content
@@ -388,21 +418,32 @@ def handle_tanakh_book(book_name):
     book_map = dict(zip(trefs_list, verses_list))
 
     ingest_version(book_map)
+def russian_version_validation():
+    for book in parashot_urls.keys():
+        segment_refs = library.get_index(book).all_segment_refs()
+        for s_g in segment_refs:
+            en_version_text = s_g.text().text
+            ru_version_text = s_g.text(vtitle="Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky [ru]").text
+            if en_version_text == '' or ru_version_text == '':
+                print(f"problem in {s_g}")
 
 if __name__ == '__main__':
     print("hello world")
-    handle_tanakh_book("Genesis")
-    handle_tanakh_book("Exodus")
-    handle_tanakh_book("Leviticus")
-    handle_tanakh_book("Numbers")
-    handle_tanakh_book("Deuteronomy")
+    # handle_tanakh_book("Genesis")
+    # handle_tanakh_book("Exodus")
+    # handle_tanakh_book("Leviticus")
+    # handle_tanakh_book("Numbers")
+    # handle_tanakh_book("Deuteronomy")
+    #
+    # # handle_tanakh_book("Judges")
+    # handle_tanakh_book("I_Samuel")
+    handle_tanakh_book("II_Samuel")
+    # handle_tanakh_book("I_Kings")
+    # handle_tanakh_book("II_Kings")
+    # handle_tanakh_book("Ruth")
+    # handle_tanakh_book("Esther")
+    russian_version_validation()
 
-    # handle_tanakh_book("Judges")
-    handle_tanakh_book("I_Samuel")
-    handle_tanakh_book("I_Kings")
-    handle_tanakh_book("II_Kings")
-    handle_tanakh_book("Ruth")
-    handle_tanakh_book("Esther")
 
     print("end")
 
