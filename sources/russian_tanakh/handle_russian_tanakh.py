@@ -9,7 +9,7 @@ from sefaria.model import *
 import re
 import requests
 import requests_cache
-requests_cache.install_cache('my_cache', expire_after=3600)  # Cache expires after 1 hour
+requests_cache.install_cache('my_cache', expire_after=3600*24*14)  # Cache expires after 1 hour
 from bs4 import BeautifulSoup
 
 # from sefaria.helper.schema import insert_last_child, reorder_children
@@ -433,6 +433,9 @@ def handle_tanakh_book(book_name):
     verse_nums_list = verse_nums_and_verses[::2]
     c = verse_nums_list.count('1')
     verses_list = verse_nums_and_verses[1::2]
+    verses_list = [verse.replace("\n", "<br>") for verse in verses_list]
+    verses_list = [verse.replace(" ", " ") for verse in verses_list]
+    verses_list = [verse.replace("  ", " ") for verse in verses_list]
     trefs_list = []
 
     # Find duplicates using a set
@@ -467,19 +470,19 @@ def russian_version_validation():
 
 if __name__ == '__main__':
     print("hello world")
-    # handle_tanakh_book("Genesis")
-    # handle_tanakh_book("Exodus")
-    # handle_tanakh_book("Leviticus")
-    # handle_tanakh_book("Numbers")
-    # handle_tanakh_book("Deuteronomy")
+    handle_tanakh_book("Genesis")
+    handle_tanakh_book("Exodus")
+    handle_tanakh_book("Leviticus")
+    handle_tanakh_book("Numbers")
+    handle_tanakh_book("Deuteronomy")
 
-    # handle_tanakh_book("Judges")
-    # handle_tanakh_book("I_Samuel")
+    handle_tanakh_book("Judges")
+    handle_tanakh_book("I_Samuel")
     handle_tanakh_book("II_Samuel")
-    # handle_tanakh_book("I_Kings")
-    # handle_tanakh_book("II_Kings")
-    # handle_tanakh_book("Ruth")
-    # handle_tanakh_book("Esther")
+    handle_tanakh_book("I_Kings")
+    handle_tanakh_book("II_Kings")
+    handle_tanakh_book("Ruth")
+    handle_tanakh_book("Esther")
     russian_version_validation()
 
 
