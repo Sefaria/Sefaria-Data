@@ -7,9 +7,10 @@ from sefaria.model import *
 import csv
 
 
-# TODO: Fix rewriter function to handle errors
 # TODO: Also need to handle 'sources' in DB
-# TODO: conditional debug on uuid, why the rewriter function is failing, and rewrite to fix
+# TODO: Convert to CSV
+# TODO: Find unmapped segments if any (i.e. missing English)
+# TODO: Push non existent refs to the closest match -- how? might already automatically be happening? 
 
 def ingest_map():
     with open("full_mapping.csv", "r") as f:
@@ -77,6 +78,10 @@ def rewriter_function(prod_ref, mapper, uuid=None, id=None):
     return ""
 
 
+def write_to_csv():
+    pass
+
+
 if __name__ == '__main__':
 
     mapping = ingest_map()
@@ -122,11 +127,11 @@ if __name__ == '__main__':
                     for r in ref_list:
                         tref_list.append(r.normal())
 
-                mapper_dict["expandedRefsMap"].append({"old_ref": ref, "new_refs": ref_list})
+                mapper_dict["expandedRefsMap"].append({"old_ref": ref, "new_refs": tref_list})
 
         results.append(mapper_dict)
 
     # Close the MongoDB connection
     client.close()
     print("FINISHED")
-    # print(results)
+    print(results)
