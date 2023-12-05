@@ -28,7 +28,7 @@ class AltStructNode:
                     "nodeType" : "ArrayMapNode",
                     "depth" : NumberInt(0),
                     "wholeRef" : "{self.whole_ref}",
-                    "includeSections" : true,
+                    "includeSections" : false,
                     "titles" : [
                         {{
                             "primary" : true,
