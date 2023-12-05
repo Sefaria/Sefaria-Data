@@ -17,7 +17,19 @@ import re
 import copy
 
 
+def list_of_dict_to_links(dicts):
+    list_of_dicts = []
+    for d in dicts:
+        list_of_dicts.append(Link(d))
+    return list_of_dicts
 
+def insert_links_to_db(list_of_dict_links):
+    list_of_links = list_of_dict_to_links(list_of_dict_links)
+    for l in list_of_links:
+        try:
+            l.save()
+        except Exception as e:
+            print(e)
 
 def post_indices():
     from sources.functions import post_index, post_term
@@ -384,16 +396,31 @@ def simple_tokenizer(text):
     A simple tokenizer that splits text into tokens by whitespace,
     and removes apostrophes and periods from the tokens.
     """
+
+    def remove_nikkud(hebrew_string):
+        # Define a regular expression pattern for Hebrew vowel points
+        nikkud_pattern = re.compile('[\u0591-\u05BD\u05BF-\u05C2\u05C4\u05C5\u05C7]')
+
+        # Use the sub method to replace vowel points with an empty string
+        cleaned_string = re.sub(nikkud_pattern, '', hebrew_string)
+
+        return cleaned_string
     # Replace apostrophes and periods with empty strings
     text = text.replace("'", "")
     text = text.replace(".", "")
     text = text.replace("׳", "")
     text = text.replace("–", "")
     text = text.replace(";", "")
+    text = remove_nikkud(text)
+
     # Split the text into tokens by whitespace
     tokens = text.split()
     return tokens
 def dher(text):
+    dh = "$$$$$$$$$$$$$$$$$$"
+    match = re.search(r'<b>(.*?)</b>', text)
+    if match:
+        dh = match.group(1)
     return dh
 
 
@@ -416,9 +443,41 @@ def create_daf_siman_map():
     # organize by daf
     rows.sort(key=get_daf_key)
     #     mapping_dict = {(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar")): item['Siman'] for item in rows}
-    mapping_dict = {re.sub(r"Siman (\d+), ", '',(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar").replace("Ra'ya Mehemna, ", "").replace("Saba DeMishpatim, ", ""))): item['Siman'] for item in rows}
+    # mapping_dict = {re.sub(r"Siman (\d+), ", '',(item['Daf'].replace("Volume I, ", "1:").replace("Volume II, ", "2:").replace("Volume III, ", "3:").replace("Zohar,", "Yahel Ohr on Zohar").replace("Ra'ya Mehemna, ", "").replace("Saba DeMishpatim, ", ""))): item['Siman'] for item in rows}
+
+    tuples_map = [(d['Daf'], d['Siman']) for d in rows]
+    tuples_map_temp = []
+    for x,y in tuples_map:
+        x = x.replace("Volume I, ", "1:") \
+            .replace("Volume II, ", "2:") \
+            .replace("Volume III, ", "3:") \
+            .replace("Zohar,", "Yahel Ohr on Zohar") \
+            .replace("Ra'ya Mehemna, ", "") \
+            .replace("Saba DeMishpatim, ", "") \
+            .replace("Rav Metivta, ", "") \
+            .replace("Ra'ya Mehemna, ", "")
+        tuples_map_temp += [(x,y)]
+    tuples_map = tuples_map_temp
+    # mapping_dict = {
+    #     re.sub(
+    #         r"Siman (\d+), ",
+    #         '',
+    #         (
+    #             item['Daf']
+    #             .replace("Volume I, ", "1:")
+    #             .replace("Volume II, ", "2:")
+    #             .replace("Volume III, ", "3:")
+    #             .replace("Zohar,", "Yahel Ohr on Zohar")
+    #             .replace("Ra'ya Mehemna, ", "")
+    #             .replace("Saba DeMishpatim, ", "")
+    #             .replace("Rav Metivta, ", "")
+    #             .replace("Ra'ya Mehemna, ", "")
+    #         )
+    #     ): item['Siman']
+    #     for item in rows
+    # }
     # mapping_dict["": "Zohar, Kedoshim 19:127-"]
-    return mapping_dict
+    return tuples_map
 def slice_string_until_last_colon(input_string):
     # Find the index of the last ':' in the string
     last_colon_index = input_string.rfind(':')
@@ -441,15 +500,89 @@ def remove_duplicates_ordered(input_list):
             result_list.append(item)
 
     return result_list
+
+def links_to_csv(list_of_links):
+    tuples = []
+    tuples.append(("Yahel Ref", "Zohar Ref", "Yahel Text", "Zohar Text"))
+    for link in list_of_links:
+        tuples += [(link["refs"][0], link["refs"][1], Ref(link["refs"][0]).text("he").text, Ref(link["refs"][1]).text("he").text)]
+    with open('output.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(tuples)
+
+def find_and_remove_tuple(list_of_tuples, x1):
+    for x, y in list_of_tuples:
+        if x == x1:
+            list_of_tuples.remove((x, y))
+            return y
+    return None  # Return None if x1 is not found
+
+
+def get_and_strip_last_number(s):
+    # Search for the last occurrence of a number in the string
+    match = re.search(r'\d+', s[::-1])
+
+    if match:
+        # Extract the matched number
+        last_number = int(match.group()[::-1])
+
+        # Strip the matched number from the original string
+        stripped_string = s[:-len(str(last_number))]
+
+        return last_number, stripped_string
+    else:
+        # Return None if no number is found
+        return None, s
+
+def infer_logical_links(list_of_links):
+    list_of_links_with_inferred = []
+    # Iterate over consecutive elements
+    for i in range(len(list_of_links) - 1):
+        current_link = list_of_links[i]
+        next_link = list_of_links[i + 1]
+        list_of_links_with_inferred.append(current_link)
+        current_seg_num, current_sec_tref = get_and_strip_last_number(current_link["refs"][0])
+        next_seg_num, next_sec_tref = get_and_strip_last_number(next_link["refs"][0])
+        if current_sec_tref == next_sec_tref and next_seg_num - current_seg_num == 2\
+                and current_link["refs"][1] == next_link["refs"][1]:
+            # print("logic")
+            inferred_link = copy.deepcopy(current_link)
+            inferred_link["refs"][0] = current_sec_tref + str(current_seg_num+1)
+            # print("inferred: ")
+            print(inferred_link["refs"][0])
+            list_of_links_with_inferred.append(inferred_link)
+    list_of_links_with_inferred.append(list_of_links[-1])
+    return list_of_links_with_inferred
 def match_commentary():
     from sources.functions import match_ref_interface
     daf_siman_map = create_daf_siman_map()
     yahel_seg_refs = Ref("Yahel Ohr on Zohar").all_segment_refs()
     yahel_sec_trefs = remove_duplicates_ordered([slice_string_until_last_colon(r.normal()) for r in yahel_seg_refs])
+    yahel_dafXzohar_tref_list = []
     for yahel_sec_tref in yahel_sec_trefs:
-        print(yahel_sec_tref, daf_siman_map[yahel_sec_tref])
-    # links += match_ref_interface(r_string_base_spec, r_string_comm_spec,
-    #                              comments, simple_tokenizer, dher)
+        for i in range(4):  # Repeat the process four times
+            y = find_and_remove_tuple(daf_siman_map, yahel_sec_tref)
+            if i == 3:
+                a = "halt"
+            if y is None:
+                if i == 0:
+                    print(f"No mapping to {yahel_sec_tref}")
+                break
+            else:
+                yahel_dafXzohar_tref_list.append((yahel_sec_tref, y))
+
+    print("hi")
+    links = []
+    for daf, tref in yahel_dafXzohar_tref_list:
+        segs = Ref(daf).all_segment_refs()
+        comments = [seg.text("he").text for seg in segs]
+        links += match_ref_interface(tref, daf,
+                                 comments, simple_tokenizer, dher)
+    links = infer_logical_links(links)
+    # print("second iteration:")
+    # links = infer_logical_links(links)
+    links_to_csv(links)
+    insert_links_to_db(links)
 if __name__ == '__main__':
     print("hello world")
     # post_indices()
