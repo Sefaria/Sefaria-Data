@@ -95,10 +95,10 @@ for book in note_dict:
     try:
         tc = TextChunk(Ref(root.key), lang='he', vtitle="Steinsaltz Mishneh Torah")
         tc.text = note_dict[book]
-        #tc.save()
+        tc.save()
     except:
         pass
-    #rebuild_links_for_title(root.key, user=1)
+    rebuild_links_for_title(root.key, user=1)
 # for l in links:
 #     Link({"refs": l, "generated_by": "steinsaltz_MT", "auto": True, "type": "Commentary"}).save()
 # class Section:

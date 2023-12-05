@@ -34,7 +34,7 @@ tanakh_books = """Steinsaltz on Joshua
                 Steinsaltz on Nehemiah
                 Steinsaltz on I Chronicles
                 Steinsaltz on II Chronicles"""
-
+tanakh_books = "Steinsaltz on Joshua"
 punctuation_regex = re.compile('[%s]' % re.escape(string.punctuation))
 steinsaltz = 'ביאור שטיינזלץ'
 t = Term().load({"titles.text": steinsaltz})
@@ -144,8 +144,8 @@ with open("nach_section_export - nach_section_export.csv", 'r') as f:
 
 _all = False
 creating_intro = True
-linking = True
-parsing = False
+linking = False
+parsing = True
 if _all:
     linking = parsing = creating_intro = True
 
@@ -228,7 +228,7 @@ if parsing:
                 cats = ["Tanakh", "Modern Commentary on Tanakh", "Steinsaltz", library.get_index(curr_book).categories[1]]
                 if Category().load({"path": cats}) is None:
                     c = Category()
-                    c .path = cats
+                    c.path = cats
                     c.add_shared_term(cats[-1])
                     c.save()
                 indx = {'title': root.key, 'categories': cats, "schema": root.serialize(), "dependence": "Commentary",
