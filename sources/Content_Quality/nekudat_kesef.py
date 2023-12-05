@@ -3,17 +3,19 @@ django.setup()
 from sefaria.model import *
 import re
 from bs4 import BeautifulSoup
-
+import sys
 from tqdm import tqdm
 from sefaria.helper.category import rename_category
 from scripts.search_for_indexes_that_use_term import *
+old_name = new_name = ""
 # old_name = "Nekudat HaKesef"
-# new_name = new_title = "Nekudot HaKesef"
-old_name = "Hasagot HaRaavad"
-new_name = "Hasagot HaRa'avad"
+# new_name = "Nekudot HaKesef"
+# old_name = "Hasagot HaRaavad"
+# new_name = "Hasagot HaRa'avad"
 # old_name = "Raavad"
 # new_name = "Ra'avad"
-def create_new_term(old_name, new_name):
+changes = set()
+def create_new_term():
     old_t = Term().load({"name": old_name})
     old_he = old_t.get_primary_title('he')+'2'
     if Term().load({"name": new_name}) is None:
@@ -23,6 +25,7 @@ def create_new_term(old_name, new_name):
         new_t.save()
     else:
         new_t = Term().load({"name": new_name})
+    library.rebuild(include_toc=True)
     return new_t
 
 def modify_new_term():
@@ -30,10 +33,12 @@ def modify_new_term():
     new_t = Term().load({"name": new_name})
     he = new_t.get_primary_title('he')[:-1]
     new_t.add_title(he, 'he', True, True)
+    new_t.save()
+    library.rebuild(include_toc=True)
 
-def change_collective_titles(old_name, new_name):
-    for b in library.get_indices_by_collective_title(old_name):
-        print(f"Changing collective title: {b}")
+def change_collective_titles():
+    for b in tqdm(library.get_indices_by_collective_title(old_name)):
+        changes.add(f"Changing collective title: {b}")
         b = library.get_index(b)
         b.collective_title = new_name
         b.save()
@@ -57,40 +62,52 @@ def change_collective_titles(old_name, new_name):
                                 tc.text = new_text
                                 tc.save()
                     if not found:
-                        print(f"Warning: No data-commentator {old_name} found in {base_ref}")
+                        changes.add(f"Warning: No data-commentator {old_name} found in {base_ref}")
                     else:
                         l.inline_reference['data-commentator'] = new_name
                         l.save()
-
-def change_book_titles(old_name, new_name):
-    for comm in IndexSet({'dependence': "Commentary"}):
-        if " on " in comm.title:
-            if comm.title.split(" on ")[0] == old_name:
-                old_comm_base = comm.title.split(" on ")[1]
-                new_comm_title = f"{new_name} on {old_comm_base}"
-                comm.set_title(new_comm_title)
-                print("Changing book title")
-                comm.save()
+    library.rebuild(include_toc=True)
 
 
-indices = library.all_index_records()
-iterateNodes(indices, searchTerm=old_name)
-handle_topic_title
-new_term = create_new_term(old_name, new_name)
-library.rebuild(include_toc=True)
-change_book_titles(old_name, new_name)
+def change_book_titles():
+    for comm in tqdm(IndexSet({'dependence': "Commentary"})):
+        if comm.title.split(" on ")[0] == old_name or f"{old_name} " in comm.title:
+            new_comm_title = comm.title.replace(old_name, new_name, 1)
+            comm.set_title(new_comm_title)
+            changes.add("Changing book title")
+            comm.save()
 
+def change_topic_title():
+    t = Topic().load({"titles.text": old_name})
+    if t:
+        changes.add("Changing topic title")
+        t.add_title(new_name, 'en', True, True)
+        t.save()
 
+def change_all_categories():
+    for path_len in list(range(7, 0, -1)):
+        for c in CategorySet({"$and": [{"path": {"$size": path_len}}, {"path": old_name}]}):
+            rename_category(c, new_name, new_term.get_primary_title('he'))
+    library.rebuild(include_toc=True)
 
-old_cats = CategorySet({"path": old_name})
-for path_len in list(range(7, 0, -1)):
-    for c in CategorySet({"$and": [{"path": {"$size": path_len}}, {"path": old_name}]}):
-        rename_category(c, new_name, new_term.get_primary_title('he'))
-library.rebuild(include_toc=True)
-change_collective_titles(old_name, new_name)
-library.rebuild(include_toc=True)
-change_book_titles(old_name, new_name)
-modify_new_term()
+if __name__ == "__main__":
+    # indices = library.all_index_records()
+    # iterateNodes(indices, searchTerm=old_name)
+    old_name = sys.argv[1]
+    new_name = sys.argv[2]
+    # old_name = "Hasagot HaRaavad" "Nekudat HaKesef" "Nekudot HaKesef"
+    # new_name = "Hasagot HaRa'avad"
+    old_name = "Nekudat HaKesef"
+    new_name = "Nekudot HaKesef"
+    new_term = create_new_term()
+    change_topic_title()
+    change_book_titles()
+    change_all_categories()
+    change_collective_titles()
+    modify_new_term()
+    print("RESULTS ************************************")
+    for x in changes:
+        print(x)
 
 
 
