@@ -5,12 +5,10 @@ django.setup()
 
 from sefaria.model import *
 import csv
+import json
 
-
-# TODO: Also need to handle 'sources' in DB
-# TODO: Convert to CSV
-# TODO: Find unmapped segments if any (i.e. missing English)
-# TODO: Push non existent refs to the closest match -- how? might already automatically be happening? 
+# TODO: Run on new mapping
+# TODO: Push non existent refs to the closest match -- how? might already automatically be happening?
 
 def ingest_map():
     with open("full_mapping.csv", "r") as f:
@@ -50,7 +48,6 @@ def rewriter_function(prod_ref, mapper, uuid=None, id=None):
         else:
             return cur_beeri_ref_list[0]
 
-    ## TODO - maybe take this out so we can catch segment levels (trying to catch upper section, but only one instance)
     elif prod_ref in ["Mekhilta d'Rabbi Yishmael Old 22",
                       "Mekhilta d'Rabbi Yishmael Old 19",
                       "Mekhilta d'Rabbi Yishmael Old 20",
@@ -78,8 +75,9 @@ def rewriter_function(prod_ref, mapper, uuid=None, id=None):
     return ""
 
 
-def write_to_csv():
-    pass
+def write_to_json(mapper_dictionary):
+    with open("sheets_mapping_data.json", 'w') as json_file:
+        json.dump(mapper_dictionary, json_file, indent=4)
 
 
 if __name__ == '__main__':
@@ -111,7 +109,9 @@ if __name__ == '__main__':
     for document in result:
         uuid = document["owner"]
         sheet_id = document["id"]
-        mapper_dict = {"uuid": uuid, "sheet_id": sheet_id, "includedRefsMap": [], "expandedRefsMap": []}
+        sources = document["sources"]
+        mapper_dict = {"uuid": uuid, "sheet_id": sheet_id, "includedRefsMap": [], "expandedRefsMap": [],
+                       "sourcesMap": {}}
 
         for ref in document["includedRefs"]:
             if "Mekhilta d'Rabbi Yishmael" in ref:
@@ -129,9 +129,25 @@ if __name__ == '__main__':
 
                 mapper_dict["expandedRefsMap"].append({"old_ref": ref, "new_refs": tref_list})
 
+        for source_dict in sources:
+            if "ref" in source_dict:
+                ref = source_dict["ref"]
+                if "Mekhilta d'Rabbi Yishmael" in ref:
+                    en_ref = rewriter_function(ref, mapping, uuid, sheet_id)
+                    oref = Ref(en_ref)
+
+                    if oref.index:  # exclude weird refs like Mekhilta 22 (ask, since it's a Nechama sheet?)
+                        print(sheet_id)
+                        he_ref = oref.normal(lang="he")
+
+                        mapper_dict["sourcesMap"] = {"old_ref": ref,
+                                                     "new_refs": {"en_ref": en_ref,
+                                                                  "he_ref": he_ref}
+                                                     }
+
         results.append(mapper_dict)
 
     # Close the MongoDB connection
     client.close()
-    print("FINISHED")
-    print(results)
+    write_to_json(mapper_dictionary=result)
+    print(results[0])
