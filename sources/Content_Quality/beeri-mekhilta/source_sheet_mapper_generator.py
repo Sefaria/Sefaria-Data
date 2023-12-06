@@ -149,5 +149,5 @@ if __name__ == '__main__':
 
     # Close the MongoDB connection
     client.close()
-    write_to_json(mapper_dictionary=result)
+    write_to_json(mapper_dictionary=results)
     print(results[0])
