@@ -51,7 +51,7 @@ def russian_semantic_validation():
             verdict = ask_ollama(prompt)
             if "NO" in verdict:
                 print(f"possible semantic problem in {s_g}")
-            if "YES" in verdict:
+            elif "YES" in verdict:
                 print(f"{s_g} passed")
             else:
                 print(f"unclear verdict for {s_g}: {verdict}")
