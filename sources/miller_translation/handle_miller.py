@@ -19,16 +19,17 @@ def get_list_of_verses(html_document):
     soup = prepend_to_text_in_elements(soup, "TRANSLATION-HEADINGS", header_token)
     soup = prepend_to_text_in_elements(soup, "CharOverride-3", new_verse_token)
     soup = prepend_to_text_in_elements(soup, "CharOverride-2", new_chapter_token)
-    soup = prepend_to_text_in_elements(soup, "CharOverride-16", new_chapter_token)
-    selected_elements = soup.find_all(class_=lambda x: x and (x.startswith("ParaOverride-") or x.startswith("TRANSLATION-HEADINGS")))
-    text_list = [clean_line(element.text) for element in selected_elements]
+    # soup = prepend_to_text_in_elements(soup, "CharOverride-16", new_chapter_token)
+    selected_elements = soup.find_all(class_=lambda x: x and (x.startswith("CharOverride-3") or x.startswith("CharOverride-4") or x.startswith("TRANSLATION-HEADINGS") or x.startswith("TRANSLATION-SMALL-HEADINGS")))
+    text_list = [element.text for element in selected_elements]
     clean_text = ''.join(text_list)
+    clean_text = replace_double_digits(clean_text, new_verse_token)
     text_list = clean_text.split("$")
+    text_list = [item.strip() for item in text_list if item.strip()]
     return text_list
 
 def clean_line(line):
     line = replace_double_digits(line, new_verse_token)
-    line = replace_double_digits(line, new_chapter_token)
     return line
 def replace_double_digits(input_string, token):
     token_escape = re.escape(token)
