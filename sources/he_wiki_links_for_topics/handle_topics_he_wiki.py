@@ -33,7 +33,7 @@ def get_hebrew_entry_url(english_wiki_url):
 
     # Check if the page exists
     if not page_en.exists():
-        print(f"Error: Page '{page_title}' does not exist on English Wikipedia.")
+        # print(f"Error: Page '{page_title}' does not exist on English Wikipedia.")
         return None
 
     # Get the interlanguage link to the Hebrew entry
@@ -42,7 +42,7 @@ def get_hebrew_entry_url(english_wiki_url):
     if hebrew_entry_url:
         return hebrew_entry_url.fullurl
     else:
-        print(f"No Hebrew entry link found for '{page_title}'.")
+        # print(f"No Hebrew entry link found for '{page_title}'.")
         return None
 
 if __name__ == '__main__':
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     for t in topic_set:
         if hasattr(t, "properties"):
             if t.properties.get("enWikiLink") and not t.properties.get("heWikiLink"):
-                print(t)
+                # print(t)
                 he_url = get_hebrew_entry_url(t.properties.get("enWikiLink").get("value"))
                 if he_url:
                     he_wiki_link_dict = {"data_source": data_source, "value": he_url}
