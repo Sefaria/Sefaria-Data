@@ -8,7 +8,7 @@ def rashis_by_daf(urls, title):
 	rashis_by_daf = {}
 	for daf, url in urls.items():
 		print(daf)
-		pageSource = selenium_get_url("/Users/stevenkaplan/Downloads/chromedriver", "https://he.wikisource.org"+url)
+		pageSource = selenium_get_url("/Users/stevenkaplan/Documents/chromedriver", "https://he.wikisource.org"+url)
 		try:
 			curr = [h2 for h2 in BeautifulSoup(pageSource).find_all("h2") if 'רש"י' in h2.text][0].next_sibling
 			rashis = []
