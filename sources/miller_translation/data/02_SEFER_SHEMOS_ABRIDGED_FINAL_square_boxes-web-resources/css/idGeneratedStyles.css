@@ -1,0 +1,915 @@
+body, div, dl, dt, dd, h1, h2, h3, h4, h5, h6, p, pre, code, blockquote {
+	margin:0;
+	padding:0;
+	border-width:0;
+}
+body {
+	-webkit-writing-mode:vertical-rl;
+	-epub-hyphens:auto;
+}
+img.Basic-Text-Frame {
+	border-style:solid;
+}
+li.BULLET-MITZVAH, p.BULLET-MITZVAH {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Semicondensed", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.19;
+	list-style-position:outside;
+	margin-bottom:6px;
+	margin-left:23px;
+	margin-right:0;
+	margin-top:0;
+	orphans:2;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.NAME-OF-THE-SEDRA {
+	-epub-hyphens:none;
+	color:#0069aa;
+	font-family:"Kepler Std Medium Display", sans-serif;
+	font-size:15px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1;
+	margin-bottom:5px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:2;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.Normal {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"ITC Cheltenham", sans-serif;
+	font-size:10px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.1;
+	margin-bottom:10px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:1;
+}
+p.ORANGE-HAEDING-JUST-AFTER-BULET {
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:2px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:5px;
+	orphans:2;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.ORANGE-HEADING-BEFORE-AND-AFTER-BULET {
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:5px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:5px;
+	orphans:2;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.TRANSLATION-HEADINGS {
+	-epub-hyphens:none;
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:2px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:9px;
+	orphans:2;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.TRANSLATION-SMALL-HEADINGS {
+	-epub-hyphens:none;
+	color:#0069aa;
+	font-family:"Kepler Std Italic Caption", sans-serif;
+	font-size:8px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.688;
+	margin-bottom:2px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:2;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.trans {
+	-epub-hyphens:none;
+	color:#000000;
+	font-family:"Kepler Std Medium", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.286;
+	margin-bottom:2px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:0;
+	orphans:1;
+	page-break-after:auto;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:7px;
+	text-transform:none;
+	widows:1;
+}
+p.trans-headings {
+	-epub-hyphens:none;
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	line-height:1.227;
+	margin-bottom:2px;
+	margin-left:0;
+	margin-right:0;
+	margin-top:9px;
+	orphans:2;
+	page-break-after:avoid;
+	page-break-before:auto;
+	text-align:justify;
+	text-align-last:left;
+	text-decoration:none;
+	text-indent:0;
+	text-transform:none;
+	widows:2;
+}
+p.ParaOverride-1 {
+	margin-bottom:5px;
+	orphans:2;
+	text-indent:0px;
+	widows:2;
+}
+p.ParaOverride-2 {
+	margin-top:9px;
+	orphans:2;
+	text-indent:0px;
+	widows:2;
+}
+p.ParaOverride-3 {
+	margin-bottom:2px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	widows:2;
+}
+p.ParaOverride-4 {
+	margin-bottom:2px;
+	orphans:2;
+	text-indent:7px;
+	widows:2;
+}
+p.ParaOverride-5 {
+	margin-bottom:2px;
+	orphans:2;
+	widows:2;
+}
+p.ParaOverride-6 {
+	margin-bottom:1px;
+}
+p.ParaOverride-7 {
+	margin-bottom:1px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	widows:2;
+}
+p.ParaOverride-8 {
+	margin-bottom:1px;
+	orphans:2;
+	text-indent:7px;
+	widows:2;
+}
+p.ParaOverride-9 {
+	margin-bottom:1px;
+	margin-top:6px;
+}
+p.ParaOverride-10 {
+	margin-bottom:1px;
+	orphans:2;
+	widows:2;
+}
+p.ParaOverride-11 {
+	margin-bottom:1px;
+	text-indent:7px;
+}
+p.ParaOverride-12 {
+	margin-top:7px;
+}
+p.ParaOverride-13 {
+	margin-bottom:2px;
+	text-indent:7px;
+}
+p.ParaOverride-14 {
+	margin-bottom:2px;
+	margin-top:9px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	widows:2;
+}
+p.ParaOverride-15 {
+	margin-bottom:2px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+	widows:2;
+}
+p.ParaOverride-16 {
+	margin-bottom:2px;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+}
+p.ParaOverride-17 {
+	margin-bottom:2px;
+	margin-top:7px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	widows:2;
+}
+p.ParaOverride-18 {
+	margin-bottom:1px;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+}
+p.ParaOverride-19 {
+	margin-bottom:1px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+	widows:2;
+}
+p.ParaOverride-20 {
+	margin-bottom:1px;
+	margin-top:9px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	widows:2;
+}
+p.ParaOverride-21 {
+	margin-bottom:1px;
+	margin-top:7px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	widows:2;
+}
+p.ParaOverride-22 {
+	-epub-hyphens:none;
+	margin-bottom:2px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+	widows:2;
+}
+p.ParaOverride-23 {
+	margin-bottom:3px;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+}
+p.ParaOverride-24 {
+	margin-bottom:2px;
+	text-align:justify;
+	text-align-last:left;
+}
+p.ParaOverride-25 {
+	margin-bottom:5px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	widows:2;
+}
+li.ParaOverride-26 {
+	margin-bottom:5px;
+	text-indent:0px;
+}
+p.ParaOverride-27 {
+	list-style-position:inside;
+	list-style-type:none;
+	margin-bottom:5px;
+	margin-left:0px;
+	text-indent:0px;
+}
+p.ParaOverride-28 {
+	margin-bottom:5px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+	widows:2;
+}
+p.ParaOverride-29 {
+	margin-bottom:3px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+	widows:2;
+}
+li.ParaOverride-30 {
+	-epub-hyphens:none;
+	text-indent:0px;
+}
+p.ParaOverride-31 {
+	margin-bottom:1px;
+	margin-top:7px;
+}
+p.ParaOverride-32 {
+	-epub-hyphens:none;
+	margin-bottom:1px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+	widows:2;
+}
+p.ParaOverride-33 {
+	margin-bottom:1px;
+	text-align:justify;
+	text-align-last:left;
+}
+p.ParaOverride-34 {
+	margin-top:14px;
+}
+p.ParaOverride-35 {
+	margin-bottom:4px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+	widows:2;
+}
+p.ParaOverride-36 {
+	margin-bottom:4px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	widows:2;
+}
+p.ParaOverride-37 {
+	margin-top:4px;
+}
+li.ParaOverride-38 {
+	text-indent:0px;
+}
+p.ParaOverride-39 {
+	margin-top:6px;
+}
+p.ParaOverride-40 {
+	margin-bottom:1px;
+	margin-top:9px;
+}
+p.ParaOverride-41 {
+	margin-bottom:2px;
+	margin-top:9px;
+	text-align:justify;
+	text-align-last:left;
+}
+p.ParaOverride-42 {
+	-epub-hyphens:none;
+	margin-bottom:2px;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+}
+p.ParaOverride-43 {
+	margin-bottom:2px;
+	margin-top:7px;
+	text-align:justify;
+	text-align-last:left;
+}
+p.ParaOverride-44 {
+	margin-bottom:5px;
+	margin-top:7px;
+}
+p.ParaOverride-45 {
+	-epub-hyphens:none;
+	margin-bottom:2px;
+	text-align:justify;
+	text-align-last:left;
+}
+p.ParaOverride-46 {
+	margin-bottom:14px;
+	orphans:2;
+	text-align:justify;
+	text-align-last:left;
+	text-indent:7px;
+	widows:2;
+}
+p.ParaOverride-47 {
+	margin-bottom:9px;
+	text-align:center;
+}
+p.ParaOverride-48 {
+	margin-bottom:9px;
+	orphans:2;
+	text-align:center;
+	text-indent:5px;
+	widows:2;
+}
+span.CharOverride-1 {
+	color:#0069aa;
+	font-size:15px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-2 {
+	color:#f58025;
+	font-size:11px;
+	font-style:normal;
+	font-weight:bold;
+}
+span.CharOverride-3 {
+	color:#f58025;
+	font-family:"Kepler Std", sans-serif;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-4 {
+	color:#0069aa;
+	font-family:"Kepler Std", sans-serif;
+	font-size:6px;
+	font-style:normal;
+	font-weight:normal;
+	vertical-align:super;
+}
+span.CharOverride-5 {
+	color:#0069aa;
+	font-family:"Kepler Std", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-6 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium", sans-serif;
+	font-size:6px;
+	font-style:normal;
+	font-weight:normal;
+	vertical-align:super;
+}
+span.CharOverride-7 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-8 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-9 {
+	color:#f58025;
+	font-family:"Memphis LT Std Light", sans-serif;
+	font-size:12px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-10 {
+	color:#f58025;
+	font-family:FbLivorna, serif;
+	font-size:10px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-11 {
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-12 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Italic", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-13 {
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-size:13px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-14 {
+	color:#0069aa;
+	font-family:"Times LT Std Phonetic", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-15 {
+	color:#f58025;
+	font-family:"Memphis LT Std Medium", sans-serif;
+	font-size:6px;
+	font-style:normal;
+	font-variant:small-caps;
+	font-weight:normal;
+	text-transform:none;
+}
+span.CharOverride-16 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Display", sans-serif;
+	font-size:15px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-17 {
+	color:#0069aa;
+	font-family:"Times LT Std Phonetic", sans-serif;
+	font-size:15px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-18 {
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-19 {
+	color:#0069aa;
+	font-family:"Kepler Std", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-20 {
+	color:#0069aa;
+	font-family:"Kepler Std", sans-serif;
+	font-size:6px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+	vertical-align:super;
+}
+span.CharOverride-21 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Italic", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:small-caps;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-22 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Italic", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:small-caps;
+	font-weight:normal;
+	text-transform:none;
+}
+span.CharOverride-23 {
+	color:#0069aa;
+	font-family:"Kepler Std", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:small-caps;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-24 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Italic", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-25 {
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-26 {
+	color:#f58025;
+	font-family:"Kepler Std Light", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-27 {
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-28 {
+	color:#f58025;
+	font-family:"Kepler Std", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-29 {
+	color:#f58025;
+	font-family:"Memphis LT Std", sans-serif;
+	font-size:6px;
+	font-style:normal;
+	font-variant:small-caps;
+	font-weight:normal;
+	text-transform:none;
+}
+span.CharOverride-30 {
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-transform:none;
+}
+span.CharOverride-31 {
+	color:#0069aa;
+	font-family:"Kepler Std", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-transform:none;
+}
+span.CharOverride-32 {
+	color:#0069aa;
+	font-family:"Kepler Std", sans-serif;
+	font-size:6px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-transform:none;
+	vertical-align:super;
+}
+span.CharOverride-33 {
+	font-variant:small-caps;
+	text-transform:none;
+}
+span.CharOverride-34 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Semicondensed", sans-serif;
+	font-size:6px;
+	font-style:normal;
+	font-weight:normal;
+	vertical-align:super;
+}
+span.CharOverride-35 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Semicondensed", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-36 {
+	font-size:58%;
+	vertical-align:super;
+}
+span.CharOverride-37 {
+	font-style:italic;
+	font-weight:normal;
+}
+span.CharOverride-38 {
+	font-family:Arial, sans-serif;
+	font-size:16px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-39 {
+	color:#f58025;
+	font-family:"Kepler Std Medium Semicondensed", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-40 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Semicondensed", sans-serif;
+	font-size:6px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+	vertical-align:super;
+}
+span.CharOverride-41 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Semicondensed", sans-serif;
+	font-size:6px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-transform:none;
+	vertical-align:super;
+}
+span.CharOverride-42 {
+	color:#0069aa;
+	font-family:"Kepler Std Medium Semicondensed", sans-serif;
+	font-size:11px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-transform:none;
+}
+span.CharOverride-43 {
+	font-family:Arial, sans-serif;
+	font-size:18px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-44 {
+	color:#f58025;
+	font-family:"Kepler Std Semibold", sans-serif;
+	font-size:13px;
+	font-style:normal;
+	font-variant:normal;
+	font-weight:normal;
+	text-decoration:none;
+	text-transform:none;
+}
+span.CharOverride-45 {
+	color:#f58025;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-46 {
+	color:#000000;
+}
+span.CharOverride-47 {
+	color:#0069aa;
+	font-family:Arial, sans-serif;
+	font-size:16px;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-48 {
+	font-family:"Times LT Std Phonetic", sans-serif;
+	font-style:normal;
+	font-weight:normal;
+}
+span.CharOverride-49 {
+	font-size:11px;
+}
+span.CharOverride-50 {
+	color:#0069aa;
+	font-family:"Kepler Std", sans-serif;
+	font-size:14px;
+	font-style:normal;
+	font-weight:normal;
+}
+div._idGenStoryDirection-1 {
+	-webkit-writing-mode:horizontal-tb;
+}
+img._idGenObjectAttribute-1 {
+	height:17px;
+	width:28px;
+}
+img._idGenObjectAttribute-2 {
+	height:15px;
+	width:28px;
+}
+img._idGenObjectAttribute-3 {
+	height:17px;
+	width:71px;
+}
+img._idGenObjectAttribute-4 {
+	height:17px;
+	width:64px;
+}
+img._idGenObjectAttribute-5 {
+	height:15px;
+	width:70px;
+}
+img._idGenObjectAttribute-6 {
+	height:15px;
+	width:62px;
+}
+img._idGenObjectAttribute-7 {
+	height:17px;
+	width:62px;
+}
+img._idGenObjectAttribute-8 {
+	height:17px;
+	width:74px;
+}
+div._idGenObjectStyleOverride-1 {
+	border-width:0px;
+}
