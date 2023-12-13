@@ -101,7 +101,7 @@ def selenium_get_url(driver_path, url, name=None, driver_options=None):
     if driver_options is None:
         driver_options = Options()
         driver_options.add_argument("--headless")
-    driver = webdriver.Chrome(driver_path, chrome_options=driver_options)
+    driver = webdriver.Chrome(driver_path, options=driver_options)
     driver.get(url)
     pageSource = driver.page_source
     if name:

@@ -104,19 +104,19 @@ if __name__ == "__main__":
     rewriter = lambda x: x.replace(f"{title}, Part 3 Introduction", f"{title}, Part 3, Introduction")
     cascade(f"{title}", rewriter=rewriter, needs_rewrite=needs_rewrite_3)
 
-    # # new ones
-    # rewriter = lambda string: string.replace(f"{title}, Introduction, Letter to R Joseph son of Judah",
-    #                f"{title}, Letter to R Joseph son of Judah")
-    # cascade(f"{title}", rewriter=rewriter, needs_rewrite=lambda string, *args: string.startswith("Guide for the Perplexed, Introduction"))
-    #
-    # rewriter = lambda string: string.replace(f"{title}, Introduction, Prefatory Remarks",
-    #                f"{title}, Prefatory Remarks")
-    # cascade(f"{title}", rewriter=rewriter, needs_rewrite=lambda string, *args: string.startswith("Guide for the Perplexed, Introduction"))
-    #
-    # rewriter = lambda string: string.replace(f"{title}, Introduction, Introduction",
-    #                f"{title}, Part 1, Introduction")
-    # cascade(f"{title}", rewriter=rewriter, needs_rewrite=lambda string, *args: string.startswith("Guide for the Perplexed, Introduction"))
-    #
-    # rewriter = lambda string: string.replace(f"{title}, Introduction, Introduction of Ibn Tibon",
-    #                                          f"{title}, Introduction of Ibn Tibon")
-    # cascade(f"{title}", rewriter=rewriter, needs_rewrite=lambda string, *args: string.startswith("Guide for the Perplexed, Introduction"))
+    rewriter = lambda string: string.replace(f"{title}, Introduction, Letter to R Joseph son of Judah",
+                   f"{title}, Letter to R Joseph son of Judah")
+    cascade(f"{title}", rewriter=rewriter, needs_rewrite=lambda string, *args: string.startswith("Guide for the Perplexed, Introduction, Letter to R Joseph son of Judah"))
+
+    rewriter = lambda string: string.replace(f"{title}, Introduction, Prefatory Remarks",
+                   f"{title}, Prefatory Remarks")
+    cascade(f"{title}", rewriter=rewriter, needs_rewrite=lambda string, *args: string.startswith("Guide for the Perplexed, Introduction, Prefatory Remarks"))
+
+    rewriter = lambda string: string.replace(f"{title}, Introduction, Introduction",
+                   f"{title}, Part 1, Introduction")
+    cascade(f"{title}", rewriter=rewriter, needs_rewrite=lambda string, *args: string.startswith("Guide for the Perplexed, Introduction, Introduction"))
+
+    if title == "Guide for the Perplexed":
+        rewriter = lambda string: string.replace(f"{title}, Introduction, Introduction of Ibn Tibon",
+                                                 f"{title}, Introduction of Ibn Tibon")
+        cascade(f"{title}", rewriter=rewriter, needs_rewrite=lambda string, *args: string.startswith("Guide for the Perplexed, Introduction, Introduction of Ibn Tibon"))
