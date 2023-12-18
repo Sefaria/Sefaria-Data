@@ -4,6 +4,7 @@ django.setup()
 
 from sefaria.model import *
 import csv
+from beeri_utilities import write_to_csv
 
 
 def rename_books():
@@ -36,7 +37,6 @@ def ingest_map():
 
 
 def rewriter_function(prod_ref, mapper):
-    sum = 1 + 1  # silly debug
     # If a segment-level ref
     if prod_ref in mapper:
         cur_beeri_ref_list = mapper[prod_ref]
@@ -60,8 +60,9 @@ def rewriter_function(prod_ref, mapper):
         if start_tref in mapper and end_tref in mapper:
             first_oref = Ref(mapper[start_tref][0])
             last_oref = Ref(mapper[end_tref][0])
-            ranged_ref = first_oref.to(last_oref)
-            return ranged_ref.normal()
+            if first_oref.book == last_oref.book:
+                ranged_ref = first_oref.to(last_oref)
+                return ranged_ref.normal()
         return f"ERROR: {prod_ref}"
 
     return f"ERROR: {prod_ref}"
@@ -75,6 +76,7 @@ if __name__ == '__main__':
     print("old_mekhilta_ref,beeri_mekhilta_ref,other_text_ref,type,generated_by,all,status")
 
     errors = []
+    results = []
     mapper = ingest_map()
 
     with open("mekhilta_all_links.csv", "r") as f:
@@ -82,24 +84,26 @@ if __name__ == '__main__':
         map = {}
         for row in reader:
             mlink = row["mlink"]
-            olink = row["other_link"]
             new_link = rewriter_function(mlink, mapper)
+            olink = rewriter_function(row["other_link"], mapper) if "Mekhilta DeRabbi Yishmael" in row[
+                "other_link"] else row["other_link"]
             link_type = row["type"]
             generated_by = row["generated_by"]
-            link_all = row["all"]
-            status=row["status"]
 
             if "ERROR" in new_link:
                 errors.append(row)
             else:
-                # print(f"\"{mlink}\",\"{new_link}\",\"{olink}\",{link_type},{generated_by},{link_all},{status}")
-                print("*", end="")
+                results.append({"old_ref": mlink,
+                                "beeri_ref": new_link,
+                                "other_ref": olink,
+                                "type": link_type,
+                                "generated_by": generated_by})
 
     print(f"Error count: {len(errors)}")
 
     print("old_mekhilta_ref,other_text_ref,type,generated_by,all,status")
-    for e in errors:
-        print(f"{e['mlink']},{e['other_link']},{e['type']},{e['generated_by']},{e['all']},{e['status']}")
-    # print(errors)
-    # print(f"Number unique errors: {len(set(errors))}")
-    # print(set(errors))
+    # for e in errors:
+    #     print(f"{e['mlink']},{e['other_link']},{e['type']},{e['generated_by']}")
+
+    write_to_csv("mekhilta_link_report_qa_manual.csv", errors)
+    write_to_csv("mekhilta_link_report_qa.csv", results)
