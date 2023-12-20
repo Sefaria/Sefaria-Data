@@ -11,7 +11,7 @@ from source_sheet_map_utilities import write_to_json, get_sheets_quoting_mekhilt
 # TODO: Have JSON file go to immediate subdir vs parent dir
 
 def ingest_map():
-    with open("/Users/sefaria/Sefaria-Data/sources/Content_Quality/beeri-mekhilta/full_mapping_updated_dec5.csv", "r") as f:
+    with open("/sources/Content_Quality/beeri_mekhilta/full_mapping_updated_dec5.csv", "r") as f:
         reader = csv.DictReader(f)
         map = {}
         for row in reader:
