@@ -16,7 +16,10 @@ if __name__ == '__main__':
                     elif version.versionTitle in ['Sefaria Community Translation', 'itorah.com/pele-yoetz']:
                         version.actualLanguage = 'en'
                         continue
-                print(f'version {version} of index {index} has no actualLanguage')
+                elif version.versionTitle == 'Wrasaw, 1874-1885':
+                    version.actualLanguage = 'he'
+                    continue
+                print(f'version {version} of index {index} has no actualLanguage', version.versionTitle)
                 continue
 
             #add direction
@@ -41,6 +44,11 @@ if __name__ == '__main__':
             elif version.versionTitle == '[pt-br]':
                 # version.versionTitle = 'Mishnah Bava Kamma in Portuguese [pt]' #?
                 version.actualLanguage = 'pt' #?
+            elif version.versionTitle == 'Judeo-Italian Pentateuch transcribed by Robbie Kramm [itk]':
+                version.actualLanguage = 'itk'
+                version.languageFamilyName = 'Italic'
+            elif version.versionTitle == '<Wrasaw, 1874-1885>':
+                version.actualLanguage = 'he'
 
 
             #truncate code from versionTitle
@@ -84,9 +92,16 @@ if __name__ == '__main__':
                 if index.title == 'Megillat Antiochus':
                     if version.versionTitle == 'the Open Siddur Project - Aramaic':
                         version.isSource = True
+                elif index.title == 'פרוייקט הסידור הפתוח':
+                    version.isPrimary = True
                 elif index.title == 'Ben Sira':
-                    if version.versionTitle == 'Ben Sira, David Kahana ed. -- Wikisource':
+                    if version.versionTitle == 'Ben Sira, David Kahana ed. -- Wikisource ':
                         version.isSource = True
+                        version.isPrimary = True
+                elif index.title == 'What is the Talmud':
+                    if version.versionTitle == 'Berlin: Jüdischer Buch-Verlag Erwin Löwe, 1938 [de]':
+                        version.isSource = True
+                    elif version.versionTitle == 'Translated from the English by Avraham Berkovits, Jerusalem, 2013':
                         version.isPrimary = True
                 else:
                     if version.actualLanguage == 'he':
@@ -102,6 +117,8 @@ if __name__ == '__main__':
             elif index.title == 'Kuzari':
                 if version.versionTitle == 'Kitab al Khazari [jrb]':
                     version.isSource = True
+                elif version.versionTitle == 'Sefer haKuzari - Project Ben-Yehuda':
+                    version.isPrimary = True
 
 
             elif 'he' in langs:
@@ -118,6 +135,11 @@ if __name__ == '__main__':
                 if version.actualLanguage == 'en':
                     version.isSource = True
                     version.isPrimary = True
+
+            elif 'German Commentary' in index.title or 'Rav Hirsch on Torah' in index.title:
+                version.isSource = True
+                version.isPrimary = True
+
 
             else:
                 print('no hebrew and english', index.title, version.versionTitle)
