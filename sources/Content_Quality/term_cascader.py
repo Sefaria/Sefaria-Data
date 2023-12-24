@@ -64,7 +64,7 @@ def change_collective_titles():
 
 
 def change_book_titles():
-    for comm in tqdm(IndexSet({'dependence': "Commentary"})):
+    for comm in tqdm(IndexSet({'dependence': "Commentary", "title": {"$regex": f"^{old_name}"}})):
         if comm.title.split(" on ")[0] == old_name or f"{old_name} " in comm.title:
             new_comm_title = comm.title.replace(old_name, new_name, 1)
             comm.set_title(new_comm_title)
@@ -86,17 +86,21 @@ def change_all_categories():
             rename_category(c, new_name, new_term.get_primary_title('he'))
     library.rebuild(include_toc=True)
 
+
 if __name__ == "__main__":
     # indices = library.all_index_records()
     # iterateNodes(indices, searchTerm=old_name)
     old_name = sys.argv[1]
     new_name = sys.argv[2]
-    new_term = create_new_term()
-    change_topic_title()
-    change_book_titles()
-    change_all_categories()
-    change_collective_titles()
-    modify_new_term()
+    books_only = sys.argv[3] == "books_only"
+    if not books_only:
+        new_term = create_new_term()
+        change_topic_title()
+        change_all_categories()
+        change_collective_titles()
+        modify_new_term()
+    else:
+        change_book_titles()
     print("RESULTS ************************************")
     for x in changes:
         print(x)
