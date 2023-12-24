@@ -113,7 +113,9 @@ for masechet in texts:
                     assert index_to_use >= 0
                     range = nodes[found]['refs'][index_to_use]
                 except:
-                    map_probs.append([f"{masechet} {perek}:{halacha}", mapping, nodes[0]['startingAddress'], nodes[-1]['startingAddress'],
+                    final_address = AddressFolio(1).toNumber('en', nodes[-1]['startingAddress'])+len(nodes[-1]['refs'])-1
+                    final_address = AddressFolio.toStr('en', final_address)
+                    map_probs.append([f"{masechet} {perek}:{halacha}", mapping, nodes[0]['startingAddress'], final_address,
                                       texts[masechet][perek][halacha][mapping]])
                 new_dict[mapping] = range
             for mapping in texts[masechet][perek][halacha]:
