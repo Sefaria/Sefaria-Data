@@ -12,13 +12,11 @@ for v in VersionSet({"versionTitle": "The Steinsaltz Tanakh - English"}).array()
     books.append((library.get_index(v.title), v.versionTitle))
 for bt in tqdm(books):
     b, v = bt
-    if b.title != "Steinsaltz on Joshua":
-        continue
     # if not b.title == "Steinsaltz on Judges":
     #     continue
     if len(b.all_segment_refs()) < 10:
         b.versionState().refresh()
-        raise Exception
+        assert len(b.all_segment_refs()) > 10
     for r in b.all_segment_refs():
         lang = 'en'
         if "Hebrew" in v:

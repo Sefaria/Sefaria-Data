@@ -142,10 +142,10 @@ with open("nach_section_export - nach_section_export.csv", 'r') as f:
             books.append(book)
         sections.append(Section(book, range_eng, sec, title_en, title_he, comm_en, comm_he))
 
-_all = False
+_all = True
 creating_intro = True
-linking = False
-parsing = True
+linking = True
+parsing = False
 if _all:
     linking = parsing = creating_intro = True
 
@@ -330,6 +330,10 @@ if linking:
         LinkSet({"generated_by": "steinsaltz_commentary"}).delete()
     except:
         pass
+    try:
+        LinkSet({"generated_by": "steinsaltz_to_nakh"}).delete()
+    except:
+        pass
     for ref in intro_text.keys():
         amt = 0 if ref.startswith("II ") else 1
         for l, link in enumerate(intro_links[ref]): # Steinsaltz Introductions to Tanakh, Joshua, Section Preface
@@ -337,7 +341,7 @@ if linking:
             en_stein = "Steinsaltz Introductions to Tanakh, "+ref.split(",")[-1].strip()+", Section Preface"
             he_stein = Ref("Steinsaltz Introductions to Tanakh, "+ref.split(",")[-1].strip()+", Section Preface").he_normal()
             obj = {"refs": [link, f"{ref}, Section Preface {l+amt}"],
-                 "auto": True, "type": "essay", "generated_by": "steinsaltz_essay_links",
+                 "auto": True, "type": "essay", "generated_by": "steinsaltz_to_nakh",
                  "versions": [{"title": "ALL",
                                "language": "en"},
                               {"title": "ALL",
@@ -349,7 +353,7 @@ if linking:
                 Link(obj).save()
             except:
                 pass
-            obj = {"type": "essay", "generated_by": "steinsaltz_essay_links",
+            obj = {"type": "essay", "generated_by": "steinsaltz_to_nakh",
                  "versions": [{"title": "ALL",
                                "language": "en"},
                               {"title": "ALL",
@@ -378,7 +382,7 @@ if linking:
                 en_tanakh = " ".join(r.replace("Steinsaltz on ", "").split()[:-1])
                 he_tanakh = library.get_index(en_tanakh).get_title('he')
                 l = {"refs": [r.replace("Steinsaltz on ", ""), r],
-                     "auto": True, "type": "commentary", "generated_by": "steinsaltz_commentary"}
+                     "auto": True, "type": "commentary", "generated_by": "steinsaltz_to_nakh"}
                 try:
                     Link(l).save()
                 except:
@@ -397,7 +401,7 @@ if linking:
                 he_stein_node = Ref(stein_node).he_normal()
                 l2 = {"refs": [Ref(r.replace("Steinsaltz on ", "")).as_ranged_segment_ref().normal(),
                                f"{stein_node}"],
-                     "auto": True, "type": "essay", "generated_by": "steinsaltz_essay_links",
+                     "auto": True, "type": "essay", "generated_by": "steinsaltz_to_nakh",
                      "versions": [{"title": "ALL",
                                      "language": "en"},
                                     {"title": "ALL",
@@ -412,7 +416,7 @@ if linking:
                 r = Ref(r)
                 l2 = {"refs": [r.as_ranged_segment_ref().normal(),
                                f"{stein_node}"],
-                      "auto": True, "type": "essay", "generated_by": "steinsaltz_essay_links",
+                      "auto": True, "type": "essay", "generated_by": "steinsaltz_to_nakh",
                       "versions": [{"title": "ALL",
                                     "language": "en"},
                                    {"title": "ALL",
@@ -425,3 +429,43 @@ if linking:
                 except:
                     print(l2)
     "steinsaltz_commentary", "steinsaltz intro", "steinsaltz_essay_links"
+
+for v in VersionSet({"versionTitle": "The Koren Steinsaltz Tanakh HaMevoar - Hebrew"}).array():
+    books.append((library.get_index(v.title), v.versionTitle))
+books = books[::-1]
+for v in VersionSet({"versionTitle": "The Steinsaltz Tanakh - English"}).array():
+    books.append((library.get_index(v.title), v.versionTitle))
+for bt in tqdm(books):
+    b, v = bt
+    # if not b.title == "Steinsaltz on Judges":
+    #     continue
+    if len(b.all_segment_refs()) < 10:
+        b.versionState().refresh()
+        assert len(b.all_segment_refs()) > 10
+    for r in b.all_segment_refs():
+        lang = 'en'
+        if "Hebrew" in v:
+            lang = 'he'
+        orig = text = r.text(lang).text
+        both = True
+        for c in ['.', ':']:
+            c_bool = False
+            text_ftnotes = text.split(c)
+            for i, l in enumerate(text_ftnotes[1:]):
+                text_wout_html = bleach.clean(text_ftnotes[i+1], strip=True, tags=[])
+                if len(text_wout_html) > 0 and not text_wout_html.startswith(" "):
+                    m = re.findall('^[א-ת]{1}', text_wout_html)
+                    if len(m) > 0:
+                        text_ftnotes[1+i] = " " + text_ftnotes[i+1]
+                        c_bool = True
+            both = c_bool and both
+            text = f"{c}".join(text_ftnotes)
+
+        for p in ["&lt;footnote.*?&gt;", "&lt;notes.*?&gt;"]:
+            for m in re.findall(p, text):
+                print(r)
+                text = text.replace(m, "")
+        if orig != text:
+            tc = TextChunk(r, lang=lang, vtitle=v)
+            tc.text = text
+            tc.save(force_save=True)

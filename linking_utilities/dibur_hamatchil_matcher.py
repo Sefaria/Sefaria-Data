@@ -1603,7 +1603,6 @@ def set_ranges(results, base_text):
     results['matches'] = matches
     return results
 
-
 def match_ref(base_text, comments, base_tokenizer, prev_matched_results=None, dh_extract_method=lambda x: x,verbose=False, word_threshold=0.27,char_threshold=0.2,
               with_abbrev_matches=False,with_num_abbrevs=True,boundaryFlexibility=0,dh_split=None, rashi_filter=None, strict_boundaries=None, place_all=False,
               create_ranges=False, place_consecutively=False, daf_skips=2, rashi_skips=1, overall=2, lang="he", max_overlap_percent=0.7, chunks_list=False):
