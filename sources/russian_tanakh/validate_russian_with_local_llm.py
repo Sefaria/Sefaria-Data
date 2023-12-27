@@ -5,8 +5,14 @@ django.setup()
 superuser_id = 171118
 # import statistics
 import csv
+import os
+from tqdm import tqdm
 from sefaria.model import *
 import requests
+from langchain.chat_models import ChatOpenAI, ChatAnthropic
+from langchain.prompts import PromptTemplate
+from langchain.schema import HumanMessage
+
 # import requests_cache
 # requests_cache.install_cache('my_cache', expire_after=3600*24*14)
 
@@ -41,20 +47,57 @@ def ask_ollama(prompt, model="neural-chat", url="http://localhost:11434/api/gene
     else:
         print(f"Error {response.status_code}: {response.text}")
         return None
-def russian_semantic_validation():
+
+def ask_claude(query):
+    llm = ChatAnthropic()
+    # user_prompt = PromptTemplate.from_template("# Input\n{text}")
+    user_prompt = PromptTemplate.from_template("{text}")
+    human_message = HumanMessage(content=user_prompt.format(text=query))
+    answer = llm([human_message])
+
+    return answer.content
+
+def write_verdict_to_csv(csv_file, segment_ref, verdict):
+    if not os.path.exists(csv_file):
+        with open(csv_file, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Ref', 'Verdict'])
+
+    with open(csv_file, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([segment_ref, verdict])
+def get_existing_refs(csv_file):
+    if not os.path.exists(csv_file):
+        return []
+
+    with open(csv_file, 'r', newline='') as file:
+        reader = csv.reader(file)
+        existing_segment_refs = [row[0] for row in reader]
+        return existing_segment_refs
+def russian_semantic_validation(csv_filename="calude_verdicts.csv"):
+    existing_segment_refs = get_existing_refs(csv_filename)
+    segment_refs = []
     for book in books:
-        segment_refs = library.get_index(book).all_segment_refs()
-        for s_g in segment_refs:
-            en_version_text = s_g.text().text
-            ru_version_text = s_g.text(vtitle="Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky [ru]").text
-            prompt = get_validation_prompt(en_version_text, ru_version_text)
-            verdict = ask_ollama(prompt)
-            if "NO" in verdict:
-                print(f"possible semantic problem in {s_g}")
-            elif "YES" in verdict:
-                print(f"{s_g} passed")
-            else:
-                print(f"unclear verdict for {s_g}: {verdict}")
+        segment_refs += library.get_index(book).all_segment_refs()
+    for segment_ref in tqdm(segment_refs, desc=f"Validating segments", unit="segment"):
+
+        if segment_ref.tref in existing_segment_refs:
+            continue
+
+        en_version_text = segment_ref.text().text
+        ru_version_text = segment_ref.text(vtitle="Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky [ru]").text
+        prompt = get_validation_prompt(en_version_text, ru_version_text)
+        # verdict = ask_ollama(prompt)
+        verdict = ask_claude(prompt)
+        if "NO" in verdict:
+            # print(f"possible semantic problem in {segment_ref}")
+            verdict = "NO"
+        elif "YES" in verdict:
+            # print(f"{segment_ref} passed")
+            verdict = "YES"
+        # else:
+        #     print(f"unclear verdict for {segment_ref}: {verdict}")
+        write_verdict_to_csv(csv_filename, segment_ref, verdict)
 
 
 if __name__ == '__main__':
