@@ -8,10 +8,9 @@ import csv
 from sefaria.model import *
 import re
 import requests
-import requests_cache
-requests_cache.install_cache('my_cache', expire_after=3600*24*14)  # Cache expires after 1 hour
+# import requests_cache
+# requests_cache.install_cache('my_cache', expire_after=3600*24*14)
 from bs4 import BeautifulSoup
-
 # from sefaria.helper.schema import insert_last_child, reorder_children
 # from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
@@ -470,19 +469,19 @@ def russian_version_validation():
 
 if __name__ == '__main__':
     print("hello world")
-    handle_tanakh_book("Genesis")
-    handle_tanakh_book("Exodus")
-    handle_tanakh_book("Leviticus")
-    handle_tanakh_book("Numbers")
-    handle_tanakh_book("Deuteronomy")
-
-    handle_tanakh_book("Judges")
-    handle_tanakh_book("I_Samuel")
-    handle_tanakh_book("II_Samuel")
-    handle_tanakh_book("I_Kings")
-    handle_tanakh_book("II_Kings")
-    handle_tanakh_book("Ruth")
-    handle_tanakh_book("Esther")
+    # handle_tanakh_book("Genesis")
+    # handle_tanakh_book("Exodus")
+    # handle_tanakh_book("Leviticus")
+    # handle_tanakh_book("Numbers")
+    # handle_tanakh_book("Deuteronomy")
+    #
+    # handle_tanakh_book("Judges")
+    # handle_tanakh_book("I_Samuel")
+    # handle_tanakh_book("II_Samuel")
+    # handle_tanakh_book("I_Kings")
+    # handle_tanakh_book("II_Kings")
+    # handle_tanakh_book("Ruth")
+    # handle_tanakh_book("Esther")
     russian_version_validation()
 
 
