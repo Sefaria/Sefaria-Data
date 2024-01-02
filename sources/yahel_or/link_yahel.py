@@ -9,6 +9,8 @@ import re
 from sefaria.model import *
 from sefaria.utils.talmud import daf_to_section, section_to_daf
 from typing import List
+from pprint import pprint
+import copy
 
 
 def get_daf_key(row):
@@ -46,7 +48,8 @@ def dher(text):
     dh = "$$$$$$$$$$$$$$$$$$"
     match = re.search(r'<b>(.*?)</b>', text)
     if match:
-        dh = match.group(1)
+        if len(match.group(1).split()) >= 2:
+            dh = match.group(1)
     return dh
 
 
@@ -101,6 +104,21 @@ def links_to_csv(list_of_links, filename="output.csv"):
         writer = csv.writer(file)
         writer.writerows(tuples)
 
+def get_and_strip_last_number(s):
+    # Search for the last occurrence of a number in the string
+    match = re.search(r'\d+', s[::-1])
+
+    if match:
+        # Extract the matched number
+        last_number = int(match.group()[::-1])
+
+        # Strip the matched number from the original string
+        stripped_string = s[:-len(str(last_number))]
+
+        return last_number, stripped_string
+    else:
+        # Return None if no number is found
+        return None, s
 def infer_logical_links(list_of_links):
     list_of_links_with_inferred = []
     # Iterate over consecutive elements
@@ -152,29 +170,52 @@ def find_and_remove_tuple(list_of_tuples, x1):
             return y
     return None  # Return None if x1 is not found
 
-def get_missing_links(seg_refs: List[Ref], matches: List):
+def get_missing_links(yahel_daf, matches: List):
+    segs = Ref(yahel_daf).all_segment_refs()
     found_refs = [Ref(match["refs"][0]) for match in matches]
-    missing = [seg_ref for seg_ref in seg_refs if seg_ref not in found_refs]
+    missing = [seg_ref for seg_ref in segs if seg_ref not in found_refs]
     return missing
 
-def get_new_search_space(old_tref, k: int):
-    new_ref = Ref(old_tref)
-    for i in range(0, k):
-        try:
-            new_ref = new_ref.to(new_ref.next_segment_ref())
-            new_ref = (new_ref.prev_section_ref()).to(new_ref)
-        except Exception as e:
-            print(e)
-    return new_ref.tref
 
-def match_commentary():
+def get_previous_value(tuple_list, given_key):
+    try:
+        index = [item[0] for item in tuple_list].index(given_key)
+        if index > 0:
+            previous_key = tuple_list[index - 1][0]
+            previous_value = tuple_list[index - 1][1]
+            return previous_value
+        else:
+            print("Given key is the first key in the list, no previous key.")
+            return None
+    except ValueError:
+        print("Given key not found in the list.")
+        return None
+def get_next_value(tuple_list, given_key):
+    try:
+        index = [item[0] for item in tuple_list].index(given_key)
+        if index < len(tuple_list) - 1:
+            next_key = tuple_list[index + 1][0]
+            next_value = tuple_list[index + 1][1]
+            return next_value
+        else:
+            print("Given key is the last key in the list, no next key.")
+            return None
+    except ValueError:
+        print("Given key not found in the list.")
+        return None
+
+def infer_links(yahel_daf, zoahr_tref):
     from sources.functions import match_ref_interface
-    daf_siman_map = create_daf_siman_map()
-    yahel_seg_refs = Ref("Yahel Ohr on Zohar").all_segment_refs()
-    yahel_sec_trefs = remove_duplicates_ordered([slice_string_until_last_colon(r.normal()) for r in yahel_seg_refs])
+    segs = Ref(yahel_daf).all_segment_refs()
+    comments = [seg.text("he").text for seg in segs]
+    matches = match_ref_interface(zoahr_tref, yahel_daf,
+                             comments, simple_tokenizer, dher)
+    return matches
+
+def generate_yahel_dafXzohar_tref_list(daf_siman_map, yahel_sec_trefs):
     yahel_dafXzohar_tref_list = []
     for yahel_sec_tref in yahel_sec_trefs:
-        for i in range(4):  # Repeat the process four times
+        for i in range(4):
             y = find_and_remove_tuple(daf_siman_map, yahel_sec_tref)
             if i == 3:
                 a = "halt"
@@ -184,27 +225,58 @@ def match_commentary():
                 break
             else:
                 yahel_dafXzohar_tref_list.append((yahel_sec_tref, y))
+    return yahel_dafXzohar_tref_list
+
+def get_yahel_sec_trefs():
+    yahel_seg_refs = Ref("Yahel Ohr on Zohar").all_segment_refs()
+    return remove_duplicates_ordered([slice_string_until_last_colon(r.normal()) for r in yahel_seg_refs])
+
+def get_new_matches(more_matches: List, matches: List):
+    only_new_matches = []
+    existing_refs = [Ref(match["refs"][0]) for match in matches]
+    for new_match in more_matches:
+        if Ref(new_match["refs"][0]) not in existing_refs:
+            only_new_matches.append(new_match)
+    return only_new_matches
+
+
+def match_commentary():
+    daf_siman_map = create_daf_siman_map()
+    yahel_sec_trefs = get_yahel_sec_trefs()
+    yahel_dafXzohar_tref_list = generate_yahel_dafXzohar_tref_list(daf_siman_map, yahel_sec_trefs)
 
     print("hi")
     links = []
-    for daf, tref in tqdm(yahel_dafXzohar_tref_list, desc="Processing", unit="daf"):
-        segs = Ref(daf).all_segment_refs()
-        comments = [seg.text("he").text for seg in segs]
-        matches = match_ref_interface(tref, daf,
-                                 comments, simple_tokenizer, dher)
-        missing_links = get_missing_links(segs, matches)
-        for seg in missing_links:
-            new_search_space = get_new_search_space(tref, 10)
+    look_side_ways_links = []
+    for yahel_daf, zohar_tref in yahel_dafXzohar_tref_list:
+        matches = infer_links(yahel_daf, zohar_tref)
 
-            comment = seg.text("he").text
-            matches += match_ref_interface(new_search_space, daf,
-                                          [comment], simple_tokenizer, dher)
+        # missing_links = get_missing_links(yahel_daf, matches)
+        zohar_tref_for_previous_daf = get_previous_value(yahel_dafXzohar_tref_list, yahel_daf)
+        zohar_tref_for_next_daf = get_next_value(yahel_dafXzohar_tref_list, yahel_daf)
+        print(zohar_tref_for_previous_daf)
+        more_matches = []
+        if zohar_tref_for_previous_daf:
+            more_matches += infer_links(yahel_daf, zohar_tref_for_previous_daf)
+        if zohar_tref_for_next_daf:
+            more_matches += infer_links(yahel_daf, zohar_tref_for_next_daf)
+        only_new_matches = get_new_matches(more_matches, matches)
+        if only_new_matches:
+            halt = 1
+        matches += only_new_matches
+        look_side_ways_links += only_new_matches
+
+
+
+
 
         links += matches
     links = infer_logical_links(links)
     # print("second iteration:")
     # links = infer_logical_links(links)
     links_to_csv(links, filename="output2.csv")
+    sideways_refs = [link["refs"] for link in look_side_ways_links]
+    pprint(sideways_refs)
     # insert_links_to_db(links)
 
 
