@@ -26,10 +26,7 @@ def retrieve_sheets_collection(cauldron=False):
     return collection
 
 
-def get_sheets_quoting_mekhilta(collection):
-
-    # Define the search term
-    search_term = 'Mekhilta d\'Rabbi Yishmael'
+def get_sheets_quoting_mekhilta(collection, search_term='Mekhilta DeRabbi Yishmael Old'):
 
     # Query the collection
     query = {"includedRefs": {"$regex": search_term}}

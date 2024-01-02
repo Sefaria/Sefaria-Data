@@ -11,7 +11,7 @@ from source_sheet_map_utilities import write_to_json, get_sheets_quoting_mekhilt
 # TODO: Have JSON file go to immediate subdir vs parent dir
 
 def ingest_map():
-    with open("/sources/Content_Quality/beeri_mekhilta/full_mapping_updated_dec5.csv", "r") as f:
+    with open("/Users/sefaria/Sefaria-Data/sources/Content_Quality/beeri_mekhilta/full_mapping.csv", "r") as f:
         reader = csv.DictReader(f)
         map = {}
         for row in reader:
@@ -30,7 +30,7 @@ def make_prod_ref_old(prod_ref):
 
 
 def rewriter_function(prod_ref, mapper, uuid=None, sheet_id=None):
-    if "old" not in prod_ref:  # i.e. prod ref hasn't been affected by name change
+    if "Old" not in prod_ref:  # i.e. prod ref hasn't been affected by name change
         prod_ref = make_prod_ref_old(prod_ref)
     # If a segment-level ref
     if prod_ref and prod_ref in mapper:
@@ -47,13 +47,13 @@ def rewriter_function(prod_ref, mapper, uuid=None, sheet_id=None):
         else:
             return cur_beeri_ref_list[0]
 
-    elif prod_ref in ["Mekhilta d'Rabbi Yishmael Old 22",
-                      "Mekhilta d'Rabbi Yishmael Old 19",
-                      "Mekhilta d'Rabbi Yishmael Old 20",
-                      "Mekhilta d'Rabbi Yishmael Old 17",
-                      "Mekhilta d'Rabbi Yishmael Old 1",
-                      "Mekhilta d'Rabbi Yishmael Old 3",
-                      "Mekhilta d'Rabbi Yishmael Old 2"]:
+    elif prod_ref in ["Mekhilta DeRabbi Yishmael Old 22",
+                      "Mekhilta DeRabbi Yishmael Old 19",
+                      "Mekhilta DeRabbi Yishmael Old 20",
+                      "Mekhilta DeRabbi Yishmael Old 17",
+                      "Mekhilta DeRabbi Yishmael Old 1",
+                      "Mekhilta DeRabbi Yishmael Old 3",
+                      "Mekhilta DeRabbi Yishmael Old 2"]:
         print(f"Sheet ID: {sheet_id} -- {prod_ref} needs to be handled manually for (user: {uuid})")
         return ""
 
@@ -92,13 +92,14 @@ if __name__ == '__main__':
                        "newSources": []}
 
         for ref in document["includedRefs"]:
-            if "Mekhilta d'Rabbi Yishmael" in ref:
+            if "Mekhilta DeRabbi Yishmael Old" in ref:
+                print(ref)
                 mapper_dict["newIncludedRefs"].append(rewriter_function(ref, mapping, uuid, sheet_id))
             else:
                 mapper_dict["newIncludedRefs"].append(ref)
 
         for ref in document["expandedRefs"]:
-            if "Mekhilta d'Rabbi Yishmael" in ref:
+            if "Mekhilta DeRabbi Yishmael Old" in ref:
                 mapped_ref = rewriter_function(ref, mapping, uuid, sheet_id)
                 if mapped_ref:
                     ref_list = Ref(mapped_ref).all_segment_refs()
@@ -112,7 +113,7 @@ if __name__ == '__main__':
             if "ref" in source_dict:
                 ref = source_dict["ref"]
 
-                if "Mekhilta d'Rabbi Yishmael" in ref:
+                if "Mekhilta DeRabbi Yishmael Old" in ref:
                     new_ref_dict = source_dict
                     en_ref = rewriter_function(ref, mapping, uuid, sheet_id)
                     oref = Ref(en_ref)
