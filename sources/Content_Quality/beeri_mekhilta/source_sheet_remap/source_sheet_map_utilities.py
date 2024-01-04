@@ -35,5 +35,5 @@ def get_sheets_quoting_mekhilta(collection, search_term='Mekhilta DeRabbi Yishma
 
 
 def write_to_json(mapper_dictionary):
-    with open("sheets_data.json", 'w') as json_file:
+    with open("sheets_data2.json", 'w') as json_file:
         json.dump(mapper_dictionary, json_file, indent=4)

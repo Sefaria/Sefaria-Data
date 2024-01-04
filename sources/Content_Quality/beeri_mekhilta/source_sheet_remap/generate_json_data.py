@@ -131,4 +131,4 @@ if __name__ == '__main__':
         results.append(mapper_dict)
 
     write_to_json(mapper_dictionary=results)
-    print(results[0])
+    print(f"{len(results)} sheets written to JSON")

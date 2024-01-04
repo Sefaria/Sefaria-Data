@@ -30,7 +30,9 @@ def get_mesorat_hashas_links():
 def set_up_matcher():
     matcher = ParallelMatcher(lambda x: re.sub('[^א-ת ]', '', x).split(),
                               all_to_all=False,
-                              ngram_size=3)
+                              min_words_in_match=5,
+                              ngram_size=7,
+                              min_distance_between_matches=0)
     return matcher
 
 
@@ -52,6 +54,15 @@ if __name__ == '__main__':
     # Try here matching the Mekhilta to Masechet Pesachim as a trial
     # For all index, do one at a time in comparison to Mekhilta (2 at a time, Mekhilta to Midrash, Mekhilta to Talmud)
     # for index in library.get_all in category
+
+    # Running...
+    # Generate btwn M and all TBSP in on go:
+    # tref list... ["Mekhilta", "Pesachim|Midrash|Berakhot"]
+    # Generated btwn M to M,
+    # tref list ["Mekhilta"]... w "all-to-all" true.
+
+    # Fallback: Fiddle w params
+
     match_list = matcher.match(["Mekhilta DeRabbi Yishmael", "Pesachim"], return_obj=True)
 
     if match_list:
@@ -66,3 +77,12 @@ if __name__ == '__main__':
     # write to a CSV
     print(f"Num Pesachim matches {len(matched_csv_dict)}")
     write_to_csv("mekhilta_to_pesachim_links.csv", matched_csv_dict)
+
+
+    #####
+
+    """
+    Old Mekhilta 12:1 (a,b,c,d,e) <<<>>>>> Pesachim 2a.1 (a,x,y,z)
+    BM 1.1 (a)                    <<<<>>>> Pesachim 2a.1 (a,x,y,z) 
+    ....
+    """
