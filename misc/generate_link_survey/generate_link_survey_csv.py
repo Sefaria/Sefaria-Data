@@ -11,15 +11,27 @@ import csv
 logging.basicConfig(filename='logfile.log', level=logging.INFO)
 
 
-# Todo - run across all indices
-
 
 def write_errors_to_txt(file_name, list, code="w"):
+    """
+    Function to write bad refs in Links to a CSV for future QA.
+    This function is a typical "Write-to-file" function, except it has custom styling
+    for the nature of the output.
+    :param file_name String: Name of the file to output the data to
+    :param list List: A list of the exception in position 0, and the link id in position 1
+    :param code String: A code of either "w" (write, overwriting) or "a" (append to existing) determining the write behavior of the function
+    """
     with open(f'{file_name}.txt', code) as file:
         file.write(str(list[0]) + '. Link ID: ' + str(list[1]._id) + "\n")
 
 
 def write_to_csv(file_name, dict):
+    """
+    This function writes the data about each index to a CSV progressively, saving
+    after each index to prevent data loss with such a long running function.
+    :param file_name String: Name of the CSV file
+    :param dict Dictionary: A dictionary where the keys correspond to the column names, and the values the row data for the CSV
+    """
     # Check if the file already exists
     file_exists = True
     try:
@@ -42,6 +54,15 @@ def write_to_csv(file_name, dict):
 
 
 def get_distinct_indices_linked_to_text(ls, index_name):
+    """
+    Creates a count dict of where the key is an index, and the value is the number of times it is
+    linked to the given text.
+    :param ls LinkSet: The linkset of all links to the current index
+    :param index_name String: The name of the current index
+    :return len(counts) Int: The total number of distinct indices linked to the current index
+    :return counts Dictionary: The counts dictionary. For example {"Berakhot": 10, "Ketubot": 11} would indicate that
+                                Berakhot is linked to the current index 10 times, and Ketubot 11 times.
+    """
     counts = {}
 
     for link in ls:
@@ -49,7 +70,7 @@ def get_distinct_indices_linked_to_text(ls, index_name):
             idx1 = Ref(link.refs[0]).index.title
             idx2 = Ref(link.refs[1]).index.title
         except Exception as e:
-            write_errors_to_txt("bad_refs_in_links", [e, link], "a")
+            write_errors_to_txt("broken_links", [e, link], "a")
 
         # If the index is already in the dict, increment. If not yet present, add with
         # a value of 1. Check to make sure not counting the index itself (i.e. in a link Genesis-Mekhilta,
@@ -63,6 +84,15 @@ def get_distinct_indices_linked_to_text(ls, index_name):
 
 
 def get_distinct_category_counts(ls, index_name):
+    """
+    Returns a dictionary where the keys are the categories, and the value is another dict containing the total
+    number of links to the current index within that category (for example, 3,198 Tanakh links) as well as the
+    number of distinct indices linked within that category (for example, of the 3,198 total Tanakh links, there are 12 distinct
+    books of Tanakh where those links appear).
+    :param ls LinkSet: The LinkSet of the current index
+    :param index_name: The name of the current index
+    :return data Dictionary: Category counts dictionary
+    """
     category_counts = {}
 
     for link in ls:
@@ -98,13 +128,28 @@ def get_distinct_category_counts(ls, index_name):
     return data
 
 
-def callback(index_name):
+def calculate_stats(node):
+    """
+    The main engine of this code, this is the callback function passed into traverse_tree()
+    For every node which is an index in the ToC Tree, it calculates each of the desired statistics
+    as explained in the line-by-line comments.
+    As it proceeds through an index, it concatenates the results into a dictionary, which is written
+    to a csv. Instructional print messages are printed to the console. 
+    :param node: A node in the Sefaria ToC tree.
+    """
+    # Skip category nodes
+    if type(node) == category.TocCategory or type(node) == category.TocCollectionNode:
+        return
+
+    total_time_start = time.time()
     result_data = {}
 
+    i = node.get_index_object()
+    index_name = i.title
+
     # Index name
-    i = Index().load({"title": index_name})
-    result_data["Index Title"] = i.title
-    print(f"Surveying {i.title}")
+    result_data["Index Title"] = index_name
+    print(f"Surveying {index_name}")
 
     # Top level category
     top_level_category = i.categories[0]
@@ -112,19 +157,25 @@ def callback(index_name):
     print(f"{index_name} top level category is {top_level_category}")
 
     # Number of links to Index
-    linkset_to_index = LinkSet({'refs': {"$regex": i.title}})
+    linkset_to_index = LinkSet(Ref(i.title))
     num_links_to_index = linkset_to_index.count()
     result_data["Total Number of Links to Index"] = num_links_to_index
     print(f"{index_name} has {num_links_to_index} total links")
 
     # Primary version word count
     v = Version().load({"title": i.title, "isPrimary": True})
+
+    if not v:
+        v = Version().load({"title": i.title})
+
     num_words_in_primary_version = v.word_count()
+
+
     result_data["Word Count of Primary Version"] = num_words_in_primary_version
     print(f"Primary version word count is {num_words_in_primary_version}")
 
     # Links over number of words
-    links_over_num_words = num_links_to_index / num_words_in_primary_version
+    links_over_num_words = num_links_to_index / num_words_in_primary_version if num_words_in_primary_version != 0 else -1
     result_data["Number of Links / Number of Words"] = links_over_num_words
     print(f"Links over num words is {links_over_num_words}")
 
@@ -161,15 +212,12 @@ def callback(index_name):
         print(f"{index_name} has {num_texts} distinct texts linked in {c}")
         print(f"{index_name} has {num_links} total links linked in {c}")
 
-    write_to_csv("link_survey.csv", result_data)
+    write_to_csv("link_stats.csv", result_data)
+    total_time_end = time.time()
+    print(f"Total time for {index_name} is: {(total_time_end - total_time_start) / 60.0}")
+    print("----------------------------------\n\n")
 
 
 if __name__ == '__main__':
-
-    indices = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Berakhot", "Kuzari", "Tanya"]
-    for index in indices:
-        total_time_start = time.time()
-        callback(index)
-        total_time_end = time.time()
-        print(f"Total time for {index} is: {(total_time_end - total_time_start) / 60.0}")
-        print("----------------------------------\n\n")
+    root = library.get_toc_tree().get_root()
+    root.traverse_tree(calculate_stats)
