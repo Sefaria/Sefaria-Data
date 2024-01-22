@@ -7,6 +7,7 @@ django.setup()
 from sefaria.model import *
 import time
 import csv
+import os
 
 logging.basicConfig(filename='logfile.log', level=logging.INFO)
 
@@ -32,6 +33,9 @@ def write_to_csv(file_name, dict):
     :param file_name String: Name of the CSV file
     :param dict Dictionary: A dictionary where the keys correspond to the column names, and the values the row data for the CSV
     """
+
+    date = time.localtime()
+    file_name = f"{file_name}_{date.tm_year}_{date.tm_day}_{date.tm_mon}_{date.tm_sec}"
     # Check if the file already exists
     file_exists = True
     try:
@@ -225,7 +229,7 @@ def calculate_stats(node):
         print(f"{index_name} has {num_texts} distinct texts linked in {c}")
         print(f"{index_name} has {num_links} total links linked in {c}")
 
-    write_to_csv("link_stats.csv", result_data)
+    write_to_csv("../link_stats.csv", result_data)
     total_time_end = time.time()
     print(f"Total time for {index_name} is: {(total_time_end - total_time_start) / 60.0}")
     print("----------------------------------\n\n")
