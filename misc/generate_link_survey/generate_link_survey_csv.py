@@ -34,8 +34,6 @@ def write_to_csv(file_name, dict):
     :param dict Dictionary: A dictionary where the keys correspond to the column names, and the values the row data for the CSV
     """
 
-    date = time.localtime()
-    file_name = f"{file_name}_{date.tm_year}_{date.tm_day}_{date.tm_mon}_{date.tm_sec}"
     # Check if the file already exists
     file_exists = True
     try:
@@ -236,5 +234,8 @@ def calculate_stats(node):
 
 
 if __name__ == '__main__':
+    date = time.localtime()
+    file_name = f"link_stats_{date.tm_year}_{date.tm_mday}_{date.tm_mon}_{date.tm_sec}"
+    open(file_name, 'a').close()
     root = library.get_toc_tree().get_root()
     root.traverse_tree(calculate_stats)
