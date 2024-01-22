@@ -66,6 +66,10 @@ def get_distinct_indices_linked_to_text(ls, index_name):
     counts = {}
 
     for link in ls:
+
+        idx1 = None
+        idx2 = None
+
         try:
             idx1 = Ref(link.refs[0]).index.title
             idx2 = Ref(link.refs[1]).index.title
@@ -75,9 +79,9 @@ def get_distinct_indices_linked_to_text(ls, index_name):
         # If the index is already in the dict, increment. If not yet present, add with
         # a value of 1. Check to make sure not counting the index itself (i.e. in a link Genesis-Mekhilta,
         # we wouldn't want to count the Genesis side, if that's the index we're checking).
-        if idx1 != index_name:
+        if idx1 and idx1 != index_name:
             counts[idx1] = counts.get(idx1, 0) + 1
-        if idx2 != index_name:
+        if idx2 and idx2 != index_name:
             counts[idx2] = counts.get(idx2, 0) + 1
 
     return len(counts), counts
@@ -96,28 +100,37 @@ def get_distinct_category_counts(ls, index_name):
     category_counts = {}
 
     for link in ls:
+
+        idx1 = None
+        idx2 = None
+        cat1 = None
+        cat2 = None
+
         try:
             idx1 = Ref(link.refs[0]).index
             idx2 = Ref(link.refs[1]).index
         except Exception as e:
             logging.info(e)
 
-        cat1 = idx1.categories[0]
-        cat1_index_title = idx1.title
-        cat2 = idx2.categories[0]
-        cat2_index_title = idx2.title
+        if idx1:
+            cat1 = idx1.categories[0]
+            cat1_index_title = idx1.title
+
+        if idx2:
+            cat2 = idx2.categories[0]
+            cat2_index_title = idx2.title
 
         # Appending the index to the dict by category,
         # checking to ensure that the index being added is the link,
         # not the index itself being linked.
-        if cat1 in category_counts and cat1_index_title != index_name:
+        if cat1 and cat1 in category_counts and cat1_index_title != index_name:
             category_counts[cat1].append(cat1_index_title)
-        elif cat1 not in category_counts and cat1_index_title != index_name:
+        elif cat1 and cat1 not in category_counts and cat1_index_title != index_name:
             category_counts[cat1] = [cat1_index_title]
 
-        if cat2 in category_counts and cat2_index_title != index_name:
+        if cat2 and cat2 in category_counts and cat2_index_title != index_name:
             category_counts[cat2].append(cat2_index_title)
-        elif cat2 not in category_counts and cat2_index_title != index_name:
+        elif cat2 and cat2 not in category_counts and cat2_index_title != index_name:
             category_counts[cat2] = [cat2_index_title]
 
     # Crunching distinct numbers to return
@@ -134,7 +147,7 @@ def calculate_stats(node):
     For every node which is an index in the ToC Tree, it calculates each of the desired statistics
     as explained in the line-by-line comments.
     As it proceeds through an index, it concatenates the results into a dictionary, which is written
-    to a csv. Instructional print messages are printed to the console. 
+    to a csv. Instructional print messages are printed to the console.
     :param node: A node in the Sefaria ToC tree.
     """
     # Skip category nodes
