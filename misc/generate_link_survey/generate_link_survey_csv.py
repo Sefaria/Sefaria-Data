@@ -235,7 +235,7 @@ def calculate_stats(node):
 
 if __name__ == '__main__':
     date = time.localtime()
-    file_name = f"link_stats_{date.tm_year}_{date.tm_mday}_{date.tm_mon}_{date.tm_sec}"
+    file_name = f"link_stats_{date.tm_year}_{date.tm_mday}_{date.tm_mon}_{date.tm_hour}{date.tm_min}{date.tm_sec}.csv"
     open(file_name, 'a').close()
     root = library.get_toc_tree().get_root()
     root.traverse_tree(calculate_stats)
