@@ -262,7 +262,7 @@ def calculate_stats(node):
 
 if __name__ == '__main__':
     date = time.localtime()
-    csv_file_path = "../links_stats.csv"
+    csv_file_path = "links_stats.csv"
     if os.path.exists(csv_file_path):
         # Delete the file
         os.remove(csv_file_path)
