@@ -182,7 +182,7 @@ def is_halakhot_nember_equal(comments):
             print('not equal halakhot', comments[0]["masechet"], perek, halakhot, yer_halakhot)
     return fixed_halakhot
 
-def find_vilna_page(ref, page):
+def find_vilna_page(ref, page, mas):
     perek = 0
     pages = []
     try:
@@ -214,8 +214,8 @@ def find_ref(mas, perek, halakha, page):
         ref = Ref(f'{YERUSHALMI} {mas} {perek}')
     else:
         ref = Ref(f'{YERUSHALMI} {mas}')
-    if page and page != '00':
-        page_ref = find_vilna_page(ref, page)
+    if page and page not in ['00', '0']:
+        page_ref = find_vilna_page(ref, page, mas)
     elif halakha: #halakha w/o page
         return f'{mas} {perek}:{halakha}'
     else: #perek w/o page
@@ -224,7 +224,8 @@ def find_ref(mas, perek, halakha, page):
         refs = unite_refs([r.normal() for r in ref.all_segment_refs() if r in Ref(page_ref).all_segment_refs()])
         if len(refs) != 1:
             print('problem with finding page', refs)
-        return refs[0]
+        if refs:
+            return refs[0]
     else: #page q/o halakha
         return page_ref
 
@@ -280,42 +281,48 @@ def match_between_refs(comments):
                         break
             if prev == next:
                 com['base text ref'] = prev
+                com['match by context'] = 'X'
             elif re.search("^.{0,5}(?:גמ')\.?$", com['comment']) and next[-2:] == (':2'):
                 com['base text ref'] = next
                 prev = com['base text ref']
+                com['match by context'] = 'X'
             elif re.search("^.{0,5}(?:מתני')\.?$", com['comment']) and next[-2:] in [':2', ':1']:
                 com['base text ref'] = next[:-2] + ':1'
                 prev = com['base text ref']
+                com['match by context'] = 'X'
         if com.get('base text ref', None):
-            com['base text'] = com['base text ref'].text('he', 'Mechon-Mamre').text
+            com['base text'] = Ref(com['base text ref']).text('he', 'Mechon-Mamre').text
         else:
             com['base text'] = None
     return comments
 
-all = []
-for root, dirs, files in os.walk('data/'):
-    for file in files:
-        if 'docx' not in file:
-            continue
-        doc = Document(f'data/{file}')
-        print(file)
-        data = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
-        he_mas = file.split('הגרא')[1].split('.')[0].split('כתב יד')[0].strip()
-        mas = Ref(he_mas).normal().split('Mishnah ')[1]
-        if he_mas == 'פאה':
-            data = data.replace('@22(דל"ד ע"ב)', '@22(דף ל"ד ע"ב)')
-            data = re.sub('(@22\(דף \S*)\)', r'\1 ע"ב)', data)
-        comments = parse_text(data, mas, 'Beur HaGra')
-        comments = match_base(comments)
-        all += match_between_refs(comments)
+if __name__ == '__main__':
+    all = []
+    for root, dirs, files in os.walk('data/'):
+        for file in files:
+            if 'docx' not in file:
+                continue
+            doc = Document(f'data/{file}')
+            print(file)
+            data = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+            he_mas = file.split('הגרא')[1].split('.')[0].split('כתב יד')[0].strip()
+            mas = Ref(he_mas).normal().split('Mishnah ')[1]
+            if he_mas == 'פאה':
+                data = data.replace('@22(דל"ד ע"ב)', '@22(דף ל"ד ע"ב)')
+                data = re.sub('(@22\(דף \S*)\)', r'\1 ע"ב)', data)
+            comments = parse_text(data, mas, 'Beur HaGra')
+            comments = match_base(comments)
+            to_add = match_between_refs(comments)
+            for row in to_add:
+                row['file'] = file
+            all += to_add
 
-with open('gra.csv', 'w', encoding='utf-8', newline='') as fp:
-    writer = csv.DictWriter(fp, fieldnames=['file', 'masechet', 'commentary', 'perek', 'halakha', 'page', 'comment', 'dh',
-                                            'base text ref', 'base text'])
-    writer.writeheader()
-    for row in all:
-        row['file'] = file
-        writer.writerow(row)
-with open('vilna_mapping.json', 'w') as fp:
-    json.dump(VILNA_MAPPING, fp)
+    with open('gra.csv', 'w', encoding='utf-8', newline='') as fp:
+        writer = csv.DictWriter(fp, fieldnames=['file', 'masechet', 'commentary', 'perek', 'halakha', 'page', 'comment', 'dh',
+                                                'base text ref', 'match by context', 'base text'])
+        writer.writeheader()
+        for row in all:
+            writer.writerow(row)
+    with open('vilna_mapping.json', 'w') as fp:
+        json.dump(VILNA_MAPPING, fp)
 
