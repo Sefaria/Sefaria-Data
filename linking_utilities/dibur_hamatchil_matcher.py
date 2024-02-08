@@ -1190,7 +1190,6 @@ def match_text(base_text, comments, dh_extract_method=lambda x: x,verbose=False,
     curDaf = GemaraDaf(base_text, comments, dh_extract_method, prev_matched_results, dh_split, daf_skips, rashi_skips, overall, lang=lang)
     # now we go through each rashi, and find all potential matches for each, with a rating
     for irashi,ru in enumerate(curDaf.allRashi):
-        print(ru.fullText)
         if ru.startWord != -1:
             # this rashi was initialized with the `prev_matched_results` list and should be ignored with regards to matching
             continue

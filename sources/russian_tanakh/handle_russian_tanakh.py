@@ -8,10 +8,9 @@ import csv
 from sefaria.model import *
 import re
 import requests
-import requests_cache
-requests_cache.install_cache('my_cache', expire_after=3600*24*14)  # Cache expires after 1 hour
+# import requests_cache
+# requests_cache.install_cache('my_cache', expire_after=3600*24*14)
 from bs4 import BeautifulSoup
-
 # from sefaria.helper.schema import insert_last_child, reorder_children
 # from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
@@ -459,31 +458,68 @@ def handle_tanakh_book(book_name):
     book_map = dict(zip(trefs_list, verses_list))
 
     ingest_version(book_map)
-def russian_version_validation():
+
+def is_russian(sentence):
+    # Regular expression to match Russian characters
+    russian_pattern = re.compile('[а-яА-ЯёЁ]+')
+
+    # Search for Russian characters in the sentence
+    match = russian_pattern.search(sentence)
+
+    # If there is a match, the sentence contains Russian characters
+    return bool(match)
+def get_prefix(input_string):
+    index_of_colon = input_string.find(':')
+    if index_of_colon != -1:
+        return input_string[:index_of_colon]
+    else:
+        return input_string
+
+def russian_version_stricter_validation():
     for book in parashot_urls.keys():
         segment_refs = library.get_index(book).all_segment_refs()
         for s_g in segment_refs:
-            en_version_text = s_g.text().text
-            ru_version_text = s_g.text(vtitle="Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky [ru]").text
+            # en_version_text = s_g.text().text
+            # ru_version_text = s_g.text(vtitle="Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky [ru]").text
+            chapter_ref = Ref(get_prefix(s_g.tref))
+            whole_chapter_en = chapter_ref.text().text
+            whole_chapter_ru = chapter_ref.text(vtitle="Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky [ru]").text
+            for en_verse, ru_verse in zip(whole_chapter_en, whole_chapter_ru):
+                if en_verse == ru_verse:
+                    print(chapter_ref)
+
+
+
+def russian_version_validation():
+    for book in parashot_urls.keys():
+        segment_refs = library.get_index(book).all_segment_refs()
+        for s_r in segment_refs:
+            en_version_text = s_r.text().text
+            ru_version_text = s_r.text(vtitle="Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky [ru]").text
+            if s_r == Ref("Judges.5.32"):
+                a = "halt"
             if en_version_text == '' or ru_version_text == '':
-                print(f"problem in {s_g}")
+                print(f"problem in {s_r}")
+
 
 if __name__ == '__main__':
     print("hello world")
-    handle_tanakh_book("Genesis")
-    handle_tanakh_book("Exodus")
-    handle_tanakh_book("Leviticus")
-    handle_tanakh_book("Numbers")
-    handle_tanakh_book("Deuteronomy")
-
-    handle_tanakh_book("Judges")
-    handle_tanakh_book("I_Samuel")
-    handle_tanakh_book("II_Samuel")
-    handle_tanakh_book("I_Kings")
-    handle_tanakh_book("II_Kings")
-    handle_tanakh_book("Ruth")
-    handle_tanakh_book("Esther")
-    russian_version_validation()
+    # handle_tanakh_book("Genesis")
+    # handle_tanakh_book("Exodus")
+    # handle_tanakh_book("Leviticus")
+    # handle_tanakh_book("Numbers")
+    # handle_tanakh_book("Deuteronomy")
+    #
+    # handle_tanakh_book("Judges")
+    # handle_tanakh_book("I_Samuel")
+    # handle_tanakh_book("II_Samuel")
+    # handle_tanakh_book("I_Kings")
+    # handle_tanakh_book("II_Kings")
+    # handle_tanakh_book("Ruth")
+    # handle_tanakh_book("Esther")
+    ru_version_text = Ref("Judges.5").text(vtitle="Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky [ru]").text
+    en_version_text = Ref("Judges.5").text().text
+    russian_version_stricter_validation()
 
 
     print("end")

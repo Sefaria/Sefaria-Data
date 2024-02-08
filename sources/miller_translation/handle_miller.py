@@ -23,9 +23,15 @@ def get_list_of_verses_genesis():
     soup = prepend_to_text_in_elements(soup, "CharOverride-3", new_verse_token)
     soup = prepend_to_text_in_elements(soup, "CharOverride-15", new_verse_token)
     soup = prepend_to_text_in_elements(soup, "CharOverride-2", new_chapter_token)
-    soup = prepend_to_text_in_elements(soup, "_idGenDropcap", new_chapter_token)
+    soup = prepend_to_text_in_elements(soup, "_idGenDropcap-1", new_chapter_token)
+    soup = prepend_to_text_in_elements(soup, "_idGenDropcap-4", new_chapter_token)
+    soup = prepend_to_text_in_elements(soup, "CharOverride-14", new_chapter_token)
     soup = prepend_to_text_in_elements(soup, "CharOverride-16", new_chapter_token)
     soup = prepend_to_text_in_elements(soup, "CharOverride-13", new_chapter_token)
+
+    soup = append_br_for_p(soup)
+
+
     # selected_elements = soup.find_all(class_=lambda x: x and (x.startswith("CharOverride-3") or x.startswith("CharOverride-4") or x.startswith("TRANSLATION-HEADINGS") or x.startswith("TRANSLATION-SMALL-HEADINGS")))
     # selected_elements = find_elements_with_prefix(soup, ["CharOverride-3", "CharOverride-4", "CharOverride-15", "TRANSLATION-HEADINGS", "TRANSLATION-SMALL-HEADINGS"])
     selected_elements = find_elements_with_prefix(soup, ["ParaOverride", "NEW-BULLET", "TRANSLATION-HEADINGS", "PEREK"])
@@ -34,47 +40,12 @@ def get_list_of_verses_genesis():
     clean_text = replace_double_digits(clean_text, new_verse_token)
     clean_text = replace_double_digits(clean_text, new_chapter_token)
     text_list = clean_text.split("$")
+    text_list = [remove_br_from_end(line) for line in text_list]
     text_list = [item.strip() for item in text_list if item.strip()]
     text_list = [line for line in text_list if not line.startswith(new_chapter_token[1:])]
     return text_list
 
-# def get_list_of_verses_leviticus(html_document):
-#     soup = BeautifulSoup(html_document, 'html.parser')
-#     soup = prepend_token_to_classes(soup,["ORANGE-HEADING",
-#                                           "ORANGE-HEADING-BEFORE-AND-AFTER-BULET",
-#                                           "TRANSLATION-HEADINGS",
-#                                     "ORANGE-HAEDING-JUST-AFTER-BULET"],
-#                                     header_token)
-#
-#     soup = prepend_token_to_classes(soup,["CharOverride-2",
-#                                           "CharOverride-6",
-#                                           "CharOverride-5",
-#                                           "CharOverride-10",
-#                                           "CharOverride-19",
-#                                           "CharOverride-15",
-#                                           "CharOverride-24"],
-#                                     new_verse_token)
-#
-#     soup = prepend_token_to_classes(soup, [
-#                                           "_idGenDropcap-1",
-#                                             "_idGenDropcap-2"
-#                                           "CharOverride-22",
-#                                           "CharOverride-9",
-#                                           "CharOverride-21",
-#                                         "CharOverride-18",
-#                                         "CharOverride-23"],
-#                                     new_chapter_token)
-#
-#     selected_elements = find_elements_with_prefix(soup, ["ParaOverride", "NEW-BULLET", "TRANSLATION-HEADINGS", "PEREK", "ORANGE-HEADING", "BULLET-MITZVAH"])
-#     text_list = [element.text for element in selected_elements]
-#     clean_text = ''.join(text_list)
-#     clean_text = replace_double_digits(clean_text, new_verse_token)
-#     clean_text = replace_double_digits(clean_text, new_chapter_token)
-#     text_list = clean_text.split("$")
-#     text_list = [item.strip() for item in text_list if item.strip()]
-#     text_list = [line for line in text_list if not line.startswith(new_chapter_token[1:])]
-#     text_list = [line.replace("[]", "") for line in text_list]
-#     return text_list
+
 def get_list_of_verses_leviticus():
     html_document = open(f"data/Leviticus.html", 'r', encoding='utf-8').read()
 
@@ -89,6 +60,8 @@ def get_list_of_verses_leviticus():
     chapter_classes = ["_idGenDropcap-1", "_idGenDropcap-2", "CharOverride-22", "CharOverride-9", "CharOverride-21", "CharOverride-18", "CharOverride-23"]
     soup = prepend_token_to_classes(soup, chapter_classes, new_chapter_token)
 
+    soup = append_br_for_p(soup)
+
     selected_elements = find_elements_with_prefix(soup, ["ParaOverride", "NEW-BULLET", "TRANSLATION-HEADINGS", "PEREK", "ORANGE-HEADING", "BULLET-MITZVAH"])
     text_list = [element.text for element in selected_elements]
 
@@ -96,7 +69,9 @@ def get_list_of_verses_leviticus():
     clean_text = replace_double_digits(clean_text, new_verse_token)
     clean_text = replace_double_digits(clean_text, new_chapter_token)
 
-    text_list = [item.strip() for item in clean_text.split("$") if item.strip() and not item.startswith(new_chapter_token[1:])]
+    text_list = clean_text.split("$")
+    text_list = [remove_br_from_end(line) for line in text_list]
+    text_list = [item.strip() for item in text_list if item.strip() and not item.startswith(new_chapter_token[1:])]
     text_list = [line.replace("[]", "") for line in text_list]
 
     return text_list
@@ -114,6 +89,8 @@ def get_list_of_verses_numbers():
     chapter_classes = ["CharOverride-10", "CharOverride-1", "_idGenDropcap-1", "_idGenDropcap-3", "CharOverride-25"]
     soup = prepend_token_to_classes(soup, chapter_classes, new_chapter_token)
 
+    soup = append_br_for_p(soup)
+
     selected_elements = find_elements_with_prefix(soup, ["ParaOverride", "NEW-BULLET", "TRANSLATION-HEADINGS", "PEREK", "ORANGE-HEADING", "BULLET-MITZVAH"])
     text_list = [element.text for element in selected_elements]
 
@@ -121,7 +98,9 @@ def get_list_of_verses_numbers():
     clean_text = replace_double_digits(clean_text, new_verse_token)
     clean_text = replace_double_digits(clean_text, new_chapter_token)
 
-    text_list = [item.strip() for item in clean_text.split("$") if item.strip() and not item.startswith(new_chapter_token[1:])]
+    text_list = clean_text.split("$")
+    text_list = [remove_br_from_end(line) for line in text_list]
+    text_list = [item.strip() for item in text_list if item.strip() and not item.startswith(new_chapter_token[1:])]
     text_list = [line.replace("[]", "") for line in text_list]
 
     return text_list
@@ -142,6 +121,8 @@ def get_list_of_verses_deuteronomy():
                        "CharOverride-23", "CharOverride-20", "CharOverride-22"]
     soup = prepend_token_to_classes(soup, chapter_classes, new_chapter_token)
 
+    soup = append_br_for_p(soup)
+
     selected_elements = find_elements_with_prefix(soup, ["ParaOverride", "NEW-BULLET", "TRANSLATION-HEADINGS", "PEREK", "ORANGE-HEADING", "BULLET-MITZVAH"])
     text_list = [element.text for element in selected_elements]
 
@@ -149,7 +130,9 @@ def get_list_of_verses_deuteronomy():
     clean_text = replace_double_digits(clean_text, new_verse_token)
     clean_text = replace_double_digits(clean_text, new_chapter_token)
 
-    text_list = [item.strip() for item in clean_text.split("$") if item.strip() and not item.startswith(new_chapter_token[1:])]
+    text_list = clean_text.split("$")
+    text_list = [remove_br_from_end(line) for line in text_list]
+    text_list = [item.strip() for item in text_list if item.strip() and not item.startswith(new_chapter_token[1:])]
     text_list = [line.replace("[]", "") for line in text_list]
 
     return text_list
@@ -167,6 +150,8 @@ def get_list_of_verses_exodus():
     chapter_classes = ["CharOverride-3", "CharOverride-11", "CharOverride-27"]
     soup = prepend_token_to_classes(soup, chapter_classes, new_chapter_token)
 
+    soup = append_br_for_p(soup)
+
     selected_elements = find_elements_with_prefix(soup, ["ParaOverride", "NEW-BULLET", "TRANSLATION-HEADINGS", "PEREK", "ORANGE-HEADING", "BULLET-MITZVAH"])
     text_list = [element.text for element in selected_elements]
 
@@ -174,11 +159,18 @@ def get_list_of_verses_exodus():
     clean_text = replace_double_digits(clean_text, new_verse_token)
     clean_text = replace_double_digits(clean_text, new_chapter_token)
 
-    text_list = [item.strip() for item in clean_text.split("$") if item.strip() and not item.startswith(new_chapter_token[1:])]
+    text_list = clean_text.split("$")
+    text_list = [remove_br_from_end(line) for line in text_list]
+    text_list = [item.strip() for item in text_list if item.strip() and not item.startswith(new_chapter_token[1:])]
     text_list = [line.replace("[]", "") for line in text_list]
 
     return text_list
 
+def remove_br_from_end(input_string):
+    if input_string.strip().endswith("<br>"):
+        return input_string[:-4].strip()
+    else:
+        return input_string
 def prepend_token_to_classes(soup, classes, token):
     for class_name in classes:
         soup = prepend_to_text_in_elements(soup, class_name, token)
@@ -209,6 +201,14 @@ def prepend_to_text_in_elements(soup, class_name, prepended_text):
             element.string.replace_with(prepended_text + element.get_text().strip())
 
     return soup
+def append_br_for_p(soup):
+    selected_elements = soup.find_all("p")
+
+    for element in selected_elements:
+        if element.string and element.string.strip():
+            element.string.replace_with(element.get_text().strip() + "<br>")
+
+    return soup
 
 def count_elements_with_class(html_document, class_name):
     soup = BeautifulSoup(html_document, 'html.parser')
@@ -231,7 +231,7 @@ def marked_list_to_map(text_list: List[str], book_name: str):
             line = line.replace(header_token[1:], '')
             text_list[index+1] = insert_string_after_number("<b>" + line + "</b>" + "<br>", text_list[index+1])
     for key in text_map:
-        text_map[key] = put_spaces_after_colon(text_map[key])
+        text_map[key] = final_clean(text_map[key])
 
     return text_map
 
@@ -317,11 +317,6 @@ def ingest_version(book_map: Dict):
                        "status": "locked"
                        })
     modify_bulk_text(superuser_id, version, book_map)
-def handle_book(book_name):
-    html_document = open(f"data/{book_name}.html", 'r', encoding='utf-8').read()
-    text_list = get_list_of_verses(html_document)
-    map = marked_list_to_map(text_list, book_name)
-    ingest_version(map)
 
 def find_first_difference(list1, list2):
     min_len = min(len(list1), len(list2))
@@ -332,7 +327,7 @@ def find_first_difference(list1, list2):
 
     # If the lists are of different lengths, return the index of the first differing element
     return min_len if len(list1) != len(list2) else None
-def put_spaces_after_colon(input_string):
+def final_clean(input_string):
     pattern = re.compile(r'([a-zA-Z]):([a-zA-Z])')
 
     result_string = pattern.sub(r'\1: \2', input_string)
@@ -340,21 +335,63 @@ def put_spaces_after_colon(input_string):
     if result_string != input_string:
         print("Match found:", input_string)
 
-    pattern = re.compile(r'\b([A-Z])\.([A-Z])\b')
+    pattern = re.compile(r'\b([a-zA-Z])\.([a-zA-Z])\b')
 
-    result_string = pattern.sub(r'\1. \2', input_string)
+    result_string = pattern.sub(r'\1. \2', result_string)
 
     if result_string != input_string:
         print("Match found:", input_string)
 
+    # if "But when Samson will be overcome by his enemies" in input_string:
+    #     halt = True
+
+    # result_string = re.sub(r'\[.*?\]', '', result_string).strip()
+    #
+    # if result_string != input_string:
+    #     print("Match found:", input_string)
+
+    result_string = result_string.replace("[MAFTIR]", "").strip()
+    if result_string != input_string:
+        print("Match found:", input_string)
+
+    result_string = result_string.replace("<br></b><br>", "</b><br>").strip()
+
+    if result_string != input_string:
+        print("Match found:", input_string)
+
+    # pattern = re.compile(r'([a-zA-Z])-([a-zA-Z])')
+    # result_string = pattern.sub(r'\1- \2', input_string)
+    # if result_string != input_string:
+    #     print("Match found:", input_string)
+
     return result_string
 
-if __name__ == '__main__':
-    print("hello world")
-    # handle_book("Leviticus")
+def handle_books():
     text_list = get_list_of_verses_genesis()
     map = marked_list_to_map(text_list, "Genesis")
     ingest_version(map)
+
+    text_list = get_list_of_verses_exodus()
+    map = marked_list_to_map(text_list, "Exodus")
+    ingest_version(map)
+
+    text_list = get_list_of_verses_leviticus()
+    map = marked_list_to_map(text_list, "Leviticus")
+    ingest_version(map)
+
+    text_list = get_list_of_verses_numbers()
+    map = marked_list_to_map(text_list, "Numbers")
+    ingest_version(map)
+
+    text_list = get_list_of_verses_deuteronomy()
+    map = marked_list_to_map(text_list, "Deuteronomy")
+    ingest_version(map)
+
+
+if __name__ == '__main__':
+    print("hello world")
+    handle_books()
+
 
 
 

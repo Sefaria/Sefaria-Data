@@ -257,91 +257,92 @@ def vina_from_refs(filename, vienna):
         print('error, not one page', filename, nums, a, b, he_mas)
     return nums.pop()
 
-create_manusripts()
-mases = parse_zucker()
-mapping = map(mases)
-conditions = erfurt_chapter()
-erfurt, vienna = parse_csv()
-vienna_filenames = parse_vienna_filenames()
-erfurt_images, vienna_images = {}, {}
-for seder in ['Zeraim', 'Moed', 'Nashim', 'Nezikin', 'Kodashim', 'Tahorot']:
-    inds = library.get_indexes_in_category(['Tosefta', 'Vilna Edition', f'Seder {seder}'])
-    for ind in inds:
-        mas = ind.replace('Tosefta ', '')
-        he_mas = library.get_index(ind).get_title('he').replace('תוספתא ', '')
-        lieb = True if seder in ['Zeraim', 'Moed', 'Nashim'] or (seder == 'Nezikin' and 'Bava' in ind) else False
-        check_erfurt = False if seder in ['Kodashim', 'Tahorot'] and 'Zevachim' not in ind else True
+if __name__ == '__main__':
+    create_manusripts()
+    mases = parse_zucker()
+    mapping = map(mases)
+    conditions = erfurt_chapter()
+    erfurt, vienna = parse_csv()
+    vienna_filenames = parse_vienna_filenames()
+    erfurt_images, vienna_images = {}, {}
+    for seder in ['Zeraim', 'Moed', 'Nashim', 'Nezikin', 'Kodashim', 'Tahorot']:
+        inds = library.get_indexes_in_category(['Tosefta', 'Vilna Edition', f'Seder {seder}'])
+        for ind in inds:
+            mas = ind.replace('Tosefta ', '')
+            he_mas = library.get_index(ind).get_title('he').replace('תוספתא ', '')
+            lieb = True if seder in ['Zeraim', 'Moed', 'Nashim'] or (seder == 'Nezikin' and 'Bava' in ind) else False
+            check_erfurt = False if seder in ['Kodashim', 'Tahorot'] and 'Zevachim' not in ind else True
 
-        if not lieb:
-            for ref in Ref(ind).all_segment_refs():
-                zucker = mapping[ref.tref]
-                for part in zucker.split('-'):
-                    chapter, halakha = part.split(':')
-                    if check_erfurt and ('Zevachim' not in ind or int(chapter) < 6):
-                        nums = map_zucker(he_mas, chapter, halakha, erfurt)
-                        erfurt_images = add_refs(erfurt_images, nums, ref)
-                    vienna_nums = map_zucker(he_mas, chapter, halakha, vienna)
-                    vienna_addres = find_vienna(vienna_filenames[mas], chapter, halakha)
-                    if len(vienna_nums) != len(vienna_addres):
-                        if mas in ['Makkot', 'Makhshirin', 'Zavim', 'Oktsin']:
-                            continue
-                        print(mas, chapter, halakha, len(vienna_nums), len(vienna_addres))
-                    vienna_images = add_refs(vienna_images, vienna_addres, ref)
+            if not lieb:
+                for ref in Ref(ind).all_segment_refs():
+                    zucker = mapping[ref.tref]
+                    for part in zucker.split('-'):
+                        chapter, halakha = part.split(':')
+                        if check_erfurt and ('Zevachim' not in ind or int(chapter) < 6):
+                            nums = map_zucker(he_mas, chapter, halakha, erfurt)
+                            erfurt_images = add_refs(erfurt_images, nums, ref)
+                        vienna_nums = map_zucker(he_mas, chapter, halakha, vienna)
+                        vienna_addres = find_vienna(vienna_filenames[mas], chapter, halakha)
+                        if len(vienna_nums) != len(vienna_addres):
+                            if mas in ['Makkot', 'Makhshirin', 'Zavim', 'Oktsin']:
+                                continue
+                            print(mas, chapter, halakha, len(vienna_nums), len(vienna_addres))
+                        vienna_images = add_refs(vienna_images, vienna_addres, ref)
 
-        else:
-            for ref in Ref(ind).all_segment_refs() + Ref(f'{ind} (Lieberman)'.replace('Kattan', 'Katan')).all_segment_refs():
-                chapter, halakha = ref.tref.split()[-1].split(':')
-                chapter, halakha = int(chapter), int(halakha)
-                edition = 'lieberman' if 'Lieberman' in ref.tref else 'vilna'
-                chapter = chapter + erfurt_diif(conditions, ind, chapter, halakha, edition)
-                nums = map_zucker(he_mas, chapter, None, erfurt)
-                erfurt_images = add_refs(erfurt_images, nums, ref)
-                vienna_nums = map_zucker(he_mas, chapter, None, vienna)
-                vienna_addres = find_vienna(vienna_filenames[mas], chapter, None)
-                vienna_images = add_refs(vienna_images, vienna_addres, ref)
-                if len(vienna_nums) != len(vienna_addres):
-                    print(mas, chapter, halakha, len(vienna_nums), len(vienna_addres))
-
-msp = []
-for images in [erfurt_images, vienna_images]:
-    for num, refs in images.items():
-        if len(num) > 4:
-            f_name = num
-            num = vina_from_refs(f_name, vienna)
-        else:
-            f_name = ''
-        num = int(num)
-        refs = unite_refs(refs)
-        mp = ManuscriptPage()
-        if f_name:
-            mp.image_url = f'https://storage.googleapis.com/manuscripts.sefaria.org/vienna-tosefta/{f_name}.jpg'
-            mp.thumbnail_url = f'https://storage.googleapis.com/manuscripts.sefaria.org/vienna-tosefta/{f_name}_thumbnail.jpg'
-        else:
-            mp.image_url = f'https://storage.googleapis.com/manuscripts.sefaria.org/erfurt-tosefta/{num+3}_erfurt.jpg'
-            mp.thumbnail_url = f'https://storage.googleapis.com/manuscripts.sefaria.org/erfurt-tosefta/{num+3}_erfurt_thumbnail.jpg'
-        #if requests.request('get', mp.image_url).status_code != 200:
-        #    print('error url', mp.image_url)
-        #if requests.request('get', mp.thumbnail_url).status_code != 200:
-        #    print('error url', mp.thumbnail_url)
-        mp.contained_refs = refs
-        if f_name:
-            mp.manuscript_slug = 'wien-oesterreichische-nationalbibliothek-46'
-        else:
-            mp.manuscript_slug = "berlin-staatsbibliothek-or-fol-1220"
-        if f_name:
-            if num < 214 < num < 642:
-                mp.page_id = f'{num//2}r' if num/2 == num//2 else f'{num//2}v'
             else:
-                mp.page_id = f'{num // 2 + 1}r' if num / 2 == num // 2 else f'{num // 2 + 1}v'
-        else:
-            mp.page_id = f'{num//2+1}r' if num/2 == num//2 else f'{num//2+1}v'
-        mp.set_expanded_refs()
-        mp.validate()
-        msp.append(mp.contents())
-        try:
-            mp.save()
-        except (DuplicateKeyError, DuplicateRecordError):
-            pass
+                for ref in Ref(ind).all_segment_refs() + Ref(f'{ind} (Lieberman)'.replace('Kattan', 'Katan')).all_segment_refs():
+                    chapter, halakha = ref.tref.split()[-1].split(':')
+                    chapter, halakha = int(chapter), int(halakha)
+                    edition = 'lieberman' if 'Lieberman' in ref.tref else 'vilna'
+                    chapter = chapter + erfurt_diif(conditions, ind, chapter, halakha, edition)
+                    nums = map_zucker(he_mas, chapter, None, erfurt)
+                    erfurt_images = add_refs(erfurt_images, nums, ref)
+                    vienna_nums = map_zucker(he_mas, chapter, None, vienna)
+                    vienna_addres = find_vienna(vienna_filenames[mas], chapter, None)
+                    vienna_images = add_refs(vienna_images, vienna_addres, ref)
+                    if len(vienna_nums) != len(vienna_addres):
+                        print(mas, chapter, halakha, len(vienna_nums), len(vienna_addres))
 
-with open('msp.json', 'w') as fp:
-    json.dump(msp, fp)
+    msp = []
+    for images in [erfurt_images, vienna_images]:
+        for num, refs in images.items():
+            if len(num) > 4:
+                f_name = num
+                num = vina_from_refs(f_name, vienna)
+            else:
+                f_name = ''
+            num = int(num)
+            refs = unite_refs(refs)
+            mp = ManuscriptPage()
+            if f_name:
+                mp.image_url = f'https://storage.googleapis.com/manuscripts.sefaria.org/vienna-tosefta/{f_name}.jpg'
+                mp.thumbnail_url = f'https://storage.googleapis.com/manuscripts.sefaria.org/vienna-tosefta/{f_name}_thumbnail.jpg'
+            else:
+                mp.image_url = f'https://storage.googleapis.com/manuscripts.sefaria.org/erfurt-tosefta/{num+3}_erfurt.jpg'
+                mp.thumbnail_url = f'https://storage.googleapis.com/manuscripts.sefaria.org/erfurt-tosefta/{num+3}_erfurt_thumbnail.jpg'
+            #if requests.request('get', mp.image_url).status_code != 200:
+            #    print('error url', mp.image_url)
+            #if requests.request('get', mp.thumbnail_url).status_code != 200:
+            #    print('error url', mp.thumbnail_url)
+            mp.contained_refs = refs
+            if f_name:
+                mp.manuscript_slug = 'wien-oesterreichische-nationalbibliothek-46'
+            else:
+                mp.manuscript_slug = "berlin-staatsbibliothek-or-fol-1220"
+            if f_name:
+                if num < 214 < num < 642:
+                    mp.page_id = f'{num//2}r' if num/2 == num//2 else f'{num//2}v'
+                else:
+                    mp.page_id = f'{num // 2 + 1}r' if num / 2 == num // 2 else f'{num // 2 + 1}v'
+            else:
+                mp.page_id = f'{num//2+1}r' if num/2 == num//2 else f'{num//2+1}v'
+            mp.set_expanded_refs()
+            mp.validate()
+            msp.append(mp.contents())
+            try:
+                mp.save()
+            except (DuplicateKeyError, DuplicateRecordError):
+                pass
+
+    with open('msp.json', 'w') as fp:
+        json.dump(msp, fp)
