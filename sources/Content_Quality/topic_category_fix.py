@@ -12,27 +12,21 @@ from sefaria.model import *
 # and a linkType of dependent indicates that x is under parent y.
 # To remove x from y "category", we simply remove the link between the two.
 
-def remove_parent_topic_category(slug):
+def remove_parent_topic_category(from_topic_slug, to_topic_slug=None):
     # Remove "categories" (i.e. parent links) for the slugs
-    tls = IntraTopicLinkSet({'fromTopic': slug,
-                             'class': 'intraTopic',
-                             'linkType': 'displays-under'})
+    query = {'fromTopic': from_topic_slug,
+             'class': 'intraTopic',
+             'linkType': 'displays-under'}
+
+    if to_topic_slug:
+        # Add specific parent if specified
+        query['toTopic'] = to_topic_slug
+
+    tls = IntraTopicLinkSet()
     if tls:
         topic_link = tls[0]
         topic_link.delete()
-        print(f"Deleting category for {slug}")
-
-
-def specific_topic_cat_adjust(from_topic_slug, to_topic_slug):
-    # Remove Sefirot from being under "beliefs" (but not any other parents)
-    tls = IntraTopicLinkSet({'fromTopic': from_topic_slug,
-                             'class': 'intraTopic',
-                             'linkType': 'displays-under',
-                             'toTopic': to_topic_slug})
-
-    if tls:
-        topic_link = tls[0]
-        topic_link.delete()
+        print(f"Deleting category for {from_topic_slug}")
 
 
 if __name__ == '__main__':
@@ -51,8 +45,11 @@ if __name__ == '__main__':
         "priestly-blessing"
     ]
 
+    # Remove all parents for these slugs
     for s in slugs:
-        remove_parent_topic_category(slug=s)
+        remove_parent_topic_category(from_topic_slug=s)
 
-    specific_topic_cat_adjust(from_topic_slug='sefirot',
-                              to_topic_slug='beliefs')
+    # Specifically remove Sefirot from Beliefs, and no other
+    # parent categories (i.e. "Kabbalah").
+    remove_parent_topic_category(from_topic_slug='sefirot',
+                                 to_topic_slug='beliefs')
