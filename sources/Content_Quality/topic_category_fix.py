@@ -4,52 +4,55 @@ django.setup()
 
 from sefaria.model import *
 
-import re
 
-urls = [
-    "https://www.sefaria.org.il/topics/festivals?tab=sources",
-    "https://www.sefaria.org/topics/jewish-calendar2?tab=sheets",
-    "https://www.sefaria.org/topics/kaddish-and-kedushah?tab=sources",
-    "https://www.sefaria.org/topics/lifecycle?tab=sheets",
-    "https://www.sefaria.org/topics/losses?tab=sources",
-    "https://www.sefaria.org/topics/united-states-law?tab=sources",
-    "https://www.sefaria.org.il/topics/festivals?tab=sources",
-    "https://www.sefaria.org/topics/moses-prayer?tab=sources",
-    "https://www.sefaria.org/topics/moses-prayer-for-himself?tab=sources",
-    "https://www.sefaria.org.il/topics/praise-of-god?sort=Relevance&tab=sources",
-    "https://www.sefaria.org.il/topics/priestly-blessing?tab=sources"
-]
+# The goal of this script is to remove the "parent" categories from the following
+# topics (represented below by their URLs).
+# Topics do not have categories the way that Indices do. Topic categories
+# are controlled by the TopicLinks, a topic fromTopic x toTopic y, with a class of "intraTopic"
+# and a linkType of dependent indicates that x is under parent y.
+# To remove x from y "category", we simply remove the link between the two.
 
-# Regular expression pattern
-pattern = r"https://www\.sefaria\.org.*?/topics/(.*)\?"
-
-# List to store extracted slugs
-slugs = []
-
-# Extract slugs from URLs
-for url in urls:
-    match = re.search(pattern, url)
-    if match:
-        slugs.append(match.group(1))
-
-# Remove "categories" (i.e. parent links) for the slugs
-for s in slugs:
-    print(s)
-    tls = IntraTopicLinkSet({'fromTopic': s,
+def remove_parent_topic_category(slug):
+    # Remove "categories" (i.e. parent links) for the slugs
+    tls = IntraTopicLinkSet({'fromTopic': slug,
                              'class': 'intraTopic',
                              'linkType': 'displays-under'})
     if tls:
         topic_link = tls[0]
         topic_link.delete()
-    print()
+        print(f"Deleting category for {slug}")
 
-# Switch Sefirot from being under both "Beliefs" and "Kabbalah"
-# to just "Kaballah".
-tls = IntraTopicLinkSet({'fromTopic': 'sefirot',
-                         'class': 'intraTopic',
-                         'linkType': 'displays-under',
-                         'toTopic': 'beliefs'})
 
-if tls:
-    topic_link=tls[0]
-    topic_link.delete()
+def specific_topic_cat_adjust(from_topic_slug, to_topic_slug):
+    # Remove Sefirot from being under "beliefs" (but not any other parents)
+    tls = IntraTopicLinkSet({'fromTopic': from_topic_slug,
+                             'class': 'intraTopic',
+                             'linkType': 'displays-under',
+                             'toTopic': to_topic_slug})
+
+    if tls:
+        topic_link = tls[0]
+        topic_link.delete()
+
+
+if __name__ == '__main__':
+
+    slugs = [
+        "festivals",
+        "jewish-calendar2",
+        "kaddish-and-kedushah",
+        "lifecycle",
+        "losses",
+        "united-states-law",
+        "festivals",
+        "moses-prayer",
+        "moses-prayer-for-himself",
+        "praise-of-god",
+        "priestly-blessing"
+    ]
+
+    for s in slugs:
+        remove_parent_topic_category(slug=s)
+
+    specific_topic_cat_adjust(from_topic_slug='sefirot',
+                              to_topic_slug='beliefs')
