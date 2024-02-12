@@ -22,9 +22,10 @@ def remove_parent_topic_category(from_topic_slug, to_topic_slug=None):
         # Add specific parent if specified
         query['toTopic'] = to_topic_slug
 
-    tls = IntraTopicLinkSet()
+    tls = IntraTopicLinkSet(query)
     if tls:
         topic_link = tls[0]
+        print(topic_link)
         topic_link.delete()
         print(f"Deleting category for {from_topic_slug}")
 
