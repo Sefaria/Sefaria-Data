@@ -64,7 +64,9 @@ def change_collective_titles():
 
 
 def change_book_titles():
-    for comm in tqdm(IndexSet({'dependence': "Commentary", "title": {"$regex": f"^{old_name}"}})):
+    books = IndexSet({'dependence': "Commentary", "title": {"$regex": f"^{old_name}"}})
+    books = books.array()[:10]
+    for comm in tqdm(books):
         if comm.title.split(" on ")[0] == old_name or f"{old_name} " in comm.title:
             new_comm_title = comm.title.replace(old_name, new_name, 1)
             comm.set_title(new_comm_title)

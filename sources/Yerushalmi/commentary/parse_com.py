@@ -6,10 +6,11 @@ import csv
 import os
 import re
 from sources.functions import getGematria
-from sources.Yerushalmi.yutil import OverlayBuilder
-from sources.tosefta_scans.create_objects import unite_refs
-from data_utilities.dibur_hamatchil_matcher import match_ref
+# from sources.Yerushalmi.yutil import OverlayBuilder
+from sources.tosefta_scans.zuckermandel import unite_refs
+from linking_utilities.dibur_hamatchil_matcher import match_ref
 from sefaria.utils.talmud import section_to_daf, daf_to_section
+from docx import Document
 
 YERUSHALMI = 'Jerusalem Talmud'
 HEB_YER = 'תלמוד ירושלמי'
@@ -65,7 +66,7 @@ VILNA_MAPPING['Jerusalem Talmud Kilayim 3, 12b'] = 'Jerusalem Talmud Kilayim 3:1
 VILNA_MAPPING['Jerusalem Talmud Niddah, 13a'] = 'Jerusalem Talmud Kilayim 4:6-7'
 
 def find_coms():
-    with open ('masechtot.csv', encoding='utf-8', newline='') as fp:
+    with open('masechtot.csv', encoding='utf-8', newline='') as fp:
         data = csv.DictReader(fp)
         fields = data.fieldnames
         return {row['ירושלמי']: [f for f in fields if row[f].isdigit()] for row in data}
@@ -86,36 +87,43 @@ def get_com_data(mas, com):
             else:
                 return ''
 
-    encom = ''.join([transliter(l) for l in com])
+    # encom = ''.join([transliter(l) for l in com])
+    # for root, dirs, files in os.walk('data/'):
+    #     files = [file for file in files if mas in file]
+    #     exact = [file for file in files if encom in file
+    #              and (com!='עמודי ירושלים' or all(w not in file for w in ['btra', 'tnyna']))
+    #              and (com!='ביאור הגר"א' or 'ktb' not in file)]
+    #     if len(exact) == 0:
+    #         regexes = ['h(fnym)', 'ry(dbz)', '(tws)fwt ryd', 'syy(ry )']
+    #         for reg in regexes:
+    #             encom = re.sub(reg, r'\1', encom)
+    #         if encom == 'byawr hgra ktb yd':
+    #             encom = 'ktb yd'
+    #         encom = encom.replace('hghwt yfm', 'mhrm yfm')
+    #         encom = encom.replace('hghwt rda', 'rda')
+    #         encom = encom.replace('mhrm dy lwnzanw', ' lw')
+    #         encom = encom.replace('chydwsy rag', 'ra_g')
+    #         encom = encom.replace('mhra grydts', 'gry')
+    #         exact = [file for file in files if encom in file]
+    #         if len(exact) == 0:
+    #             encom = encom.replace('mhrm yfm', 'mhrm yfym')
+    #             encom = encom.replace('rda', 'rd_a')
+    #             encom = encom.replace('ra_g', 'rag')
+    #             encom = encom.replace(' lw', 'dylw')
+    #             exact = [file for file in files if encom in file]
+    # if len(exact) == 1:
+    #     return open(f'data/{exact[0]}', encoding='utf-8').read()
+    # elif len(exact) == 0:
+    #     print(f'doesnt find com {com}-{encom} on {mas}. all files on masechet:', files)
+    # else:
+    #     print(f'more than on file for commentary {com} on {mas}:', exact)
     for root, dirs, files in os.walk('data/'):
-        files = [file for file in files if mas in file]
-        exact = [file for file in files if encom in file
-                 and (com!='עמודי ירושלים' or all(w not in file for w in ['btra', 'tnyna']))
-                 and (com!='ביאור הגר"א' or 'ktb' not in file)]
-        if len(exact) == 0:
-            regexes = ['h(fnym)', 'ry(dbz)', '(tws)fwt ryd', 'syy(ry )']
-            for reg in regexes:
-                encom = re.sub(reg, r'\1', encom)
-            if encom == 'byawr hgra ktb yd':
-                encom = 'ktb yd'
-            encom = encom.replace('hghwt yfm', 'mhrm yfm')
-            encom = encom.replace('hghwt rda', 'rda')
-            encom = encom.replace('mhrm dy lwnzanw', ' lw')
-            encom = encom.replace('chydwsy rag', 'ra_g')
-            encom = encom.replace('mhra grydts', 'gry')
-            exact = [file for file in files if encom in file]
-            if len(exact) == 0:
-                encom = encom.replace('mhrm yfm', 'mhrm yfym')
-                encom = encom.replace('rda', 'rd_a')
-                encom = encom.replace('ra_g', 'rag')
-                encom = encom.replace(' lw', 'dylw')
-                exact = [file for file in files if encom in file]
-    if len(exact) == 1:
-        return open(f'data/{exact[0]}', encoding='utf-8').read()
-    elif len(exact) == 0:
-        print(f'doesnt find com {com}-{encom} on {mas}. all files on masechet:', files)
-    else:
-        print(f'more than on file for commentary {com} on {mas}:', exact)
+        file = [file for file in files if mas in file][0]
+        if '.doc' in file:
+            doc = Document(f'data/{file}')
+            return '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+        else:
+            return open(f'data/{file}').read()
 
 def find_tags(text):
     base_tag = r'^(?:@\d\d|\d|\$|~|&)'
@@ -382,9 +390,9 @@ def match_between_refs(comments):
             com['base text'] = None
     return comments
 
-def parse_com(com_name, mas):
+def parse_com(com_name, mas, he_mas):
     com = coms_details[com_name]
-    text = get_com_data(mas, com_name)
+    text = get_com_data(he_mas, com_name)
     comments = parse_text(text, mas, com_name)
     comments = match_base(comments)
     comments = match_between_refs(comments)
@@ -407,8 +415,10 @@ if __name__ == '__main__':
             fname = f'csvs/{en_com}/{mas}.csv'
             '''if os.path.isfile(fname):
                 continue'''
+            if 'ביאור' not in com_name:
+                continue
             print(com_name)
-            comments = parse_com(com_name, mas)
+            comments = parse_com(com_name, mas, he_mas)
 
             try:
                 os.mkdir(f'{os.getcwd()}/csvs/{en_com}')

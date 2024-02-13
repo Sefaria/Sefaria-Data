@@ -64,10 +64,12 @@ try:
 except:
     pass
 
+names["De'ot"] = "הלכות דעות"
+names["Foundations of the Torah"] = "הלכות יסודי התורה"
 for book in note_dict:
     root = JaggedArrayNode()
     root.add_structure(["Chapter", "Halacha", "Paragraph"])
-    root.add_primary_titles(f"Steinsaltz on Mishneh Torah, {book}", f"{steinsaltz}, על משנה תורה {names[book]}")
+    root.add_primary_titles(f"Steinsaltz on Mishneh Torah, {book}", f"{steinsaltz}" + " על משנה תורה, " +f"{names[book]}")
     root.key = f"Steinsaltz on Mishneh Torah, {book}"
     root.validate()
     print(root.key)
