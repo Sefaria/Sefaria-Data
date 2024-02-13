@@ -17,20 +17,6 @@ import re
 import copy
 
 
-def list_of_dict_to_links(dicts):
-    list_of_dicts = []
-    for d in dicts:
-        list_of_dicts.append(Link(d))
-    return list_of_dicts
-
-def insert_links_to_db(list_of_dict_links):
-    list_of_links = list_of_dict_to_links(list_of_dict_links)
-    for l in list_of_links:
-        try:
-            l.save()
-        except Exception as e:
-            print(e)
-
 def post_indices():
     from sources.functions import post_index, post_term
     yahel_or_term = {"name": "Yahel Ohr", "titles": [{"lang": "en", "text": "Yahel Ohr", "primary": True},

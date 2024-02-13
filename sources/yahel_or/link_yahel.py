@@ -12,7 +12,18 @@ from typing import List
 from pprint import pprint
 import copy
 
-
+def list_of_dict_to_links(dicts):
+    list_of_dicts = []
+    for d in dicts:
+        list_of_dicts.append(Link(d))
+    return list_of_dicts
+def insert_links_to_db(list_of_dict_links):
+    list_of_links = list_of_dict_to_links(list_of_dict_links)
+    for l in list_of_links:
+        try:
+            l.save()
+        except Exception as e:
+            print(e)
 def get_daf_key(row):
     daf = row['Daf']
     volume_num = len(re.search(r"Volume (I+),", daf).group(1))
@@ -277,7 +288,7 @@ def match_commentary():
     links_to_csv(links, filename="output2.csv")
     sideways_refs = [link["refs"] for link in look_side_ways_links]
     pprint(sideways_refs)
-    # insert_links_to_db(links)
+    insert_links_to_db(links)
 
 
 
