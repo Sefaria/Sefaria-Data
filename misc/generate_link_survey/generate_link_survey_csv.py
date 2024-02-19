@@ -13,7 +13,7 @@ logging.basicConfig(filename='logfile.log', level=logging.INFO)
 
 
 
-def write_errors_to_txt(file_name, list, code="w"):
+def write_errors_to_csv(file_name, list, index_name, code="w"):
     """
     Function to write bad refs in Links to a CSV for future QA.
     This function is a typical "Write-to-file" function, except it has custom styling
@@ -22,8 +22,13 @@ def write_errors_to_txt(file_name, list, code="w"):
     :param list List: A list of the exception in position 0, and the link id in position 1
     :param code String: A code of either "w" (write, overwriting) or "a" (append to existing) determining the write behavior of the function
     """
-    with open(f'{file_name}.txt', code) as file:
-        file.write(str(list[0]) + '. Link ID: ' + str(list[1]._id) + "\n")
+    with open(file_name, code, newline='') as file:
+        # Create a CSV writer
+        writer = csv.DictWriter(file, fieldnames=["index", "link_id", "refs", "error_msg"])
+
+        # Write the data to the CSV file
+        csv_dict = {"index": index_name, "link_id": list[1], "refs": list[2], "error_msg": list[0]}
+        writer.writerow(csv_dict)
 
 
 def write_to_csv(file_name, dict):
@@ -76,7 +81,7 @@ def get_distinct_indices_linked_to_text(ls, index_name):
             idx1 = Ref(link.refs[0]).index.title
             idx2 = Ref(link.refs[1]).index.title
         except Exception as e:
-            write_errors_to_txt("broken_links", [e, link], "a")
+            write_errors_to_csv("broken_links.csv", [e, link._id, link.refs], index_name, "a")
 
         # If the index is already in the dict, increment. If not yet present, add with
         # a value of 1. Check to make sure not counting the index itself (i.e. in a link Genesis-Mekhilta,
@@ -143,6 +148,33 @@ def get_distinct_category_counts(ls, index_name):
     return data
 
 
+def get_word_count(i):
+    vs = VersionSet({"title": i.title})
+
+    # If no version exists
+    if len(vs) < 1:
+        return 0
+
+    # Dictionaries have depth issues for wordcount on Ref, so they
+    # are handled independently here as a version.
+    if i.categories == ['Reference', 'Dictionary']:
+        return vs[0].word_count()
+
+    has_is_primary = False
+    for v in vs:
+        if hasattr(v, 'isPrimary'):
+            has_is_primary = True
+            if v.isPrimary:
+                wc = Ref(v.title).word_count(lang=v.language)
+
+    # No isPrimary on any of the versions
+    if not has_is_primary:
+        first_v = vs[0]
+        wc = Ref(first_v.title).word_count(lang=first_v.language)
+
+    return wc
+
+
 def calculate_stats(node):
     """
     The main engine of this code, this is the callback function passed into traverse_tree()
@@ -177,13 +209,8 @@ def calculate_stats(node):
     result_data["Total Number of Links to Index"] = num_links_to_index
     print(f"{index_name} has {num_links_to_index} total links")
 
-    # Primary version word count
-    v = Version().load({"title": i.title, "isPrimary": True})
-
-    if not v:
-        v = Version().load({"title": i.title})
-
-    num_words_in_primary_version = v.word_count()
+    # Primary version (or if no primary, first version) word count
+    num_words_in_primary_version = get_word_count(i)
 
 
     result_data["Word Count of Primary Version"] = num_words_in_primary_version
@@ -227,7 +254,7 @@ def calculate_stats(node):
         print(f"{index_name} has {num_texts} distinct texts linked in {c}")
         print(f"{index_name} has {num_links} total links linked in {c}")
 
-    write_to_csv("../link_stats.csv", result_data)
+    write_to_csv("links_stats.csv", result_data)
     total_time_end = time.time()
     print(f"Total time for {index_name} is: {(total_time_end - total_time_start) / 60.0}")
     print("----------------------------------\n\n")
@@ -235,7 +262,12 @@ def calculate_stats(node):
 
 if __name__ == '__main__':
     date = time.localtime()
-    file_name = f"link_stats_{date.tm_year}_{date.tm_mday}_{date.tm_mon}_{date.tm_hour}{date.tm_min}{date.tm_sec}.csv"
-    open(file_name, 'a').close()
+    csv_file_path = "links_stats.csv"
+    if os.path.exists(csv_file_path):
+        # Delete the file
+        os.remove(csv_file_path)
+        print(f"The file '{csv_file_path}' has been deleted.")
+    else:
+        print(f"The file '{csv_file_path}' does not exist.")
     root = library.get_toc_tree().get_root()
     root.traverse_tree(calculate_stats)
