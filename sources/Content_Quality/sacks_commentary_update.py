@@ -20,10 +20,14 @@ index_titles = [
 for idx_title in index_titles:
     print(idx_title)
     index_object = Index().load({'title': idx_title})
-    print(index_object)
+
+    # Assign commentary status
     index_object.dependence = "Commentary"
+
+    # Assign a collective title for the Covenant and Conversation indices
     if "Covenant and Conversation" in idx_title:
         index_object.collective_title = "Covenant and Conversation"
+        
     index_object.save()
 
 
