@@ -36,8 +36,8 @@ def attempt_to_match(base_words, comment_list):
     results = match_text(base_words,
                          comment_list,
                          dh_extract_method=extract_dibbur_hamatchil,
-                         word_threshold=0,
-                         char_threshold=0,
+                         word_threshold=0.1,
+                         char_threshold=0.2,
                          lang='he')
     return results
 
@@ -55,19 +55,25 @@ if __name__ == '__main__':
 
         segment_refs_for_parasha = parasha_text_ref.range_list()
 
-        commentary_text = section_title.text(lang="he").text
-        for pasuk_ref in segment_refs_for_parasha:
+        segment_refs_for_commentary = section_title.all_segment_refs()
 
-            pasuk_text = pasuk_ref.text(lang="he", vtitle="Tanach with Text Only").text
-            pasuk_text_words = []
-            pasuk_cleaned = pasuk_text.replace("-", " ")
-            pasuk_text_words += pasuk_cleaned.split(" ")
+        for comm_seg_ref in segment_refs_for_commentary:
 
+            commentary_text = comm_seg_ref.text(lang="he").text
 
-            match = attempt_to_match(base_words=pasuk_text_words, comment_list=commentary_text)
+            for pasuk_ref in segment_refs_for_parasha:
 
-            for i in range(len(match["matches"])):
-                if match["matches"][i] != (-1, -1):
-                    print(f"{section_title} <<>> {pasuk_ref.normal()}")
-                    print(f"Score: {match['matches'][i]} for {match['match_text'][i]}")
+                pasuk_text = pasuk_ref.text(lang="he", vtitle="Tanach with Text Only").text
+                pasuk_text_words = []
+                pasuk_cleaned = pasuk_text.replace("-", " ")
+                pasuk_text_words += pasuk_cleaned.split(" ")
 
+                match = attempt_to_match(base_words=pasuk_text_words, comment_list=[commentary_text])
+
+                for i in range(len(match["matches"])):
+                    if match["matches"][i] != (-1, -1):
+                        num_words = match['match_text'][i][1].split(" ")
+                        if len(num_words) < 2: # ignore one word matches
+                            continue
+                        print(f"{comm_seg_ref.normal()} <<>> {pasuk_ref.normal()}")
+                        print(f"Score: {match['matches'][i]} for {match['match_text'][i]}")
