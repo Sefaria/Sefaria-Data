@@ -6,6 +6,7 @@ superuser_id = 171118
 # import statistics
 import csv
 from sefaria.model import *
+from sefaria.helper.schema import remove_branch
 # from sefaria.helper.schema import insert_last_child, reorder_children
 # from sefaria.helper.schema import remove_branch
 from sefaria.tracker import modify_bulk_text
@@ -457,17 +458,6 @@ def print_dict_values(dict_list, keys):
             if key in d and d[key] != "":
                 print(d[key])
 
-def filter_nodes(structure, predicate):
-    if isinstance(structure, dict):
-        for key, value in structure.items():
-            if predicate(value):
-                yield value
-            yield from filter_nodes(value, predicate)
-    elif isinstance(structure, list):
-        for item in structure:
-            if predicate(item):
-                yield item
-            yield from filter_nodes(item, predicate)
 def replace_substring(data, old_substring, new_substring):
     if isinstance(data, dict):
         for key, value in data.items():
@@ -508,16 +498,32 @@ def create_text_map(lines):
         map[ref] = line.get('text')
     return map
 
+def handle_empty(node):
+    ref = Ref(str(node))
+    if ref.is_empty():
+        print(ref)
+        remove_branch(node)
+
+
+def remove_empty_nodes():
+    raavad_index = library.get_index("Ra'avad on Sifra")
+    raavad_nodes = raavad_index.nodes
+    raavad_nodes.traverse_tree(handle_empty)
+
 
 if __name__ == '__main__':
     print("hello world")
     # create_raavad_index()
-    raavad_lines = csv_to_list_of_dicts('Raavad_on_Sifra_updated.csv')
-    clean_text(raavad_lines)
-    fill_in_schema_data(raavad_lines)
-    add_segment_nums(raavad_lines)
-    text_map = create_text_map(raavad_lines)
-    ingest_raavad(text_map)
+    # raavad_lines = csv_to_list_of_dicts('Raavad_on_Sifra_updated.csv')
+    # clean_text(raavad_lines)
+    # fill_in_schema_data(raavad_lines)
+    # add_segment_nums(raavad_lines)
+    # text_map = create_text_map(raavad_lines)
+    # ingest_raavad(text_map)
+    remove_empty_nodes()
+
+
+
     # sifra = library.get_index("Sifra")
     # # print(chafetz_chaim_schema_string)
     # print(prettify_schema_string(sifra_schema_string))
