@@ -13,10 +13,15 @@ from linking_utilities.dibur_hamatchil_matcher import match_text
 def get_parasha_text_ref(section_title):
     sec_title_key = section_title.normal().split(", ")
     parasha = sec_title_key[1] if "For" not in sec_title_key[1] else None  # filter out holidays
-    if parasha and parasha != "Matot Masei":
-        return Ref(parasha)
-    elif parasha == "Matot Masei":
-        return Ref("Matot-Masei")
+    parasha_transliteration_map = {"Shemot": "Parashat Shemot",
+                                   "Vayikra": "Parashat Vayikra",
+                                   "Bamidbar": "Parashat Bamidbar",
+                                   "Devarim": "Parashat Devarim",
+                                   "Shoftim": "Parashat Shoftim",
+                                   "Matot Masei": "Matot-Masei"}
+    if parasha and parasha in ["Shemot", "Vayikra", "Bamidbar", "Devarim", "Shoftim", "Matot Masei"]:
+        parasha = parasha_transliteration_map[parasha]
+    return Ref(parasha) if parasha else None
 
 
 def extract_dibbur_hamatchil(txt):
@@ -48,19 +53,21 @@ if __name__ == '__main__':
             # Skip holidays
             continue
 
-        parasha_text = parasha_text_ref.text(lang="he", vtitle="Tanach with Text Only").text
-        parasha_text_words = []
-        # TODO - Get the specific ref
-        for perek in parasha_text:
-            for pasuk in perek:
-                pasuk_cleaned = pasuk.replace("-", " ")
-                parasha_text_words += pasuk_cleaned.split(" ")
+        segment_refs_for_parasha = parasha_text_ref.range_list()
 
         commentary_text = section_title.text(lang="he").text
-        print(f"{section_title} <<>> {parasha_text_ref}")
-        match = attempt_to_match(base_words=parasha_text_words, comment_list=commentary_text)
+        for pasuk_ref in segment_refs_for_parasha:
 
-        for i in range(len(match["matches"])):
-            if match["matches"][i] != (-1, -1):
-                print(f"Score: {match['matches'][i]} for {match['match_text'][i]}")
+            pasuk_text = pasuk_ref.text(lang="he", vtitle="Tanach with Text Only").text
+            pasuk_text_words = []
+            pasuk_cleaned = pasuk_text.replace("-", " ")
+            pasuk_text_words += pasuk_cleaned.split(" ")
+
+
+            match = attempt_to_match(base_words=pasuk_text_words, comment_list=commentary_text)
+
+            for i in range(len(match["matches"])):
+                if match["matches"][i] != (-1, -1):
+                    print(f"{section_title} <<>> {pasuk_ref.normal()}")
+                    print(f"Score: {match['matches'][i]} for {match['match_text'][i]}")
 
