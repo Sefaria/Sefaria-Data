@@ -481,6 +481,8 @@ def create_raavad_index():
     raavad_index['schema'] = chafetz_chaim.schema
     replace_substring(raavad_index, 'Chafetz Chaim', "Ra'avad")
     replace_substring(raavad_index, 'חפץ חיים', 'ראב"ד')
+    # raavad_index["categories"] = ["Midrash", "Commentary"]
+    raavad_index['dependence'] = 'commentary'
     post_index(raavad_index)
 
 
@@ -510,6 +512,37 @@ def remove_empty_nodes():
     raavad_nodes = raavad_index.nodes
     raavad_nodes.traverse_tree(handle_empty)
 
+def creaet_link(raavad_ref, sifra_ref):
+    return(
+        {
+            "refs": [
+                raavad_ref,
+                sifra_ref
+            ],
+            # "generated_by": "Guide for the Perplexed_to_Efodi",
+            "type": "Commentary",
+            "auto": True
+        }
+    )
+def insert_dict_links_to_db(list_of_dict_links):
+    list_of_links = []
+    for d in list_of_dict_links:
+        list_of_links.append(Link(d))
+    for l in list_of_links:
+        l.save()
+
+
+def link_raavad():
+    link_dicts = []
+    raavad_index = library.get_index("Ra'avad on Sifra")
+    raavad_refs = raavad_index.all_segment_refs()
+    for ref in raavad_refs:
+        print(ref)
+        raavad_tref = ref.tref
+        sifra_tref = raavad_tref[:raavad_tref.rfind(':')].replace("Ra'avad on ", "")
+        print(sifra_tref)
+        link_dicts += [creaet_link(Ref(raavad_tref).normal(), Ref(sifra_tref).normal())]
+    insert_dict_links_to_db(link_dicts)
 
 if __name__ == '__main__':
     print("hello world")
@@ -520,7 +553,10 @@ if __name__ == '__main__':
     # add_segment_nums(raavad_lines)
     # text_map = create_text_map(raavad_lines)
     # ingest_raavad(text_map)
-    remove_empty_nodes()
+    # remove_empty_nodes()
+
+
+    link_raavad()
 
 
 
