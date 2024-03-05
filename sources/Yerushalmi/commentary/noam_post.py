@@ -54,7 +54,7 @@ def post(mas, com, server, data):
     post_text(title, text_version, server=server, index_count='on')
 
 server = 'http://localhost:8000'
-server = 'https://new-shmuel.cauldron.sefaria.org'
+server = 'https://ahs-yomi.cauldron.sefaria.org'
 comm = 'Noam Yerushalmi'
 make_term_and_cat(server)
 
