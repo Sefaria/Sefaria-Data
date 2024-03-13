@@ -892,14 +892,15 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
             tt_slice = tt[os:oe+1]
 
             for bl in biblset:
+                bible_ref = bl.refs[1] if rr == bl.refs[0] else bl.refs[0]
                 try:
-                    if not Ref(bl.refs[1]).is_segment_level():
+                    if not Ref(bible_ref).is_segment_level():
                         #print bl.refs[1]
                         continue
-                    bt = bible_tokenizer(Ref(bl.refs[1]).text('he','Tanach with Text Only').as_string()) if bl.refs[1] not in bible_array_cache else bible_array_cache[bl.refs[1]]
+                    bt = bible_tokenizer(Ref(bible_ref).text('he','Tanach with Text Only').as_string()) if bible_ref not in bible_array_cache else bible_array_cache[bible_ref]
                 except InputError as e:
                     print(e)
-                    print("This ref is problematic {} on this Talmud ref {}".format(bl.refs[1],str(rr)))
+                    print("This ref is problematic {} on this Talmud ref {}".format(bible_ref,str(rr)))
                     continue
                 bs,be = get_maximum_subset_dh(tt_slice,bt,threshold=85)
                 if bs != -1 and be != -1:
