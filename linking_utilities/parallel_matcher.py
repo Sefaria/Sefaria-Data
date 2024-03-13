@@ -832,11 +832,13 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
     num_nonpasuk_match_words = 4
     mesorat_hashas = json.load(open(mesorat_hashas_name, 'rb'))
 
-    mesechtot_names = get_texts_from_category(category)
+    # mesechtot_names = get_texts_from_category(category)
+    mesechtot_names = ['Mekhilta DeRabbi Yishmael, Tractate Pischa', 'Pesachim 2a-20a']
 
     pickle_jar = {}
     for mes in mesechtot_names:
-        pickle_jar[mes] = pickle.load(open('text_index_map/{}.pkl'.format(mes)))
+        # pickle_jar[mes] = pickle.load(open('text_index_map/{}.pkl'.format(mes)))
+        pickle_jar[mes] = pickle.load(open('text_index_map/{}.pkl'.format(mes), 'rb'))
 
     matches = {}
     for l in mesorat_hashas:
@@ -861,7 +863,8 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
         if ildict % 100 == 0:
             print("{}/{}--------------------------------------------".format(ildict,len_m))
         bad_match = False
-        m = ref1.index.title
+        # m = ref1.index.title
+        m = str(ref1.top_section_ref().index_node)
         ind_list = pickle_jar[m][0]
         for ir,rr in enumerate([ref1,ref2]):
             try:
@@ -923,10 +926,12 @@ def filter_pasuk_matches(category, mesorat_hashas_name):
 
     objStr = json.dumps(bad_mesorat_hashas, indent=4, ensure_ascii=False)
     with open('mesorat_hashas_pasuk_filtered_bad.json', "w") as f:
-        f.write(objStr.encode('utf-8'))
+        # f.write(objStr.encode('utf-8'))
+        f.write(objStr.encode('utf-8').decode('utf-8'))
     objStr = json.dumps(new_mesorat_hashas, indent=4, ensure_ascii=False)
     with open('mesorat_hashas_pasuk_filtered.json', "w") as f:
-        f.write(objStr.encode('utf-8'))
+        # f.write(objStr.encode('utf-8'))
+        f.write(objStr.encode('utf-8').decode('utf-8'))
 
 def filter_close_matches(mesorat_hashas_name, max_cluster_dist=20, filter_only_talmud=False):
 
