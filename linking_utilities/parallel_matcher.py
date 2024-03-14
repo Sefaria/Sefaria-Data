@@ -809,10 +809,12 @@ class ParallelMatcher:
 
 
 
-
+def get_normalizer():
+    from sefaria.helper.normalization import NormalizerComposer
+    return NormalizerComposer(['unidecode', 'br-tag', 'itag', 'html', 'maqaf', 'cantillation', 'double-space'])
 
 def filter_pasuk_matches(category, mesorat_hashas_name):
-
+    normalizer = get_normalizer()
     def bible_tokenizer(s):
 
         words = re.split(r'\s+',re.sub('\u05be', ' ',s))

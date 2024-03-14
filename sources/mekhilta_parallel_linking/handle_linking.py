@@ -4,7 +4,7 @@ django.setup()
 
 from sefaria.model import *
 import re
-import csv
+import csv, json
 # from linking_utilities.parallel_matcher import ParallelMatcher
 from linking_utilities.parallel_matcher import *
 import pandas as pd
@@ -28,8 +28,8 @@ def get_mesorat_hashas_links():
     return filtered_dict
 
 
-def set_up_matcher():
-    matcher = ParallelMatcher(lambda x: re.sub('[^א-ת ]', '', x).split(),
+def set_up_matcher(tokenizer=lambda x: re.sub('[^א-ת ]', '', x).split()):
+    matcher = ParallelMatcher(tokenizer,
                               all_to_all=False,
                               min_words_in_match=5,
                               ngram_size=7,
@@ -48,10 +48,39 @@ def get_snippet_from_mesorah_item(mesorah_item, pm):
     words = pm.word_list_map[mesorah_item.mesechta]
     return " ".join(words[mesorah_item.location[0]:mesorah_item.location[1]+1])
 
+def print_mesorah_json(json_filename):
+    with open(json_filename, 'r') as file:
+        data = json.load(file)
+    list_of_matches = []
+    for item in data:
+        dict_item = {'mekhilta': item[0], 'other': item[1]}
+        list_of_matches.append(dict_item)
+    for match in list_of_matches:
+        print(match['mekhilta'])
+        print(Ref(match['mekhilta']).text(lang="he").as_string())
+        print(match['other'])
+        print(Ref(match['other']).text(lang="he").as_string())
+        print("###################################################")
+def get_normalizer():
+    from sefaria.helper.normalization import NormalizerComposer
+    return NormalizerComposer(['unidecode', 'br-tag', 'itag', 'html', 'maqaf', 'cantillation', 'double-space'])
+
+normalizer = get_normalizer()
+def talmud_tokenizer(s):
+    s = normalizer.normalize(s)
+    s = re.sub(r'\u05BE', ' ', s)  # replace maqaf / hyphen with space
+    s = re.sub(r'[\u0591-\u05C7]', '', s)
+    s = re.sub(r'[\u2000-\u206F\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E]', '', s)  # remove punctuation
+    for match in re.finditer(r'\(.*?\)', s):
+        if library.get_titles_in_string(match.group()) and len(match.group().split()) <= 5:
+            s = s.replace(match.group(), "")
+    words = [w for w in re.split(r'\s+',s) if  w != '']
+    return words
+
 if __name__ == '__main__':
     matched_csv_dict = []
     unmatched_csv_dict = []
-    matcher = set_up_matcher()
+    matcher = set_up_matcher(talmud_tokenizer)
     # links = get_mesorat_hashas_links()
 
     # Try here matching the Mekhilta to Masechet Pesachim as a trial
@@ -66,8 +95,11 @@ if __name__ == '__main__':
 
     # Fallback: Fiddle w params
 
-    # match_list = matcher.match(["Mekhilta DeRabbi Yishmael, Tractate Pischa", "Pesachim 2a-20a"], return_obj=False)
-    filter_pasuk_matches("All", "mesorat_hashas_indexes.json")
+    match_list = matcher.match(["Mekhilta DeRabbi Yishmael, Tractate Pischa", "Pesachim 2a-50a"], return_obj=True)
+
+    # filter_pasuk_matches("All", "mesorat_hashas_indexes.json")
+    # print_mesorah_json("mesorat_hashas_pasuk_filtered_bad.json")
+
 
 
     if match_list:
