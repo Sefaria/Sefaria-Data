@@ -963,7 +963,6 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
         len_prob = len(matches["match_text"][n][0]) < 2 or len(matches["match_text"][n][1]) < 2
         curr_comm_ref = "{} {}".format(comm_ref, n + 1) if len(comments) > 1 else comm_ref
         if match and not len_prob:
-            print(f"{matches['match_text'][n][0]} <<>> {matches['match_text'][n][1]}")
             curr_base_ref = match.normal()
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
                         "type": "Commentary", "auto": True}
