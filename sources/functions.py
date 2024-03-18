@@ -14,6 +14,7 @@ import re
 import bleach
 from pathlib import Path
 from sefaria.utils.hebrew import *
+
 p = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, p)
 sys.path.insert(0, "../")
@@ -21,6 +22,7 @@ from time import sleep
 from collections import defaultdict, Counter
 from .local_settings import *
 import django
+
 django.setup()
 sys.path.insert(0, SEFARIA_PROJECT_PATH)
 from sefaria.model import *
@@ -68,25 +70,25 @@ gematria['ר'] = 200
 gematria['ש'] = 300
 gematria['ת'] = 400
 
-
 inv_gematria = {}
 for key in list(gematria.keys()):
     inv_gematria[gematria[key]] = key
 
-heb_parshiot = ["בראשית","נח", "לך לך", "וירא", "חיי שרה", "תולדות", "ויצא", "וישלח", "וישב", "מקץ",
-"ויגש", "ויחי", "שמות", "וארא", "בא", "בשלח", "יתרו", "משפטים", "תרומה", "תצוה", "כי תשא",
-"ויקהל", "פקודי", "ויקרא", "צו", "שמיני", "תזריע", "מצרע", "אחרי מות", "קדשים", "אמר", "בהר",
-"בחקתי", "במדבר", "נשא", "בהעלתך", "שלח לך", "קרח", "חקת", "בלק", "פינחס", "מטות",
-"מסעי", "דברים", "ואתחנן", "עקב", "ראה", "שפטים", "כי תצא", "כי תבוא", "נצבים",
-"וילך", "האזינו", "וזאת הברכה"]
+heb_parshiot = ["בראשית", "נח", "לך לך", "וירא", "חיי שרה", "תולדות", "ויצא", "וישלח", "וישב", "מקץ",
+                "ויגש", "ויחי", "שמות", "וארא", "בא", "בשלח", "יתרו", "משפטים", "תרומה", "תצוה", "כי תשא",
+                "ויקהל", "פקודי", "ויקרא", "צו", "שמיני", "תזריע", "מצרע", "אחרי מות", "קדשים", "אמר", "בהר",
+                "בחקתי", "במדבר", "נשא", "בהעלתך", "שלח לך", "קרח", "חקת", "בלק", "פינחס", "מטות",
+                "מסעי", "דברים", "ואתחנן", "עקב", "ראה", "שפטים", "כי תצא", "כי תבוא", "נצבים",
+                "וילך", "האזינו", "וזאת הברכה"]
 
 eng_parshiot = ["Bereshit", "Noach", "Lech Lecha", "Vayera", "Chayei Sara", "Toldot", "Vayetzei", "Vayishlach",
-"Vayeshev", "Miketz", "Vayigash", "Vayechi", "Shemot", "Vaera", "Bo", "Beshalach", "Yitro",
-"Mishpatim", "Terumah", "Tetzaveh", "Ki Tisa", "Vayakhel", "Pekudei", "Vayikra", "Tzav", "Shmini",
-"Tazria", "Metzora", "Achrei Mot", "Kedoshim", "Emor", "Behar", "Bechukotai", "Bamidbar", "Nasso",
-"Beha'alotcha", "Sh'lach", "Korach", "Chukat", "Balak", "Pinchas", "Matot", "Masei",
-"Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech", "Ha'Azinu",
-"V'Zot HaBerachah"]
+                "Vayeshev", "Miketz", "Vayigash", "Vayechi", "Shemot", "Vaera", "Bo", "Beshalach", "Yitro",
+                "Mishpatim", "Terumah", "Tetzaveh", "Ki Tisa", "Vayakhel", "Pekudei", "Vayikra", "Tzav", "Shmini",
+                "Tazria", "Metzora", "Achrei Mot", "Kedoshim", "Emor", "Behar", "Bechukotai", "Bamidbar", "Nasso",
+                "Beha'alotcha", "Sh'lach", "Korach", "Chukat", "Balak", "Pinchas", "Matot", "Masei",
+                "Devarim", "Vaetchanan", "Eikev", "Re'eh", "Shoftim", "Ki Teitzei", "Ki Tavo", "Nitzavim", "Vayeilech",
+                "Ha'Azinu",
+                "V'Zot HaBerachah"]
 
 from lxml.html import fromstring
 
@@ -109,6 +111,7 @@ def selenium_get_url(driver_path, url, name=None, driver_options=None):
             f.write(pageSource)
     return pageSource
 
+
 def flatten_list(lst):
     result = []
     for item in lst:
@@ -117,6 +120,7 @@ def flatten_list(lst):
         else:
             result.append(item)
     return result
+
 
 def create_intro():
     intro = JaggedArrayNode()
@@ -127,9 +131,9 @@ def create_intro():
     return intro
 
 
-
 def any_english_in_str(line):
     return re.findall("[a-zA-Z0-9]{1}", line) != []
+
 
 # def is_english_word(line):
 #     if any_english_in_str(line):
@@ -137,7 +141,8 @@ def any_english_in_str(line):
 #         return eng_dictionary.check(line)
 #     return False
 
-def create_simple_index_commentary(en_title, he_title, base_title, categories, addressTypes=None, type="many_to_one", server=SEFARIA_SERVER):
+def create_simple_index_commentary(en_title, he_title, base_title, categories, addressTypes=None, type="many_to_one",
+                                   server=SEFARIA_SERVER):
     '''
     Returns a JSON index object for a simple Index that is a Commentary.
     :param en_title: Name of commentary in English
@@ -155,7 +160,7 @@ def create_simple_index_commentary(en_title, he_title, base_title, categories, a
     he_base_title = base_index.get_title('he')
     he_full_title = "{} על {}".format(he_title, he_base_title)
     root.add_primary_titles(full_title, he_full_title)
-    structure = base_index.nodes.sectionNames #this mimics the structure as "one_to_one"
+    structure = base_index.nodes.sectionNames  # this mimics the structure as "one_to_one"
     if type == "many_to_one":
         structure.append("Comment")
     root.add_structure(structure, address_types=addressTypes)
@@ -173,8 +178,8 @@ def create_simple_index_commentary(en_title, he_title, base_title, categories, a
 
 
 def create_complex_index_torah_commentary(en_title, he_title,
-                                        intro_structure=["Paragraph"],
-                                        path=["Tanakh", "Commentary"], server=SEFARIA_SERVER):
+                                          intro_structure=["Paragraph"],
+                                          path=["Tanakh", "Commentary"], server=SEFARIA_SERVER):
     '''
     Creates a complex index commentary on the Torah.
     :param en_title: English name of commentator
@@ -212,9 +217,6 @@ def create_complex_index_torah_commentary(en_title, he_title,
         "dependence": "Commentary",
         "base_text_titles": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]
     }, server=server)
-
-
-
 
 
 def find_almost_identical(str1, array_of_strings, ratio=0.7):
@@ -257,12 +259,11 @@ def perek_to_number(perek_num):
         return "Not supporting {} yet".format(perek_num)
 
 
-
 def removeExtraSpaces(txt, str=False):
-    txt = txt.replace("\xc2\xa0", " ").replace("\xe2\x80\x83", "")#make sure we only have one kind of space, get rid of unicode space
-    while txt.find("  ") >= 0:          #now get rid of all double spaces
+    txt = txt.replace("\xc2\xa0", " ").replace("\xe2\x80\x83",
+                                               "")  # make sure we only have one kind of space, get rid of unicode space
+    while txt.find("  ") >= 0:  # now get rid of all double spaces
         txt = txt.replace("  ", " ")
-
 
     '''we want to make sure every end bold tag has one and only one space after it
     right now, we know that all instances have one space or zero.
@@ -273,9 +274,10 @@ def removeExtraSpaces(txt, str=False):
     txt = txt.replace("</b>", "</b> ")
 
     txt = txt.replace("( ", "(").replace(" )", ")")
-    txt = txt.replace("<br> ", "<br>") #paragraphs shouldn't start with a space
+    txt = txt.replace("<br> ", "<br>")  # paragraphs shouldn't start with a space
 
     return txt
+
 
 def ChetAndHey(poss_siman, siman):
     if siman - 4 == poss_siman - 8 and poss_siman % 10 == 8:
@@ -295,11 +297,11 @@ def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[], output_f
     time = 0
     output_file = open(output_file, 'a')
     for line in open(file):
-        line = line.replace("\n","")
+        line = line.replace("\n", "")
         if line.find("00") >= 0:
-            time+=1
+            time += 1
         line = line.decode('utf-8')
-        line = line.replace("\u202a", "").replace("\u202c","")
+        line = line.replace("\u202a", "").replace("\u202c", "")
         if len(line) == 0:
             continue
         if len(reg_exp_reset) > 0:
@@ -309,8 +311,8 @@ def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[], output_f
                 in_order_array = []
         find_all = re.findall(reg_exp_tag, line)
         if len(find_all) > 0:
-          for each_one in find_all:
-            in_order_array.append(each_one)
+            for each_one in find_all:
+                in_order_array.append(each_one)
         prev_line = line
     if len(in_order_array) > 0:
         result = in_order(in_order_array)
@@ -319,31 +321,29 @@ def in_order_caller(file, reg_exp_tag, reg_exp_reset="", dont_count=[], output_f
         print(file)
         print(result)
         print("\n")
-        output_file.write(file.encode('utf-8')+"\n")
-        output_file.write("חסר פרק "+result.encode('utf-8')+"\n\n\n")
+        output_file.write(file.encode('utf-8') + "\n")
+        output_file.write("חסר פרק " + result.encode('utf-8') + "\n\n\n")
     output_file.close()
 
 
-
-
 def in_order_multiple_segments(line, curr_num, increment_by):
-     if len(line) > 0 and line[0] == ' ':
-         line = line[1:]
-     if len(line) > 0 and line[len(line)-1] == ' ':
-         line = line[:-1]
-     if len(line.split(" "))>1:
-         all = line.split(" ")
-         num_list = []
-         for i in range(len(all)):
-             num_list.append(getGematria(all[i]))
-         num_list = sorted(num_list)
-         for poss_num in num_list:
-             poss_num = fixChetHay(poss_num, curr_num)
-             if poss_num < curr_num:
-                 return -1
-             else:
-                 curr_num = poss_num
-     return curr_num
+    if len(line) > 0 and line[0] == ' ':
+        line = line[1:]
+    if len(line) > 0 and line[len(line) - 1] == ' ':
+        line = line[:-1]
+    if len(line.split(" ")) > 1:
+        all = line.split(" ")
+        num_list = []
+        for i in range(len(all)):
+            num_list.append(getGematria(all[i]))
+        num_list = sorted(num_list)
+        for poss_num in num_list:
+            poss_num = fixChetHay(poss_num, curr_num)
+            if poss_num < curr_num:
+                return -1
+            else:
+                curr_num = poss_num
+    return curr_num
 
 
 def fixChetHay(poss_num, curr_num):
@@ -358,29 +358,29 @@ def fixChetHay(poss_num, curr_num):
 
 
 def in_order(list_tags, multiple_segments=False, dont_count=[], increment_by=1):
-     poss_num = 0
-     curr_num = 0
-     perfect = True
-     for line in list_tags:
-         actual_line = line
-         for word in dont_count:
+    poss_num = 0
+    curr_num = 0
+    perfect = True
+    for line in list_tags:
+        actual_line = line
+        for word in dont_count:
             line = line.replace(word, "")
-         if multiple_segments == True:
-             curr_num = in_order_multiple_segments(line, curr_num, increment_by)
-         else:
-             poss_num = getGematria(line)
-             poss_num = fixChetHay(poss_num, curr_num)
-             if increment_by > 0:
-                 if poss_num - curr_num != increment_by:
-                     perfect = False
-             if poss_num < curr_num:
-                 perfect = False
-             curr_num = poss_num
-             if perfect == False:
-                 return actual_line
-             prev_line = line
+        if multiple_segments == True:
+            curr_num = in_order_multiple_segments(line, curr_num, increment_by)
+        else:
+            poss_num = getGematria(line)
+            poss_num = fixChetHay(poss_num, curr_num)
+            if increment_by > 0:
+                if poss_num - curr_num != increment_by:
+                    perfect = False
+            if poss_num < curr_num:
+                perfect = False
+            curr_num = poss_num
+            if perfect == False:
+                return actual_line
+            prev_line = line
 
-     return ""
+    return ""
 
 
 def wordHasNekudot(word):
@@ -405,6 +405,7 @@ def wordHasNekudot(word):
     data = data.replace("\u05C4", "")
     return data != word.decode('utf-8')
 
+
 def strip_nekud(word):
     data = word.replace("\u05B0", "")
     data = data.replace("\u05B1", "")
@@ -428,25 +429,25 @@ def strip_nekud(word):
 
 
 def getHebrewParsha(eng_parsha):
-    count=0
+    count = 0
     eng_parsha = eng_parsha.replace("’", "'")
     for this_parsha in eng_parshiot:
         this_parsha = this_parsha.replace("’", "'")
-        if this_parsha==eng_parsha:
+        if this_parsha == eng_parsha:
             return heb_parshiot[count]
-        count+=1
+        count += 1
 
 
 def getHebrewTitle(sefer, SEFARIA_SERVER='http://www.sefaria.org/'):
-   sefer = sefer.title() 
-   sefer_url = SEFARIA_SERVER+'api/index/'+sefer.replace(" ","_")
-   req = urllib.request.Request(sefer_url)
-   res = urllib.request.urlopen(req)
-   data = json.load(res)
-   return data['heTitle']
+    sefer = sefer.title()
+    sefer_url = SEFARIA_SERVER + 'api/index/' + sefer.replace(" ", "_")
+    req = urllib.request.Request(sefer_url)
+    res = urllib.request.urlopen(req)
+    data = json.load(res)
+    return data['heTitle']
 
 
-def removeAllTags(orig_string, array = ['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], replace_with=""):
+def removeAllTags(orig_string, array=['@', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], replace_with=""):
     for unwanted_string in array:
         orig_string = orig_string.replace(unwanted_string, "")
     return orig_string
@@ -463,7 +464,7 @@ def convertDictToArray(dict, empty=[]):
             count += 1
         else:
             diff = int(key) - count
-            while(diff > 0):
+            while (diff > 0):
                 array.append(empty)
                 diff -= 1
             array.append(dict[key])
@@ -473,13 +474,14 @@ def convertDictToArray(dict, empty=[]):
 
 def compileCommentaryIntoPage(title, daf):
     page = []
-    ref = Ref(title+" "+AddressTalmud.toStr("en", daf)+".1")
+    ref = Ref(title + " " + AddressTalmud.toStr("en", daf) + ".1")
     while ref is not None and ref.normal().find(AddressTalmud.toStr("en", daf)) >= 0:
         text = ref.text('he').text
         for line in text:
             page.append(line)
         ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
     return page
+
 
 def remove_numbers(text):
     digit_pattern = re.compile("^\d+\.")
@@ -521,28 +523,26 @@ def get_rid_of_numbers(book, version_title, version_source, get_server, post_ser
         post_text(section.normal(), send_text, server=post_server)
 
 
-
-
-
 def lookForLineInCommentary(title, daf, line_n):
     total_count = 0
-    ref = Ref(title+" "+AddressTalmud.toStr("en", daf)+":1")
+    ref = Ref(title + " " + AddressTalmud.toStr("en", daf) + ":1")
     while ref is not None and ref.normal().find(AddressTalmud.toStr("en", daf)) >= 0:
         text = ref.text('he').text
         local_count = 0
         for line in text:
-            local_count+=1
-            total_count+=1
+            local_count += 1
+            total_count += 1
             if total_count == line_n:
-                return ref.normal()+"."+str(local_count)
+                return ref.normal() + "." + str(local_count)
         ref = ref.next_section_ref() if ref.next_section_ref() != ref else None
     return ""
 
 
 def onlyOne(text, subset):
-    if text.find(subset)>=0 and text.find(subset)==text.rfind(subset):
+    if text.find(subset) >= 0 and text.find(subset) == text.rfind(subset):
         return True
     return False
+
 
 def get_all_non_ascii(text):
     non = [x for x in text if ord(x) >= 128]
@@ -551,20 +551,19 @@ def get_all_non_ascii(text):
         non_ascii_set.add(each_char)
     return non_ascii_set
 
+
 def replaceBadNodeTitlesHelper(title, replaceBadNodeTitles, bad_char, good_char):
-    url = SEFARIA_SERVER+'api/index/'+title.replace(" ", "_")
+    url = SEFARIA_SERVER + 'api/index/' + title.replace(" ", "_")
     req = urllib.request.Request(url)
     data = json.load(urllib.request.urlopen(req))
     replaceBadNodeTitles(bad_char, good_char, data)
     post_index(data)
 
 
-
-
 def checkLengthsDicts(x_dict, y_dict):
     for daf in x_dict:
         if len(x_dict[daf]) != len(y_dict[daf]):
-            print("{} by {}".format(daf+1, len(x_dict[daf]) - len(y_dict[daf])))
+            print("{} by {}".format(daf + 1, len(x_dict[daf]) - len(y_dict[daf])))
 
 
 def weak_connection(func):
@@ -575,7 +574,7 @@ def weak_connection(func):
         weak_network = kwargs.pop('weak_network', False)
         num_tries = kwargs.pop('num_tries', 3)
         if weak_network:
-            for i in range(num_tries-1):
+            for i in range(num_tries - 1):
                 try:
                     result = func(*args, **kwargs)
                 except (HTTPError, URLError, requests.exceptions.ConnectionError) as e:
@@ -586,6 +585,7 @@ def weak_connection(func):
         if not success:
             result = func(*args, **kwargs)
         return result
+
     return post_weak_connection
 
 
@@ -626,28 +626,26 @@ def http_request(url, params=None, body=None, json_payload=None, method="GET"):
         return response.text
 
 
-
 def make_title(text):
     '''
     Takes as input a node named 'text' and capitalizes it appropriately
     :param text:
     :return:
     '''
-    #first clean up text
+    # first clean up text
     text = text.strip()
 
-
-    #just make sure there aren't double spaces in the name or code below fails
+    # just make sure there aren't double spaces in the name or code below fails
     text = text.replace("  ", " ")
     stop_words = ["a", "the", "on", "is", "of", "in", "to", "and", "by", "or", "within", "other", "their", "who"]
     roman_letters = ["i", "v", "x", "l"]
     other_starts = ['"', "'", '(', '[']
 
-    #capitalize first letter no matter what so add the first word to new_text because it's fine as it is
+    # capitalize first letter no matter what so add the first word to new_text because it's fine as it is
     text = text[0].upper() + text[1:].lower()
     new_text = text.split(" ")[0] + " "
 
-    #capitalize non-stopwords
+    # capitalize non-stopwords
     for word in text.split()[1:]:
         is_roman_numeral = [x for x in word if x not in roman_letters] == ""
         if is_roman_numeral:
@@ -664,8 +662,9 @@ def make_title(text):
 
     return new_text
 
+
 @weak_connection
-def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key = API_KEY):
+def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key=API_KEY):
     url = server + "/api/sheets{}".format("/{}/add".format(spec_sheet_id) if len(spec_sheet_id) > 0 else '')
     response = http_request(url, body={"apikey": api_key, "rebuildNodes": True}, json_payload=sheet, method="POST")
     if isinstance(response, dict):
@@ -675,12 +674,13 @@ def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key = API_KEY
             f.write(response)
         return response
 
+
 @weak_connection
 def post_index(index, server=SEFARIA_SERVER, method="POST", dump_json=False):
     if dump_json:
         with open('index_json.json', 'w') as fp:
             json.dump(index, fp)
-    url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
+    url = server + '/api/v2/raw/index/' + index["title"].replace(" ", "_")
     return http_request(url, body={'apikey': API_KEY}, json_payload=index, method=method)
     # indexJSON = json.dumps(index)
     # values = {
@@ -701,13 +701,14 @@ def post_index(index, server=SEFARIA_SERVER, method="POST", dump_json=False):
 def hasTags(comment):
     mod_comment = removeAllTags(comment)
     return mod_comment != comment
-     
+
+
 @weak_connection
 def post_category(category_dict, server=SEFARIA_SERVER):
-    url = server+'/api/category/'
+    url = server + '/api/category/'
     return requests.post(url, data={'apikey': API_KEY, 'json': json.dumps(category_dict)})
 
-    
+
 def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
     """
     Familiarize yourself with Categories as First Class Objects before using this method:
@@ -740,12 +741,13 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
 
     # add missing parents
     closest_parent = response['closest_parent']['lastPath']
-    missing_parents = path[path.index(closest_parent)+1:-1]  # grab everything between lastParent and current category
+    missing_parents = path[path.index(closest_parent) + 1:-1]  # grab everything between lastParent and current category
     for parent in missing_parents:
-        add_category(parent, path[:path.index(parent)+1], server=server)
+        add_category(parent, path[:path.index(parent) + 1], server=server)
 
     if he_title is None:  # upload using a sharedTerm
-        response = requests.get('{}/api/terms/{}'.format(server, en_title)).json()  # check if term exists at destination
+        response = requests.get(
+            '{}/api/terms/{}'.format(server, en_title)).json()  # check if term exists at destination
 
         if response.get('error') is not None:
             term = Term().load({'name': en_title})
@@ -774,11 +776,12 @@ def post_link(info, server=SEFARIA_SERVER, skip_lang_check=True, VERBOSE=True, m
     if dump_json:
         with open('links_dump.json', 'w') as fp:
             json.dump(info, fp)
-    url = server+'/api/links/' if not skip_lang_check else server+"/api/links/?skip_lang_check=1"
+    url = server + '/api/links/' if not skip_lang_check else server + "/api/links/?skip_lang_check=1"
     result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method=method)
     if VERBOSE:
         print(result)
     return result
+
 
 @weak_connection
 def delete_link(id_or_ref, server=SEFARIA_SERVER, VERBOSE=False):
@@ -788,6 +791,7 @@ def delete_link(id_or_ref, server=SEFARIA_SERVER, VERBOSE=False):
     if VERBOSE:
         print(result)
     return result
+
 
 def post_link_weak_connection(info, repeat=10):
     url = SEFARIA_SERVER + '/api/links/'
@@ -818,9 +822,8 @@ def post_link_weak_connection(info, repeat=10):
         sys.exit(1)
 
 
-
 def roman_to_int(input):
-   """
+    """
    Convert a roman numeral to an integer.
 
    >>> r = range(1, 4000)
@@ -846,38 +849,39 @@ def roman_to_int(input):
     ...
    ValueError: input is not a valid roman numeral: IL
    """
-   if type(input) != type(""):
-      raise TypeError("expected string, got %s" % type(input))
-   input = input.upper()
-   nums = ['M', 'D', 'C', 'L', 'X', 'V', 'I']
-   input = "".join([i for i in input if i in nums])
-   ints = [1000, 500, 100, 50,  10,  5,   1]
-   places = []
-   for c in input:
-      if not c in nums:
-         raise ValueError("input is not a valid roman numeral: %s" % input)
-   for i in range(len(input)):
-      c = input[i]
-      value = ints[nums.index(c)]
-      # If the next place holds a larger number, this value is negative.
-      try:
-         nextvalue = ints[nums.index(input[i +1])]
-         if nextvalue > value:
-            value *= -1
-      except IndexError:
-         # there is no next place.
-         pass
-      places.append(value)
-   sum = 0
-   for n in places: sum += n
-   # Easiest test for validity...
-   if int_to_roman(sum) == input:
-      return sum
-   else:
-      raise ValueError('input is not a valid roman numeral: %s' % input)
+    if type(input) != type(""):
+        raise TypeError("expected string, got %s" % type(input))
+    input = input.upper()
+    nums = ['M', 'D', 'C', 'L', 'X', 'V', 'I']
+    input = "".join([i for i in input if i in nums])
+    ints = [1000, 500, 100, 50, 10, 5, 1]
+    places = []
+    for c in input:
+        if not c in nums:
+            raise ValueError("input is not a valid roman numeral: %s" % input)
+    for i in range(len(input)):
+        c = input[i]
+        value = ints[nums.index(c)]
+        # If the next place holds a larger number, this value is negative.
+        try:
+            nextvalue = ints[nums.index(input[i + 1])]
+            if nextvalue > value:
+                value *= -1
+        except IndexError:
+            # there is no next place.
+            pass
+        places.append(value)
+    sum = 0
+    for n in places: sum += n
+    # Easiest test for validity...
+    if int_to_roman(sum) == input:
+        return sum
+    else:
+        raise ValueError('input is not a valid roman numeral: %s' % input)
+
 
 def int_to_roman(input):
-   """
+    """
    Convert an integer to Roman numerals.
 
    Examples:
@@ -920,28 +924,46 @@ def int_to_roman(input):
    >>> print int_to_roman(1999)
    MCMXCIX
    """
-   if type(input) != type(1):
-      raise TypeError("expected integer, got %s" % type(input))
-   if not 0 < input < 4000:
-      raise ValueError("Argument must be between 1 and 3999")
-   ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,  4,   1)
-   nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
-   result = ""
-   for i in range(len(ints)):
-      count = int(input / ints[i])
-      result += nums[i] * count
-      input -= ints[i] * count
-   return result
+    if type(input) != type(1):
+        raise TypeError("expected integer, got %s" % type(input))
+    if not 0 < input < 4000:
+        raise ValueError("Argument must be between 1 and 3999")
+    ints = (1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1)
+    nums = ('M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I')
+    result = ""
+    for i in range(len(ints)):
+        count = int(input / ints[i])
+        result += nums[i] * count
+        input -= ints[i] * count
+    return result
 
-def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle="", generated_by="", padding=False):
+
+def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle="", generated_by="",
+                        padding=False):
+    """
+    A wrapper for match_ref which uses the Dibbur HaMatchil matcher to create links between a base text and
+    a commentary text.
+
+    :param base_ref: The tref for the section of the base text (i.e. if trying to match Rashi on Genesis with Genesis, this is the Genesis section-level tref)
+    :param comm_ref: A unique ID (string) for every commentary ref, can simply be the commentary tref. Using the commentary tref will yield the most descriptive links.
+    :param comments: A list text segments of the commentary text (i.e. ["text of comment 1", "text of comment 2"]).
+    :param base_tokenizer: Pass a callback function that determines how we want to split the segments of commentary by words. This is the place for normalization, removing nikkud, etc to streamline the match.
+    :param dh_extract_method: Pass a callback function that determines how to extract the dibbur hamatchil from the base text
+    :param vtitle: Version title
+    :param generated_by: String for links
+    :param padding: Add an empty link
+    :return: List of links matched using the match_ref function of the Dibbur HaMatchil Matcher
+    """
     generated_by_str = Ref(base_ref).index.title + "_to_" + comm_ref.split()[0] if generated_by == "" else generated_by
     links = []
-    base = TextChunk(Ref(base_ref), lang='he', vtitle=vtitle) if vtitle else TextChunk(Ref(base_ref), lang='he', vtitle=vtitle)
+    base = TextChunk(Ref(base_ref), lang='he', vtitle=vtitle) if vtitle else TextChunk(Ref(base_ref), lang='he',
+                                                                                       vtitle=vtitle)
     matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)
     for n, match in enumerate(matches["matches"]):
         len_prob = len(matches["match_text"][n][0]) < 2 or len(matches["match_text"][n][1]) < 2
         curr_comm_ref = "{} {}".format(comm_ref, n + 1) if len(comments) > 1 else comm_ref
         if match and not len_prob:
+            print(f"{matches['match_text'][n][0]} <<>> {matches['match_text'][n][1]}")
             curr_base_ref = match.normal()
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
                         "type": "Commentary", "auto": True}
@@ -949,6 +971,7 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
         elif padding:
             links.append({})
     return links
+
 
 def is_index(poss_index):
     try:
@@ -961,14 +984,15 @@ def is_index(poss_index):
 def post_link_in_steps(links, step=0, sleep_amt=5, server=SEFARIA_SERVER):
     pos = 0
     if step == 0:
-        step = int(len(links)/4)
+        step = int(len(links) / 4)
     for i in range(0, len(links), step):
-        post_link(links[pos:pos+step], server=server)
+        post_link(links[pos:pos + step], server=server)
         pos += step
         sleep(sleep_amt)
 
+
 def resegment_X_based_on_Y(ref, X, Y):
-    #X and Y are TextChunks with Ref = ref but different version titles
+    # X and Y are TextChunks with Ref = ref but different version titles
 
     def fix(results, i, X_words):
         if i == 0:
@@ -997,7 +1021,7 @@ def resegment_X_based_on_Y(ref, X, Y):
     X_words = " ".join(X.text).split()
     len_results = len(results["match_word_indices"])
 
-    #get rid of (-1, -1)s
+    # get rid of (-1, -1)s
     for i, tuple in enumerate(reversed(results["match_word_indices"])):
         prev = results["match_word_indices"][len_results - i - 2] if i < len_results - 1 else (1, 1)
         curr = tuple[1]
@@ -1010,7 +1034,7 @@ def resegment_X_based_on_Y(ref, X, Y):
             results["match_word_indices"][len_results - i - 2] = fix(results["match_word_indices"], len_results - i - 2,
                                                                      X_words)
 
-    #use match_word_indices to resegment X_words
+    # use match_word_indices to resegment X_words
     for i, tuple in enumerate(reversed(results["match_word_indices"])):
         prev = results["match_word_indices"][len_results - i - 2] if i < len_results - 1 else (-1, -1)
         curr = tuple[1]
@@ -1020,11 +1044,11 @@ def resegment_X_based_on_Y(ref, X, Y):
     return resegmented_X
 
 
-def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, talmud=True, lang='he', word_threshold=0.27, server="", rashi_filter=None, dh_extract_method=lambda x: x):
+def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, talmud=True, lang='he',
+                                  word_threshold=0.27, server="", rashi_filter=None, dh_extract_method=lambda x: x):
     def base_tokenizer(str):
         str_list = str.split(" ")
         return [str for str in str_list if len(str) > 0]
-
 
     assert len(server) > 0, "Please specify a server"
     results = {}
@@ -1041,16 +1065,18 @@ def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, ta
             comm_ref = "{} on {} {}".format(commentary_title, base_text_title, daf)
         base_text = TextChunk(Ref(base_text_ref), lang=lang)
         comm_text = TextChunk(Ref(comm_ref), lang=lang)
-        results[daf] = match_ref(base_text, comm_text, base_tokenizer=base_tokenizer, word_threshold=word_threshold, rashi_filter=rashi_filter, dh_extract_method=dh_extract_method)["matches"]
+        results[daf] = match_ref(base_text, comm_text, base_tokenizer=base_tokenizer, word_threshold=word_threshold,
+                                 rashi_filter=rashi_filter, dh_extract_method=dh_extract_method)["matches"]
         for count, link in enumerate(results[daf]):
             if link:
                 base_end = link.normal()
-                comm_end = "{} on {} {}:{}".format(commentary_title, base_text_title, AddressTalmud.toStr("en", daf), count+1)
+                comm_end = "{} on {} {}:{}".format(commentary_title, base_text_title, AddressTalmud.toStr("en", daf),
+                                                   count + 1)
                 links.append({
                     "refs": [base_end, comm_end],
                     "auto": True,
                     "type": "commentary",
-                    "generated_by": commentary_title+base_text_title
+                    "generated_by": commentary_title + base_text_title
                 })
                 matched += 1
             total += 1
@@ -1059,6 +1085,7 @@ def get_matches_for_dict_and_link(dh_dict, base_text_title, commentary_title, ta
     post_link(links, server=server)
 
     return results
+
 
 def create_payload_and_post_text(ref, text, language, vtitle, vsource, server=SEFARIA_SERVER):
     post_text(ref, {
@@ -1097,6 +1124,7 @@ def first_word_with_period(str):
             return i
     return len(str.split(" "))
 
+
 @weak_connection
 def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SERVER, dump_json=False):
     """
@@ -1112,7 +1140,7 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
             json.dump(text, fp)
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
-    url = server+'/api/texts/'+ref
+    url = server + '/api/texts/' + ref
     params, body = {}, {'apikey': API_KEY}
     if 'status' not in params:
         params['status'] = 'locked'
@@ -1139,6 +1167,7 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
     #     with open('errors.html', 'w') as errors:
     #         errors.write(e.read())
 
+
 def re_split_line(line, pattern):
     '''
     this function splits a string based on a regular expression pattern so that the resultant array of strings
@@ -1148,7 +1177,7 @@ def re_split_line(line, pattern):
     :return: array of strings
     '''
 
-    #first make sure pattern is surrounded by parenthesis so that re.split will give us an array like:
+    # first make sure pattern is surrounded by parenthesis so that re.split will give us an array like:
     # 0: pattern
     # 1: text
     # 2: pattern
@@ -1173,10 +1202,9 @@ def re_split_line(line, pattern):
         fix_pos_in_arr = 1
 
     for i, line in enumerate(lines):
-        pos_in_arr = int(i/2) + fix_pos_in_arr
+        pos_in_arr = int(i / 2) + fix_pos_in_arr
         text[pos_in_arr] += line
     return text
-
 
 
 def post_text_weak_connection(ref, text, index_count="off", repeat=10):
@@ -1205,7 +1233,7 @@ def post_text_weak_connection(ref, text, index_count="off", repeat=10):
                 errors.write(e.read())
             continue
         except Exception as e:
-            print('Exception {}'.format(i+1))
+            print('Exception {}'.format(i + 1))
             continue
     else:
         print('too many errors')
@@ -1250,8 +1278,9 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
     """
     textJSON = json.dumps(flags)
     version['ref'] = version['ref'].replace(' ', '_')
-    url = server+'/api/version/flags/{}/{}/{}'.format(
-        urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']), urllib.parse.quote(version['vtitle']).encode('utf-8')
+    url = server + '/api/version/flags/{}/{}/{}'.format(
+        urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']),
+        urllib.parse.quote(version['vtitle']).encode('utf-8')
     )
     values = {'json': textJSON, 'apikey': API_KEY}
     data = urllib.parse.urlencode(values).encode('utf-8')
@@ -1288,9 +1317,9 @@ def post_term(term_dict, server=SEFARIA_SERVER, update=False):
 
 def add_term(en_title, he_title, scheme='toc_categories', server=SEFARIA_SERVER):
     term_dict = {
-    'name': en_title,
-    'scheme': scheme,
-    'titles': [{'lang': 'en', 'text': en_title, 'primary': True}, {'lang': 'he', 'text': he_title, 'primary': True}]
+        'name': en_title,
+        'scheme': scheme,
+        'titles': [{'lang': 'en', 'text': en_title, 'primary': True}, {'lang': 'he', 'text': he_title, 'primary': True}]
     }
     res = post_term(term_dict, server)
 
@@ -1304,7 +1333,7 @@ def add_title_existing_term(name, title, lang="en", server=SEFARIA_SERVER):
     :param server:
     :return:
     '''
-    url = server+"/api/terms/"+name
+    url = server + "/api/terms/" + name
     term = http_request(url)
     new_title = {'lang': lang, 'text': title}
     term["titles"].append(new_title)
@@ -1313,16 +1342,18 @@ def add_title_existing_term(name, title, lang="en", server=SEFARIA_SERVER):
 
 def get_index_api(ref, server='http://www.sefaria.org'):
     ref = ref.replace(" ", "_")
-    url = server+'/api/v2/raw/index/'+ref
+    url = server + '/api/v2/raw/index/' + ref
     # req = urllib2.Request(url)
     # response = urllib2.urlopen(req)
     # data = json.load(response)
     return http_request(url)
 
+
 def get_links(ref, server="http://www.sefaria.org"):
     ref = ref.replace(" ", "_")
-    url = server+'/api/links/'+ref+"?skip_lang_check=1"
+    url = server + '/api/links/' + ref + "?skip_lang_check=1"
     return http_request(url)
+
 
 def get_text(ref, lang="", versionTitle="", server="http://draft.sefaria.org"):
     ref = ref.replace(" ", "_")
@@ -1338,9 +1369,10 @@ def get_text(ref, lang="", versionTitle="", server="http://draft.sefaria.org"):
     except:
         print('Error')
 
+
 def get_text_plus(ref, SERVER='www'):
-    #ref = Ref(ref).url()
-    url = 'http://'+SERVER+'.sefaria.org/api/texts/'+ref.replace(" ","_")+'?commentary=0&context=0&pad=0'
+    # ref = Ref(ref).url()
+    url = 'http://' + SERVER + '.sefaria.org/api/texts/' + ref.replace(" ", "_") + '?commentary=0&context=0&pad=0'
     req = urllib.request.Request(url)
     try:
         response = urllib.request.urlopen(req)
@@ -1349,88 +1381,89 @@ def get_text_plus(ref, SERVER='www'):
     except HTTPError as e:
         pdb.set_trace()
 
+
 def isGematria(txt):
-    txt = txt.replace('.','')
-    if txt.find("ך")>=0:
+    txt = txt.replace('.', '')
+    if txt.find("ך") >= 0:
         txt = txt.replace("ך", "כ")
-    if txt.find("ם")>=0:
+    if txt.find("ם") >= 0:
         txt = txt.replace("ם", "מ")
-    if txt.find("ף")>=0:
+    if txt.find("ף") >= 0:
         txt = txt.replace("ף", "פ")
-    if txt.find("ץ")>=0:
+    if txt.find("ץ") >= 0:
         txt = txt.replace("ץ", "צ")
-    if txt.find("טו")>=0:
+    if txt.find("טו") >= 0:
         txt = txt.replace("טו", "יה")
-    if txt.find("טז")>=0:
+    if txt.find("טז") >= 0:
         txt = txt.replace("טז", "יו")
     if len(txt) == 2:
         letter_count = 0
         for i in range(9):
-            if inv_gematria[i+1]==txt[letter_count:2+letter_count]:
+            if inv_gematria[i + 1] == txt[letter_count:2 + letter_count]:
                 return True
-            if inv_gematria[(i+1)*10]==txt[letter_count:2+letter_count]:
+            if inv_gematria[(i + 1) * 10] == txt[letter_count:2 + letter_count]:
                 return True
         for i in range(4):
-            if inv_gematria[(i+1)*100]==txt[letter_count:2+letter_count]:
+            if inv_gematria[(i + 1) * 100] == txt[letter_count:2 + letter_count]:
                 return True
     elif len(txt) == 4:
-      first_letter_is = ""
-      for letter_count in range(2):
-        letter_count *= 2
-        for i in range(9):
-            if inv_gematria[i+1]==txt[letter_count:2+letter_count]:
-                if letter_count == 0:
-                    #print "single false"
-                    return False
-                else:
-                    first_letter_is = "singles"
-            if inv_gematria[(i+1)*10]==txt[letter_count:2+letter_count]:
-                if letter_count == 0:
-                    first_letter_is = "tens"
-                elif letter_count == 2:
-                    if first_letter_is != "hundred":
-                        #print "tens false"
-                        return False
-        for i in range(4):
-            if inv_gematria[(i+1)*100]==txt[letter_count:2+letter_count]:
-                if letter_count == 0:
-                    first_letter_is = "hundred"
-                elif letter_count == 2:
-                    if txt[0:2] != 'ת':
-                        #print "hundreds false, no taf"
-                        return False
-    elif len(txt) == 6:
-        #rules: first and second letter can't be singles
-        #first letter must be hundreds
-        #second letter can be hundreds or tens
-        #third letter must be singles
-        for letter_count in range(3):
+        first_letter_is = ""
+        for letter_count in range(2):
             letter_count *= 2
             for i in range(9):
-                if inv_gematria[i+1]==txt[letter_count:2+letter_count]:
-                    if letter_count != 4:
-                    #	print "3 length singles false"
-                        return False
+                if inv_gematria[i + 1] == txt[letter_count:2 + letter_count]:
                     if letter_count == 0:
+                        # print "single false"
+                        return False
+                    else:
                         first_letter_is = "singles"
-                if inv_gematria[(i+1)*10]==txt[letter_count:2+letter_count]:
+                if inv_gematria[(i + 1) * 10] == txt[letter_count:2 + letter_count]:
                     if letter_count == 0:
-                        #print "3 length tens false, can't be first"
-                        return False
+                        first_letter_is = "tens"
                     elif letter_count == 2:
                         if first_letter_is != "hundred":
-                        #	print "3 length tens false because first letter not 100s"
+                            # print "tens false"
                             return False
-                    elif letter_count == 4:
-                        #print "3 length tens false, can't be last"
-                        return False
             for i in range(4):
-                if inv_gematria[(i+1)*100]==txt[letter_count:2+letter_count]:
+                if inv_gematria[(i + 1) * 100] == txt[letter_count:2 + letter_count]:
                     if letter_count == 0:
                         first_letter_is = "hundred"
                     elif letter_count == 2:
                         if txt[0:2] != 'ת':
-                            #print "3 length hundreds false, no taf"
+                            # print "hundreds false, no taf"
+                            return False
+    elif len(txt) == 6:
+        # rules: first and second letter can't be singles
+        # first letter must be hundreds
+        # second letter can be hundreds or tens
+        # third letter must be singles
+        for letter_count in range(3):
+            letter_count *= 2
+            for i in range(9):
+                if inv_gematria[i + 1] == txt[letter_count:2 + letter_count]:
+                    if letter_count != 4:
+                        #	print "3 length singles false"
+                        return False
+                    if letter_count == 0:
+                        first_letter_is = "singles"
+                if inv_gematria[(i + 1) * 10] == txt[letter_count:2 + letter_count]:
+                    if letter_count == 0:
+                        # print "3 length tens false, can't be first"
+                        return False
+                    elif letter_count == 2:
+                        if first_letter_is != "hundred":
+                            #	print "3 length tens false because first letter not 100s"
+                            return False
+                    elif letter_count == 4:
+                        # print "3 length tens false, can't be last"
+                        return False
+            for i in range(4):
+                if inv_gematria[(i + 1) * 100] == txt[letter_count:2 + letter_count]:
+                    if letter_count == 0:
+                        first_letter_is = "hundred"
+                    elif letter_count == 2:
+                        if txt[0:2] != 'ת':
+                            # print "3 length hundreds false, no taf"
                             return False
     else:
         print("length of gematria is off")
@@ -1438,124 +1471,128 @@ def isGematria(txt):
         return False
     return True
 
+
 def getGematria(txt):
     if not isinstance(txt, str):
         txt = txt.decode('utf-8')
     txt = txt.replace("ך", "כ").replace("ם", "מ").replace("ן", "נ").replace("ף", "פ").replace("ץ", "צ")
-    index=0
-    sum=0
-    while index <= len(txt)-1:
-        if txt[index:index+1] in gematria:
-            sum += gematria[txt[index:index+1]]
+    index = 0
+    sum = 0
+    while index <= len(txt) - 1:
+        if txt[index:index + 1] in gematria:
+            sum += gematria[txt[index:index + 1]]
 
-        index+=1
+        index += 1
     return sum
+
 
 def numToHeb(engnum=""):
     engnum = str(engnum)
     numdig = len(engnum)
     hebnum = ""
     letters = [["" for i in range(3)] for j in range(10)]
-    letters[0]=["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"]
-    letters[1]=["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"]
-    letters[2]=["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"]
+    letters[0] = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"]
+    letters[1] = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"]
+    letters[2] = ["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"]
     if (numdig > 3):
         print("We currently can't handle numbers larger than 999")
         exit()
     for count in range(numdig):
-        hebnum += letters[numdig-count-1][int(engnum[count])]
+        hebnum += letters[numdig - count - 1][int(engnum[count])]
     hebnum = re.sub('יה', 'טו', hebnum)
     hebnum = re.sub('יו', 'טז', hebnum)
     return hebnum
 
+
 def isGematria(txt):
-    txt = txt.replace('.','')
-    if txt.find("ך")>=0:
+    txt = txt.replace('.', '')
+    if txt.find("ך") >= 0:
         txt = txt.replace("ך", "כ")
-    if txt.find("ם")>=0:
+    if txt.find("ם") >= 0:
         txt = txt.replace("ם", "מ")
-    if txt.find("ף")>=0:
+    if txt.find("ף") >= 0:
         txt = txt.replace("ף", "פ")
-    if txt.find("ץ")>=0:
+    if txt.find("ץ") >= 0:
         txt = txt.replace("ץ", "צ")
-    if txt.find("טו")>=0:
+    if txt.find("טו") >= 0:
         txt = txt.replace("טו", "יה")
-    if txt.find("טז")>=0:
+    if txt.find("טז") >= 0:
         txt = txt.replace("טז", "יו")
     if len(txt) == 2:
         letter_count = 0
         for i in range(9):
-            if inv_gematria[i+1]==txt[letter_count:2+letter_count]:
+            if inv_gematria[i + 1] == txt[letter_count:2 + letter_count]:
                 return True
-            if inv_gematria[(i+1)*10]==txt[letter_count:2+letter_count]:
+            if inv_gematria[(i + 1) * 10] == txt[letter_count:2 + letter_count]:
                 return True
         for i in range(4):
-            if inv_gematria[(i+1)*100]==txt[letter_count:2+letter_count]:
+            if inv_gematria[(i + 1) * 100] == txt[letter_count:2 + letter_count]:
                 return True
     elif len(txt) == 4:
-      first_letter_is = ""
-      for letter_count in range(2):
-        letter_count *= 2
-        for i in range(9):
-            if inv_gematria[i+1]==txt[letter_count:2+letter_count]:
-                if letter_count == 0:
-                    #print "single false"
-                    return False
-                else:
-                    first_letter_is = "singles"
-            if inv_gematria[(i+1)*10]==txt[letter_count:2+letter_count]:
-                if letter_count == 0:
-                    first_letter_is = "tens"
-                elif letter_count == 2:
-                    if first_letter_is != "hundred":
-                        #print "tens false"
-                        return False
-        for i in range(4):
-            if inv_gematria[(i+1)*100]==txt[letter_count:2+letter_count]:
-                if letter_count == 0:
-                    first_letter_is = "hundred"
-                elif letter_count == 2:
-                    if txt[0:2] != 'ת':
-                        #print "hundreds false, no taf"
-                        return False
-    elif len(txt) == 6:
-        #rules: first and second letter can't be singles
-        #first letter must be hundreds
-        #second letter can be hundreds or tens
-        #third letter must be singles
-        for letter_count in range(3):
+        first_letter_is = ""
+        for letter_count in range(2):
             letter_count *= 2
             for i in range(9):
-                if inv_gematria[i+1]==txt[letter_count:2+letter_count]:
-                    if letter_count != 4:
-                    #	print "3 length singles false"
-                        return False
+                if inv_gematria[i + 1] == txt[letter_count:2 + letter_count]:
                     if letter_count == 0:
+                        # print "single false"
+                        return False
+                    else:
                         first_letter_is = "singles"
-                if inv_gematria[(i+1)*10]==txt[letter_count:2+letter_count]:
+                if inv_gematria[(i + 1) * 10] == txt[letter_count:2 + letter_count]:
                     if letter_count == 0:
-                        #print "3 length tens false, can't be first"
-                        return False
+                        first_letter_is = "tens"
                     elif letter_count == 2:
                         if first_letter_is != "hundred":
-                        #	print "3 length tens false because first letter not 100s"
+                            # print "tens false"
                             return False
-                    elif letter_count == 4:
-                        #print "3 length tens false, can't be last"
-                        return False
             for i in range(4):
-                if inv_gematria[(i+1)*100]==txt[letter_count:2+letter_count]:
+                if inv_gematria[(i + 1) * 100] == txt[letter_count:2 + letter_count]:
                     if letter_count == 0:
                         first_letter_is = "hundred"
                     elif letter_count == 2:
                         if txt[0:2] != 'ת':
-                            #print "3 length hundreds false, no taf"
+                            # print "hundreds false, no taf"
+                            return False
+    elif len(txt) == 6:
+        # rules: first and second letter can't be singles
+        # first letter must be hundreds
+        # second letter can be hundreds or tens
+        # third letter must be singles
+        for letter_count in range(3):
+            letter_count *= 2
+            for i in range(9):
+                if inv_gematria[i + 1] == txt[letter_count:2 + letter_count]:
+                    if letter_count != 4:
+                        #	print "3 length singles false"
+                        return False
+                    if letter_count == 0:
+                        first_letter_is = "singles"
+                if inv_gematria[(i + 1) * 10] == txt[letter_count:2 + letter_count]:
+                    if letter_count == 0:
+                        # print "3 length tens false, can't be first"
+                        return False
+                    elif letter_count == 2:
+                        if first_letter_is != "hundred":
+                            #	print "3 length tens false because first letter not 100s"
+                            return False
+                    elif letter_count == 4:
+                        # print "3 length tens false, can't be last"
+                        return False
+            for i in range(4):
+                if inv_gematria[(i + 1) * 100] == txt[letter_count:2 + letter_count]:
+                    if letter_count == 0:
+                        first_letter_is = "hundred"
+                    elif letter_count == 2:
+                        if txt[0:2] != 'ת':
+                            # print "3 length hundreds false, no taf"
                             return False
     else:
         print("length of gematria is off")
         print(txt)
         return False
     return True
+
 
 def multiple_replace(old_string, replacement_dictionary):
     """
@@ -1601,11 +1638,10 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
             print("Start {0} at chapter: ".format(book))
             start_chapter = eval(input())
             url = SEFARIA_SERVER + '/api/texts/' + book + '.' + \
-                str(start_chapter) + '/' + language + '/' + version_title
+                  str(start_chapter) + '/' + language + '/' + version_title
 
         else:
             url = SEFARIA_SERVER + '/api/texts/' + book + '.1/' + language + '/' + version_title
-
 
         try:
             # get first chapter in book
@@ -1617,20 +1653,20 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
 
             # check for correct number of chapters
             if len(chapters) != version_text['lengths'][0]:
-                file_buffer.write('Chapter Problem in'+book+'\n')
+                file_buffer.write('Chapter Problem in' + book + '\n')
 
             for index, chapter in enumerate(chapters):
 
                 # if starting in the middle skip to appropriate chapter
                 if middle:
-                    if index+1 != start_chapter:
+                    if index + 1 != start_chapter:
                         continue
 
                     else:
                         # set middle back to false
                         middle = False
 
-                print(index+1)
+                print(index + 1)
 
                 # get canonical number of verses
                 canon = len(TextChunk(chapter, vtitle='Tanach with Text Only', lang='he').text)
@@ -1643,7 +1679,7 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
                 # get next chapter
                 next_chapter = reg_replace(' \d', version_text['next'], ' ', '.')
                 next_chapter = next_chapter.replace(' ', '_')
-                url = SEFARIA_SERVER+'/api/texts/'+next_chapter+'/'+language+'/'+version_title
+                url = SEFARIA_SERVER + '/api/texts/' + next_chapter + '/' + language + '/' + version_title
 
                 response = urllib.request.urlopen(url)
                 version_text = json.load(response)
@@ -1653,7 +1689,6 @@ def find_discrepancies(book_list, version_title, file_buffer, language, middle=F
             print(url)
             file_buffer.close()
             sys.exit(1)
-
 
 
 def get_daf(num):
@@ -1681,19 +1716,22 @@ def get_page(daf, amud):
     """
 
     if amud == 'a':
-        return 2*daf - 3
+        return 2 * daf - 3
     elif amud == 'b':
-        return 2*daf - 2
+        return 2 * daf - 2
     else:
         print('invalid daf number')
         return 0
 
+
 import csv, codecs, io
+
 
 class UTF8Recoder:
     """
     Iterator that reads an encoded stream and reencodes the input to UTF-8
     """
+
     def __init__(self, f, encoding):
         self.reader = codecs.getreader(encoding)(f)
 
@@ -1702,6 +1740,7 @@ class UTF8Recoder:
 
     def __next__(self):
         return self.reader.next().encode("utf-8")
+
 
 class UnicodeReader:
     """
@@ -1719,6 +1758,7 @@ class UnicodeReader:
 
     def __iter__(self):
         return self
+
 
 class UnicodeWriter:
     """
