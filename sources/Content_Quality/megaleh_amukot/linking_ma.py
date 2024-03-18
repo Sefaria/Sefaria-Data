@@ -5,10 +5,8 @@ django.setup()
 import re
 from sefaria.model import *
 from linking_utilities.dibur_hamatchil_matcher import match_text
+from sources.functions import match_ref_interface, post_link
 
-
-# Run DH on each parasha
-# Post all created links
 
 def get_parasha_text_ref(section_title):
     sec_title_key = section_title.normal().split(", ")
@@ -32,9 +30,9 @@ def extract_dibbur_hamatchil(txt):
     return dhm
 
 
-def attempt_to_match(base_words, comment_list):
+def attempt_to_match(base_words, comments):
     results = match_text(base_words,
-                         comment_list,
+                         comments,
                          dh_extract_method=extract_dibbur_hamatchil,
                          word_threshold=0.1,
                          char_threshold=0.2,
@@ -42,38 +40,56 @@ def attempt_to_match(base_words, comment_list):
     return results
 
 
+def simple_tokenizer(text):
+    """
+    A simple tokenizer that splits text into tokens by whitespace,
+    and removes apostrophes and periods from the tokens.
+    """
+
+    def remove_nikkud(hebrew_string):
+        # Define a regular expression pattern for Hebrew vowel points
+        nikkud_pattern = re.compile('[\u0591-\u05BD\u05BF-\u05C2\u05C4\u05C5\u05C7]')
+
+        # Use the sub method to replace vowel points with an empty string
+        cleaned_string = re.sub(nikkud_pattern, '', hebrew_string)
+
+        return cleaned_string
+
+    # Replace apostrophes and periods with empty strings
+    text = text.replace("'", "")
+    text = text.replace(".", "")
+    text = text.replace("׳", "")
+    text = text.replace("–", "")
+    text = text.replace(";", "")
+    text = remove_nikkud(text)
+
+    # Split the text into tokens by whitespace
+    tokens = text.split()
+    return tokens
+
+
 if __name__ == '__main__':
     ma = Index().load({'title': 'Megaleh Amukot on Torah'})
 
     sections = ma.all_section_refs()
+    count = 1
     for section_title in sections:
         parasha_text_ref = get_parasha_text_ref(section_title)
+        count += 1
 
         if not parasha_text_ref:
             # Skip holidays
             continue
 
-        segment_refs_for_parasha = parasha_text_ref.range_list()
-
         segment_refs_for_commentary = section_title.all_segment_refs()
 
-        for comm_seg_ref in segment_refs_for_commentary:
+        segs = section_title.all_segment_refs()
+        comments = [seg.text("he").text for seg in segs]
+        links = match_ref_interface(base_ref=parasha_text_ref.normal(),
+                                    comm_ref=section_title.normal(),
+                                    comments=comments,
+                                    base_tokenizer=simple_tokenizer,
+                                    dh_extract_method=extract_dibbur_hamatchil)
 
-            commentary_text = comm_seg_ref.text(lang="he").text
-
-            for pasuk_ref in segment_refs_for_parasha:
-
-                pasuk_text = pasuk_ref.text(lang="he", vtitle="Tanach with Text Only").text
-                pasuk_text_words = []
-                pasuk_cleaned = pasuk_text.replace("-", " ")
-                pasuk_text_words += pasuk_cleaned.split(" ")
-
-                match = attempt_to_match(base_words=pasuk_text_words, comment_list=[commentary_text])
-
-                for i in range(len(match["matches"])):
-                    if match["matches"][i] != (-1, -1):
-                        num_words = match['match_text'][i][1].split(" ")
-                        if len(num_words) < 2: # ignore one word matches
-                            continue
-                        print(f"{comm_seg_ref.normal()} <<>> {pasuk_ref.normal()}")
-                        print(f"Score: {match['matches'][i]} for {match['match_text'][i]}")
+        for l in links:
+            post_link(l)
