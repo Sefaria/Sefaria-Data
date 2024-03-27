@@ -4,9 +4,11 @@ django.setup()
 
 import re
 from sefaria.model import *
+from sefaria.helper.normalization import *
 from linking_utilities.dibur_hamatchil_matcher import match_text
 from sources.functions import match_ref_interface, post_link
 
+# Todo - bsp
 
 def get_parasha_text_ref(section_title):
     sec_title_key = section_title.normal().split(", ")
@@ -27,6 +29,7 @@ def extract_dibbur_hamatchil(txt):
     if len(dhm) < 1:
         return ""
     dhm = re.sub(r'[^\w\s]', '', dhm[0])
+    # print(dhm)
     return dhm
 
 
@@ -38,6 +41,13 @@ def attempt_to_match(base_words, comments):
                          char_threshold=0.2,
                          lang='he')
     return results
+
+def get_normalizer():
+    from sefaria.helper.normalization import NormalizerComposer
+    return NormalizerComposer(['unidecode', 'br-tag', 'itag', 'html', 'maqaf', 'cantillation', 'double-space'])
+
+
+normalizer = get_normalizer()
 
 
 def simple_tokenizer(text):
@@ -55,17 +65,27 @@ def simple_tokenizer(text):
 
         return cleaned_string
 
+
     # Replace apostrophes and periods with empty strings
     text = text.replace("'", "")
     text = text.replace(".", "")
     text = text.replace("׳", "")
     text = text.replace("–", "")
     text = text.replace(";", "")
+    text = text.replace("&", "")
+
+    # Remove any non-Hebrew characters
+    text = re.sub(r"[^\u0590-\u05FF\s]", "", text)
     text = remove_nikkud(text)
 
+
+    normalized_text = normalizer.normalize(text)
+
     # Split the text into tokens by whitespace
-    tokens = text.split()
+    tokens = normalized_text.split()
+    # print(tokens)
     return tokens
+
 
 
 if __name__ == '__main__':
@@ -75,13 +95,13 @@ if __name__ == '__main__':
     count = 1
     for section_title in sections:
         parasha_text_ref = get_parasha_text_ref(section_title)
-        count += 1
+
 
         if not parasha_text_ref:
             # Skip holidays
             continue
 
-        segment_refs_for_commentary = section_title.all_segment_refs()
+        # segment_refs_for_commentary = section_title.all_segment_refs()
 
         segs = section_title.all_segment_refs()
         comments = [seg.text("he").text for seg in segs]
@@ -91,5 +111,12 @@ if __name__ == '__main__':
                                     base_tokenizer=simple_tokenizer,
                                     dh_extract_method=extract_dibbur_hamatchil)
 
+
+
+
         for l in links:
-            post_link(l)
+            count += 1
+            print(l)
+
+    print(f"{count} links")
+        #     post_link(l)
