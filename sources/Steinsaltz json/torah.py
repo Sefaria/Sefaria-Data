@@ -1,3 +1,32 @@
+versions = VersionSet({"versionTitle": 'The Koren Steinsaltz Tanakh HaMevoar - Hebrew'}).array() + VersionSet({"versionTitle": "The Steinsaltz Tanakh - English"}).array()
+for v in versions:
+  book = library.get_index(v.title)
+  book.authors = ['adin-steinsaltz']
+  book.pubDate = [2015]
+  book.pubPlace = "Jerusalem"
+  book.compPlace = "Jerusalem"
+  if "Torah" in book.categories:
+    book.enDesc = "The Steinsaltz Tanakh is Rabbi Adin Even-Israel Steinsaltz's pioneering modern translation and commentary on the Hebrew Bible. The work aims to make the text clear, engaging, and accessible to readers of all backgrounds and to let the Torah speak in its own words. It focuses on connecting the reader directly to the peshat — plain meaning of the biblical text — and includes references to many earlier commentaries, works of Jewish thought, and other sources."
+    book.enShortDesc = ''
+    book.heDesc = 'ביאור שטיינזלץ לתנ"ך הוא ביאור ותרגום מודרני ראשון מסוגו ופורץ דרך של הרב עדין אבן-ישראל שטיינזלץ. מטרת ביאור שטיינזלץ לתנ"ך היא להפוך את הכתוב בתנ"ך לבהיר יותר, מרתק ונגיש לקוראים מכל רקע ולתת לתורה לדבר במילותיה. הפרשנות מבקשת לחבר את הקורא ישירות לפשט, למשמעות הפשוטה של ​​הכתוב, וכוללת הפניות לפירושים ומקורות רבים, למחשבת ישראל ולמקורות נוספים.'
+    book.heShortDesc = ''
+  else:
+    book.enDesc = "The Steinsaltz Tanakh is Rabbi Adin Even-Israel Steinsaltz's pioneering modern translation and commentary on the Hebrew Bible. The work aims to make the text clear, engaging, and accessible to readers of all backgrounds and to let the Torah speak in its own words. It focuses on connecting the reader directly to the peshat — the plain meaning of the biblical text —and includes references to many earlier commentaries, works of Jewish thought, and other sources."
+    book.enShortDesc = ''
+    book.heDesc = 'ביאור שטיינזלץ לתנ"ך הוא ביאור ותרגום מודרני ראשון מסוגו ופורץ דרך של הרב עדין אבן-ישראל שטיינזלץ. מטרת ביאור שטיינזלץ לתנ"ך היא להפוך את הכתוב בתנ"ך לבהיר יותר, מרתק ונגיש לקוראים מכל רקע ולתת לתורה לדבר במילותיה. הפרשנות מבקשת לחבר את הקורא ישירות לפשט, למשמעות הפשוטה של ​​הכתוב, וכוללת הפניות לפירושים ומקורות רבים, למחשבת ישראל ולמקורות נוספים.'
+    book.heShortDesc = ''
+  book.save(override_dependencies=True)
+
+for v in VersionSet({"versionTitle": 'Mishneh Torah with Commentary by Rabbi Adin Even-Israel Steinsaltz, Koren Publishers'}):
+    book = library.get_index(v.title)
+    book.authors = ['adin-steinsaltz']
+    book.pubDate = [2017]
+    book.pubPlace = "Jerusalem"
+    book.compPlace = "Jerusalem"
+    book.enDesc = 'Steinsaltz on Mishneh Torah is Rabbi Adin Even-Israel Steinsaltz’s modern commentary on Maimonides’ 12th-century legal code entitled Mishneh Torah, one of the most organized, comprehensive, and influential works of Jewish law. Steinsaltz’s commentary features clear explanations of the text aimed at making the text accessible to all learners. It also includes introductions to each chapter and law, summaries of later legal rulings with source citations, and explanations of background principles and terms.'
+    book.heDesc = 'ביאור שטיינזלץ על משנה-תורה לרמב"ם הוא פירושו המודרני של הרב עדין אבן-ישראל שטיינזלץ לחיבורו ההלכתי של הרמב"ם מהמאה ה-12, מהיצירות המקיפות והמשפיעות ביותר של ההלכה היהודית. הפרשנות של שטיינזלץ כוללת הסברים ברורים של הכתוב שמטרתם להנגיש את חיבור חשוב זה לכל הלומדים. הביאור כולל גם הקדמות לכל פרק ומצווה, סיכומים של פסקי הלכה מאוחרים יותר עם מראה מקומות, והסברים על עקרונות ומונחי רקע.'
+    book.save(override_dependencies=True)
+
 from sources.functions import *
 from tqdm import tqdm
 from sefaria.helper.link import rebuild_links_for_title

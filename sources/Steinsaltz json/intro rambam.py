@@ -33,10 +33,11 @@ root.validate()
 indx = {"schema": root.serialize(),
            "title": root.key,
            "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Steinsaltz"]}
-try:
-    Index(indx).save()
-except:
-    pass
+post_index(indx)
+indx = {
+           "title": "Potato",
+           "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Steinsaltz"]}
+post_index(indx)
 
 for ref in text:
     tc = TextChunk(Ref(f"Steinsaltz Introductions to Mishneh Torah, {ref}"), vtitle='Steinsaltz Mishneh Torah', lang='he')
