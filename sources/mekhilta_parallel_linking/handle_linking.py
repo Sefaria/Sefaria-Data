@@ -95,9 +95,9 @@ if __name__ == '__main__':
 
     # Fallback: Fiddle w params
 
-    match_list = matcher.match(["Mekhilta DeRabbi Yishmael, Tractate Pischa", "Pesachim 2a-50a"], return_obj=True)
+    match_list = matcher.match(["Mekhilta DeRabbi Yishmael, Tractate Pischa", "Pesachim 2a-20a"], return_obj=True)
 
-    # filter_pasuk_matches("All", "mesorat_hashas_indexes.json")
+    filter_pasuk_matches("All", "mesorat_hashas_indexes.json")
     # print_mesorah_json("mesorat_hashas_pasuk_filtered_bad.json")
 
 
