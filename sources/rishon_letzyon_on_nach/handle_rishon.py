@@ -56,7 +56,7 @@ base_index_template = {
         "#ENGLISH_BOOK#"
     ],
     "base_text_mapping": "many_to_one",
-    # "collective_title": "Rishon LeTzion"
+    # "collective_title": "Rishon Letzion"
 }
 def apply_function_recursively(d, func):
     if isinstance(d, dict):
@@ -159,31 +159,6 @@ def hebrew_book_to_english(bookname):
     return hebrew_to_english_map[bookname]
 
 
-
-def ingest_mikra(parsed_books):
-    for book in parsed_books:
-        book_name = next(iter(book)).split()[0]
-        if book_name == "Song":
-            book_name = "Song of Songs"
-        print("ingesting the book of " + book_name)
-        index = library.get_index(book_name)
-        cur_version = VersionSet({'title': book_name,
-                                  "versionTitle" : "Miqra Mevoar, trans. and edited by David Kokhav, Jerusalem 2020"})
-
-        if cur_version.count() > 0:
-            cur_version.delete()
-            print("deleted existing version")
-        chapter = index.nodes.create_skeleton()
-        version = Version({"versionTitle": "Miqra Mevoar, trans. and edited by David Kokhav, Jerusalem 2020",
-                           "versionSource": "https://he.wikisource.org/wiki/%D7%9E%D7%A7%D7%A8%D7%90_%D7%9E%D7%91%D7%95%D7%90%D7%A8",
-                           "title": book_name,
-                           "language": "he",
-                           "chapter": chapter,
-                           "digitizedBySefaria": True,
-                           "license": "PD",
-                           "status": "locked"
-                           })
-        modify_bulk_text(superuser_id, version, book)
 def read_csv_to_list_of_dicts(file_path):
     data = []
     with open(file_path, 'r') as file:
