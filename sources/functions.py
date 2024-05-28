@@ -936,7 +936,7 @@ def int_to_roman(input):
 def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle="", generated_by="", padding=False):
     generated_by_str = Ref(base_ref).index.title + "_to_" + comm_ref.split()[0] if generated_by == "" else generated_by
     links = []
-    base = TextChunk(Ref(base_ref), lang='he', vtitle=vtitle) if vtitle else TextChunk(Ref(base_ref), lang='he', vtitle=vtitle)
+    base = TextChunk(Ref(base_ref), lang='he', vtitle=vtitle) if vtitle else TextChunk(Ref(base_ref), lang='he')
     matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)
     for n, match in enumerate(matches["matches"]):
         len_prob = len(matches["match_text"][n][0]) < 2 or len(matches["match_text"][n][1]) < 2
