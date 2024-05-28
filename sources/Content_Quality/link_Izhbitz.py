@@ -126,11 +126,8 @@ for hasidic_ref in new_finds:
     for zohar_ref, dh in new_finds[hasidic_ref]:
         if zohar_ref is not None:
             results = match_ref(Ref(zohar_ref).text('he'), [dh], lambda x: x.split())
-            if results['matches'][0] is None:
-                links.append({"generated_by": "izbhiz_to_zohar", "auto": True, "type": "commentary", "refs": [zohar_ref, hasidic_ref]})
-            else:
-                successes += 1
-            total += 1
+            if results['matches'][0] is not None:
+                links.append({"generated_by": "izbhiz_to_zohar", "auto": True, "type": "commentary", "refs": [results["matches"][0].normal(), hasidic_ref]})
 print(successes, total)
 for l in links:
     try:

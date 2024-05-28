@@ -34,52 +34,84 @@ assert index_list[5] == 423
 #     matched_refs = library.get_refs_in_string(test_string, lang='en', citing_only=False)
 #     assert matched_refs == [Ref(trefs[i])]
 
-words = """Rabbenu
-Bereishit Rabbah
-Parashat Bereishit
-Chayim
-HaChayim
-Maamar Mezake HaRabim  
-Chidushei
-Megilat Esther on Sefer HaMitzvot
-Or 
-Bamidbar
-Achronim
-Yitzhak
-Zerachiah ha-Levi of Girona
-Biur Halacha
-Kessef Mishneh
-Yorah De'ah
-Raavad
-Saadia
-Pardes Rimonim 
-Siddur Tehilat Hashem
-Likutei
-Tefilot
-Taanit
-Beha'alotcha
-Sh'lach
-Eichah
-Shaarei
-Laish
-Daat Zkenim
-Yehiel 
-Ben-Zion Meir Hai Uziel
-Hilchos Talmud Torah
-Baal HaSulam
-Petikha LePerush HaSulam
-Hakdamot L'Chochmat HaEmet 
-Halevi
-Hagahot 
-Yaavetz 
-Beur
-tzadik""".splitlines()
+# words = """Rabbenu
+# Bereishit Rabbah
+# Parashat Bereishit
+# Chayim
+# HaChayim
+# Maamar Mezake HaRabim
+# Chidushei
+# Megilat Esther on Sefer HaMitzvot
+# Or
+# Bamidbar
+# Achronim
+# Yitzhak
+# Zerachiah ha-Levi of Girona
+# Biur Halacha
+# Kessef Mishneh
+# Yorah De'ah
+# Raavad
+# Saadia
+# Pardes Rimonim
+# Siddur Tehilat Hashem
+# Likutei
+# Tefilot
+# Taanit
+# Beha'alotcha
+# Sh'lach
+# Eichah
+# Shaarei
+# Laish
+# Daat Zkenim
+# Yehiel
+# Ben-Zion Meir Hai Uziel
+# Hilchos Talmud Torah
+# Baal HaSulam
+# Petikha LePerush HaSulam
+# Hakdamot L'Chochmat HaEmet
+# Halevi
+# Hagahot
+# Yaavetz
+# Beur
+# tzadik""".splitlines()
+words = """Likutei
+Maamar Hador
+Chidushei HaRa'ah on Berakhot
+Summary of Shakh on Shulchan Arukh, Yoreh De'ah
+Summary of Taz on Shulchan Arukh, Yoreh De'ah
+Shev Shmat'ta
+Derekh Chayim (by Maharal) 
+Mitzpeh Etan on Avot D'Rabbi Natan
+Yad Avraham on Shulchan Arukh, Yoreh De'ah
+Be'ur Eser S'firot
+Hagahot Imrei Barukh on Shulchan Arukh, Choshen Mishpat
+Barukh She'amar on Pesach Haggadah
+Ephod Bad on Pesach Haggadah
+Lev Hakhamim on Tractate Semachot
+Shita Mekubetzet
+Tumat Yesharim on Avot D'Rabbi Natan
+Chayim VaChesed
+Shaarei Orah
+Mesilat Yesharim
+Or Hachaim on Torah
+Noam Elimelech
+Maamar Torat HaBayit
+Shaarei Tzedek
+Hechalot Rabbati
+Chidushei HaRadal
+Haggahot of R' David Luria on Sefer HaParnas
+Davar Be'ito
+Tzipita L'Yeshua
+Dina D'Garmei
+Sha'ar Ha'Gemul""".splitlines()
 def search_for_string(root_dir, search_string):
     finds = set()
     for subdir, dirs, files in os.walk(root_dir):
         for filename in files:
             filepath = os.path.join(subdir, filename)
-            if "test" not in filepath:
+            if "test" not in filepath or "node_modules" in filepath or ".git" in filepath:
+                continue
+            if not filepath.endswith(".py"):
                 continue
             try:
                 with open(filepath, 'r', encoding='utf-8') as file:
@@ -114,19 +146,24 @@ def re_search_for_string(root_dir, search_string):
 # for word in words:
 
 books = IndexSet().array()
-finds = set()
-re_books = "|".join([re.escape(b.title) for b in books]+[re.escape(b.get_title('he')) for b in books]+[re.escape(b.title.replace(" ", "_")) for b in books])
-finds = re_search_for_string('../../../Sefaria-Project/', re_books)
+def find_books_in_tests(re_books, file):
+    finds = set()
+    finds = re_search_for_string('../../../Sefaria-Project/', re_books)
 
-print(len(finds))
-new_finds = set()
-for x in finds:
-    if "_" in x:
-        new_x = x.replace("_", " ")
-        new_finds.add(new_x)
-    else:
-        new_finds.add(x)
-print(len(new_finds))
-print(new_finds)
-with open("books in tests.txt", 'w') as f:
-    f.writelines("\n".join(sorted(list(new_finds))))
+    print(len(finds))
+    new_finds = set()
+    for x in finds:
+        if "_" in x:
+            new_x = x.replace("_", " ")
+            new_finds.add(new_x)
+        else:
+            new_finds.add(x)
+    print(len(new_finds))
+    print(new_finds)
+    with open(file, 'w') as f:
+        f.writelines("\n".join(sorted(list(new_finds))))
+
+all_books = "|".join([re.escape(b.title) for b in books]+[re.escape(b.get_title('he')) for b in books]+[re.escape(b.title.replace(" ", "_")) for b in books])
+yedida_list = "|".join([re.escape(x) for x in words])
+#find_books_in_tests(all_books, "books in tests.txt")
+find_books_in_tests(yedida_list, "yedida list.txt")

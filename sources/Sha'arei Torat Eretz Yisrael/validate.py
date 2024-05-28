@@ -41,8 +41,7 @@ def make_index(masechet, type):
 
     indx = {"title": root.key, "schema": root.serialize(), "categories": category, "collective_title": "Sha'arei Torat Bavel", "dependence": "Commentary",
             "base_text_titles": [masechet]}
-    if type == "Mishnah":
-        indx["base_text_mapping"] = "many_to_one"
+
     try:
         Index(indx).save()
     except:

@@ -9,6 +9,7 @@ from sefaria.model.abstract import SluggedAbstractMongoRecord
 from sefaria.system.exceptions import DuplicateRecordError
 from sefaria.helper.category import move_index_into, create_category
 from bs4 import BeautifulSoup
+from sources.functions import *
 UID = 28
 SOURCE_SLUG = "ashlag-glossary"
 TEXTS = [
@@ -216,22 +217,13 @@ def convert_html_to_markdown(new_desc):
     if len(nested) > 0:
         print(f"nested tags in {nested} {new_desc}")
     else:
-        for tag in ["<i>", "</i>"]:
-            new_desc = new_desc.replace(tag, "*")
+        new_desc = new_desc.replace("<i>", "*").replace(" </i>", "* ").replace("</i>", "*")
         for tag in ["<b>", "</b>"]:
             new_desc = new_desc.replace(tag, "**")
         for tag in ["<br>", "<br/>"]:
             new_desc = new_desc.replace(tag, "  ")
         if len(re.findall("\*{1,2}", new_desc)) % 2 == 1:
             print("uneven pattern found", new_desc)
-        else:
-            soup = BeautifulSoup(new_desc)
-            for a_tag in soup.find_all('a'):  # class=\"namedEntityLink\" href=\"/topics/sefira1\">sefirot
-                href = a_tag.attrs['href']
-                txt = a_tag.string
-                assert a_tag.string != None
-                a_tag.replace_with(f"[{txt}]({href})")
-            new_desc = soup.text
     return new_desc.replace("{", "<<").replace("}", ">>")
 
 def interlink_topics(orig_descs):
@@ -272,6 +264,13 @@ def interlink_topics(orig_descs):
 
         desc = convert_html_to_markdown(desc)
         new_desc = FULL_REG.sub(full_sub, desc)
+        soup = BeautifulSoup(new_desc)
+        for a_tag in soup.find_all('a'):  # class=\"namedEntityLink\" href=\"/topics/sefira1\">sefirot
+            href = a_tag.attrs['href']
+            txt = a_tag.string
+            assert a_tag.string != None
+            a_tag.replace_with(f"[{txt}]({href})")
+        new_desc = soup.text
         if new_desc != desc:
             topix.description["en"] = new_desc
             topix.save()
@@ -368,7 +367,7 @@ def old_create_topic_links_for_text(text_name, mapping):
 
     matches = TextMatches()
 
-    vs = VersionSet({'title': text_name, 'language': 'en'})
+    vs = VersionSet({'title': text_name, 'language': 'en', 'versionTitle': "The Sefaria Sulam, 2023"})
     for v in vs:
         print(text_name)
         print(v.versionTitle)
@@ -376,7 +375,7 @@ def old_create_topic_links_for_text(text_name, mapping):
         for ref in library.get_index(text_name).all_segment_refs():
             tc = ref.text("en", v.versionTitle)
             old = tc.text
-
+            tc.text = tc.text.replace("{", "<<").replace("}", ">>")
             # Find and record all matching terms
             for referral in FULL_REG.findall(tc.text):
                 norm = normalize(remove_tags(referral))
@@ -414,7 +413,7 @@ def create_topic_links_for_text(text_name, mapping):
 
     matches = TextMatches()
 
-    vs = VersionSet({'title': text_name, 'language': 'en'})
+    vs = VersionSet({'title': text_name, 'language': 'en', "versionTitle": "The Sefaria Sulam, 2023"})
     for v in vs:
         print(text_name)
         print(v.versionTitle)
@@ -555,7 +554,7 @@ print(RefTopicLinkSet({"dataSource": SOURCE_SLUG}).count())
 print(IntraTopicLinkSet({"dataSource": SOURCE_SLUG}).count())
 #test_coverage()
 build_all_topics()
-#wrap_all()
+wrap_all()
 print(RefTopicLinkSet({"dataSource": SOURCE_SLUG}).count())
 print(IntraTopicLinkSet({"dataSource": SOURCE_SLUG}).count())
 
