@@ -122,10 +122,10 @@ def hebrew_book_to_english(bookname):
         "דברים": "Deuteronomy",
         "יהושע": "Joshua",
         "שופטים": "Judges",
-        "שמואל א": "1 Samuel",
-        "שמואל ב": "2 Samuel",
-        "מלכים א": "1 Kings",
-        "מלכים ב": "2 Kings",
+        "שמואל א": "I Samuel",
+        "שמואל ב": "II Samuel",
+        "מלכים א": "I Kings",
+        "מלכים ב": "II Kings",
         "ישעיהו": "Isaiah",
         "ירמיהו": "Jeremiah",
         "יחזקאל": "Ezekiel",
@@ -152,8 +152,8 @@ def hebrew_book_to_english(bookname):
         "דניאל": "Daniel",
         "עזרא": "Ezra",
         "נחמיה": "Nehemiah",
-        "דברי הימים א": "1 Chronicles",
-        "דברי הימים ב": "2 Chronicles",
+        "דברי הימים א": "I Chronicles",
+        "דברי הימים ב": "II Chronicles",
     }
 
     return hebrew_to_english_map[bookname]
@@ -233,7 +233,7 @@ def ingest_versions(partitioned_books):
 if __name__ == '__main__':
     # validate()
     print("hi")
-    rishon_list = read_csv_to_list_of_dicts("Rishon_LeTzion.csv")
+    rishon_list = read_csv_to_list_of_dicts("Rishon LeTzion - UPDATED.csv")
     fill_in_chapters_and_books(rishon_list)
     fill_in_segment_nums(rishon_list)
     fill_in_refs(rishon_list)
