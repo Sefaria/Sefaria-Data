@@ -33,10 +33,11 @@ root.validate()
 indx = {"schema": root.serialize(),
            "title": root.key,
            "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Steinsaltz"]}
-post_index(indx)
+#post_index(indx)
 indx = {
            "title": "Potato",
-           "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Steinsaltz"]}
+           "categories": ["Halakhah", "Mishneh Torah", "Commentary", "Steinsaltz"],
+            "sectionNames": ["Paragraph"],}
 post_index(indx)
 
 for ref in text:
