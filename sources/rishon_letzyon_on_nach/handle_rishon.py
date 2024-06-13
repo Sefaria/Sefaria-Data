@@ -56,7 +56,7 @@ base_index_template = {
         "#ENGLISH_BOOK#"
     ],
     "base_text_mapping": "many_to_one",
-    # "collective_title": "Rishon Letzion"
+    "collective_title": "Rishon Letzion"
 }
 def apply_function_recursively(d, func):
     if isinstance(d, dict):
@@ -238,7 +238,7 @@ if __name__ == '__main__':
     fill_in_segment_nums(rishon_list)
     fill_in_refs(rishon_list)
     partitioned_by_books = partition_dicts_by_key(rishon_list, "book")
-    # create_indexes(partitioned_by_books)
+    create_indexes(partitioned_by_books)
     ingest_versions(partitioned_by_books)
     # print(partitioned_by_books)
 
