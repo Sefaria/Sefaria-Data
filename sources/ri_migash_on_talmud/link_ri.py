@@ -56,10 +56,12 @@ def simple_tokenizer(text):
     return tokens
 def dher(text):
     dh = "$$$$$$$$$$$$$$$$$$"
-    match = re.search(r'<b>(.*?)</b>', text)
-    if match:
-        if len(match.group(1).split()) >= 2:
-            dh = match.group(1)
+    # match = re.search(r'<b>(.*?)</b>', text)
+    # if match:
+    #     if len(match.group(1).split()) >= 2:
+    #         dh = match.group(1)
+    words = text.split(" ")[:10]
+    dh = " ".join(words)
     return dh
 
 
@@ -183,15 +185,25 @@ def get_validation_set(csv_filename):
             val_set.append(row)
     return val_set
 
-
+def score_matches(validation_set):
+    # first_ri_tref = validation_set[0][0]
+    last_ri_tref = validation_set[-1][0]
+    index_of_colon = last_ri_tref.find(':')
+    last_ri_amud_tref = last_ri_tref[0:index_of_colon]
+    ri_bava_batra_amudim_refs = library.get_index("Ri Migash on Bava Batra").all_section_refs()
+    matches = []
+    for ri_amud_ref in ri_bava_batra_amudim_refs:
+        talmud_amud_ref = Ref(ri_amud_ref.tref.replace("Ri Migash on ", ""))
+        matches += infer_links(ri_amud_ref.tref, talmud_amud_ref.tref)
+        index_of_colon = last_ri_tref.find(':')
+        if ri_amud_ref == Ref(last_ri_amud_tref):
+            break
 
 if __name__ == '__main__':
     print("hello world")
     validation_set = get_validation_set("bava_batra_validation.csv")
-    ri_bava_batra_amudim_refs = library.get_index("Ri Migash on Bava Batra").all_section_refs()
-    for ri_amud_ref in ri_bava_batra_amudim_refs:
-        talmud_amud_ref = Ref(ri_amud_ref.tref.replace("Ri Migash on ", ""))
-        infer_links(ri_amud_ref.tref, talmud_amud_ref.tref)
+    score_matches(validation_set)
+
 
     print("end")
 
