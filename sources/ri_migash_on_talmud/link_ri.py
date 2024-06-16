@@ -61,18 +61,18 @@ def dher(text):
     #     if len(match.group(1).split()) >= 2:
     #         dh = match.group(1)
     words = text.split(" ")[:10]
+    cutoff_index = -1
+    for index, word in enumerate(words):
+        if word[-1] == '.' or word in {"וכו'", "פירש", "פירוש",}:
+            cutoff_index = index
+            break
+    if cutoff_index > -1:
+          words = words[:cutoff_index+1]
     dh = " ".join(words)
     return dh
 
 
-def get_rows(prefix, node):
-    temp_rows = []
-    starting_int = daf_to_section(node.startingAddress)
-    for i, tref in enumerate(node.refs):
-        curr_daf = section_to_daf(starting_int+i)
-        # temp_rows += [{"Daf": f"{prefix}, {curr_daf}", "URL": "https://sefaria.org/" + Ref(tref).url()}]
-        temp_rows += [{"Daf": f"{prefix}, {curr_daf}", "Siman": tref}]
-    return temp_rows
+
 
 def links_to_csv(list_of_links, filename="output.csv"):
     tuples = []
@@ -216,7 +216,24 @@ def get_f_score(golden_standard, predictions):
         return 0.0
     f_score = 2 * (precision * recall) / (precision + recall)
 
-    return f_score
+    return f_score, recall, precision
+
+def print_false_negatives(golden_standard, predictions):
+    golden_standard_set = set(golden_standard)
+    predictions_set = set(predictions)
+    false_negatives_set = golden_standard_set - predictions_set
+    print("False Negatives:")
+    for match in false_negatives_set:
+        #http://localhost:8000/Genesis.5.1?lang=he&with=Rashi&lang2=he
+        print(f"https://new-shmuel.cauldron.sefaria.org/{Ref(match[0]).url()}?lang=he&p2={Ref(match[1]).url()}&?lang2=he")
+def print_false_positives(golden_standard, predictions):
+    golden_standard_set = set(golden_standard)
+    predictions_set = set(predictions)
+    false_positives = predictions_set - golden_standard_set
+    print("False Positives:")
+    for match in false_positives:
+        #http://localhost:8000/Genesis.5.1?lang=he&with=Rashi&lang2=he
+        print(f"http://localhost:8000/{Ref(match[0]).url()}?lang=he&p2={Ref(match[1]).url()}&?lang2=he")
 def score_matches(validation_set):
     # first_ri_tref = validation_set[0][0]
     last_ri_tref = validation_set[-1][0]
@@ -233,8 +250,12 @@ def score_matches(validation_set):
     matches_pairs = []
     for link in matches:
         matches_pairs.append((Ref(link['refs'][0]).normal(), Ref(link['refs'][1]).normal()))
-    f_score = get_f_score(validation_set, matches_pairs)
-    print(f_score)
+    f_score, recall, precision = get_f_score(validation_set, matches_pairs)
+    print(f"f_score: {f_score}")
+    print(f"recall: {recall}")
+    print(f"precision: {precision}")
+    print_false_negatives(validation_set, matches_pairs)
+    print_false_positives(validation_set, matches_pairs)
 
 if __name__ == '__main__':
     print("hello world")
