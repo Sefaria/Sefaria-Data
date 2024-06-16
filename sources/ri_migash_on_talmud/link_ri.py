@@ -182,9 +182,41 @@ def get_validation_set(csv_filename):
     with open(csv_filename, mode='r') as file:
         reader = csv.reader(file)
         for row in reader:
-            val_set.append(row)
+            val_set.append((Ref(row[0]).normal(),Ref(row[1]).normal()))
     return val_set
 
+
+def get_f_score(golden_standard, predictions):
+    """
+    Calculate the F-score given the golden standard and predictions.
+
+    Parameters:
+    golden_standard (list): The list of true labels.
+    predictions (list): The list of predicted labels.
+
+    Returns:
+    float: The F-score.
+    """
+
+    # Convert to sets to handle the case of unordered lists
+    golden_standard_set = set(golden_standard)
+    predictions_set = set(predictions)
+
+    # Calculate true positives, false positives, and false negatives
+    true_positives = len(golden_standard_set.intersection(predictions_set))
+    false_positives = len(predictions_set - golden_standard_set)
+    false_negatives = len(golden_standard_set - predictions_set)
+
+    # Calculate precision and recall
+    precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
+    recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
+
+    # Calculate F-score
+    if precision + recall == 0:
+        return 0.0
+    f_score = 2 * (precision * recall) / (precision + recall)
+
+    return f_score
 def score_matches(validation_set):
     # first_ri_tref = validation_set[0][0]
     last_ri_tref = validation_set[-1][0]
@@ -198,6 +230,11 @@ def score_matches(validation_set):
         index_of_colon = last_ri_tref.find(':')
         if ri_amud_ref == Ref(last_ri_amud_tref):
             break
+    matches_pairs = []
+    for link in matches:
+        matches_pairs.append((Ref(link['refs'][0]).normal(), Ref(link['refs'][1]).normal()))
+    f_score = get_f_score(validation_set, matches_pairs)
+    print(f_score)
 
 if __name__ == '__main__':
     print("hello world")
