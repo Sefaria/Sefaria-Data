@@ -134,7 +134,8 @@ def infer_links(ri_amud, talmud_amud):
     from sources.functions import match_ref_interface
     segs = Ref(ri_amud).all_segment_refs()
     comments = [seg.text("he").text for seg in segs]
-    matches = match_ref_interface(talmud_amud, ri_amud,
+    talmud_amud_extended = (Ref(talmud_amud).to(Ref(talmud_amud).all_segment_refs()[-1].next_segment_ref())).normal()
+    matches = match_ref_interface(talmud_amud_extended, ri_amud,
                              comments, simple_tokenizer, dher)
     return matches
 
@@ -225,7 +226,8 @@ def print_false_negatives(golden_standard, predictions):
     print("False Negatives:")
     for match in false_negatives_set:
         #http://localhost:8000/Genesis.5.1?lang=he&with=Rashi&lang2=he
-        print(f"https://new-shmuel.cauldron.sefaria.org/{Ref(match[0]).url()}?lang=he&p2={Ref(match[1]).url()}&?lang2=he")
+        # print(f"https://new-shmuel.cauldron.sefaria.org/{Ref(match[0]).url()}?lang=he&p2={Ref(match[1]).url()}&?lang2=he")
+        print(f"http://localhost:8000/{Ref(match[0]).url()}?lang=he&p2={Ref(match[1]).url()}&?lang2=he")
 def print_false_positives(golden_standard, predictions):
     golden_standard_set = set(golden_standard)
     predictions_set = set(predictions)
@@ -244,7 +246,6 @@ def score_matches(validation_set):
     for ri_amud_ref in ri_bava_batra_amudim_refs:
         talmud_amud_ref = Ref(ri_amud_ref.tref.replace("Ri Migash on ", ""))
         matches += infer_links(ri_amud_ref.tref, talmud_amud_ref.tref)
-        index_of_colon = last_ri_tref.find(':')
         if ri_amud_ref == Ref(last_ri_amud_tref):
             break
     matches_pairs = []
