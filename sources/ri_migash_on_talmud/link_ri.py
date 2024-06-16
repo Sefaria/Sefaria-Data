@@ -76,9 +76,22 @@ def dher(text):
 
 def links_to_csv(list_of_links, filename="output.csv"):
     tuples = []
-    tuples.append(("Yahel Ref", "Zohar Ref", "Yahel Text", "Zohar Text"))
-    for link in list_of_links:
-        tuples += [(link["refs"][0], link["refs"][1], Ref(link["refs"][0]).text("he").text, Ref(link["refs"][1]).text("he").text)]
+    tuples.append(("Ri Migash Ref", "Talmud Ref", "Ri Migash Text", "Talmud Text", "URL"))
+    def create_data_tuple(link):
+        return (link["refs"][0], link["refs"][1], Ref(link["refs"][0]).text("he").text, Ref(link["refs"][1]).text("he").text,
+         f"https://new-shmuel.cauldron.sefaria.org/{Ref((link['refs'][0])).url()}?lang=he&p2={Ref(link['refs'][1]).url()}&?lang2=he")
+    def create_only_base_ref_tuple(base_ref):
+        return (base_ref, "", "", "", f"https://new-shmuel.cauldron.sefaria.org/{Ref(base_ref).url()}?lang=he")
+
+    for ri_seg_ref in library.get_index("Ri Migash on Bava Batra").all_segment_refs():
+        matching_links = [link for link in list_of_links if Ref(link["refs"][0]) == ri_seg_ref]
+        matching_link = matching_links[0] if matching_links else None
+        if matching_link:
+            tuples.append(create_data_tuple(matching_link))
+        else:
+            tuples.append(create_only_base_ref_tuple(ri_seg_ref.normal()))
+    # for link in list_of_links:
+    #     tuples += [create_data_tuple(link)]
     with open(filename, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerows(tuples)
@@ -258,10 +271,19 @@ def score_matches(validation_set):
     print_false_negatives(validation_set, matches_pairs)
     print_false_positives(validation_set, matches_pairs)
 
+def link_ri_bava_batra():
+    ri_bava_batra_amudim_refs = library.get_index("Ri Migash on Bava Batra").all_section_refs()
+    matches = []
+    for ri_amud_ref in ri_bava_batra_amudim_refs:
+        talmud_amud_ref = Ref(ri_amud_ref.tref.replace("Ri Migash on ", ""))
+        matches += infer_links(ri_amud_ref.tref, talmud_amud_ref.tref)
+    return matches
 if __name__ == '__main__':
     print("hello world")
-    validation_set = get_validation_set("bava_batra_validation.csv")
-    score_matches(validation_set)
+    # validation_set = get_validation_set("bava_batra_validation.csv")
+    # score_matches(validation_set)
+    links = link_ri_bava_batra()
+    links_to_csv(links)
 
 
     print("end")
