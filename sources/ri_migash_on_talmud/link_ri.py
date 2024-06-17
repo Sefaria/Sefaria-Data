@@ -55,15 +55,20 @@ def simple_tokenizer(text):
     tokens = text.split()
     return tokens
 def dher(text):
+    stop_words = ["הא דאמרינן", "ואקשינן", "והאי דקתני"]
     dh = "$$$$$$$$$$$$$$$$$$"
-    # match = re.search(r'<b>(.*?)</b>', text)
-    # if match:
-    #     if len(match.group(1).split()) >= 2:
-    #         dh = match.group(1)
+    if '<b>' in text and '</b>' in text:
+        match = re.search(r'<b>(.*?)</b>', text)
+        if match:
+            if len(match.group(1).split()) >= 2:
+                dh = match.group(1)
+        return dh
+    for stop_word in stop_words:
+        text = text.replace(stop_word, '')
     words = text.split(" ")[:10]
     cutoff_index = -1
     for index, word in enumerate(words):
-        if word[-1] == '.' or word in {"וכו'", "פירש", "פירוש",}:
+        if word and word[-1] == '.' or word in {"וכו'", "פירש", "פירוש", "פי'"}:
             cutoff_index = index
             break
     if cutoff_index > -1:
@@ -300,9 +305,9 @@ if __name__ == '__main__':
     print("hello world")
     # validation_set = get_validation_set("bava_batra_validation.csv")
     # score_matches(validation_set)
-    links = link_ri("Bava Batra")
-    insert_links_to_db(links)
-    # links_to_csv(links, "Shevuot")
+    links = link_ri("Shevuot")
+    # insert_links_to_db(links)
+    links_to_csv(links, "Shevuot")
 
 
     print("end")
