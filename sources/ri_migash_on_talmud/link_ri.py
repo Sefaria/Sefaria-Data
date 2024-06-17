@@ -74,7 +74,7 @@ def dher(text):
 
 
 
-def links_to_csv(list_of_links, filename="output.csv"):
+def links_to_csv(list_of_links, masechet_name, filename="output.csv"):
     tuples = []
     tuples.append(("Ri Migash Ref", "Talmud Ref", "Ri Migash Text", "Talmud Text", "URL"))
     def create_data_tuple(link):
@@ -83,7 +83,7 @@ def links_to_csv(list_of_links, filename="output.csv"):
     def create_only_base_ref_tuple(base_ref):
         return (base_ref, "", "", "", f"https://new-shmuel.cauldron.sefaria.org/{Ref(base_ref).url()}?lang=he")
 
-    for ri_seg_ref in library.get_index("Ri Migash on Bava Batra").all_segment_refs():
+    for ri_seg_ref in library.get_index("Ri Migash on "+masechet_name).all_segment_refs():
         matching_links = [link for link in list_of_links if Ref(link["refs"][0]) == ri_seg_ref]
         matching_link = matching_links[0] if matching_links else None
         if matching_link:
@@ -147,7 +147,11 @@ def infer_links(ri_amud, talmud_amud):
     from sources.functions import match_ref_interface
     segs = Ref(ri_amud).all_segment_refs()
     comments = [seg.text("he").text for seg in segs]
-    talmud_amud_extended = (Ref(talmud_amud).to(Ref(talmud_amud).all_segment_refs()[-1].next_segment_ref())).normal()
+    talmud_amud_extended = ""
+    try:
+        talmud_amud_extended = (Ref(talmud_amud).to(Ref(talmud_amud).all_segment_refs()[-1].next_segment_ref())).normal()
+    except:
+        talmud_amud_extended = talmud_amud
     matches = match_ref_interface(talmud_amud_extended, ri_amud,
                              comments, simple_tokenizer, dher)
     return matches
@@ -271,19 +275,34 @@ def score_matches(validation_set):
     print_false_negatives(validation_set, matches_pairs)
     print_false_positives(validation_set, matches_pairs)
 
-def link_ri_bava_batra():
-    ri_bava_batra_amudim_refs = library.get_index("Ri Migash on Bava Batra").all_section_refs()
+def link_ri(masechet_name):
+    ri_amudim_refs = library.get_index("Ri Migash on "+masechet_name).all_section_refs()
     matches = []
-    for ri_amud_ref in ri_bava_batra_amudim_refs:
+    for ri_amud_ref in ri_amudim_refs:
         talmud_amud_ref = Ref(ri_amud_ref.tref.replace("Ri Migash on ", ""))
         matches += infer_links(ri_amud_ref.tref, talmud_amud_ref.tref)
     return matches
+
+def list_of_dict_to_links(dicts):
+    list_of_dicts = []
+    for d in dicts:
+        list_of_dicts.append(Link(d))
+    return list_of_dicts
+
+def insert_links_to_db(list_of_dict_links):
+    list_of_links = list_of_dict_to_links(list_of_dict_links)
+    for l in list_of_links:
+        try:
+            l.save()
+        except Exception as e:
+            print(e)
 if __name__ == '__main__':
     print("hello world")
     # validation_set = get_validation_set("bava_batra_validation.csv")
     # score_matches(validation_set)
-    links = link_ri_bava_batra()
-    links_to_csv(links)
+    links = link_ri("Bava Batra")
+    insert_links_to_db(links)
+    # links_to_csv(links, "Shevuot")
 
 
     print("end")
