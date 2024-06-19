@@ -89,7 +89,7 @@ def links_to_csv(list_of_links, masechet_name, filename="output.csv"):
         return (base_ref, "", "", "", f"https://new-shmuel.cauldron.sefaria.org/{Ref(base_ref).url()}?lang=he")
 
     for ri_seg_ref in library.get_index("Ri Migash on "+masechet_name).all_segment_refs():
-        matching_links = [link for link in list_of_links if Ref(link["refs"][0]) == ri_seg_ref]
+        matching_links = [link for link in list_of_links if Ref(link["refs"][0]).contains(ri_seg_ref)]
         matching_link = matching_links[0] if matching_links else None
         if matching_link:
             tuples.append(create_data_tuple(matching_link))
@@ -160,45 +160,6 @@ def infer_links(ri_amud, talmud_amud):
     matches = match_ref_interface(talmud_amud_extended, ri_amud,
                              comments, simple_tokenizer, dher)
     return matches
-
-def match_commentary():
-    daf_siman_map = create_daf_siman_map()
-    yahel_sec_trefs = get_yahel_sec_trefs()
-    yahel_dafXzohar_tref_list = generate_yahel_dafXzohar_tref_list(daf_siman_map, yahel_sec_trefs)
-
-    print("hi")
-    links = []
-    look_side_ways_links = []
-    for yahel_daf, zohar_tref in yahel_dafXzohar_tref_list:
-        matches = infer_links(yahel_daf, zohar_tref)
-
-        # missing_links = get_missing_links(yahel_daf, matches)
-        zohar_tref_for_previous_daf = get_previous_value(yahel_dafXzohar_tref_list, yahel_daf)
-        zohar_tref_for_next_daf = get_next_value(yahel_dafXzohar_tref_list, yahel_daf)
-        print(zohar_tref_for_previous_daf)
-        more_matches = []
-        if zohar_tref_for_previous_daf:
-            more_matches += infer_links(yahel_daf, zohar_tref_for_previous_daf)
-        if zohar_tref_for_next_daf:
-            more_matches += infer_links(yahel_daf, zohar_tref_for_next_daf)
-        only_new_matches = get_new_matches(more_matches, matches)
-        if only_new_matches:
-            halt = 1
-        matches += only_new_matches
-        look_side_ways_links += only_new_matches
-
-
-
-
-
-        links += matches
-    links = infer_logical_links(links)
-    # print("second iteration:")
-    # links = infer_logical_links(links)
-    links_to_csv(links, filename="output2.csv")
-    sideways_refs = [link["refs"] for link in look_side_ways_links]
-    pprint(sideways_refs)
-    insert_links_to_db(links)
 
 def get_validation_set(csv_filename):
     val_set = []
@@ -301,13 +262,47 @@ def insert_links_to_db(list_of_dict_links):
             l.save()
         except Exception as e:
             print(e)
+def rangify_links(masechet_name, links):
+    def get_new_link(ri_tref, talmud_tref):
+        new_link = {'auto': True, 'generated_by': 'Shevuot_to_Ri', 'refs': [ri_tref, talmud_tref],
+         'type': 'Commentary'}
+        return new_link
+
+
+    ri_amudim_refs = library.get_index("Ri Migash on "+masechet_name).all_section_refs()
+    ri_seg_refs = library.get_index("Ri Migash on " + masechet_name).all_segment_refs()
+    new_links = []
+    i = 0
+    while (i < len(ri_seg_refs)):
+        start_of_range_ref = ri_seg_refs[i]
+        if len([link['refs'][1] for link in links if Ref(link['refs'][0]) == start_of_range_ref]) == 0:
+            i += 1
+            continue
+        if len([link['refs'][0] for link in links if Ref(link['refs'][0]) == ri_seg_refs[i+1]]) == 0:
+            end_of_range_ref = start_of_range_ref
+            i = i+1
+            while(i < len(ri_seg_refs) and ri_seg_refs[i].section_ref() == start_of_range_ref.section_ref()) and len([link['refs'][0] for link in links if Ref(link['refs'][0]) == ri_seg_refs[i]]) == 0:
+                end_of_range_ref = ri_seg_refs[i]
+                i += 1
+            ranged_ref = start_of_range_ref.to(end_of_range_ref)
+            print(f"http://localhost:8000/{ranged_ref.url()}")
+            new_links.append(get_new_link(ranged_ref.normal(), [link['refs'][1] for link in links if Ref(link['refs'][0]) == start_of_range_ref][0]))
+        else:
+            print(f"http://localhost:8000/{start_of_range_ref.url()}")
+            new_links.append(get_new_link(start_of_range_ref.normal(), [link['refs'][1] for link in links if Ref(link['refs'][0]) == start_of_range_ref][0]))
+        i+=1
+    return new_links
+
+
+
 if __name__ == '__main__':
     print("hello world")
     # validation_set = get_validation_set("bava_batra_validation.csv")
     # score_matches(validation_set)
     links = link_ri("Shevuot")
+    rangified_links = rangify_links("Shevuot", links)
     # insert_links_to_db(links)
-    links_to_csv(links, "Shevuot")
+    links_to_csv(rangified_links, "Shevuot")
 
 
     print("end")
