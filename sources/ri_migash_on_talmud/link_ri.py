@@ -290,7 +290,7 @@ def rangify_links(masechet_name, links):
         else:
             print(f"http://localhost:8000/{start_of_range_ref.url()}")
             new_links.append(get_new_link(start_of_range_ref.normal(), [link['refs'][1] for link in links if Ref(link['refs'][0]) == start_of_range_ref][0]))
-        i+=1
+            i+=1
     return new_links
 
 
@@ -301,8 +301,8 @@ if __name__ == '__main__':
     # score_matches(validation_set)
     links = link_ri("Shevuot")
     rangified_links = rangify_links("Shevuot", links)
-    # insert_links_to_db(links)
-    links_to_csv(rangified_links, "Shevuot")
+    insert_links_to_db(rangified_links)
+    # links_to_csv(rangified_links, "Shevuot")
 
 
     print("end")
