@@ -56,5 +56,9 @@ if __name__ == '__main__':
     html_content = re.sub(pattern, lambda m: f"${m.group()}$", html_content)
     html_content = remove_divs_starting_with_text(html_content, 'עין משפט ונר מצוה')
     plain_text = html_to_text(html_content)
+    # Using re.findall to find all matches
+    matches = re.compile(r'\$.+?\$').finditer(plain_text)
+    for match in matches:
+        print(plain_text[match.regs[0][0]:match.regs[0][1]])
     print(plain_text)
     print("hello world")
