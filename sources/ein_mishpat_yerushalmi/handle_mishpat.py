@@ -46,43 +46,30 @@ def simple_tokenizer(text):
     return tokens
 
 def remove_divs_starting_with_text(html_content, prefix):
-    """
-    Remove all <div> elements from the HTML content whose text starts with the specified prefix.
-
-    Parameters:
-    - html_content (str): The HTML content as a string.
-    - prefix (str): The prefix to match at the beginning of the text.
-
-    Returns:
-    - str: The modified HTML content as a string.
-    """
-
     soup = BeautifulSoup(html_content, 'html.parser')
-
-    # Find all <div> elements whose text starts with the prefix
     divs_to_remove = [div for div in soup.find_all('div') if div.get_text().strip().startswith(prefix)]
-
-    # Remove the identified <div> elements
     for div in divs_to_remove:
         div.decompose()
 
-    # Convert the BeautifulSoup object back to a string
+    modified_html = str(soup)
+    return modified_html
+
+def remove_paragraphs_starting_with_text(html_content, prefix):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    paragraphs_to_remove = [p for p in soup.find_all('p') if p.get_text().strip().startswith(prefix)]
+    for p in paragraphs_to_remove:
+        p.decompose()
+
     modified_html = str(soup)
 
     return modified_html
+def remove_elements_by_tag(html_content, tag_names: List):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    for tag_name in tag_names:
+        for element in soup.find_all(tag_name):
+            element.decompose()
+    return str(soup)
 
-# def infer_links(ri_amud, talmud_amud):
-#     from sources.functions import match_ref_interface
-#     segs = Ref(ri_amud).all_segment_refs()
-#     comments = [seg.text("he").text for seg in segs]
-#     talmud_amud_extended = ""
-#     try:
-#         talmud_amud_extended = (Ref(talmud_amud).to(Ref(talmud_amud).all_segment_refs()[-1].next_segment_ref())).normal()
-#     except:
-#         talmud_amud_extended = talmud_amud
-#     matches = match_ref_interface(talmud_amud_extended, ri_amud,
-#                              comments, simple_tokenizer, dher)
-#     return matches
 
 def get_dh(text):
     result = re.sub(r'\$.+?\$', '', text)
@@ -151,14 +138,21 @@ if __name__ == '__main__':
     pattern = r'\b[\u0590-\u05FF]+_[\u0590-\u05FF]+\b'
     html_content = re.sub(pattern, lambda m: f"${m.group()}$", html_content)
     html_content = remove_divs_starting_with_text(html_content, 'עין משפט ונר מצוה')
+    html_content = remove_paragraphs_starting_with_text(html_content, "קישורים")
+    html_content = remove_elements_by_tag(html_content, ['h3', 'figure'])
     plain_text = html_to_text(html_content)
+    #remove
+    #מפרשים:
+    #   ^[דף ג עמוד ב]
+    #from page
+    plain_text = re.sub(r"מפרשים:\s*\^\[.*?\]", '', plain_text)
     # Using re.findall to find all matches
     matches = re.compile(r'\$.+?\$').finditer(plain_text)
     comments = []
     for match in matches:
         match_text = plain_text[match.regs[0][0]:match.regs[0][1]]
         if all(term not in match_text for term in ['מסכת', 'פרק', 'ירושלמי']):
-            extraction = extract_with_context(plain_text, (match.regs[0][0], match.regs[0][1]), 1, 5)
+            extraction = extract_with_context(plain_text, (match.regs[0][0], match.regs[0][1]), 0, 5)
             comments.append(extraction)
 
     for index, c in enumerate(comments):
