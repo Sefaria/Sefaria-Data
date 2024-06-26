@@ -137,12 +137,28 @@ def extract_with_context(text, span, num_words_before, num_words_after):
 
     return result
 
+
+def concatenate_lines(input_string):
+    lines = input_string.splitlines()
+    result = []
+
+    for line in lines:
+        stripped_line = line.strip()
+        if stripped_line and stripped_line[0].isdigit():
+            result.append(line)
+        else:
+            if result:
+                result[-1] += ' ' + line.strip()
+            else:
+                result.append(line)
+
+    return result
 def get_footnotes_markers(html_content):
     divs_text = get_divs_starting_with_text(html_content, 'עין משפט ונר מצוה')
     markers_footnotes = []
     linker = library.get_linker("he")
     for div_text in divs_text:
-        lines = div_text.splitlines()
+        lines = concatenate_lines(div_text)
         lines_starting_with_number = [
             line for line in lines if line.lstrip() and line.lstrip().split() and line.lstrip().split()[0][0].isdigit()
         ]
