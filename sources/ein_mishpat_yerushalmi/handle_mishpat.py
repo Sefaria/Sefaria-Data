@@ -54,6 +54,12 @@ def remove_divs_starting_with_text(html_content, prefix):
     modified_html = str(soup)
     return modified_html
 
+def get_divs_starting_with_text(html_content, prefix):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    divs_to_get = [div.get_text().strip() for div in soup.find_all('div') if div.get_text().strip().startswith(prefix)]
+    return divs_to_get
+
+
 def remove_paragraphs_starting_with_text(html_content, prefix):
     soup = BeautifulSoup(html_content, 'html.parser')
     paragraphs_to_remove = [p for p in soup.find_all('p') if p.get_text().strip().startswith(prefix)]
@@ -93,13 +99,14 @@ def list_of_tuples_to_csv(data, filename='output.csv'):
     except Exception as e:
         print(f"An error occurred: {e}")
 def link_markers_to_sefaria_segments(comments_list):
-    base_text = Ref('Jerusalem Talmud Pesachim').text('he')
-    base_text_list = [seg.text('he') for seg in library.get_index('Jerusalem Talmud Pesachim').all_segment_refs()]
+    # base_text = Ref('Jerusalem Talmud Pesachim').text('he')
+    base_text_list = [seg.text('he') for seg in library.get_index('Jerusalem Talmud Shabbat').all_segment_refs()]
     links = match_ref(base_text_list, comments_list, simple_tokenizer, dh_extract_method=get_dh, chunks_list=True)
     table = []
     for marker, matched in zip(comments_list, links['matches']):
         tref = matched.tref if matched else ""
         url = "https://www.sefaria.org/"+matched.url() if matched else ""
+
         table.append( (marker, tref, url) )
     list_of_tuples_to_csv(table)
     print(links)
@@ -130,10 +137,32 @@ def extract_with_context(text, span, num_words_before, num_words_after):
 
     return result
 
+def get_footnotes_markers(html_content):
+    divs_text = get_divs_starting_with_text(html_content, 'עין משפט ונר מצוה')
+    markers_footnotes = []
+    linker = library.get_linker("he")
+    for div_text in divs_text:
+        lines = div_text.splitlines()
+        lines_starting_with_number = [
+            line for line in lines if line.lstrip() and line.lstrip().split() and line.lstrip().split()[0][0].isdigit()
+        ]
+        for line in lines_starting_with_number:
+            match = re.search(r'[\u0590-\u05FF]+_[\u0590-\u05FF]+\b', line)
+            marker = match.group() if match else None
+            if marker:
+                doc = linker.link(line, type_filter="citation", with_failures=False)
+                for citation in doc.resolved_refs:
+                    print(citation.ref)
+                    markers_footnotes.append( (marker, citation.ref) )
+    list_of_tuples_to_csv(markers_footnotes, 'footnotes_links')
+
+
 if __name__ == '__main__':
     # Reading HTML content from a file
     with open('ביאור_ירושלמי מאיר_מסכת פסחים_פרק ראשון – ויקיטקסט.html', 'r', encoding='utf-8') as file:
         html_content = file.read()
+
+    get_footnotes_markers(html_content)
 
     pattern = r'\b[\u0590-\u05FF]+_[\u0590-\u05FF]+\b'
     html_content = re.sub(pattern, lambda m: f"${m.group()}$", html_content)
