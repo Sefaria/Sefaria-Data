@@ -940,7 +940,7 @@ def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract
     matches = match_ref(base, comments, base_tokenizer=base_tokenizer, dh_extract_method=dh_extract_method)
     for n, match in enumerate(matches["matches"]):
         len_prob = len(matches["match_text"][n][0]) < 2 or len(matches["match_text"][n][1]) < 2
-        curr_comm_ref = "{} {}".format(comm_ref, n + 1) if len(comments) > 1 else comm_ref
+        curr_comm_ref = "{} {}".format(comm_ref, n + 1)
         if match and not len_prob:
             curr_base_ref = match.normal()
             new_link = {"refs": [curr_comm_ref, curr_base_ref], "generated_by": generated_by_str,
