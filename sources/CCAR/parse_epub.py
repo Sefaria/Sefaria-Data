@@ -64,15 +64,38 @@ def identify_chapters(parents):
                     # Extract and print the chapter number if found
                     if match:
                         chapter = int(match.group(1))
-                        print(f"Chapter: {chapter}")
+                elif re.search(r'^(\d+)', child.text) and chapter >= 1:
+                    for node in child:
+                        if isinstance(node, Tag) and node.name in ['b', 'i']:
+                            match = re.search(r'^(\d+)', node.text)
+                            already_pasuk = re.search(r'^\d+:\d+', node.text)
+                            if match and already_pasuk is None:
+                                node.string = node.text.replace(match.group(0), f"{chapter}:{match.group(0)}", 1)
+                # elif re.search("<b><i>\D+</i></b>", str(child)):
+            found_verse = False
+            prepend = []
+            for c, child in enumerate(parent.children):
+                if re.search(r'^(\d+)', child.text) is None:
+                    if found_verse:
+                        br_tag = Tag(name='br')
+                        prev_child_num = 1
+                        prev_child = parent.contents[c - prev_child_num]
+                        while prev_child.text == "":
+                            prev_child_num += 1
+                            prev_child = parent.contents[c - prev_child_num]
+                        parent.contents[c - prev_child_num].append(br_tag)
+                        for x in list(child.children):
+                            parent.contents[c - prev_child_num].append(x)
+                        child.string = ""
                     else:
-                        print("Chapter not found")
-                elif re.search(r'^(\d+)\.', child.text) and chapter >= 1:
-                    for text_node in child.find_all(text=True):
-                        match = re.search(r'^(\d+)\.', child.text)
-                        if match and match.group(0) in text_node:
-                            new_text = text_node.replace(match.group(0), f"{chapter}:{match.group(0)}")
-                            text_node.replace_with(new_text)
+                        prepend.append(child)
+                else:
+                    if len(prepend) > 0:
+                        for i, x in enumerate(prepend):
+                            child.insert(i, x)
+                        prepend = []
+                    found_verse = True
+
 
 
     return parents
@@ -96,6 +119,12 @@ for item in book.get_items():
         # with open(f"{item.id}.html", 'w', encoding='utf-8') as f:
         #     f.write(soup.prettify())
         if 'chap' in item.id:
+            for span in soup.find_all('span'):
+                txt = span.get_text()
+                span.replace_with(txt)
+            for a_tag in soup.find_all('a'):
+                txt = a_tag.get_text()
+                a_tag.replace_with(txt)
             with open(f"parsed_HTML/{item.id}.html", 'w', encoding='utf-8') as f:
                 parents = parse(soup.find('body').children)
                 parents = identify_chapters(parents)
