@@ -5,6 +5,14 @@ from bs4 import Tag, NavigableString
 import re
 from sources.functions import *
 import difflib
+special_node_names = {"Post-biblical Interpretations": [], "Contemporary Reflection": [], "Another View": [], "Introductions": []}
+parshiot = []
+for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
+    parshiot += [Term().load({"name": x["sharedTitle"]}).get_primary_title('en') for x in
+                 library.get_index(book).alt_structs["Parasha"]["nodes"]]
+
+for node in special_node_names:
+    special_node_names[node] = {key: [] for key in parshiot}
 
 def get_parasha(name):
     url = "http://localhost:8000/api/name/"+name
@@ -174,21 +182,47 @@ def extract_book(parents):
     #     for p in parshiot:
     #         if p in parents[0].text:
     #             found.append(book)
+    global parshiot
     print(parents[0].contents[-1].contents[-1].text)
     found = []
-    parshiot = []
-    for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-        parshiot += [Term().load({"name": x["sharedTitle"]}).get_primary_title('en') for x in library.get_index(book).alt_structs["Parasha"]["nodes"]]
     closest_matches = difflib.get_close_matches(parents[0].contents[-1].contents[-1].text, parshiot, n=1, cutoff=0.0)
     if closest_matches:
         closest_match = closest_matches[0]
         for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-            parshiot = [Term().load({"name": x["sharedTitle"]}).get_primary_title('en') for x in
+            book_parshiot = [Term().load({"name": x["sharedTitle"]}).get_primary_title('en') for x in
                          library.get_index(book).alt_structs["Parasha"]["nodes"]]
-            if closest_match in parshiot:
+            if closest_match in book_parshiot:
                 return book
     return None
 
+def extract_special_node_names(parents, chap_num):
+    global special_node_names
+    global parshiot
+    special_node_parents = [x for x in parents if x.attrs['class'] != ['note'] and len(x.contents) > 7]
+    for node_name in special_node_names:
+        found = -1
+        for p, parent in enumerate(special_node_parents):
+            if node_name.lower() in str(parent.contents[0:2]).lower():
+                special_node_names[node_name][parshiot[chap_num-1]] = parent #parshiot[chap_num-1]
+                found = p
+                break
+        if found != -1:
+            del special_node_parents[found]
+    special_node_names["Introductions"][parshiot[chap_num - 1]] = special_node_parents[0]
+    for intro in special_node_parents[1:]:
+        for child in intro:
+            special_node_names["Introductions"][parshiot[chap_num - 1]].append(child)
+
+    for key in special_node_names:
+        special_node_names[key][parshiot[chap_num - 1]] = parse_special_node(special_node_names[key][parshiot[chap_num - 1]])
+
+def parse_special_node(special_node):
+    if isinstance(special_node, Tag):
+        for child in special_node.find_all('div'):
+            br = Tag(name="br")
+            child.insert(0, br)
+        special_node = bleach.clean(str(special_node), strip=True, tags=ALLOWED_TAGS).replace("<br><br>", "<br>")
+    return special_node
 
 # Read the ePUB file
 book_file = epub.read_epub('ISBN_9780881232837.epub')
@@ -223,7 +257,9 @@ for item in book_file.get_items():
                 parents = parse(soup.find('body').children)
                 parents = identify_chapters(parents)
                 book_title = extract_book(parents)
+                parents = [x for x in parents if len(x.contents) > 4]
                 extract_chapters(parents, books[book_title])
+                extract_special_node_names(parents, int(item.id.replace("chap", "")))
                 combined_soup = BeautifulSoup('', 'html.parser')
 
                 # Append each element to the container
@@ -237,8 +273,9 @@ for item in book_file.get_items():
         with open(os.path.join(output_dir, image_name), 'wb') as image_file:
             image_file.write(image_data)
 
+special_node_names
 for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
     book_dict = books[book]
     for chapter in book_dict:
         for verse in book_dict[chapter]:
-            book_dict[chapter][verse] = bleach.clean(str(book_dict[chapter][verse]), strip=True, tags=["i", "b", 'br']).replace("<br><br>", "<br>")
+            book_dict[chapter][verse] = bleach.clean(str(book_dict[chapter][verse]), strip=True, tags=ALLOWED_TAGS).replace("<br><br>", "<br>")
