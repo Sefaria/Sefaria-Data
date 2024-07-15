@@ -98,9 +98,9 @@ def list_of_tuples_to_csv(data, filename='output.csv'):
         print(f"Data has been written to {filename}")
     except Exception as e:
         print(f"An error occurred: {e}")
-def link_markers_to_sefaria_segments(comments_list):
-    # base_text = Ref('Jerusalem Talmud Pesachim').text('he')
-    base_text_list = [seg.text('he') for seg in library.get_index('Jerusalem Talmud Shabbat').all_segment_refs()]
+def link_markers_to_sefaria_segments(comments_list, masechet_name, chapter_num):
+    segments = Ref(f'Jerusalem Talmud {masechet_name} chapter {chapter_num}').all_segment_refs()
+    base_text_list = [seg.text('he') for seg in segments]
     links = match_ref(base_text_list, comments_list, simple_tokenizer, dh_extract_method=get_dh, chunks_list=True)
     table = []
     for marker, matched in zip(comments_list, links['matches']):
@@ -153,7 +153,7 @@ def concatenate_lines(input_string):
                 result.append(line)
 
     return result
-def get_footnotes_markers(html_content):
+def infer_footnotes_links(html_content):
     divs_text = get_divs_starting_with_text(html_content, 'עין משפט ונר מצוה')
     markers_footnotes = []
     linker = library.get_linker("he")
@@ -170,16 +170,8 @@ def get_footnotes_markers(html_content):
                 for citation in doc.resolved_refs:
                     print(citation.ref)
                     markers_footnotes.append( (marker, citation.ref) )
-    list_of_tuples_to_csv(markers_footnotes, 'footnotes_links')
-
-
-if __name__ == '__main__':
-    # Reading HTML content from a file
-    with open('ביאור_ירושלמי מאיר_מסכת פסחים_פרק ראשון – ויקיטקסט.html', 'r', encoding='utf-8') as file:
-        html_content = file.read()
-
-    get_footnotes_markers(html_content)
-
+    list_of_tuples_to_csv(markers_footnotes, 'footnotes_links.csv')
+def infer_sefaria_segment_for_markers(html_content, masechet_name, chapter_num):
     pattern = r'\b[\u0590-\u05FF]+_[\u0590-\u05FF]+\b'
     html_content = re.sub(pattern, lambda m: f"${m.group()}$", html_content)
     html_content = remove_divs_starting_with_text(html_content, 'עין משפט ונר מצוה')
@@ -202,6 +194,13 @@ if __name__ == '__main__':
 
     for index, c in enumerate(comments):
         print(str(index) + ": " + c)
-    link_markers_to_sefaria_segments(comments)
-    print(plain_text)
+    link_markers_to_sefaria_segments(comments, masechet_name, chapter_num)
+
+if __name__ == '__main__':
+    # Reading HTML content from a file
+    with open('ביאור_ירושלמי מאיר_מסכת פסחים_פרק ראשון – ויקיטקסט.html', 'r', encoding='utf-8') as file:
+        html_content = file.read()
+
+    # infer_sefaria_segment_for_markers(html_content, "Shabbat", "1")
+    infer_footnotes_links(html_content)
     print("hello world")
