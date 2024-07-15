@@ -14,17 +14,10 @@ if __name__ == '__main__':
             topic = Topic().load({'slug': title_dict['slug']})
             if not topic:
                 continue
-            for title in topic.titles:
+            for i, title in enumerate(topic.titles):
                 title_text = title["text"]
                 if title_text == title_dict['title'] and re.search(r"\((.+)\)$", title_text):
                     title_text = re.sub(r"\((.+)\)$", r'[\1]', title_text)
+                    topic.titles[i]['text'] = title_text
+                    topic.save()
                     print(title_text)
-
-
-    # topic_set = TopicSet({ "titles.text" : { "$regex" : "\((.+)\)$" } })
-    # for topic in topic_set:
-    #     for title in topic.titles:
-    #         title_text = title["text"]
-    #         if re.search(r"\((.+)\)$", title_text):
-    #             title_text = re.sub(r"\((.+)\)$", r'[\1]', title_text)
-    #             print(title_text)
