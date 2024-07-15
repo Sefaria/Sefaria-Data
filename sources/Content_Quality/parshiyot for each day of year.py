@@ -25,7 +25,7 @@ correct_spellings = """Bereshit
 Noach
 Lekh Lekha
 Vayera
-Chayei Sarah
+Chayyei Sarah
 Toldot
 Vayeitzei
 Vayishlach
@@ -109,13 +109,13 @@ def most_similar_string(X, Y):
 #             results_set.add(results[0]['displayValue']['en'])
 # print(results_set)
 from sefaria.system.database import db
-parshiot_found = []
+parshiot_found = [] #
 for p in db.parshiot.find():
     x = most_similar_string(p['parasha'], correct_spellings)
     if x:
         if p['parasha'] not in parshiot_found:
             topic = Topic().load({"parasha": p['parasha']})
-            if "Parashat " in x:
+            if "Parashat " in x or "Shabbat" in x:
                 topic.add_title(x, 'en', True, True)
             else:
                 topic.add_title("Parashat "+x, 'en', True, True)
