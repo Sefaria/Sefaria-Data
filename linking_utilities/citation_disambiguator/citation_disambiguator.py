@@ -193,10 +193,10 @@ class CitationDisambiguator:
         fgood.close()
         fbad.close()
 
-    def disambiguate_one(self, main_oref, main_tc, quoted_oref):
+    def disambiguate_one(self, main_oref, main_tc, quoted_oref, snip_only_before=False):
         good, bad = [], []
         try:
-            main_snippet_list = get_snippet_by_seg_ref(main_tc.text, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True)
+            main_snippet_list = get_snippet_by_seg_ref(main_tc.text, quoted_oref, must_find_snippet=True, snip_size=65, use_indicator_words=True, snip_only_before=snip_only_before)
         except InputError:
             return good, bad
         except UnicodeEncodeError:
@@ -312,7 +312,7 @@ def save_disambiguated_to_file(good, bad, csv_good, csv_bad):
     csv_good.writerows(good)
     csv_bad.writerows(bad)
 
-def get_snippet_by_seg_ref(source_text, found, must_find_snippet=False, snip_size=100, use_indicator_words=False, return_matches=False):
+def get_snippet_by_seg_ref(source_text, found, must_find_snippet=False, snip_size=100, use_indicator_words=False, return_matches=False, snip_only_before=False):
     """
     based off of library.get_wrapped_refs_string
     :param source_text:
@@ -320,6 +320,7 @@ def get_snippet_by_seg_ref(source_text, found, must_find_snippet=False, snip_siz
     :param must_find_snippet: bool, True if you only want to return a str if you found a snippet
     :param snip_size int number of chars in snippet on each side
     :param use_indicator_words bool, True if you want to use hard-coded indicator words to determine which side of the ref the quote is on
+    :param snip_only_before bool, True if you want the snippet to take words only before the citation
     :return:
     """
     after_indicators = ["דכתיב", "ודכתיב", "וכתיב", "וכתוב", "שכתוב", "כשכתוב", "כדכתיב", "זל", "ז״ל", "ז''ל",
@@ -363,7 +364,8 @@ def get_snippet_by_seg_ref(source_text, found, must_find_snippet=False, snip_siz
                 start_snip = max(start_snip_space, start_snip_link)
                 if start_snip == -1:
                     start_snip = start_snip_naive
-                end_snip_naive = match.end(3) + snip_size if match.end(3) + snip_size <= len(linkified) else len(linkified)
+                snip_after_size = 0 if snip_only_before else snip_size
+                end_snip_naive = match.end(3) + snip_after_size if match.end(3) + snip_after_size <= len(linkified) else len(linkified)
                 end_snip_space = linkified.find(" ", end_snip_naive)
                 end_snip_link = linkified.find("<a ", match.end(3))
                 end_snip = min(end_snip_space, end_snip_link)
