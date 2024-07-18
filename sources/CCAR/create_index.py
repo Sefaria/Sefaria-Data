@@ -1,25 +1,32 @@
 from sources.functions import *
-nodes = """Introductions
-Post-biblical Interpretations"
+fms = {"Foreword": "בראש מילין", "Preface": "פתח דבר", "Acknowledgements": "תודות", "Introduction": "הקדמה",
+       "Women and Interpretation of the Torah": "נשים ופרשנות התורה", "Women in Ancient Israel; An Overview": "נשים בישראל בעת העתיקה; סקירה",
+       "Women and Post Biblical Commentary": """נשים ופרשנות חז"ל""", "Women and Contemporary Revelation": "נשים וגילויים בני זמננו",
+       "The Poetry of Torah and the Torah of Poetry": "שירת התורה ותורת השירה"}
+nodes = """Parashah Introductions
+Post Biblical Interpretations
 Contemporary Reflection
 Another View""".splitlines()
-
+he_nodes = """הקדמות לפרשות
+פרשנות חז"ל
+התבוננות עכשווית
+פרספקטיבה נוספת""".splitlines()
 root = SchemaNode()
 root.key = "The Torah; A Women's Commentary"
-root.add_primary_titles(root.key, "")
-for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-    book_node = JaggedArrayNode()
-    book_node.key = book
-    book_node.add_primary_titles(book, library.get_index(book).get_primary_title('he'))
-    book_node.add_structure(["Chapter", "Verse", "Paragraph"])
-    book_node.depth = 3
-    book_node.validate()
-    root.append(book_node)
+root.add_primary_titles(root.key, "פירוש התורה: פרספקטיבה נשית")
+for en, he in fms.items():
+    child = JaggedArrayNode()
+    child.key = en
+    child.add_primary_titles(en, he)
+    child.add_structure(["Paragraph"])
+    child.validate()
+    root.append(child)
 
-for node in nodes:
+for n, node in enumerate(nodes):
     child = SchemaNode()
     child.key = node
-    child.add_primary_titles(child.key, "")
+    child.add_primary_titles(child.key, he_nodes[n])
+    child.toc_zoom = 1
     parshiot = []
     for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
         parshiot += [Term().load({"name": x["sharedTitle"]}) for x in library.get_index(book).alt_structs["Parasha"]["nodes"]]
@@ -34,3 +41,17 @@ for node in nodes:
         child.append(parsha_node)
     child.validate()
     root.append(child)
+
+for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
+    book_node = JaggedArrayNode()
+    book_node.key = book
+    book_node.add_primary_titles(book, library.get_index(book).get_title('he'))
+    book_node.add_structure(["Chapter", "Verse", "Paragraph"])
+    book_node.depth = 3
+    book_node.toc_zoom = 2
+    book_node.validate()
+    root.append(book_node)
+
+root.validate()
+Index({"title": root.key, "schema": root.serialize(), "categories": ["Tanakh", "Modern Commentary on Tanakh"], "dependence": "Commentary",
+       "base_text_titles": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]}).save()
