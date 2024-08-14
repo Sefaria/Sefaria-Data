@@ -153,7 +153,8 @@ def make_objects(entries):
             'lexiconName': TITLE,
         }
     )
-    # index.save()
+    index.save()
+
     version = Version({
         'title': TITLE,
         'versionTitle': vtitle,
@@ -161,7 +162,7 @@ def make_objects(entries):
         'language': 'he',
         'chapter': {'Index': index_text,'Introduction': ['א'], 'Foreword': ['א']}
     })
-    version.save()
+    # version.save()
 
     length = len(entries)
     for i, headword in enumerate(entries):
@@ -175,7 +176,7 @@ def make_objects(entries):
             le.prev_hw = list(entries)[i-1]
         if i != length - 1:
             le.next_hw = list(entries)[i+1]
-        le.save()
+        # le.save()
 
 def make_link(shown, inside, scroll=False):
     data_ref = f'{TITLE}, {inside}'

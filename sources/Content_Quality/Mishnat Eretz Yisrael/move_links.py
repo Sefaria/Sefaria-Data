@@ -13,6 +13,21 @@ def reset_count(ref, inc_count):
         return 0
     return inc_count
 
+def validate_img(poss_img):
+    try:
+        url = BeautifulSoup(poss_img).find("img").attrs['src']
+    except Exception as e:
+        print(poss_img)
+        return False
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return True
+    except:
+        pass
+    print(poss_img)
+    return False
+
 def convert_links(title, links):
     ls = Ref(title).linkset()
     generated_by = set()
@@ -39,7 +54,7 @@ for f in os.listdir("."):
         inc_count = 0
         title = f.replace('- w images.csv', '').strip()
         library.get_index(title)
-        rows = list(csv.reader(open(f)))
+        rows = list(csv.reader(open(f), delimiter=',', escapechar='\\'))
         new_rows = rows[:5]
         curr_ref = None
         refs = []
@@ -48,6 +63,7 @@ for f in os.listdir("."):
             poss_ref, text, poss_img = row
             if len(poss_ref.strip()) == 0:  # found img
                 assert len(poss_img.strip()) > 0
+                validate_img(poss_img.strip())
                 inc_count += 1
                 curr_ref_to_save = inc_ref(curr_ref, inc_count)
                 if curr_ref_to_save == 'Mishnat Eretz Yisrael on Mishnah Middot 2:5:21':
@@ -69,7 +85,7 @@ for f in os.listdir("."):
             #tc.text = what_to_save
             new_rows.append([curr_ref_to_save, what_to_save])
         with open(f"{title} new.csv", 'w') as new_f:
-            csv_writer = csv.writer(new_f)
+            csv_writer = csv.writer(new_f, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL, escapechar='\\')
             csv_writer.writerows(new_rows)
             #tc.save()
 
