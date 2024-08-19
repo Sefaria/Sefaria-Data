@@ -13,10 +13,10 @@ def get_dh(comm, word):
         comm = comm[dh_pos+3:].strip()
     dh = comm.split(".")[0].split(":")[0].strip()
     return dh
-def extract_comments(ref, base):
-    comms = [x for x in TextChunk(ref, lang='he').text]
+def extract_comments(ref, base, prev_type):
+    # comms = [x for x in TextChunk(ref, lang='he').text]
+    comms = [TextChunk(ref, lang='he').text]
     comm_dict = {f"Tosafot on {base}": [], f"Rashi on {base}": [], base: []}
-    prev_type = ""
     for comm in comms:
         if comm.startswith("<b>"):
             comm = re.search("<b>(.*?)</b>", comm).group(1)
@@ -52,24 +52,28 @@ def extract_comments(ref, base):
             dh = get_dh(comm, None)
             comm_dict[base].append(dh)
             prev_type = base
-    return comm_dict
+    for k in list(comm_dict.keys()):
+        if len(comm_dict[k]) == 0:
+            comm_dict.pop(k)
+    return (comm_dict, prev_type)
 
 
 
 #def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle="", generated_by="", padding=False):
-results = []
+all_results = []
+LinkSet({"generated_by": "Arukh_LaNer_linker"}).delete()
 for t in ["Arukh LaNer on Sanhedrin", "Arukh LaNer on Rosh Hashanah"]:
-    for ref in library.get_index(t).all_section_refs():
-        orig_base_ref = ref.normal().replace("Arukh LaNer on ", "")
-        comms = extract_comments(ref, orig_base_ref)
+    prev_type = ""
+    for ref in library.get_index(t).all_segment_refs():
+        orig_base_ref = ref.section_ref().normal().replace("Arukh LaNer on ", "")
+        comms, prev_type = extract_comments(ref, orig_base_ref, prev_type)
         for base_ref in comms:
             try:
-                results += match_ref_interface(base_ref, ref.normal(), comms[base_ref], baser, dher)
-            except:
-                print(base_ref)
+                results = match_ref(TextChunk(Ref(base_ref), lang='he'), comms[base_ref], lambda x: x.split())
+                Link({"refs": [results['matches'][0].normal(), ref.normal()], "auto": True, "type": "Commentary",
+                                "generated_by": "Arukh_LaNer_linker"}).save()
+            except Exception as e:
+                pass
 
-LinkSet({"generated_by": "Arukh_LaNer_linker"}).delete()
-for link in results:
-    link['generated_by'] = "Arukh_LaNer_linker"
-    Link(link).save()
+
 print(LinkSet({"generated_by": "Arukh_LaNer_linker"}).count())
