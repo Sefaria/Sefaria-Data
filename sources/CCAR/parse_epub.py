@@ -6,7 +6,7 @@ import re
 from sources.functions import *
 import difflib
 allowed_tags = {'i', 'b', 'u', 'small', 'a'}
-special_node_names = {"Post Biblical Interpretations": [], "Contemporary Reflection": [], "Another View": [], "Parashah Introductions": []}
+special_node_names = {"Postbiblical Interpretations": [], "Contemporary Reflection": [], "Another View": [], "Parashah Introductions": []}
 parshiot = []
 for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
     parshiot += [Term().load({"name": x["sharedTitle"]}).get_primary_title('en') for x in
@@ -204,7 +204,7 @@ def extract_special_node_names(parents, chap_num):
         found = -1
         for p, parent in enumerate(special_node_parents):
             check_node_name = node_name
-            if node_name == "Post Biblical Interpretations":
+            if node_name == "Postbiblical Interpretations":
                 check_node_name = "Post-biblical Interpretations"
             for x in parent.contents[0:2]:
                 if check_node_name.lower() in str(x).lower():
@@ -268,7 +268,7 @@ if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 fms = {"Foreword": "בראש מילין", "Preface": "פתח דבר", "Acknowledgements": "תודות", "Introduction": "הקדמה",
        "Women and Interpretation of the Torah": "נשים ופרשנות התורה", "Women in Ancient Israel; An Overview": "נשים בישראל בעת העתיקה; סקירה",
-       "Women and Post Biblical Commentary": """נשים ופרשנות חז"ל""", "Women and Contemporary Revelation": "נשים וגילויים בני זמננו",
+       "Women and Postbiblical Commentary": """נשים ופרשנות חז"ל""", "Women and Contemporary Revelation": "נשים וגילויים בני זמננו",
        "The Poetry of Torah and the Torah of Poetry": "שירת התורה ותורת השירה"}
 fm_text_dict = {}
 # Iterate over each item in the book
