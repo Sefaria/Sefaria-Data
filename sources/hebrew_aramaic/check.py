@@ -1,23 +1,28 @@
 import csv
 import re
-
+import os
 from lxml import etree
 
-tree = etree.parse('01-Alef.xml')
-root = tree.getroot()
-entry_tags = root.findall('.//entry')
 prev = ' '
 headwords = []
-for entry in entry_tags:
-    hws = entry.findall('head-word')
-    if not hws:
-        print(etree.tostring(entry, pretty_print=True, encoding='unicode'))
-    hw = entry.findtext('head-word')
-    headwords.append({'headword': hw})
-    hw = re.sub('[^ א-ת]', '', hw)
-    if sorted([prev, hw]) != [prev, hw]:
-        headwords[-1]['error'] = '*'
-    prev = hw
+path = 'data'
+for file in sorted(os.listdir(path), key=lambda x: int(re.findall('^\d+', x)[0])):
+    print(file)
+    tree = etree.parse(f'{path}/{file}')
+    root = tree.getroot()
+    entry_tags = root.findall('.//entry')
+    for entry in entry_tags:
+        hws = entry.findall('head-word')
+        if not hws:
+            print('no headword')
+            print(etree.tostring(entry, pretty_print=True, encoding='unicode'))
+            continue
+        hw = entry.findtext('head-word')
+        headwords.append({'headword': hw})
+        hw = re.sub('[^ א-ת]', '', hw.replace('ײ', 'יי').replace('װ', 'וו'))
+        if sorted([prev, hw]) != [prev, hw]:
+            headwords[-1]['error'] = '*'
+        prev = hw
 
 with open('misorders.csv', 'w') as fp:
     w = csv.DictWriter(fp, fieldnames=['headword', 'error'])
