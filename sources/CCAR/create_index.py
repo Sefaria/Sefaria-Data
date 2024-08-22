@@ -1,10 +1,10 @@
 from sources.functions import *
 fms = {"Foreword": "בראש מילין", "Preface": "פתח דבר", "Acknowledgements": "תודות", "Introduction": "הקדמה",
        "Women and Interpretation of the Torah": "נשים ופרשנות התורה", "Women in Ancient Israel; An Overview": "נשים בישראל בעת העתיקה; סקירה",
-       "Women and Post Biblical Commentary": """נשים ופרשנות חז"ל""", "Women and Contemporary Revelation": "נשים וגילויים בני זמננו",
+       "Women and Postbiblical Commentary": """נשים ופרשנות חז"ל""", "Women and Contemporary Revelation": "נשים וגילויים בני זמננו",
        "The Poetry of Torah and the Torah of Poetry": "שירת התורה ותורת השירה"}
 nodes = """Parashah Introductions
-Post Biblical Interpretations
+Postbiblical Interpretations
 Contemporary Reflection
 Another View""".splitlines()
 he_nodes = """הקדמות לפרשות
@@ -13,7 +13,7 @@ he_nodes = """הקדמות לפרשות
 פרספקטיבה נוספת""".splitlines()
 root = SchemaNode()
 root.key = "The Torah; A Women's Commentary"
-root.add_primary_titles(root.key, "פירוש התורה: פרספקטיבה נשית")
+root.add_primary_titles(root.key, "התורה: פירושן של נשים")
 for en, he in fms.items():
     child = JaggedArrayNode()
     child.key = en
