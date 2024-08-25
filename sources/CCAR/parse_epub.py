@@ -162,11 +162,6 @@ def extract_chapters(parents, book_dict):
                     chapter, verse = child.attrs["ref"].split(':')
                     chapter = int(chapter)
                     verse = int(verse)
-                    if verse in book_dict[chapter]:
-                        book_dict[chapter][verse].append(NavigableString("\n"))
-                        book_dict[chapter][verse].append(child)
-                    else:
-                        book_dict[chapter][verse] = child
                     for grandchild in child:
                         if grandchild.name == "div" and 'head' in str(grandchild.get('class', [])):
                             grandchild.append(NavigableString("\n"))
@@ -175,8 +170,15 @@ def extract_chapters(parents, book_dict):
                     for grandchild in child:
                         if grandchild.text == "Commentary":
                             grandchild.decompose()
-                        if grandchild.text.strip == "":
+                        if isinstance(grandchild, Tag) and grandchild.name == 'b' and grandchild.text.strip() == "":
                             grandchild.decompose()
+                    copy_child = BeautifulSoup(str(child), 'html.parser').find(child.name)
+                    if verse in book_dict[chapter]:
+                        book_dict[chapter][verse].append(NavigableString("\n"))
+                        book_dict[chapter][verse].append(copy_child)
+                    else:
+                        book_dict[chapter][verse] = copy_child
+
     return book_dict
 
 def extract_book(parents):
@@ -184,9 +186,10 @@ def extract_book(parents):
     #         if p in parents[0].text:
     #             found.append(book)
     global parshiot
-    print(parents[0].contents[-1].contents[-1].text)
+    p = parents[0].contents[-1].contents[-1].text.replace("Sh’lach L’cha", "Sh'lach")
+    print(p)
     found = []
-    closest_matches = difflib.get_close_matches(parents[0].contents[-1].contents[-1].text, parshiot, n=1, cutoff=0.0)
+    closest_matches = difflib.get_close_matches(p, parshiot, n=1, cutoff=0.0)
     if closest_matches:
         closest_match = closest_matches[0]
         for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
@@ -289,6 +292,7 @@ for item in book_file.get_items():
                 parents = parse(soup.find('body').children)
                 parents = identify_chapters(parents)
                 book_title = extract_book(parents)
+                print(book_title)
                 parents = [x for x in parents if len(x.contents) > 4]
                 extract_chapters(parents, books[book_title])
                 extract_special_node_names(parents, int(item.id.replace("chap", "")))

@@ -47,8 +47,17 @@ def extract_comments(ref, base, prev_type):
         elif comm.startswith("""בא"ד"""):
             dh = get_dh(comm, """בא"ד""")
             comm_dict[prev_type].append(dh)
+        elif comm.startswith("""בד"ה"""):
+            dh = get_dh(comm, """בד"ה""")
+            comm_dict[prev_type].append(dh)
+        elif comm.startswith('ד"ה'):
+            dh = get_dh(comm, 'ד"ה')
+            comm_dict[prev_type].append(dh)
+        elif comm.startswith("""במתניתן""") or comm.startswith("""בגמרא"""):
+            dh = comm.replace("""במתניתן""", "").replace("""בגמרא""", "").replace(":", "").replace(".", "").strip()
+            comm_dict[base].append(dh)
         else:
-            comm = comm.replace("בגמרא", "").replace("""בד"ה""", "").replace("""ד"ה""", "")
+            comm = comm.replace("בגמרא", "").replace("""בד"ה""", "").replace("""ד"ה""", "").strip()
             dh = get_dh(comm, None)
             comm_dict[base].append(dh)
             prev_type = base
@@ -70,7 +79,12 @@ for t in ["Arukh LaNer on Sanhedrin", "Arukh LaNer on Rosh Hashanah"]:
         for base_ref in comms:
             try:
                 results = match_ref(TextChunk(Ref(base_ref), lang='he'), comms[base_ref], lambda x: x.split())
-                Link({"refs": [results['matches'][0].normal(), ref.normal()], "auto": True, "type": "Commentary",
+                if results['matches'][0] is not None:
+                    if " on " in results['matches'][0].normal():
+                        real_base_ref = results['matches'][0].section_ref().normal().replace("Rashi on ", "").replace("Tosafot on ", "")
+                        Link({"refs": [real_base_ref, ref.normal()], "auto": True, "type": "Commentary",
+                             "generated_by": "Arukh_LaNer_linker"}).save()
+                    Link({"refs": [results['matches'][0].normal(), ref.normal()], "auto": True, "type": "Commentary",
                                 "generated_by": "Arukh_LaNer_linker"}).save()
             except Exception as e:
                 pass
