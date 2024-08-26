@@ -4,13 +4,13 @@ fms = {"Foreword": "בראש מילין", "Preface": "פתח דבר", "Acknowled
        "Women and Postbiblical Commentary": """נשים ופרשנות חז"ל""", "Women and Contemporary Revelation": "נשים וגילויים בני זמננו",
        "The Poetry of Torah and the Torah of Poetry": "שירת התורה ותורת השירה"}
 nodes = """Parashah Introductions
+Another View
 Postbiblical Interpretations
-Contemporary Reflection
-Another View""".splitlines()
+Contemporary Reflection""".splitlines()
 he_nodes = """הקדמות לפרשות
+פרספקטיבה נוספת
 פרשנות חז"ל
-התבוננות עכשווית
-פרספקטיבה נוספת""".splitlines()
+התבוננות עכשווית""".splitlines()
 root = SchemaNode()
 root.key = "The Torah; A Women's Commentary"
 root.add_primary_titles(root.key, "התורה: פירושן של נשים")
@@ -53,5 +53,6 @@ for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
     root.append(book_node)
 
 root.validate()
+print(root.key)
 Index({"title": root.key, "schema": root.serialize(), "categories": ["Tanakh", "Modern Commentary on Tanakh"], "dependence": "Commentary",
        "base_text_titles": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]}).save()
