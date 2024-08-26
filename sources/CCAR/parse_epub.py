@@ -222,7 +222,8 @@ def extract_special_node_names(parents, chap_num):
     special_node_names["Parashah Introductions"][parshiot[chap_num - 1]] = special_node_parents[0]
     for intro in special_node_parents[1:]:
         for child in intro:
-            special_node_names["Parashah Introductions"][parshiot[chap_num - 1]].append(child)
+            copy_child = BeautifulSoup(str(child), 'html.parser').find(child.name)
+            special_node_names["Parashah Introductions"][parshiot[chap_num - 1]].append(copy_child)
 
     for key in special_node_names:
         special_node_names[key][parshiot[chap_num - 1]] = parse_text(special_node_names[key][parshiot[chap_num - 1]],
@@ -289,7 +290,8 @@ for item in book_file.get_items():
                 txt = a_tag.get_text()
                 a_tag.replace_with(txt)
             with open(f"parsed_HTML/{item.id}.html", 'w', encoding='utf-8') as f:
-                parents = parse(soup.find('body').children)
+                children_iterator = soup.find('body').children
+                parents = parse(children_iterator)
                 parents = identify_chapters(parents)
                 book_title = extract_book(parents)
                 print(book_title)
@@ -321,7 +323,7 @@ for item in book_file.get_items():
 
 
 title = "The Torah; A Women's Commentary"
-versionTitle = "URJ Press / CCAR 2007"
+versionTitle = "CCAR Press / Women of Reform Judaism 2008"
 versionSource = "https://www.ccarpress.org/shopping_product_detail.asp?pid=50296"
 for node in special_node_names:
     for parasha in special_node_names[node]:

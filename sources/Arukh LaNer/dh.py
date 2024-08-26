@@ -13,7 +13,7 @@ def get_dh(comm, word):
         comm = comm[dh_pos+3:].strip()
     dh = comm.split(".")[0].split(":")[0].strip()
     return dh
-def extract_comments(ref, base, prev_type):
+def extract_comments(ref, base, prev_type, prev_match):
     # comms = [x for x in TextChunk(ref, lang='he').text]
     comms = [TextChunk(ref, lang='he').text]
     comm_dict = {f"Tosafot on {base}": [], f"Rashi on {base}": [], base: []}
@@ -45,8 +45,7 @@ def extract_comments(ref, base, prev_type):
             comm_dict[f"Rashi on {base}"].append(dh)
             prev_type = f"Rashi on {base}"
         elif comm.startswith("""בא"ד"""):
-            dh = get_dh(comm, """בא"ד""")
-            comm_dict[prev_type].append(dh)
+            return ({}, prev_type)
         elif comm.startswith("""בד"ה"""):
             dh = get_dh(comm, """בד"ה""")
             comm_dict[prev_type].append(dh)
@@ -56,6 +55,7 @@ def extract_comments(ref, base, prev_type):
         elif comm.startswith("""במתניתן""") or comm.startswith("""בגמרא"""):
             dh = comm.replace("""במתניתן""", "").replace("""בגמרא""", "").replace(":", "").replace(".", "").strip()
             comm_dict[base].append(dh)
+            prev_type = base
         else:
             comm = comm.replace("בגמרא", "").replace("""בד"ה""", "").replace("""ד"ה""", "").strip()
             dh = get_dh(comm, None)
@@ -71,15 +71,25 @@ def extract_comments(ref, base, prev_type):
 #def match_ref_interface(base_ref, comm_ref, comments, base_tokenizer, dh_extract_method, vtitle="", generated_by="", padding=False):
 all_results = []
 LinkSet({"generated_by": "Arukh_LaNer_linker"}).delete()
+prev_match = None
 for t in ["Arukh LaNer on Sanhedrin", "Arukh LaNer on Rosh Hashanah"]:
     prev_type = ""
     for ref in library.get_index(t).all_segment_refs():
         orig_base_ref = ref.section_ref().normal().replace("Arukh LaNer on ", "")
-        comms, prev_type = extract_comments(ref, orig_base_ref, prev_type)
+        comms, prev_type = extract_comments(ref, orig_base_ref, prev_type, prev_match)
+        if len(comms) == 0:
+            Link({"refs": [prev_match, ref.normal()], "auto": True, "type": "Commentary",
+                  "generated_by": "Arukh_LaNer_linker"}).save()
+            if " on " in prev_match:
+                real_base_ref = Ref(prev_match).section_ref().normal().replace("Rashi on ", "").replace(
+                    "Tosafot on ", "")
+                Link({"refs": [real_base_ref, ref.normal()], "auto": True, "type": "Commentary",
+                      "generated_by": "Arukh_LaNer_linker"}).save()
         for base_ref in comms:
             try:
                 results = match_ref(TextChunk(Ref(base_ref), lang='he'), comms[base_ref], lambda x: x.split())
                 if results['matches'][0] is not None:
+                    prev_match = results['matches'][0].normal()
                     if " on " in results['matches'][0].normal():
                         real_base_ref = results['matches'][0].section_ref().normal().replace("Rashi on ", "").replace("Tosafot on ", "")
                         Link({"refs": [real_base_ref, ref.normal()], "auto": True, "type": "Commentary",
