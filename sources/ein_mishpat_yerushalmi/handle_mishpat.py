@@ -166,10 +166,10 @@ def infer_footnotes_links(html_content):
             match = re.search(r'[\u0590-\u05FF]+_[\u0590-\u05FF]+\b', line)
             marker = match.group() if match else None
             if marker:
-                doc = linker.link(line, type_filter="citation", with_failures=False)
+                doc = linker.link(line, type_filter="citation", with_failures=True)
                 for citation in doc.resolved_refs:
                     print(citation.ref)
-                    markers_footnotes.append( (marker, citation.ref) )
+                    markers_footnotes.append( (marker, citation.pretty_text, citation.ref) )
     list_of_tuples_to_csv(markers_footnotes, 'footnotes_links.csv')
 def infer_sefaria_segment_for_markers(html_content, masechet_name, chapter_num):
     pattern = r'\b[\u0590-\u05FF]+_[\u0590-\u05FF]+\b'
@@ -197,10 +197,16 @@ def infer_sefaria_segment_for_markers(html_content, masechet_name, chapter_num):
     link_markers_to_sefaria_segments(comments, masechet_name, chapter_num)
 
 if __name__ == '__main__':
-    # Reading HTML content from a file
-    with open('ביאור_ירושלמי מאיר_מסכת פסחים_פרק ראשון – ויקיטקסט.html', 'r', encoding='utf-8') as file:
-        html_content = file.read()
-
+    # # Reading HTML content from a file
+    # with open('ביאור_ירושלמי מאיר_מסכת פסחים_פרק ראשון – ויקיטקסט.html', 'r', encoding='utf-8') as file:
+    #     html_content = file.read()
+    #
     # infer_sefaria_segment_for_markers(html_content, "Shabbat", "1")
-    infer_footnotes_links(html_content)
-    print("hello world")
+    # infer_footnotes_links(html_content)
+    # print("hello world")
+
+    mt = IndexSet({"categories": "Mishneh Torah"}).array()
+    for index in mt:
+        if index.title.startswith("Mishneh Torah,"):
+            print(index.all_titles("he")[0])
+
