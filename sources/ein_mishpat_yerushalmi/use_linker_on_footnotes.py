@@ -17,20 +17,40 @@ def csv_to_list(file_path):
     return data
 
 
+def insert_token_before_repeated_word(text, word, token):
+    # Find all occurrences of the word and skip the first one
+    matches = [m.start() for m in re.finditer(word, text)]
+
+    # Only insert if there are two or more occurrences
+    if len(matches) > 1:
+        # We start from the second occurrence
+        for i in range(1, len(matches)):
+            text = text[:matches[i] + i - 1] + token + text[matches[i] + i - 1:]
+
+    return text
+
 if __name__ == '__main__':
     footnotes_list = csv_to_list("Ein Mishpat Yerusalmi Wikitext Footnotes Refs.csv")
     linker = library.get_linker("he")
-    text = """
-    מיי' פ"א מהל' יום טוב הלכה י"ט
+    footnote = """
+     1 ד_א מיי' פ ו' מהל' נדרים הלכה ג', |טור ושו"ע יו"ד סי' רכ"א סעיף א', סמ"ג לאוין רמב:
     """
-    doc = linker.link(text, type_filter="citation", with_failures=True)
+    clean_footnote = "מיי'" + footnote.split("מיי'", 1)[1] if "מיי'" in footnote else footnote
+    clean_footnote = insert_token_before_repeated_word(clean_footnote, "מיי'", ")  ")
+    clean_footnote = clean_footnote.replace('סמ"ג', ' )סמ"ג')
+    clean_footnote = clean_footnote.replace('|', ' ')
+    doc = linker.link(clean_footnote, type_filter="citation", with_failures=True)
+
 
 
     footnote_and_refs = []
     for footnote in tqdm(footnotes_list):
         new_inference = []
         new_inference.append(footnote)
-        clean_footnote = footnote.split("מיי'", 1)[1] if "מיי'" in footnote else footnote
+        clean_footnote = "מיי'" + footnote.split("מיי'", 1)[1] if "מיי'" in footnote else footnote
+        clean_footnote = insert_token_before_repeated_word(clean_footnote, "מיי'", ")  ")
+        clean_footnote = clean_footnote.replace('סמ"ג', ' )סמ"ג')
+        clean_footnote = clean_footnote.replace('|', ' ')
         doc = linker.link(clean_footnote, type_filter="citation", with_failures=True)
         for citation in doc.resolved_refs:
             if citation and hasattr(citation, 'ref') and hasattr(citation.ref, 'tref') and 'Mishneh Torah' in citation.ref.tref:
