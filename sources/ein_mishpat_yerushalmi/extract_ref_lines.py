@@ -33,7 +33,7 @@ def concatenate_lines(input_string):
                 result.append(line)
 
     return result
-def infer_footnotes_links(html_content):
+def infer_footnotes_links(html_content, filename=""):
     divs_text = get_divs_starting_with_text(html_content, 'עין משפט ונר מצוה')
     markers_footnotes = []
     # linker = library.get_linker("he")
@@ -47,6 +47,7 @@ def infer_footnotes_links(html_content):
             marker = match.group() if match else None
             if match:
                 print(match.string)
+                # print(filename)
 def get_html_files(directory):
     for root, dirs, files in os.walk(directory):
         for file in files:
@@ -87,9 +88,9 @@ def simple_validation():
 
 
 if __name__ == '__main__':
-    # for wikifile in get_html_files('wiki_data'):
-    #     print(wikifile)
-    #     with open(wikifile, 'r', encoding='utf-8') as file:
-    #         html_content = file.read()
-    #     infer_footnotes_links(html_content)
-    simple_validation()
+    for wikifile in get_html_files('wiki_data'):
+        # print(wikifile)
+        with open(wikifile, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+            infer_footnotes_links(html_content, filename=str(wikifile))
+    # simple_validation()
