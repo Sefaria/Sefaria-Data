@@ -64,7 +64,62 @@ def extract_first_number(string):
     match = re.search(r'\d+', string)
     return int(match.group()) if match else None
 
-def infer_sefaria_segment_for_markers(html_content, masechet_name, chapter_num):
+def remove_divs_starting_with_text(html_content, prefix):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    divs_to_remove = [div for div in soup.find_all('div') if div.get_text().strip().startswith(prefix)]
+    for div in divs_to_remove:
+        div.decompose()
+
+    modified_html = str(soup)
+    return modified_html
+
+def remove_paragraphs_starting_with_text(html_content, prefix):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    paragraphs_to_remove = [p for p in soup.find_all('p') if p.get_text().strip().startswith(prefix)]
+    for p in paragraphs_to_remove:
+        p.decompose()
+
+    modified_html = str(soup)
+
+    return modified_html
+
+def remove_elements_by_tag(html_content, tag_names: List):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    for tag_name in tag_names:
+        for element in soup.find_all(tag_name):
+            element.decompose()
+    return str(soup)
+
+def html_to_text(html_content):
+    soup = BeautifulSoup(html_content, 'lxml')
+    return soup.get_text()
+
+def extract_with_context(text, span, num_words_before, num_words_after):
+    import re
+
+    # Define a regex pattern that includes words and words surrounded by dollar signs
+    pattern = r'\$?\b\w+\b\$?'
+
+    # Extracting the span text
+    span_text = text[span[0]:span[1]]
+
+    # Finding the start index of the span in terms of word positions
+    words = re.findall(pattern, text)
+    start_idx = len(re.findall(pattern, text[:span[0]]))
+
+    # Getting the indices of the context words
+    start_context = max(0, start_idx - num_words_before)
+    end_context = min(len(words), start_idx + num_words_after + len(re.findall(pattern, span_text)))
+
+    # Extracting the relevant words
+    context_words = words[start_context:end_context]
+
+    # Join the context words to form the result
+    result = ' '.join(context_words)
+
+    return result
+
+def get_inline_footnotes(html_content):
     pattern = r'\b[\u0590-\u05FF]+_[\u0590-\u05FF]+\b'
     html_content = re.sub(pattern, lambda m: f"${m.group()}$", html_content)
     html_content = remove_divs_starting_with_text(html_content, 'עין משפט ונר מצוה')
@@ -85,14 +140,38 @@ def infer_sefaria_segment_for_markers(html_content, masechet_name, chapter_num):
             extraction = extract_with_context(plain_text, (match.regs[0][0], match.regs[0][1]), 0, 5)
             comments.append(extraction)
 
-    for index, c in enumerate(comments):
-        print(str(index) + ": " + c)
-    link_markers_to_sefaria_segments(comments, masechet_name, chapter_num)
+    # for index, c in enumerate(comments):
+    #     print(str(index) + ": " + c)
+    return comments
+
+def get_divs_starting_with_text(html_content, prefix):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    divs_to_get = [div.get_text().strip() for div in soup.find_all('div') if div.get_text().strip().startswith(prefix)]
+    return divs_to_get
+
+def get_bottom_footnotes(html_content):
+    divs_text = get_divs_starting_with_text(html_content, 'עין משפט ונר מצוה')
+    footnotes_lines = []
+    for div_text in divs_text:
+        lines = concatenate_lines(div_text)
+        lines_starting_with_number = [
+            line for line in lines if line.lstrip() and line.lstrip().split() and line.lstrip().split()[0][0].isdigit()
+        ]
+        footnotes_lines += lines_starting_with_number
+        # for line in lines_starting_with_number:
+            # match = re.search(r'[\u0590-\u05FF]+_[\u0590-\u05FF]+\b', line)
+            # marker = match.group() if match else None
+
+    return footnotes_lines
 
 if __name__ == '__main__':
     for wikifile in get_html_files('wiki_data'):
         # print(wikifile)
         with open(wikifile, 'r', encoding='utf-8') as file:
             html_content = file.read()
-            infer_footnotes_links(html_content, filename=str(wikifile))
+            # infer_footnotes_links(html_content, filename=str(wikifile))
+        inline = get_inline_footnotes(html_content)
+        bottom = get_bottom_footnotes(html_content)
+        print(inline)
+        print(bottom)
     # simple_validation()
