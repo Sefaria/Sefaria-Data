@@ -45,7 +45,7 @@ def convert_links(title, links):
         new_ref = Ref(start).to(Ref(end)).normal()
         l.refs[ref_pos] = new_ref
         generated_by.add(l.generated_by)
-        #l.save()
+        l.save()
     print(generated_by)
 
 links = {}  # one to one mapping of old and new refs
@@ -81,13 +81,13 @@ for f in os.listdir("."):
                 just_found_ref = True
             else:
                 print(f"Problem at {poss_ref}")
-            #tc = TextChunk(Ref(curr_ref), lang='he', vtitle='Mishnat Eretz Yisrael, Tamid-Middot, Elon Shvut, 2020')
-            #tc.text = what_to_save
+            tc = TextChunk(Ref(curr_ref), lang='he', vtitle='Mishnat Eretz Yisrael, Tamid-Middot, Elon Shvut, 2020')
+            tc.text = what_to_save
             new_rows.append([curr_ref_to_save, what_to_save])
         with open(f"{title} new.csv", 'w') as new_f:
             csv_writer = csv.writer(new_f, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL, escapechar='\\')
             csv_writer.writerows(new_rows)
-            #tc.save()
+            tc.save()
 
 
 for f in os.listdir("."):
