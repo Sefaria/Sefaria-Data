@@ -100,10 +100,12 @@ def identify_chapters(parents):
                 elif re.search(r'^(\d+)', child.text) and chapter >= 1:
                     node = child.contents[0]
                     match = re.search(r'^(\d+)', extract_text(node))
-                    already_pasuk = re.search(r'^\d+:\d+', extract_text(node))
+                    already_pasuk = re.search(r'^(\d+):(\d+)', extract_text(node))
                     new_text = extract_text(node)
                     if match and already_pasuk is None:
                         new_text = new_text.replace(match.group(0), f"{chapter}:{match.group(0)}", 1)
+                    else:
+                        chapter = int(already_pasuk.group(1))
                     new_node = Tag(name="b")
                     new_node.string = new_text
                     node.replace_with(new_node)
