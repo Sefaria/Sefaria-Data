@@ -48,11 +48,24 @@ def infer_footnotes_links(html_content, filename=""):
             if match:
                 print(match.string)
                 # print(filename)
+# def get_html_files(directory):
+#     for root, dirs, files in os.walk(directory):
+#         for file in files:
+#             if file.endswith(".html"):
+#                 yield os.path.join(root, file)
 def get_html_files(directory):
+    html_files = []
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".html"):
-                yield os.path.join(root, file)
+                html_files.append(os.path.join(root, file))
+
+    html_files.sort(key=os.path.getctime)
+
+    # Yield sorted files
+    for file in html_files:
+        yield file
+
 def extract_first_number(string):
     match = re.search(r'\d+', string)
     return int(match.group()) if match else None
