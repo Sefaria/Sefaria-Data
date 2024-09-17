@@ -95,8 +95,6 @@ def html_to_text(html_content):
     return soup.get_text()
 
 def extract_with_context(text, span, num_words_before, num_words_after):
-    import re
-
     # Define a regex pattern that includes words and words surrounded by dollar signs
     pattern = r'\$?\b\w+\b\$?'
 
@@ -137,7 +135,7 @@ def get_inline_footnotes(html_content):
     for match in matches:
         match_text = plain_text[match.regs[0][0]:match.regs[0][1]]
         if all(term not in match_text for term in ['מסכת', 'פרק', 'ירושלמי']):
-            extraction = extract_with_context(plain_text, (match.regs[0][0], match.regs[0][1]), 0, 5)
+            extraction = extract_with_context(plain_text, (match.regs[0][0], match.regs[0][1]), 1, 5)
             comments.append(extraction)
 
     # for index, c in enumerate(comments):
@@ -157,21 +155,64 @@ def get_bottom_footnotes(html_content):
         lines_starting_with_number = [
             line for line in lines if line.lstrip() and line.lstrip().split() and line.lstrip().split()[0][0].isdigit()
         ]
-        footnotes_lines += lines_starting_with_number
-        # for line in lines_starting_with_number:
-            # match = re.search(r'[\u0590-\u05FF]+_[\u0590-\u05FF]+\b', line)
-            # marker = match.group() if match else None
+        # footnotes_lines += lines_starting_with_number
+        formatted_lines = []
+        for line in lines_starting_with_number:
+            match = re.search(r'[\u0590-\u05FF]+_[\u0590-\u05FF]+\b', line)
+            if match:
+                matched_text = match.group(0)
+                # Insert $ signs and replace the original match in the string
+                updated_line = re.sub(r'[\u0590-\u05FF]+_[\u0590-\u05FF]+\b', f"${matched_text}$", line)
+                formatted_lines += [updated_line]
+        footnotes_lines += formatted_lines
 
     return footnotes_lines
 
+def extract_text_within_dollars(string):
+    # Use regular expression to find text within $...$
+    match = re.search(r'\$(.*?)\$', string)
+    if match:
+        return match.group(1).replace(" ", "")  # Return the text between $ signs
+    return None
+
 if __name__ == '__main__':
+    report_data = []
     for wikifile in get_html_files('wiki_data'):
-        # print(wikifile)
+        print(wikifile)
         with open(wikifile, 'r', encoding='utf-8') as file:
             html_content = file.read()
             # infer_footnotes_links(html_content, filename=str(wikifile))
         inline = get_inline_footnotes(html_content)
         bottom = get_bottom_footnotes(html_content)
-        print(inline)
-        print(bottom)
-    # simple_validation()
+        for inline_footnote in inline:
+            inline_marker = extract_text_within_dollars(inline_footnote)
+            # if not inline_marker:
+            #     print("\tMissing Inline Marker:", inline_footnote)
+            #     continue
+            bottom_matches = [bottom_footnote for bottom_footnote in bottom if inline_marker in bottom_footnote]
+            if not bottom_matches:
+                print("\tInline Marker without Bottom Marker:", inline_footnote)
+                report_data.append({
+                    "filename": wikifile,
+                    "Marker": inline_marker,
+                    "Type of Error": "Inline Marker without Bottom Marker"
+                })
+        for bottom_footnote in bottom:
+            bottom_marker = extract_text_within_dollars(bottom_footnote)
+            # if not bottom_marker:
+            #     print("\tMissing Bottom Marker:", bottom_footnote)
+            #     continue
+            inline_matches = [inline_footnote for inline_footnote in inline if bottom_marker in inline_footnote]
+            if not inline_matches:
+                print("\tBottom Marker without Inline Marker:", bottom_footnote)
+                report_data.append({
+                    "filename": wikifile,
+                    "Marker": bottom_marker,
+                    "Type of Error": "Bottom Marker without Inline Marker"
+                })
+    # Write to CSV file
+    with open('output.csv', mode='w', newline='') as file:
+        fieldnames = report_data[0].keys()
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(report_data)
