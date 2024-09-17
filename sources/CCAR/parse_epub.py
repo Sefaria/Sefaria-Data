@@ -99,19 +99,27 @@ def identify_chapters(parents):
                         chapter = int(match.group(1))
                 elif re.search(r'^(\d+)', child.text) and chapter >= 1:
                     node = child.contents[0]
-                    match = re.search(r'^(\d+)', extract_text(node))
-                    already_pasuk = re.search(r'^(\d+):(\d+)', extract_text(node))
                     new_text = extract_text(node)
+                    match = re.search(r'^(\d+)', new_text)
+                    already_pasuk = re.search(r'^(\d+):(\d+)', new_text)
                     if match and already_pasuk is None:
                         new_text = new_text.replace(match.group(0), f"{chapter}:{match.group(0)}", 1)
                     else:
                         chapter = int(already_pasuk.group(1))
                     new_node = Tag(name="b")
-                    new_node.string = new_text
+                    italics_tag = Tag(name="i")
+                    italics_tag.string = new_text
+                    new_node.append(italics_tag)
                     node.replace_with(new_node)
                     if '–' in new_text:
-                        child.attrs["orig_ref"] = new_text.replace(".", "")
-                        new_node.string = new_text.split('–')[0]+"."
+                        child.attrs["orig_ref"] = new_text.replace(".", "").split()[0]
+                        pattern = r"(\d+:\d+)–\d+\."
+                        # Replace the matched pattern with the desired format "3:4."
+                        adjusted_text = re.sub(pattern, r"\1.", new_text)
+                        italics_tag = Tag(name="i")
+                        italics_tag.string = adjusted_text
+                        new_node.append(italics_tag)
+                        new_node.string = adjusted_text
 
 
                 # elif re.search("<b><i>\D+</i></b>", str(child)):
@@ -138,9 +146,10 @@ def identify_chapters(parents):
                         prepend.append(child)
                 else:
                     verse_and_chapter = re.search(r'^(\d+:\d+)', child.text).group(0)
-                    child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'. ', '', 1)
-                    child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'.', '', 1)
-                    child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, '', 1).strip()
+                    if "—" not in child.contents[0].text:
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'. ', '', 1)
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'.', '', 1)
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, '', 1).strip()
 
                     child.attrs["ref"] = verse_and_chapter
                     if len(prepend) > 0:
@@ -149,10 +158,18 @@ def identify_chapters(parents):
                             diff -= 1
                         prepend = []
                     found_verse = True
-
+            if len(prepend) > 0:
+                verse_and_chapter = re.search(r'\((\d+:\d+)', str(prepend)).group(1)
+                prepend[0].attrs["ref"] = verse_and_chapter
             for x in parent.find_all("div", {"class": "tab-en1"}):
                 if x.text.strip() == "":
                     x.decompose()
+            for x in parent.find_all("b"):
+                if x.text.strip() == "Commentary":
+                    x.decompose()
+            for x in parent.find_all("i"):
+                if x.text.strip().startswith("—") and x.text.strip().count(" ") in [1, 2]:
+                    x.string = ""
     return parents
 
 def extract_chapters(parents, book_dict):
@@ -257,6 +274,19 @@ def parse_text(node, special_node=False):
                 segments[i] = segments[i].replace(".", "",1).strip()
     return segments
 
+def remove_a_tags(htmls):
+    # Parse the HTML using BeautifulSoup
+    new = []
+    for html in htmls:
+        soup = BeautifulSoup(html, 'html.parser')
+
+        # Find all <a> tags and unwrap them
+        for a_tag in soup.find_all('a'):
+            a_tag.unwrap()
+
+        # Convert the BeautifulSoup object back to a string
+        new.append(str(soup))
+    return new
 # Read the ePUB file
 book_file = epub.read_epub('ISBN_9780881232837.epub')
 
@@ -331,7 +361,7 @@ for node in special_node_names:
     for parasha in special_node_names[node]:
         ref = f"{title}, {node}, {parasha}"
         send_text = {
-            "text": special_node_names[node][parasha],
+            "text": remove_a_tags(special_node_names[node][parasha]),
             "versionTitle": versionTitle,
             "versionSource": versionSource,
             "language": "en",
