@@ -154,12 +154,15 @@ def identify_chapters(parents, item_id):
 
                     child.attrs["ref"] = verse_and_chapter
                     if len(prepend) > 0:
+                        found = None
                         for i, x in enumerate(prepend):
-                            # verse_and_chapter = re.search(r'\((\d+:\d+)', str(x))
-                            # if 'head' in str(x.get('class', [])) and verse_and_chapter:
-                            #     x.attrs["ref"] = verse_and_chapter.group(1)
-                            # else:
-                                child.insert(i, x)
+                            if 'head' in str(x.get('class', [])):
+                                verse_and_chapter = re.search(r'\((\d+:\d+)', str(x))
+                                if verse_and_chapter:
+                                    x.attrs["ref"] = verse_and_chapter.group(1)
+                                    found = x
+                            elif found:
+                                found.insert(len(found.contents), x)
                                 diff -= 1
                         prepend = []
                     found_verse = True
@@ -183,6 +186,11 @@ def identify_chapters(parents, item_id):
             for x in parent.find_all("i"):
                 if x.text.strip().startswith("—") and x.text.strip().count(" ") in [1, 2]:
                     x.string = ""
+            for c, child in enumerate(parent.contents):
+                classes = str(child.get('class', []))
+                if 'head' in classes and 'ref' not in child.attrs:
+                    child.attrs['ref'] = parent.contents[c+1].attrs['ref']
+
     return parents
 
 def extract_chapters(parents, book_dict):
@@ -376,8 +384,9 @@ for item in book_file.get_items():
 
 
 title = "The Torah; A Women's Commentary"
-versionTitle = "CCAR Press / Women of Reform Judaism 2008"
+versionTitle = "CCAR Press / Women of Reform Judaism, 2008"
 versionSource = "https://www.ccarpress.org/shopping_product_detail.asp?pid=50296"
+versionNotes = "Editors: Tamara Cohn Eskenazi and Andrea L. Weiss"
 for node in special_node_names:
     for parasha in special_node_names[node]:
         ref = f"{title}, {node}, {parasha}"
@@ -385,6 +394,7 @@ for node in special_node_names:
             "text": remove_a_tags(special_node_names[node][parasha]),
             "versionTitle": versionTitle,
             "versionSource": versionSource,
+            "versionNotes": versionNotes,
             "language": "en",
             "actualLanguage": "en",
             "languageFamilyName": "english",
@@ -435,3 +445,9 @@ for l in links:
         Link(l).save()
     except:
         pass
+
+for v in VersionSet({"title": "The Torah; A Women's Commentary"}):
+    v.versionNotes = versionNotes
+    v.purchaseInformationImage = "https://www.ccarpress.org/product_image.asp?id=4427&szType=4"
+    v.purchaseInformationURL = "https://www.ccarpress.org/shopping_product_detail.asp?pid=50296"
+    v.save()
