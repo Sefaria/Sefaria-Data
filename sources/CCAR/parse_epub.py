@@ -155,10 +155,10 @@ def identify_chapters(parents, item_id):
                     child.attrs["ref"] = verse_and_chapter
                     if len(prepend) > 0:
                         for i, x in enumerate(prepend):
-                            verse_and_chapter = re.search(r'\((\d+:\d+)', str(x))
-                            if 'head' in str(x.get('class', [])) and verse_and_chapter:
-                                x.attrs["ref"] = verse_and_chapter.group(1)
-                            else:
+                            # verse_and_chapter = re.search(r'\((\d+:\d+)', str(x))
+                            # if 'head' in str(x.get('class', [])) and verse_and_chapter:
+                            #     x.attrs["ref"] = verse_and_chapter.group(1)
+                            # else:
                                 child.insert(i, x)
                                 diff -= 1
                         prepend = []
