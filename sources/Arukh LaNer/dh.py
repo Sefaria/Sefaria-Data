@@ -6,6 +6,8 @@ def dher(x):
     return x
 
 def get_dh(comm, word):
+    if comm.startswith('שם'):
+        comm = comm.replace('שם', '', 1)
     if word is not None:
         comm = re.split(rf"{word}[.:]{0,1}", comm)[-1].strip()
     dh_pos = comm.find("""ד"ה""")
@@ -13,7 +15,7 @@ def get_dh(comm, word):
         comm = comm[dh_pos+3:].strip()
     dh = comm.split(".")[0].split(":")[0].split("וכו'")[0].strip()
     if dh.count(" ") > 5:
-        return " ".join(dh.split()[:5])
+        dh = " ".join(dh.split()[:5])
     return dh
 def extract_comments(ref, base, prev_type, prev_match):
     # comms = [x for x in TextChunk(ref, lang='he').text]
@@ -28,7 +30,7 @@ def extract_comments(ref, base, prev_type, prev_match):
         else:
             prev_type = [k for k in keys if "Tosafot" not in k and "Rashi" not in k][0]
     for comm in comms:
-        first_5_words = " ".join(comm.split()[:5])
+        first_5_words = " ".join(comm.split()[:6])
         if comm.startswith("<b>"):
             comm = re.search("<b>(.*?)</b>", comm).group(1)
         if "תוס'" in first_5_words:
@@ -136,7 +138,7 @@ possible_matches = 0
 for t in titles:
     prev_type = ""
     prev_match = None
-    for ref in library.get_index(t).all_segment_refs():
+    for ref in tqdm(library.get_index(t).all_segment_refs()):
         if "Introduction" in ref.normal() or "Foreword" in ref.normal():
             continue
         possible_matches += 1
@@ -153,7 +155,8 @@ for t in titles:
                       "generated_by": generated_by}).save()
         for base_ref in comms:
             try:
-                results = match_ref(TextChunk(Ref(base_ref), lang='he', vtitle='William Davidson Edition - Aramaic'), comms[base_ref], lambda x: x.split())
+                vtitle = None if "Rashi" in base_ref or "Tosafot" in base_ref else 'William Davidson Edition - Aramaic'
+                results = match_ref(TextChunk(Ref(base_ref), lang='he', vtitle=vtitle), comms[base_ref], lambda x: x.split())
                 if results['matches'][0] is not None:
                     prev_match = results['matches'][0].normal()
                     if " on " in results['matches'][0].normal():

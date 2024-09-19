@@ -83,7 +83,7 @@ def extract_text(element):
    elif element is not None and hasattr(element, 'get_text'):
        return element.get_text()
    return ''
-def identify_chapters(parents):
+def identify_chapters(parents, item_id):
     for parent in parents:
         chapter = -1
         if parent.get('class', []) == ['note']:
@@ -99,19 +99,28 @@ def identify_chapters(parents):
                         chapter = int(match.group(1))
                 elif re.search(r'^(\d+)', child.text) and chapter >= 1:
                     node = child.contents[0]
-                    match = re.search(r'^(\d+)', extract_text(node))
-                    already_pasuk = re.search(r'^(\d+):(\d+)', extract_text(node))
                     new_text = extract_text(node)
+                    match = re.search(r'^(\d+)', new_text)
+                    already_pasuk = re.search(r'^(\d+):(\d+)', new_text)
                     if match and already_pasuk is None:
                         new_text = new_text.replace(match.group(0), f"{chapter}:{match.group(0)}", 1)
                     else:
                         chapter = int(already_pasuk.group(1))
                     new_node = Tag(name="b")
-                    new_node.string = new_text
+                    italics_tag = Tag(name="i")
+                    italics_tag.string = new_text
+                    new_node.append(italics_tag)
                     node.replace_with(new_node)
-                    if '–' in new_text:
-                        child.attrs["orig_ref"] = new_text.replace(".", "")
-                        new_node.string = new_text.split('–')[0]+"."
+                    for char in ["-", "—", '–']:
+                        if char in new_text:
+                            child.attrs["orig_ref"] = new_text.replace(".", "").split()[0]
+                            pattern = r"(\d+:\d+)[-—–]{1}\d+\."
+                            # Replace the matched pattern with the desired format "3:4."
+                            adjusted_text = re.sub(pattern, r"\1.", new_text)
+                            italics_tag = Tag(name="i")
+                            italics_tag.string = adjusted_text
+                            new_node.append(italics_tag)
+                            new_node.string = adjusted_text
 
 
                 # elif re.search("<b><i>\D+</i></b>", str(child)):
@@ -138,21 +147,50 @@ def identify_chapters(parents):
                         prepend.append(child)
                 else:
                     verse_and_chapter = re.search(r'^(\d+:\d+)', child.text).group(0)
-                    child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'. ', '', 1)
-                    child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'.', '', 1)
-                    child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, '', 1).strip()
+                    if "-" not in child.contents[0].text and "—" not in child.contents[0].text and '–' not in child.contents[0].text:
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'. ', '', 1)
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'.', '', 1)
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, '', 1).strip()
 
                     child.attrs["ref"] = verse_and_chapter
                     if len(prepend) > 0:
+                        found = None
                         for i, x in enumerate(prepend):
-                            child.insert(i, x)
-                            diff -= 1
+                            if 'head' in str(x.get('class', [])):
+                                verse_and_chapter = re.search(r'\((\d+:\d+)', str(x))
+                                if verse_and_chapter:
+                                    x.attrs["ref"] = verse_and_chapter.group(1)
+                                    found = x
+                            elif found:
+                                found.insert(len(found.contents), x)
+                                diff -= 1
                         prepend = []
                     found_verse = True
-
+            if len(prepend) > 0:
+                found = None
+                print("ID = ", item_id, str(prepend))
+                for x in prepend:
+                    if 'head' in str(x.get('class', [])):
+                        verse_and_chapter = re.search(r'\((\d+:\d+)', str(x))
+                        if verse_and_chapter:
+                            x.attrs["ref"] = verse_and_chapter.group(1)
+                            found = x
+                    elif found:
+                        found.insert(len(found.contents), x)
             for x in parent.find_all("div", {"class": "tab-en1"}):
                 if x.text.strip() == "":
                     x.decompose()
+            for x in parent.find_all("b"):
+                if x.text.strip() == "Commentary":
+                    x.decompose()
+            for x in parent.find_all("i"):
+                if x.text.strip().startswith("—") and x.text.strip().count(" ") in [1, 2]:
+                    x.string = ""
+            for c, child in enumerate(parent.contents):
+                classes = str(child.get('class', []))
+                if 'head' in classes and 'ref' not in child.attrs:
+                    child.attrs['ref'] = parent.contents[c+1].attrs['ref']
+
     return parents
 
 def extract_chapters(parents, book_dict):
@@ -257,6 +295,27 @@ def parse_text(node, special_node=False):
                 segments[i] = segments[i].replace(".", "",1).strip()
     return segments
 
+def post_process(text):
+    for i, line in enumerate(text):
+        bold_tag = re.search("^<b>.*?</b>", line)
+        if bold_tag:
+            if "<i>" not in bold_tag.group(0):
+                text[i] = line.replace("<b>", "<b><i>", 1).replace("</b>", "</i></b>", 1)
+    return text
+
+def remove_a_tags(htmls):
+    # Parse the HTML using BeautifulSoup
+    new = []
+    for html in htmls:
+        soup = BeautifulSoup(html, 'html.parser')
+
+        # Find all <a> tags and unwrap them
+        for a_tag in soup.find_all('a'):
+            a_tag.unwrap()
+
+        # Convert the BeautifulSoup object back to a string
+        new.append(str(soup))
+    return new
 # Read the ePUB file
 book_file = epub.read_epub('ISBN_9780881232837.epub')
 
@@ -294,7 +353,7 @@ for item in book_file.get_items():
             with open(f"parsed_HTML/{item.id}.html", 'w', encoding='utf-8') as f:
                 children_iterator = soup.find('body').children
                 parents = parse(children_iterator)
-                parents = identify_chapters(parents)
+                parents = identify_chapters(parents, item.id)
                 book_title = extract_book(parents)
                 print(book_title)
                 parents = [x for x in parents if len(x.contents) > 4]
@@ -325,15 +384,17 @@ for item in book_file.get_items():
 
 
 title = "The Torah; A Women's Commentary"
-versionTitle = "CCAR Press / Women of Reform Judaism 2008"
+versionTitle = "CCAR Press / Women of Reform Judaism, 2008"
 versionSource = "https://www.ccarpress.org/shopping_product_detail.asp?pid=50296"
+versionNotes = "Editors: Tamara Cohn Eskenazi and Andrea L. Weiss"
 for node in special_node_names:
     for parasha in special_node_names[node]:
         ref = f"{title}, {node}, {parasha}"
         send_text = {
-            "text": special_node_names[node][parasha],
+            "text": remove_a_tags(special_node_names[node][parasha]),
             "versionTitle": versionTitle,
             "versionSource": versionSource,
+            "versionNotes": versionNotes,
             "language": "en",
             "actualLanguage": "en",
             "languageFamilyName": "english",
@@ -353,7 +414,7 @@ for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
                 links.append({"generated_by": "ccar_to_torah", "type": "commentary", "auto": True,
                               "refs": [f"{ref}:{s+1}", f"{book} {chapter}:{verse}"]})
             send_text = {
-                "text": book_dict[chapter][verse],
+                "text": post_process(book_dict[chapter][verse]),
                 "versionTitle": versionTitle,
                 "versionSource": versionSource,
                 "language": "en",
@@ -384,3 +445,9 @@ for l in links:
         Link(l).save()
     except:
         pass
+
+for v in VersionSet({"title": "The Torah; A Women's Commentary"}):
+    v.versionNotes = versionNotes
+    v.purchaseInformationImage = "https://www.ccarpress.org/product_image.asp?id=4427&szType=4"
+    v.purchaseInformationURL = "https://www.ccarpress.org/shopping_product_detail.asp?pid=50296"
+    v.save()
