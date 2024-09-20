@@ -111,16 +111,17 @@ def identify_chapters(parents, item_id):
                     italics_tag.string = new_text
                     new_node.append(italics_tag)
                     node.replace_with(new_node)
-                    for char in ["-", "—", '–']:
-                        if char in new_text:
-                            child.attrs["orig_ref"] = new_text.replace(".", "").split()[0]
-                            pattern = r"(\d+:\d+)[-—–]{1}\d+\."
-                            # Replace the matched pattern with the desired format "3:4."
-                            adjusted_text = re.sub(pattern, r"\1.", new_text)
-                            italics_tag = Tag(name="i")
-                            italics_tag.string = adjusted_text
-                            new_node.append(italics_tag)
-                            new_node.string = adjusted_text
+                    if re.search(r"(\d+:\d+)[-—–]{1}\d+\.", new_text):
+                        for char in ["-", "—", '–']:
+                            if char in new_text:
+                                child.attrs["orig_ref"] = new_text.replace(".", "").split()[0]
+                                pattern = r"(\d+:\d+)[-—–]{1}\d+\."
+                                # Replace the matched pattern with the desired format "3:4."
+                                adjusted_text = re.sub(pattern, r"\1.", new_text)
+                                italics_tag = Tag(name="i")
+                                italics_tag.string = adjusted_text
+                                new_node.append(italics_tag)
+                                new_node.string = adjusted_text
 
 
                 # elif re.search("<b><i>\D+</i></b>", str(child)):
@@ -147,7 +148,21 @@ def identify_chapters(parents, item_id):
                         prepend.append(child)
                 else:
                     verse_and_chapter = re.search(r'^(\d+:\d+)', child.text).group(0)
-                    if "-" not in child.contents[0].text and "—" not in child.contents[0].text and '–' not in child.contents[0].text:
+                    # 3 three cases when there's a verse
+                    # verse and no dh
+                    # <b> verse dh </b>
+                    # <b> verse </b> <b> dh </b>
+                    # when there's no dh and no range, take the verse out
+                    tagless_text = bleach.clean(str(child), strip=True, tags=[])
+                    no_range = re.search(r"^(\d+:\d+)[-—–]{1}\d+\.", tagless_text) is None
+                    startswith_bi = lambda x: str(x).startswith("<b><i>") or str(x).startswith("<i><b>")
+                    just_tags = [x for x in child.contents if isinstance(x, Tag)]
+                    next_is_dh = False
+                    if len(just_tags) > 1:
+                        next_is_dh = startswith_bi(child.contents[0]) and startswith_bi(just_tags[1])
+                    this_one_has_dh = len(child.contents[0].text) > (len(verse_and_chapter) + 2)
+                    found_dh = this_one_has_dh or next_is_dh
+                    if no_range and found_dh:
                         child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'. ', '', 1)
                         child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'.', '', 1)
                         child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, '', 1).strip()
@@ -181,11 +196,13 @@ def identify_chapters(parents, item_id):
                 if x.text.strip() == "":
                     x.decompose()
             for x in parent.find_all("b"):
+                if x.text.strip() == "":
+                    x.decompose()
                 if x.text.strip() == "Commentary":
                     x.decompose()
-            for x in parent.find_all("i"):
-                if x.text.strip().startswith("—") and x.text.strip().count(" ") in [1, 2]:
-                    x.string = ""
+            # for x in parent.find_all("i"):
+            #     if x.text.strip().startswith("—") and x.text.strip().count(" ") in [1, 2]:
+            #         x.string = ""
             for c, child in enumerate(parent.contents):
                 classes = str(child.get('class', []))
                 if 'head' in classes and 'ref' not in child.attrs:
@@ -221,23 +238,36 @@ def extract_chapters(parents, book_dict):
 
     return book_dict
 
-def extract_book(parents):
+def extract_book(parents, id):
     #     for p in parshiot:
     #         if p in parents[0].text:
     #             found.append(book)
     global parshiot
-    p = parents[0].contents[-1].contents[-1].text.replace("Sh’lach L’cha", "Sh'lach")
-    print(p)
-    found = []
-    closest_matches = difflib.get_close_matches(p, parshiot, n=1, cutoff=0.0)
-    if closest_matches:
-        closest_match = closest_matches[0]
-        for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-            book_parshiot = [Term().load({"name": x["sharedTitle"]}).get_primary_title('en') for x in
-                         library.get_index(book).alt_structs["Parasha"]["nodes"]]
-            if closest_match in book_parshiot:
-                return book
-    return None
+    id = int(id.replace("chap", ""))
+    if id <= 12:
+        return "Genesis"
+    elif id <= 23:
+        return "Exodus"
+    elif id <= 33:
+        return 'Leviticus'
+    elif id <= 43:
+        return "Numbers"
+    else:
+        return "Deuteronomy"
+    # from sefaria.system.database import db
+    # #p = parents[0].contents[-1].contents[-1].text.replace("Sh’lach L’cha", "Sh'lach")
+    # parents[0].contents[-1].contents[-1].contents[-1].text.replace("Sh’lach L’cha", "Sh'lach")
+    # print(p)
+    # found = []
+    # closest_matches = difflib.get_close_matches(p, parshiot, n=1, cutoff=0.0)
+    # if closest_matches:
+    #     closest_match = closest_matches[0]
+    #     for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
+    #         book_parshiot = [Term().load({"name": x["sharedTitle"]}).get_primary_title('en') for x in
+    #                      library.get_index(book).alt_structs["Parasha"]["nodes"]]
+    #         if closest_match in book_parshiot:
+    #             return book
+    # return None
 
 def extract_special_node_names(parents, chap_num):
     global special_node_names
@@ -345,16 +375,14 @@ for item in book_file.get_items():
         #     f.write(soup.prettify())
         if 'chap' in item.id:
             for span in soup.find_all('span'):
-                txt = span.get_text()
-                span.replace_with(txt)
+                span.unwrap()
             for a_tag in soup.find_all('a'):
-                txt = a_tag.get_text()
-                a_tag.replace_with(txt)
+                a_tag.unwrap()
             with open(f"parsed_HTML/{item.id}.html", 'w', encoding='utf-8') as f:
-                children_iterator = soup.find('body').children
+                children_iterator = list(soup.find('body').children)
                 parents = parse(children_iterator)
                 parents = identify_chapters(parents, item.id)
-                book_title = extract_book(parents)
+                book_title = extract_book(parents, item.id)
                 print(book_title)
                 parents = [x for x in parents if len(x.contents) > 4]
                 extract_chapters(parents, books[book_title])
