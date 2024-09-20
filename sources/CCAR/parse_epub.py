@@ -272,7 +272,7 @@ def extract_book(parents, id):
 def extract_special_node_names(parents, chap_num):
     global special_node_names
     global parshiot
-    special_node_parents = [x for x in parents if x.attrs['class'] != ['note'] and len(x.contents) > 7]
+    special_node_parents = [x for x in parents if x.attrs['class'] != ['note']]
     for node_name in special_node_names:
         found = -1
         for p, parent in enumerate(special_node_parents):
@@ -289,10 +289,15 @@ def extract_special_node_names(parents, chap_num):
                 break
         if found != -1:
             del special_node_parents[found]
+
+
     special_node_names["Parashah Introductions"][parshiot[chap_num - 1]] = special_node_parents[0]
     for intro in special_node_parents[1:]:
         for child in intro:
-            copy_child = BeautifulSoup(str(child), 'html.parser').find(child.name)
+            if isinstance(child, NavigableString):
+                copy_child = str(child)
+            else:
+                copy_child = BeautifulSoup(str(child), 'html.parser').find(child.name)
             special_node_names["Parashah Introductions"][parshiot[chap_num - 1]].append(copy_child)
 
     for key in special_node_names:
@@ -367,6 +372,7 @@ fms = {"Foreword": "בראש מילין", "Preface": "פתח דבר", "Acknowled
        "The Poetry of Torah and the Torah of Poetry": "שירת התורה ותורת השירה"}
 fm_text_dict = {}
 # Iterate over each item in the book
+prev_book_title = ""
 for item in book_file.get_items():
     if item.get_type() == ebooklib.ITEM_DOCUMENT:
         # Use BeautifulSoup to parse HTML
@@ -384,7 +390,8 @@ for item in book_file.get_items():
                 parents = identify_chapters(parents, item.id)
                 book_title = extract_book(parents, item.id)
                 print(book_title)
-                parents = [x for x in parents if len(x.contents) > 4]
+                parents = [x for x in parents if len(str(x)) > 100]
+                any_bad_ones = [x for x in parents if len(str(x)) < 200]
                 extract_chapters(parents, books[book_title])
                 extract_special_node_names(parents, int(item.id.replace("chap", "")))
                 combined_soup = BeautifulSoup('', 'html.parser')
