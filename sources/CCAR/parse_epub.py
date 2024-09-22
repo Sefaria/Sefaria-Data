@@ -160,14 +160,14 @@ def identify_chapters(parents, item_id):
                     # when there's no dh and no range, take the verse out
                     tagless_text = bleach.clean(str(child), strip=True, tags=[])
                     no_range = re.search(r"^(\d+:\d+)[-—–]{1}\d+\.", tagless_text) is None
-                    startswith_bi = lambda x: str(x).startswith("<b><i>") or str(x).startswith("<i><b>")
-                    just_tags = [x for x in child.contents if isinstance(x, Tag)]
-                    next_is_dh = False
-                    if len(just_tags) > 1:
-                        next_is_dh = startswith_bi(child.contents[0]) and startswith_bi(just_tags[1])
-                    this_one_has_dh = len(child.contents[0].text) > (len(verse_and_chapter) + 2)
-                    found_dh = this_one_has_dh or next_is_dh
-                    if no_range and found_dh:
+                    # startswith_bi = lambda x: str(x).startswith("<b><i>") or str(x).startswith("<i><b>")
+                    # just_tags = [x for x in child.contents if isinstance(x, Tag)]
+                    # next_is_dh = False
+                    # if len(just_tags) > 1:
+                    #     next_is_dh = startswith_bi(child.contents[0]) and startswith_bi(just_tags[1])
+                    # this_one_has_dh = len(child.contents[0].text) > (len(verse_and_chapter) + 2)
+                    # found_dh = this_one_has_dh or next_is_dh
+                    if no_range: # and found_dh:
                         child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'. ', '', 1)
                         child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'.', '', 1)
                         child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, '', 1).strip()
@@ -441,6 +441,7 @@ for node in special_node_names:
             "direction": "ltr",
         }
         post_text(ref, send_text)
+LinkSet({"generated_by": "ccar_to_torah"}).delete()
 links = []
 for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
     book_dict = books[book]
