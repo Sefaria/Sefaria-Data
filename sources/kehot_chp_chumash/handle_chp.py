@@ -4,6 +4,7 @@ from sefaria.model import *
 import os
 from bs4 import BeautifulSoup
 import re
+import csv
 
 
 def extract_elements_with_class(html_content, class_name):
@@ -64,6 +65,8 @@ def extract_verse_address(verse_text):
 
     def begins_with_number(text):
         text = text.replace(' ', '').replace('$','').replace('#', "").strip()
+        if not text:
+            return False
         return text[0].isdigit()
 
     verse_text = verse_text.replace('$', '')
@@ -84,10 +87,20 @@ def extract_verse_address(verse_text):
         current_verse_num += 1
         return current_chapter_num, current_verse_num
 
+def contains_english_letters(text):
+    return bool(re.search(r'[a-zA-Z]', text))
 
+def replace_symbols_with_bold_tags(text):
+    text = text.replace('$', '<b>').replace('#', '</b>')
+    return text
 
+def format_text_map(text_map):
+    for key in text_map:
+        text_map[key] = replace_symbols_with_bold_tags(text_map[key])
+    return text_map
 
 if __name__ == '__main__':
+    text_map = {}
     directory = 'html'
     for filename in sorted(os.listdir(directory)):
         file_path = os.path.join(directory, filename)
@@ -102,6 +115,17 @@ if __name__ == '__main__':
             elements = extract_elements_with_class(html_content, 'Peshat')
             for element in elements:
                 address = extract_verse_address(element.text)
-                print(f"{current_book} {address[0]}:{address[1]}")
+                if not contains_english_letters(element.text):
+                    continue
+                ref = f"{current_book} {address[0]}:{address[1]}"
+                if ref in text_map:
+                    text_map[ref] += f" {element.text}"
+                else:
+                    text_map[ref] = element.text
+                print(ref)
                 print(element.text)
-                # print(extract_verse_address(element.text))
+                print(text_map[ref])
+    text_map = format_text_map(text_map)
+    with open('output.csv', mode='w', newline='') as file:
+        csv.writer(file).writerows([['Ref', 'Text']] + list(text_map.items()))
+    print('hi')
