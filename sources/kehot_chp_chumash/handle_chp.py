@@ -4,6 +4,7 @@ from sefaria.model import *
 import os
 from bs4 import BeautifulSoup
 import re
+import csv
 
 
 def extract_elements_with_class(html_content, class_name):
@@ -61,6 +62,13 @@ def extract_verse_address(verse_text):
             return match.group(0)
         else:
             return None
+
+    def begins_with_number(text):
+        text = text.replace(' ', '').replace('$','').replace('#', "").strip()
+        if not text:
+            return False
+        return text[0].isdigit()
+
     verse_text = verse_text.replace('$', '')
     verse_text = verse_text.replace('#', '')
     address = extract_number_pair(verse_text)
@@ -69,6 +77,8 @@ def extract_verse_address(verse_text):
         current_chapter_num = c_num
         current_verse_num = v_num
         return c_num, v_num
+    if not begins_with_number(verse_text):
+        return current_chapter_num, current_verse_num
     if extract_first_number(verse_text):
         v_num = int(extract_first_number(verse_text))
         current_verse_num = v_num
@@ -77,21 +87,45 @@ def extract_verse_address(verse_text):
         current_verse_num += 1
         return current_chapter_num, current_verse_num
 
+def contains_english_letters(text):
+    return bool(re.search(r'[a-zA-Z]', text))
 
+def replace_symbols_with_bold_tags(text):
+    text = text.replace('$', '<b>').replace('#', '</b>')
+    return text
 
+def format_text_map(text_map):
+    for key in text_map:
+        text_map[key] = replace_symbols_with_bold_tags(text_map[key])
+    return text_map
 
 if __name__ == '__main__':
+    text_map = {}
     directory = 'html'
     for filename in sorted(os.listdir(directory)):
         file_path = os.path.join(directory, filename)
         if not os.path.isfile(file_path):
             continue
         print(file_path)
-        print(file_name_to_book(filename))
+        current_book = file_name_to_book(filename)
+        print(current_book)
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             html_content = file.read()
             html_content = replace_bold_span(html_content)
             elements = extract_elements_with_class(html_content, 'Peshat')
             for element in elements:
+                address = extract_verse_address(element.text)
+                if not contains_english_letters(element.text):
+                    continue
+                ref = f"{current_book} {address[0]}:{address[1]}"
+                if ref in text_map:
+                    text_map[ref] += f" {element.text}"
+                else:
+                    text_map[ref] = element.text
+                print(ref)
                 print(element.text)
-                print(extract_verse_address(element.text))
+                print(text_map[ref])
+    text_map = format_text_map(text_map)
+    with open('output.csv', mode='w', newline='') as file:
+        csv.writer(file).writerows([['Ref', 'Text']] + list(text_map.items()))
+    print('hi')
