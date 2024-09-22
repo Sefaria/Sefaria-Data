@@ -5,7 +5,7 @@ from bs4 import Tag, NavigableString
 import re
 from sources.functions import *
 import difflib
-allowed_tags = {'i', 'b', 'u', 'small', 'a'}
+allowed_tags = {'i', 'b', 'u', 'small', 'a', 'br'}
 special_node_names = {"Postbiblical Interpretations": [], "Contemporary Reflection": [], "Another View": [], "Parashah Introductions": []}
 parshiot = []
 for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
@@ -139,8 +139,13 @@ def identify_chapters(parents, item_id):
                         while prev_child.text == "":
                             prev_child_num += 1
                             prev_child = parent.contents[c - prev_child_num + diff]
-                        if isinstance(prev_child.contents[-1], NavigableString) or prev_child.contents[-1].name != 'br':
+                        is_sentence = False
+                        for char in [":", ".", "?", "!"]:
+                            is_sentence = is_sentence or prev_child.text.endswith(char) or prev_child.text.endswith(char+")")
+                        if (isinstance(prev_child.contents[-1], NavigableString) or prev_child.contents[-1].name != 'br') and is_sentence:
                             prev_child.append(br_tag)
+                        elif prev_child.contents[-1].string:
+                            prev_child.append(NavigableString(" "))
                         for x in list(child.children):
                             prev_child.append(x)
                         child.string = ""
@@ -315,8 +320,8 @@ def parse_text(node, special_node=False):
             for div in node.find_all('div'):
                 div.append("\n")
                 div.insert(0, "\n")
-        for br in node.find_all('br'):
-            br.append("\n")
+        # for br in node.find_all('br'):
+        #     br.append("\n")
         special_node_string = str(node).replace("&lt;", "<").replace("&gt;", ">")
         bleached_string = bleach.clean(special_node_string, strip=True, tags=allowed_tags)
         bleached_string = bleached_string.replace("\n \n", "\n\n").replace("<i></i>", "").replace("<b></b>", "")
@@ -403,9 +408,7 @@ for item in book_file.get_items():
         elif item.id.startswith("fm") and 10 <= int(item.id.replace("fm", "").replace("a", "")) <= 18:
             soup = BeautifulSoup(item.get_content(), 'html.parser')
             soup.find("div", {"class": "fmtitle"}).decompose()
-            for br in soup.find_all('br'):
-                br.append("\n")
-            fm_text = bleach.clean(str(soup), tags=["i", "b", "u", "small"], strip=True)
+            fm_text = bleach.clean(str(soup), tags=allowed_tags, strip=True)
             fm_text = [x for x in fm_text.splitlines() if x.strip() != ""]
             which_fm = int(item.id.replace("fm", "").replace("a", ""))-10
             which_fm = list(fms.keys())[which_fm]
