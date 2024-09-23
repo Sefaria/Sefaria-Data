@@ -178,16 +178,18 @@ def identify_chapters(parents, item_id):
                     #     next_is_dh = startswith_bi(child.contents[0]) and startswith_bi(just_tags[1])
                     # this_one_has_dh = len(child.contents[0].text) > (len(verse_and_chapter) + 2)
                     # found_dh = this_one_has_dh or next_is_dh
-                    if 'orig_ref' not in child.attrs: # and found_dh:
+                    if 'orig_ref' not in child.attrs and no_range: # and found_dh:
                         child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'. ', '', 1)
                         child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'.', '', 1)
                         child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, '', 1).strip()
                     elif 'orig_ref' in child.attrs:
-                        child.contents[0].string = child.attrs['orig_ref'].replace(".", "")
+                        assert verse_and_chapter in child.contents[0].text
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, child.attrs['orig_ref'].replace(".", ""))
                     else:
                         actual_range = re.search(r"^\d+:(\d+[-—–]{1}\d+)\.{0,1}", tagless_text).group(1)
                         for x in child.contents:
                             if str(x).startswith("<b><i>") or str(x).startswith("<i><b>"):
+                                print("POSSIBLE PROBLEM -- "+str(x))
                                 x.string = ""
                             elif str(x) in ["-", "—", "–"]:
                                 x.replace_with("")
@@ -215,7 +217,6 @@ def identify_chapters(parents, item_id):
                     found_verse = True
             if len(prepend) > 0:
                 found = None
-                print("ID = ", item_id, str(prepend))
                 for x in prepend:
                     if 'head' in str(x.get('class', [])):
                         verse_and_chapter = re.search(r'\((\d+:\d+)', str(x))
@@ -344,6 +345,11 @@ def extract_special_node_names(parents, chap_num):
 
 def parse_text(node, special_node=False):
     segments = []
+    for x in node.find_all("div", {"class": "hanga"}):
+        x.name = "span"
+        x.attrs["class"] = "poetry indentAll"
+    for x in node.find_all("span", {"class": ["grey"]}):
+        x.append(NavigableString(" "))
     if isinstance(node, Tag):
         if special_node:
             for x in node.contents:
@@ -356,7 +362,10 @@ def parse_text(node, special_node=False):
         for br in node.find_all('br'):
             br.append("\n")
         special_node_string = str(node).replace("&lt;", "<").replace("&gt;", ">")
-        bleached_string = bleach.clean(special_node_string, strip=True, tags=allowed_tags)
+        if special_node:
+            bleached_string = bleach.clean(special_node_string, strip=True, tags=allowed_tags+['span'], attributes=["class"])
+        else:
+            bleached_string = bleach.clean(special_node_string, strip=True, tags=allowed_tags)
         bleached_string = bleached_string.replace("\n \n", "\n\n").replace("<i></i>", "").replace("<b></b>", "")
         while "\n\n" in bleached_string:
             bleached_string = bleached_string.replace("\n\n", "\n")
@@ -419,7 +428,8 @@ for item in book_file.get_items():
         #     f.write(soup.prettify())
         if 'chap' in item.id:
             for span in soup.find_all('span'):
-                span.unwrap()
+                if 'class' not in span.attrs or span.attrs['class'] != ['grey']:
+                    span.unwrap()
             for a_tag in soup.find_all('a'):
                 a_tag.unwrap()
             with open(f"parsed_HTML/{item.id}.html", 'w', encoding='utf-8') as f:
@@ -427,7 +437,6 @@ for item in book_file.get_items():
                 parents = parse(children_iterator)
                 parents = identify_chapters(parents, item.id)
                 book_title = extract_book(parents, item.id)
-                print(book_title)
                 parents = [x for x in parents if len(str(x)) > 100]
                 any_bad_ones = [x for x in parents if len(str(x)) < 200]
                 extract_chapters(parents, books[book_title])
