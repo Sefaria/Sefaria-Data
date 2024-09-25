@@ -1,6 +1,5 @@
 import django
 
-
 django.setup()
 from sefaria.model import *
 from sefaria.tracker import modify_bulk_text
@@ -70,7 +69,7 @@ def file_name_to_book(file_name):
 def replace_bold_and_italic_span(text):
     # pattern = r'<span class="bold">\s*(.*?)\s*</span>'
 
-    small_patterns = [r'<span class="bold CharOverride-6">(.*?)</span>',]
+    small_patterns = [r'<span class="bold CharOverride-6">(.*?)</span>',r'<span class="bold CharOverride-5">(.*?)</span>']
     bold_patterns = [r'<span class="bold">(.*?)</span>',
                 r'<span class="Peshat-PN">(.*?)</span>',
                 r'<span class="bd">(.*?)</span>']
@@ -231,6 +230,8 @@ def insert_footnotes(html_content, footnotes_map):
 
 
 if __name__ == '__main__':
+    overrides = set()
+
     text_map = {}
     directory = 'html'
     for filename in sorted(os.listdir(directory)):
@@ -242,6 +243,7 @@ if __name__ == '__main__':
         if current_book is None:
             continue
         print(current_book)
+
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             html_content = file.read()
             html_content = content_fixes(html_content)
@@ -251,9 +253,6 @@ if __name__ == '__main__':
             # elements = extract_elements_with_class(html_content, 'Peshat', "Peshat-Heading")
             elements = extract_elements_with_class(html_content, 'Peshat')
             for element in elements:
-
-
-
                 address = extract_verse_address(element.text)
                 if "to affix the onyx stones to the upper ends of the Ephod’s shoulder straps," in element.text:
                     address = (12, 13)
@@ -268,7 +267,12 @@ if __name__ == '__main__':
                 print(element.text)
                 print(text_map[ref])
 
+                matches = re.findall(r'CharOverride-\d+', html_content)
+                for match in matches:
+                    overrides.add(match)
 
+
+    print(overrides)
     text_map = format_text_map(text_map)
     with open('output.csv', mode='w', newline='') as file:
         csv.writer(file).writerows([['Ref', 'Text']] + list(text_map.items()))
