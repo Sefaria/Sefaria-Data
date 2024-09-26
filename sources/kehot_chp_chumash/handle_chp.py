@@ -69,7 +69,13 @@ def file_name_to_book(file_name):
 def replace_bold_and_italic_span(text):
     # pattern = r'<span class="bold">\s*(.*?)\s*</span>'
 
-    small_patterns = [r'<span class="bold CharOverride-6">(.*?)</span>',r'<span class="bold CharOverride-5">(.*?)</span>']
+    small_patterns = [r'<span class="bold CharOverride-6">(.*?)</span>',
+                      r'<span class="bold CharOverride-5">(.*?)</span>',
+                      r'<span class="bold CharOverride-2">(.*?)</span>',
+                      r'<span class="bold CharOverride-3">(.*?)</span>',
+                      r'<span class="bold CharOverride-4">(.*?)</span>',
+                      r'<span class="bold CharOverride-8">(.*?)</span>',
+                      ]
     bold_patterns = [r'<span class="bold">(.*?)</span>',
                 r'<span class="Peshat-PN">(.*?)</span>',
                 r'<span class="bd">(.*?)</span>']
