@@ -6,6 +6,7 @@ from tqdm import tqdm
 superuser_id = 171118
 import csv
 import re
+import os
 from sefaria.model import *
 from sefaria.utils.talmud import daf_to_section, section_to_daf
 from typing import List
@@ -196,17 +197,104 @@ def infer_sefaria_segment_for_markers(html_content, masechet_name, chapter_num):
         print(str(index) + ": " + c)
     link_markers_to_sefaria_segments(comments, masechet_name, chapter_num)
 
-if __name__ == '__main__':
-    # # Reading HTML content from a file
-    # with open('ביאור_ירושלמי מאיר_מסכת פסחים_פרק ראשון – ויקיטקסט.html', 'r', encoding='utf-8') as file:
-    #     html_content = file.read()
-    #
-    # infer_sefaria_segment_for_markers(html_content, "Shabbat", "1")
-    # infer_footnotes_links(html_content)
-    # print("hello world")
+def get_html_files(directory):
+    html_files = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".html"):
+                html_files.append(os.path.join(root, file))
 
-    mt = IndexSet({"categories": "Mishneh Torah"}).array()
-    for index in mt:
-        if index.title.startswith("Mishneh Torah,"):
-            print(index.all_titles("he")[0])
+    html_files.sort(key=os.path.getctime)
+    for file in html_files:
+        yield file
+
+
+masechtot_dict = {
+    # Zeraim (Seeds)
+    "ברכות": "Berakhot",
+    "פאה": "Peah",
+    "דמאי": "Demai",
+    "כלאים": "Kilayim",
+    "שביעית": "Shevi'it",
+    "תרומות": "Terumot",
+    "מעשרות": "Ma'asrot",
+    "מעשר שני": "Ma'aser Sheni",
+    "חלה": "Challah",
+    "ערלה": "Orlah",
+    "ביכורים": "Bikkurim",
+
+    # Moed (Festivals)
+    "שבת": "Shabbat",
+    "עירובין": "Eruvin",
+    "פסחים": "Pesachim",
+    "שקלים": "Shekalim",
+    "יומא": "Yoma",
+    "סוכה": "Sukkah",
+    "ביצה": "Beitzah",
+    "ראש השנה": "Rosh Hashanah",
+    "תענית": "Taanit",
+    "מגילה": "Megillah",
+    "מועד קטן": "Moed Katan",
+    "חגיגה": "Chagigah",
+
+    # Nashim (Women)
+    "יבמות": "Yevamot",
+    "כתובות": "Ketubot",
+    "נדרים": "Nedarim",
+    "נזיר": "Nazir",
+    "סוטה": "Sotah",
+    "גיטין": "Gittin",
+    "קידושין": "Kiddushin",
+
+    # Nezikin (Damages)
+    "בבא קמא": "Bava Kamma",
+    "בבא מציעא": "Bava Metzia",
+    "בבא בתרא": "Bava Batra",
+    "סנהדרין": "Sanhedrin",
+    "מכות": "Makkot",
+    "שבועות": "Shevuot",
+    "עבודה זרה": "Avodah Zarah",
+    "הוריות": "Horayot",
+
+    # Kodashim (Holy Things)
+    "זבחים": "Zevachim",
+    "מנחות": "Menachot",
+    "חולין": "Chullin",
+    "בכורות": "Bekhorot",
+    "ערכין": "Arakhin",
+    "תמורה": "Temurah",
+    "כריתות": "Keritot",
+    "מעילה": "Me'ilah",
+    "תמיד": "Tamid",
+    "מידות": "Middot",
+    "קינים": "Kinnim",
+
+    # Taharot (Purities)
+    "כלים": "Kelim",
+    "אהלות": "Oholot",
+    "נגעים": "Nega'im",
+    "פרה": "Parah",
+    "טהרות": "Taharot",
+    "מקואות": "Mikvaot",
+    "נידה": "Niddah",
+    "מכשירין": "Makhshirin",
+    "זבים": "Zavim",
+    "טבול יום": "Tovul Yom",
+    "ידים": "Yadayim",
+    "עוקצים": "Okatzim"
+}
+if __name__ == '__main__':
+    # Reading HTML content from a file
+    for wikifile in get_html_files('wiki_data'):
+        print(wikifile)
+        with open(wikifile, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+
+        infer_sefaria_segment_for_markers(html_content, "Shabbat", "1")
+    # infer_footnotes_links(html_content)
+
+    # mt = IndexSet({"categories": "Mishneh Torah"}).array()
+    # for index in mt:
+    #     if index.title.startswith("Mishneh Torah,"):
+    #         print(index.all_titles("he")[0])
 

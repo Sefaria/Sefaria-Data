@@ -5,7 +5,7 @@ from bs4 import Tag, NavigableString
 import re
 from sources.functions import *
 import difflib
-allowed_tags = {'i', 'b', 'u', 'small', 'a'}
+allowed_tags = ['i', 'b', 'u', 'small', 'a']
 special_node_names = {"Postbiblical Interpretations": [], "Contemporary Reflection": [], "Another View": [], "Parashah Introductions": []}
 parshiot = []
 for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
@@ -77,13 +77,23 @@ def parse(children):
     parents.append(parent_chap)
     return parents
 
+def element_has_dh(child):
+    startswith_bi = lambda x: str(x).startswith("<b><i>") or str(x).startswith("<i><b>")
+    return startswith_bi(child)
+    # just_tags = [x for x in child.contents if isinstance(x, Tag)]
+    # next_is_dh = False
+    # if len(just_tags) > 1:
+    #     next_is_dh = startswith_bi(child.contents[0]) and startswith_bi(just_tags[1])
+    # this_one_has_dh = len(child.contents[0].text) > (len(verse_and_chapter) + 2)
+    # return this_one_has_dh or next_is_dh
+
 def extract_text(element):
    if isinstance(element, NavigableString):
        return str(element)
    elif element is not None and hasattr(element, 'get_text'):
        return element.get_text()
    return ''
-def identify_chapters(parents):
+def identify_chapters(parents, item_id):
     for parent in parents:
         chapter = -1
         if parent.get('class', []) == ['note']:
@@ -99,17 +109,30 @@ def identify_chapters(parents):
                         chapter = int(match.group(1))
                 elif re.search(r'^(\d+)', child.text) and chapter >= 1:
                     node = child.contents[0]
-                    match = re.search(r'^(\d+)', extract_text(node))
-                    already_pasuk = re.search(r'^\d+:\d+', extract_text(node))
                     new_text = extract_text(node)
+                    match = re.search(r'^(\d+)', new_text)
+                    already_pasuk = re.search(r'^(\d+):(\d+)', new_text)
                     if match and already_pasuk is None:
                         new_text = new_text.replace(match.group(0), f"{chapter}:{match.group(0)}", 1)
+                    else:
+                        chapter = int(already_pasuk.group(1))
                     new_node = Tag(name="b")
-                    new_node.string = new_text
-                    node.replace_with(new_node)
-                    if '–' in new_text:
-                        child.attrs["orig_ref"] = new_text.replace(".", "")
-                        new_node.string = new_text.split('–')[0]+"."
+                    italics_tag = Tag(name="i")
+                    italics_tag.string = new_text
+                    new_node.append(italics_tag)
+                    node.replace_with(new_node)  # 32-35 becomes 29:32-35
+                    range_m = re.search(r"\d+:(\d+[-—–]{1}\d+)\.{0,1}", new_text)
+                    if range_m:
+                        for char in ["-", "—", '–']:
+                            if char in new_text:
+                                child.attrs["orig_ref"] = range_m.group(1)
+                                pattern = r"(\d+:\d+)[-—–]{1}\d+\."
+                                # Replace the matched pattern with the desired format "3:4."
+                                adjusted_text = re.sub(pattern, r"\1.", new_text)
+                                italics_tag = Tag(name="i")
+                                italics_tag.string = adjusted_text
+                                new_node.append(italics_tag)
+                                new_node.string = adjusted_text
 
 
                 # elif re.search("<b><i>\D+</i></b>", str(child)):
@@ -127,8 +150,13 @@ def identify_chapters(parents):
                         while prev_child.text == "":
                             prev_child_num += 1
                             prev_child = parent.contents[c - prev_child_num + diff]
-                        if isinstance(prev_child.contents[-1], NavigableString) or prev_child.contents[-1].name != 'br':
+                        is_sentence = False
+                        for char in [":", ".", "?", "!"]:
+                            is_sentence = is_sentence or prev_child.text.endswith(char) or prev_child.text.endswith(char+")")
+                        if (isinstance(prev_child.contents[-1], NavigableString) or prev_child.contents[-1].name != 'br') and is_sentence:
                             prev_child.append(br_tag)
+                        else:
+                            prev_child.append(NavigableString(" "))
                         for x in list(child.children):
                             prev_child.append(x)
                         child.string = ""
@@ -136,21 +164,89 @@ def identify_chapters(parents):
                         prepend.append(child)
                 else:
                     verse_and_chapter = re.search(r'^(\d+:\d+)', child.text).group(0)
-                    child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'. ', '', 1)
-                    child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'.', '', 1)
-                    child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, '', 1).strip()
+                    # 3 three cases when there's a verse
+                    # verse and no dh
+                    # <b> verse dh </b>
+                    # <b> verse </b> <b> dh </b>
+                    # when there's no dh and no range, take the verse out
+                    tagless_text = bleach.clean(str(child), strip=True, tags=[])
+                    no_range = re.search(r"^\d+:(\d+[-—–]{1}\d+)\.{0,1}", tagless_text) is None
+                    # startswith_bi = lambda x: str(x).startswith("<b><i>") or str(x).startswith("<i><b>")
+                    # just_tags = [x for x in child.contents if isinstance(x, Tag)]
+                    # next_is_dh = False
+                    # if len(just_tags) > 1:
+                    #     next_is_dh = startswith_bi(child.contents[0]) and startswith_bi(just_tags[1])
+                    # this_one_has_dh = len(child.contents[0].text) > (len(verse_and_chapter) + 2)
+                    # found_dh = this_one_has_dh or next_is_dh
+                    if 'orig_ref' not in child.attrs and no_range: # and found_dh:
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'. ', '', 1)
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter+'.', '', 1)
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, '', 1).strip()
+                    elif 'orig_ref' in child.attrs:
+                        assert verse_and_chapter in child.contents[0].text
+                        child.contents[0].string = child.contents[0].text.replace(verse_and_chapter, child.attrs['orig_ref'].replace(".", ""))
+                    else:
+                        actual_range = re.search(r"^\d+:(\d+[-—–]{1}\d+)\.{0,1}", tagless_text).group(1)
+                        for x in child.contents:
+                            if str(x).startswith("<b><i>") or str(x).startswith("<i><b>"):
+                                print("POSSIBLE PROBLEM -- "+str(x))
+                                x.string = ""
+                            elif str(x) in ["-", "—", "–"]:
+                                x.replace_with("")
+                            else:
+                                break
+                        node = Tag(name="b")
+                        italics_tag = Tag(name="i")
+                        italics_tag.string = actual_range+"."
+                        node.append(italics_tag)
+                        child.insert(0, node)
 
                     child.attrs["ref"] = verse_and_chapter
                     if len(prepend) > 0:
+                        found = None
                         for i, x in enumerate(prepend):
-                            child.insert(i, x)
-                            diff -= 1
+                            if 'head' in str(x.get('class', [])):
+                                verse_and_chapter = re.search(r'\((\d+:\d+)', str(x))
+                                if verse_and_chapter:
+                                    x.attrs["ref"] = verse_and_chapter.group(1)
+                                    found = x
+                            elif found:
+                                found.insert(len(found.contents), x)
+                                diff -= 1
                         prepend = []
                     found_verse = True
-
+            if len(prepend) > 0:
+                found = None
+                for x in prepend:
+                    if 'head' in str(x.get('class', [])):
+                        verse_and_chapter = re.search(r'\((\d+:\d+)', str(x))
+                        if verse_and_chapter:
+                            x.attrs["ref"] = verse_and_chapter.group(1)
+                            found = x
+                    elif found:
+                        found.insert(len(found.contents), x)
             for x in parent.find_all("div", {"class": "tab-en1"}):
                 if x.text.strip() == "":
                     x.decompose()
+            for x in parent.find_all("b"):
+                if x.text.strip() == "":
+                    x.decompose()
+                if x.text.strip() == "Commentary":
+                    x.decompose()
+            for x in parent.find_all("i"):
+                if x.text.strip() == "":
+                    x.decompose()
+            for x in parent.find_all("b"):
+                if x.text.strip() == "":
+                    x.decompose()
+            # for x in parent.find_all("i"):
+            #     if x.text.strip().startswith("—") and x.text.strip().count(" ") in [1, 2]:
+            #         x.string = ""
+            for c, child in enumerate(parent.contents):
+                classes = str(child.get('class', []))
+                if 'head' in classes and 'ref' not in child.attrs:
+                    child.attrs['ref'] = parent.contents[c+1].attrs['ref']
+
     return parents
 
 def extract_chapters(parents, book_dict):
@@ -181,28 +277,41 @@ def extract_chapters(parents, book_dict):
 
     return book_dict
 
-def extract_book(parents):
+def extract_book(parents, id):
     #     for p in parshiot:
     #         if p in parents[0].text:
     #             found.append(book)
     global parshiot
-    p = parents[0].contents[-1].contents[-1].text.replace("Sh’lach L’cha", "Sh'lach")
-    print(p)
-    found = []
-    closest_matches = difflib.get_close_matches(p, parshiot, n=1, cutoff=0.0)
-    if closest_matches:
-        closest_match = closest_matches[0]
-        for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-            book_parshiot = [Term().load({"name": x["sharedTitle"]}).get_primary_title('en') for x in
-                         library.get_index(book).alt_structs["Parasha"]["nodes"]]
-            if closest_match in book_parshiot:
-                return book
-    return None
+    id = int(id.replace("chap", ""))
+    if id <= 12:
+        return "Genesis"
+    elif id <= 23:
+        return "Exodus"
+    elif id <= 33:
+        return 'Leviticus'
+    elif id <= 43:
+        return "Numbers"
+    else:
+        return "Deuteronomy"
+    # from sefaria.system.database import db
+    # #p = parents[0].contents[-1].contents[-1].text.replace("Sh’lach L’cha", "Sh'lach")
+    # parents[0].contents[-1].contents[-1].contents[-1].text.replace("Sh’lach L’cha", "Sh'lach")
+    # print(p)
+    # found = []
+    # closest_matches = difflib.get_close_matches(p, parshiot, n=1, cutoff=0.0)
+    # if closest_matches:
+    #     closest_match = closest_matches[0]
+    #     for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
+    #         book_parshiot = [Term().load({"name": x["sharedTitle"]}).get_primary_title('en') for x in
+    #                      library.get_index(book).alt_structs["Parasha"]["nodes"]]
+    #         if closest_match in book_parshiot:
+    #             return book
+    # return None
 
 def extract_special_node_names(parents, chap_num):
     global special_node_names
     global parshiot
-    special_node_parents = [x for x in parents if x.attrs['class'] != ['note'] and len(x.contents) > 7]
+    special_node_parents = [x for x in parents if x.attrs['class'] != ['note']]
     for node_name in special_node_names:
         found = -1
         for p, parent in enumerate(special_node_parents):
@@ -219,10 +328,15 @@ def extract_special_node_names(parents, chap_num):
                 break
         if found != -1:
             del special_node_parents[found]
+
+
     special_node_names["Parashah Introductions"][parshiot[chap_num - 1]] = special_node_parents[0]
     for intro in special_node_parents[1:]:
         for child in intro:
-            copy_child = BeautifulSoup(str(child), 'html.parser').find(child.name)
+            if isinstance(child, NavigableString):
+                copy_child = str(child)
+            else:
+                copy_child = BeautifulSoup(str(child), 'html.parser').find(child.name)
             special_node_names["Parashah Introductions"][parshiot[chap_num - 1]].append(copy_child)
 
     for key in special_node_names:
@@ -231,6 +345,11 @@ def extract_special_node_names(parents, chap_num):
 
 def parse_text(node, special_node=False):
     segments = []
+    for x in node.find_all("div", {"class": "hanga"}):
+        x.name = "span"
+        x.attrs["class"] = "poetry indentAll"
+    for x in node.find_all("span", {"class": ["grey"]}):
+        x.append(NavigableString(" "))
     if isinstance(node, Tag):
         if special_node:
             for x in node.contents:
@@ -243,7 +362,10 @@ def parse_text(node, special_node=False):
         for br in node.find_all('br'):
             br.append("\n")
         special_node_string = str(node).replace("&lt;", "<").replace("&gt;", ">")
-        bleached_string = bleach.clean(special_node_string, strip=True, tags=allowed_tags)
+        if special_node:
+            bleached_string = bleach.clean(special_node_string, strip=True, tags=allowed_tags+['span'], attributes=["class"])
+        else:
+            bleached_string = bleach.clean(special_node_string, strip=True, tags=allowed_tags)
         bleached_string = bleached_string.replace("\n \n", "\n\n").replace("<i></i>", "").replace("<b></b>", "")
         while "\n\n" in bleached_string:
             bleached_string = bleached_string.replace("\n\n", "\n")
@@ -255,6 +377,27 @@ def parse_text(node, special_node=False):
                 segments[i] = segments[i].replace(".", "",1).strip()
     return segments
 
+def post_process(text):
+    for i, line in enumerate(text):
+        bold_tag = re.search("^<b>.*?</b>", line)
+        if bold_tag:
+            if "<i>" not in bold_tag.group(0):
+                text[i] = line.replace("<b>", "<b><i>", 1).replace("</b>", "</i></b>", 1)
+    return text
+
+def remove_a_tags(htmls):
+    # Parse the HTML using BeautifulSoup
+    new = []
+    for html in htmls:
+        soup = BeautifulSoup(html, 'html.parser')
+
+        # Find all <a> tags and unwrap them
+        for a_tag in soup.find_all('a'):
+            a_tag.unwrap()
+
+        # Convert the BeautifulSoup object back to a string
+        new.append(str(soup))
+    return new
 # Read the ePUB file
 book_file = epub.read_epub('ISBN_9780881232837.epub')
 
@@ -276,6 +419,7 @@ fms = {"Foreword": "בראש מילין", "Preface": "פתח דבר", "Acknowled
        "The Poetry of Torah and the Torah of Poetry": "שירת התורה ותורת השירה"}
 fm_text_dict = {}
 # Iterate over each item in the book
+prev_book_title = ""
 for item in book_file.get_items():
     if item.get_type() == ebooklib.ITEM_DOCUMENT:
         # Use BeautifulSoup to parse HTML
@@ -284,18 +428,17 @@ for item in book_file.get_items():
         #     f.write(soup.prettify())
         if 'chap' in item.id:
             for span in soup.find_all('span'):
-                txt = span.get_text()
-                span.replace_with(txt)
+                if 'class' not in span.attrs or span.attrs['class'] != ['grey']:
+                    span.unwrap()
             for a_tag in soup.find_all('a'):
-                txt = a_tag.get_text()
-                a_tag.replace_with(txt)
+                a_tag.unwrap()
             with open(f"parsed_HTML/{item.id}.html", 'w', encoding='utf-8') as f:
-                children_iterator = soup.find('body').children
+                children_iterator = list(soup.find('body').children)
                 parents = parse(children_iterator)
-                parents = identify_chapters(parents)
-                book_title = extract_book(parents)
-                print(book_title)
-                parents = [x for x in parents if len(x.contents) > 4]
+                parents = identify_chapters(parents, item.id)
+                book_title = extract_book(parents, item.id)
+                parents = [x for x in parents if len(str(x)) > 100]
+                any_bad_ones = [x for x in parents if len(str(x)) < 200]
                 extract_chapters(parents, books[book_title])
                 extract_special_node_names(parents, int(item.id.replace("chap", "")))
                 combined_soup = BeautifulSoup('', 'html.parser')
@@ -306,10 +449,10 @@ for item in book_file.get_items():
                 f.write(str(combined_soup))
         elif item.id.startswith("fm") and 10 <= int(item.id.replace("fm", "").replace("a", "")) <= 18:
             soup = BeautifulSoup(item.get_content(), 'html.parser')
+            for a_tag in soup.find_all('a'):
+                a_tag.unwrap()
             soup.find("div", {"class": "fmtitle"}).decompose()
-            for br in soup.find_all('br'):
-                br.append("\n")
-            fm_text = bleach.clean(str(soup), tags=["i", "b", "u", "small"], strip=True)
+            fm_text = bleach.clean(str(soup), tags=allowed_tags+['br'], strip=True)
             fm_text = [x for x in fm_text.splitlines() if x.strip() != ""]
             which_fm = int(item.id.replace("fm", "").replace("a", ""))-10
             which_fm = list(fms.keys())[which_fm]
@@ -323,15 +466,17 @@ for item in book_file.get_items():
 
 
 title = "The Torah; A Women's Commentary"
-versionTitle = "CCAR Press / Women of Reform Judaism 2008"
+versionTitle = "CCAR Press / Women of Reform Judaism, 2008"
 versionSource = "https://www.ccarpress.org/shopping_product_detail.asp?pid=50296"
+versionNotes = "Editors: Tamara Cohn Eskenazi and Andrea L. Weiss"
 for node in special_node_names:
     for parasha in special_node_names[node]:
         ref = f"{title}, {node}, {parasha}"
         send_text = {
-            "text": special_node_names[node][parasha],
+            "text": remove_a_tags(special_node_names[node][parasha]),
             "versionTitle": versionTitle,
             "versionSource": versionSource,
+            "versionNotes": versionNotes,
             "language": "en",
             "actualLanguage": "en",
             "languageFamilyName": "english",
@@ -340,6 +485,7 @@ for node in special_node_names:
             "direction": "ltr",
         }
         post_text(ref, send_text)
+LinkSet({"generated_by": "ccar_to_torah"}).delete()
 links = []
 for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
     book_dict = books[book]
@@ -351,7 +497,7 @@ for book in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
                 links.append({"generated_by": "ccar_to_torah", "type": "commentary", "auto": True,
                               "refs": [f"{ref}:{s+1}", f"{book} {chapter}:{verse}"]})
             send_text = {
-                "text": book_dict[chapter][verse],
+                "text": post_process(book_dict[chapter][verse]),
                 "versionTitle": versionTitle,
                 "versionSource": versionSource,
                 "language": "en",
@@ -382,3 +528,12 @@ for l in links:
         Link(l).save()
     except:
         pass
+
+for v in VersionSet({"title": "The Torah; A Women's Commentary"}):
+    v.versionNotes = versionNotes
+    v.purchaseInformationImage = "https://www.ccarpress.org/product_image.asp?id=4427&szType=4"
+    v.purchaseInformationURL = "https://www.ccarpress.org/shopping_product_detail.asp?pid=50296"
+    v.save()
+
+from sefaria.helper.link import rebuild_links_from_text as rebuild
+rebuild("The Torah; A Women's Commentary", 1)
