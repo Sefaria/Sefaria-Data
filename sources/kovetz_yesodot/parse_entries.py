@@ -35,8 +35,10 @@ def make_string(p_element):
     line = str(new_element)[3:-4].replace(' ', ' ')
     line = ' '.join(line.split())
     for fn in re.findall('\[(\d+)\]', line):
+        global next_ft_num
         note = NOTES.pop(int(fn))
-        line = line.replace(f'[{fn}]', f'<sup class="footnote-marker">{fn}</sup><i class="footnote">{note}</i>')
+        line = line.replace(f'[{fn}]', f'<sup class="footnote-marker">{next_ft_num}</sup><i class="footnote">{note}</i>')
+        next_ft_num += 1
     return line
 
 def join_string(element):
@@ -258,6 +260,7 @@ for word_sec in word_sections:
         if element.name in ['h2', 'h3']:
             headword = join_string(element).replace('-', '')
             headwords[headword] = {}
+            next_ft_num = 1
             # if not first_iter:
             #     if not has_lexic_order(prev_hw, headword):
             #         print(f'problem with headwords order: {prev_hw}; {headword}')
