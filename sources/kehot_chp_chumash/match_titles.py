@@ -73,13 +73,19 @@ if __name__ == '__main__':
     for classification in classifications:
         prompt = get_classification_prompt(classification["title"], classification["option_1_text"], classification["option_2_text"])
         print(prompt)
-        verdict = ask_ollama(prompt)
-        if '0' in verdict:
-            halt = True
-        if "0" in verdict:
-            classification["verdict"] = "option2"
-        if "1" in verdict:
-            classification["verdict"] = "option1"
+        models = ["llama3.2", "mistral"]
+        for index, model in enumerate(models):
+            verdict = ask_ollama(prompt, model=model)
+            if '0' in verdict:
+                halt = True
+            if "0" in verdict:
+                classification[f"verdict_of_{model}"] = "option2"
+            if "1" in verdict:
+                classification[f"verdict_of_{model}"] = "option1"
+            if index == len(models) - 1:
+                predictions = [classification[f"verdict_of_{model}"] for model in models]
+                if len(set(predictions)) > 1:
+                    print({f"verdict_of_{model}" : classification[f"verdict_of_{model}"] for model in models})
     csv_file = 'titles_matches.csv'
     with open(csv_file, mode='w', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=classifications[0].keys())
