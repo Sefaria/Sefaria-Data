@@ -88,7 +88,11 @@ def replace_bold_and_italic_span(text):
         return f'@@@{content}/@@@'
     def replace_small(match):
         content = match.group(1)
-        return f'$SMALL&BOLD{content}/$SMALL&BOLD'
+        if content == 'od':
+            return f'$SMALL&BOLD{content.upper()}/$SMALL&BOLD'
+        else:
+            return f'$CLOSE_OPEN_BOLD{content}/$CLOSE_OPEN_BOLD'
+
     for pattern in bold_patterns:
         text = re.sub(pattern, replace_bold, text)
     for pattern in italic_patterns:
@@ -168,8 +172,10 @@ def find_and_remove_b_num_b(s: str, n: int):
 def format_text_map(text_map):
     for key in text_map:
         text = text_map[key]
-        text = text.replace('/$SMALL&BOLD', '</b></small>')
-        text = text.replace('$SMALL&BOLD', '<b><small>')
+        text = text.replace('/$SMALL&BOLD', '</small></b>')
+        text = text.replace('$SMALL&BOLD', '<small><b>')
+        text = text.replace('/$CLOSE_OPEN_BOLD', '')
+        text = text.replace('$CLOSE_OPEN_BOLD', '')
         text = replace_symbols_with_bold_tags(text)
         text = find_and_remove_b_num_b(text, 40)
         match = re.search(r"<b>\d+", text)
@@ -181,6 +187,9 @@ def format_text_map(text_map):
         text = text.replace('FOOTNOTE_MARKER', '<sup class="footnote-marker">')
         text = text.replace('/FOOTNOTE', '</i>')
         text = text.replace('FOOTNOTE', '<i class="footnote">')
+        # text = re.sub(r'<b>\s*</b>', '', text)
+        text = text.replace('<b></b>', '')
+        text = text.replace('<b> </b>', ' ')
         text_map[key] = text
     return text_map
 
@@ -237,6 +246,7 @@ def insert_footnotes(html_content, footnotes_map):
 
 if __name__ == '__main__':
     overrides = set()
+    titles_count = 0
 
     text_map = {}
     directory = 'html'
@@ -256,9 +266,13 @@ if __name__ == '__main__':
             footnotes_map = extract_footnotes(html_content)
             html_content = insert_footnotes(html_content, footnotes_map)
             html_content = replace_bold_and_italic_span(html_content)
-            # elements = extract_elements_with_class(html_content, 'Peshat', "Peshat-Heading")
-            elements = extract_elements_with_class(html_content, 'Peshat')
+            elements = extract_elements_with_class(html_content, 'Peshat', "Peshat-Heading")
+            # elements = extract_elements_with_class(html_content, 'Peshat')
             for element in elements:
+                if element.has_attr('class') and 'Peshat-Heading' in element['class']:
+                    text_map[f"title:{titles_count}"] = f"{element.text}"
+                    titles_count += 1
+                    continue
                 address = extract_verse_address(element.text)
                 if "to affix the onyx stones to the upper ends of the Ephod’s shoulder straps," in element.text:
                     address = (12, 13)
@@ -282,6 +296,9 @@ if __name__ == '__main__':
     text_map = format_text_map(text_map)
     with open('output.csv', mode='w', newline='') as file:
         csv.writer(file).writerows([['Ref', 'Text']] + list(text_map.items()))
+    for key in list(text_map):  # Use list to avoid RuntimeError due to modifying dict while iterating
+        if "title" in key:
+            del text_map[key]
     partitioned_map = partition_dict_by_first_word(text_map)
     for book, map in partitioned_map.items():
         ingest_version(book, map)
