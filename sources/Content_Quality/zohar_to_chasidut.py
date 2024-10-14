@@ -57,7 +57,10 @@ def get_score(words_a, words_b):
 
     dumb_score = (ImaginaryContenderPerWord * len(words_a)) - score
     return dumb_score
+
+results = []
 def find_dh(refs):
+    global results
     pm = ParallelMatcher(tokenizer=lambda x: bleach.clean(x, strip=True, tags=[]).split(),
                         min_words_in_match=4,
                         ngram_size=3,
@@ -69,7 +72,7 @@ def find_dh(refs):
                         max_words_between=2,
                         dh_extract_method=lambda x: bleach.clean(x, strip=True, tags=[]))
     x = pm.match([r.normal() for r in refs], return_obj=True)
-    print(x)
+    results += [(i.a.ref.normal(), i.b.ref.normal()) for i in x if i.score > 0]
 
 import re
 finds = defaultdict(list)
@@ -93,12 +96,17 @@ for book in texts:
     for v in library.get_index(book).versionSet():
         if v.language == 'en':
             v.walk_thru_contents(find_zohar)
-for x in finds:
-    for find in finds[x]:
-        try:
-            Link({"generated_by": "zohar_to_LT", "type": "Commentary", "auto": True, "refs": [x, find]}).save()
-        except Exception as e:
-            print(e)
+# for x in finds:
+#     for find in finds[x]:
+#         try:
+#             Link({"generated_by": "zohar_to_LT", "type": "Commentary", "auto": True, "refs": [x, find]}).save()
+#         except Exception as e:
+#             print(e)
+LinkSet({"generated_by": "zohar_to_LT"}).delete()
 
-
-print("Zohar, Introduction")
+for x in results:
+    print(x[0], "=>", x[1])
+    # try:
+    #     Link({"generated_by": "zohar_to_LT", "type": "Commentary", "auto": True, "refs": [x[0], x[1]]}).save()
+    # except Exception as e:
+    #     print(e)
