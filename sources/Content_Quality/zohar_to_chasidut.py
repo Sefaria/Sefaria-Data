@@ -106,7 +106,7 @@ LinkSet({"generated_by": "zohar_to_LT"}).delete()
 
 for x in results:
     print(x[0], "=>", x[1])
-    # try:
-    #     Link({"generated_by": "zohar_to_LT", "type": "Commentary", "auto": True, "refs": [x[0], x[1]]}).save()
-    # except Exception as e:
-    #     print(e)
+    try:
+        Link({"generated_by": "zohar_to_LT", "type": "Commentary", "auto": True, "refs": [x[0], x[1]]}).save()
+    except Exception as e:
+        print(e)
