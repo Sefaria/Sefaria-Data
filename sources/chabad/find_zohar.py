@@ -52,41 +52,43 @@ with open("results.csv", "a") as csvfile:
                 found_refs_parasha = []
             text = bleach.clean(ref.text('he').text, strip=True, tags=[])
             data = {"text": text}
-            found_something = False
             if "בזהר " not in text and "בזוהר " not in text:
-                pass
+                found_refs_daf.append((ref.normal(), "", ""))
             else:
                 response = requests.post(url, json=data, headers=headers)
                 response = json.loads(response.content)
                 if 'error' in response:
                     print(response)
+                    found_refs_daf.append((ref.normal(), "", ""))
                 elif response.get('result', {}) == []:
-                    pass
+                    found_refs_daf.append((ref.normal(), "", ""))
                 else:
                     print(response)
-                    this_parasha = list(response.get('result').values())[0].get('parasha')
-                    found_parasha = ""
-                    if this_parasha in he_zohar_parshiot:
-                        found_parasha = this_parasha
-                    else:
-                        closest_match = difflib.get_close_matches(this_parasha, he_zohar_parshiot, n=1)
-                        if closest_match:
-                            found_parasha = closest_match[0]
-                    this_daf = list(response.get('result').values())[0].get('daf')
-                    if len(found_parasha) > 0:
-                        if this_daf:
-                            matches = difflib.get_close_matches(this_daf, list(mapping[found_parasha].keys()), n=1)
-                            if len(matches) > 0:
-                                this_daf = matches[0]
-                                zohar_ref = mapping[found_parasha][this_daf]
-                                found_refs_daf.append((ref.normal(), zohar_ref))
-                                found_something = True
+                    found_something = False
+                    for citation, result in response['result'].items():
+                        this_parasha = result.get('parasha')
+                        found_parasha = ""
+                        if this_parasha in he_zohar_parshiot:
+                            found_parasha = this_parasha
                         else:
-                            for zohar_ref in whole_mapping[found_parasha]:
-                                found_refs_parasha.append((ref.normal(), zohar_ref))
-                                found_something = True
-            if not found_something:
-                found_refs_daf.append((ref.normal(), ""))
+                            closest_match = difflib.get_close_matches(this_parasha, he_zohar_parshiot, n=1)
+                            if closest_match:
+                                found_parasha = closest_match[0]
+                        this_daf = result.get('daf')
+                        if len(found_parasha) > 0:
+                            if this_daf:
+                                matches = difflib.get_close_matches(this_daf, list(mapping[found_parasha].keys()), n=1)
+                                if len(matches) > 0:
+                                    this_daf = matches[0]
+                                    zohar_ref = mapping[found_parasha][this_daf]
+                                    found_refs_daf.append((ref.normal(), zohar_ref, result.get('dh'), citation))
+                                    found_something = True
+                            else:
+                                for zohar_ref in whole_mapping[found_parasha]:
+                                    found_refs_parasha.append((ref.normal(), zohar_ref, result.get('dh'), citation))
+                                    found_something = True
+                    if not found_something:
+                        found_refs_daf.append((ref.normal(), "", ""))
 
     writer.writerows(found_refs_daf)
     writer.writerows(found_refs_parasha)
