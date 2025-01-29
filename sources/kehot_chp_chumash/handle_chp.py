@@ -228,6 +228,8 @@ def extract_footnotes(html_content):
         footnote_text_combined = ' '.join(footnote_texts).strip()
         if footnote_text_combined and footnote_text_combined[0] == '.':
             footnote_text_combined = footnote_text_combined[1:].strip()
+        if not footnote_number.strip().isdigit() or footnote_number.isspace():
+            print(footnote_text_combined)
         footnotes[footnote_number] = footnote_text_combined
     return footnotes
 
@@ -258,12 +260,16 @@ if __name__ == '__main__':
         current_book = file_name_to_book(filename)
         if current_book is None:
             continue
-        print(current_book)
+        # print(current_book)
 
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             html_content = file.read()
             html_content = content_fixes(html_content)
             footnotes_map = extract_footnotes(html_content)
+            # for key, value in footnotes_map.items():
+            #     # print(file_path)
+            #     # print(key)
+            #     # print(value)
             html_content = insert_footnotes(html_content, footnotes_map)
             html_content = replace_bold_and_italic_span(html_content)
             elements = extract_elements_with_class(html_content, 'Peshat', "Peshat-Heading")
@@ -283,16 +289,16 @@ if __name__ == '__main__':
                     text_map[ref] += f" {element.text}"
                 else:
                     text_map[ref] = element.text
-                print(ref)
-                print(element.text)
-                print(text_map[ref])
+                # print(ref)
+                # print(element.text)
+                # print(text_map[ref])
 
                 matches = re.findall(r'CharOverride-\d+', html_content)
                 for match in matches:
                     overrides.add(match)
 
 
-    print(overrides)
+    # print(overrides)
     text_map = format_text_map(text_map)
     with open('output.csv', mode='w', newline='') as file:
         csv.writer(file).writerows([['Ref', 'Text']] + list(text_map.items()))
@@ -300,6 +306,6 @@ if __name__ == '__main__':
         if "title" in key:
             del text_map[key]
     partitioned_map = partition_dict_by_first_word(text_map)
-    for book, map in partitioned_map.items():
-        ingest_version(book, map)
-    print('hi')
+    # for book, map in partitioned_map.items():
+    #     ingest_version(book, map)
+    # print('hi')
