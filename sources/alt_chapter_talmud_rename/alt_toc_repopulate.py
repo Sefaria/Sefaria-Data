@@ -17,14 +17,7 @@ def retrieve_new_chapter_names():
     return data
 
 def retrieve_babylonian_talmud_masechtot():
-    title_list = library.get_indexes_in_category("Talmud")
-    babylonian_talmud_title_list = []
-    for title in title_list:
-        exclusions = ["Tractate", "Jerusalem", "Ahevukha", "DeRabbi", "Introduction"]
-        if all(term not in title for term in exclusions):
-            babylonian_talmud_title_list.append(title)
-    return babylonian_talmud_title_list
-
+    return library.get_indexes_in_corpus('Bavli')
 
 def name_changer(masechet_index, new_names_data):
     chap_num = 0
@@ -94,3 +87,4 @@ if __name__ == '__main__':
     bk_index = Ref("Bava Kamma 2").index
     bk_index.alt_structs["Chapters"]["nodes"][1]["titles"][1]["text"] = "כיצד הרגל"
     bk_index.save()
+
