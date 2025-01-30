@@ -8,6 +8,8 @@ import csv
 import os
 CSV_FILENAME = "language_analytics.csv"
 BATCH_SIZE = 10
+ERROR_LOG_FILENAME = "error_log.txt"
+
 
 # def is_full_text_available(index: Index):
 #     all_segment_refs = index.all_segment_refs()
@@ -21,7 +23,10 @@ BATCH_SIZE = 10
 #         except NoVersionFoundError:
 #             return False
 #     return True
-
+def log_error(title, error_message):
+    """Logs errors to a separate file."""
+    with open(ERROR_LOG_FILENAME, "a", encoding="utf-8") as f:
+        f.write(f"{title}: {error_message}\n")
 def get_primary_version_languages(title: str):
     versions = VersionSet({"title": title, "isPrimary": True}).array()
     primary_version_languages = sorted(
@@ -75,7 +80,11 @@ if __name__ == '__main__':
         if title in existing_titles:
             continue  # Skip already processed entries
 
-        num_of_uncovered_refs = get_num_of_uncovered_refs(index)
+        try:
+            num_of_uncovered_refs = get_num_of_uncovered_refs(index)
+        except Exception as e:
+            log_error(title, str(e))  # Write error to log file
+            continue  # Skip this index and move to the next one
         primary_languages = get_primary_version_languages(title)
 
         language_analytics.append({
