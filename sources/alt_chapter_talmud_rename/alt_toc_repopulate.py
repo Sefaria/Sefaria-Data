@@ -30,18 +30,13 @@ def name_changer(masechet_index, new_names_data):
     """
     chap_num = 0
     for node in masechet_index.alt_structs['Chapters']['nodes']:
-
         chap_num += 1
-
         new_title = new_names_data[f"{masechet} {chap_num}"]
-
         print(f">> Updating {masechet} {chap_num} to {new_title}")
-
         chapter_title_list = node["titles"]
         for title in chapter_title_list:
             if title['lang'] == 'en':
                 title['text'] = new_title
-
     masechet_index.save()
 
 def test_title_changed(new_names_data, masechet):
@@ -49,11 +44,8 @@ def test_title_changed(new_names_data, masechet):
 
     chap_num = 0
     for node in masechet_index.alt_structs['Chapters']['nodes']:
-
         chap_num += 1
-
         new_title = new_names_data[f"{masechet} {chap_num}"]
-
         chapter_title_list = node["titles"]
         for title in chapter_title_list:
             if title['lang'] == 'en':
