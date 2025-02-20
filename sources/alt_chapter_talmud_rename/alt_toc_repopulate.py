@@ -20,6 +20,14 @@ def retrieve_babylonian_talmud_masechtot():
     return library.get_indexes_in_corpus('Bavli')
 
 def name_changer(masechet_index, new_names_data):
+    """
+    This function iterates through the alt structure nodes for a given Masechet and renames
+    the title, then saves the Index.
+    :param masechet_index: The Index object for the given Masechet
+    :param new_names_data: The data dict for the new names, where the key is the masechet name and chapter number
+    and the value is the updated name for that chapter.
+    :return: None
+    """
     chap_num = 0
     for node in masechet_index.alt_structs['Chapters']['nodes']:
 
