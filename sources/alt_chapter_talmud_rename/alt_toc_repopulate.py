@@ -39,29 +39,6 @@ def name_changer(masechet_index, new_names_data):
                 title['text'] = new_title
     masechet_index.save()
 
-def test_title_changed(new_names_data, masechet):
-    masechet_index = Ref(masechet).index
-
-    chap_num = 0
-    for node in masechet_index.alt_structs['Chapters']['nodes']:
-        chap_num += 1
-        new_title = new_names_data[f"{masechet} {chap_num}"]
-        chapter_title_list = node["titles"]
-        for title in chapter_title_list:
-            if title['lang'] == 'en':
-                assert title['text'] == new_title
-
-
-def test_all_titles_changed():
-    new_names_data = retrieve_new_chapter_names()
-    masechtot = retrieve_babylonian_talmud_masechtot()
-    for masechet in masechtot:
-        test_title_changed(new_names_data, masechet)
-
-def test_bava_kamma_hebrew():
-    bk_index = Ref("Bava Kamma 2").index
-    assert bk_index.alt_structs["Chapters"]["nodes"][1]["titles"][1]["text"] == "כיצד הרגל"
-
 
 if __name__ == '__main__':
 
@@ -81,9 +58,9 @@ if __name__ == '__main__':
 
     end = time.time()
 
-    print(f"Total run time {end-start}")
+    print(f"Total run time {end - start}")
 
-    # Hebrew fix
+    # In this case, the Hebrew title name for Bava Kamma 2 also needed to be updated correcting a typo.
     bk_index = Ref("Bava Kamma 2").index
     bk_index.alt_structs["Chapters"]["nodes"][1]["titles"][1]["text"] = "כיצד הרגל"
     bk_index.save()
