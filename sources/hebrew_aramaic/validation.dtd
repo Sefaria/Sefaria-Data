@@ -1,8 +1,8 @@
-<!ELEMENT body (chapter)>
-<!ELEMENT chapter (title, (pgbrk | entry)+)>
-<!ATTLIST chapter num CDATA #REQUIRED>
-<!ELEMENT title (#PCDATA)>
-<!ELEMENT entry ((head-word, pos?)+, (senses | binyan | notes | pgbrk)*)>
+<!--<!ELEMENT body (chapter)>-->
+<!--<!ELEMENT chapter (title, (pgbrk | entry)+)>-->
+<!--<!ATTLIST chapter num CDATA #REQUIRED>-->
+<!--<!ELEMENT title (#PCDATA)>-->
+<!ELEMENT entry ((head-word, pos*)+, (senses | binyan | notes | pgbrk)+)>
 <!ATTLIST entry id ID #REQUIRED>
 <!ELEMENT head-word (#PCDATA)>
 <!ELEMENT pos (#PCDATA)>
