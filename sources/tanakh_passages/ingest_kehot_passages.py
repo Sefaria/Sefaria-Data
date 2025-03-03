@@ -39,13 +39,16 @@ if __name__ == '__main__':
                 passage_breakups.append(chunk)  # Save the previous chunk
                 chunk = []  # Start a new chunk
 
-            chunk.append(verse_ref)  # Add verse to the current chunk
+            chunk.append(verse_ref) # Add verse to the current chunk
+            if i == len(verses_refs) - 1:  # If this is the last verse in the book
+                passage_breakups.append(chunk)  # Close the final chunk
+                chunk = []  # Reset chunk for the next book
 
         if chunk:  # Append the last chunk after looping
             passage_breakups.append(chunk)
     for chunk in passage_breakups:
         Passage({
-            "full_ref": Ref(chunk[0]).to(Ref(chunk[-1])).tref,
+            "full_ref": chunk[0].to(chunk[-1]).tref,
             "type": "biblical-story",
             "source": "Kehot Chumash",
-        }).save()
+        })
