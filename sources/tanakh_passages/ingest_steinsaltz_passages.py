@@ -38,6 +38,6 @@ if __name__ == '__main__':
     for ref, title in passage_breakups:
         Passage({
             "full_ref": ref,
-            "type": "passage",
+            "type": "biblical-story",
             "source": "Steinsaltz",
         }).save()
