@@ -51,4 +51,4 @@ if __name__ == '__main__':
             "full_ref": chunk[0].to(chunk[-1]).tref,
             "type": "biblical-story",
             "source": "Kehot Chumash",
-        })
+        }).save()
