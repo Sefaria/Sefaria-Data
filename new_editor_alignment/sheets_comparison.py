@@ -1,6 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+import os
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 import sys
 import time
 import django
@@ -33,14 +37,44 @@ def update_all_sheets(new_owner):
     else:
         print("No sheets needed updating.")
 
+
+def save_sheet_content(driver, sheet_id, output_folder="saved_sheets"):
+    url = f"http://localhost:8000/sheets/{sheet_id}"
+    driver.get(url)
+
+    try:
+        # Wait for the sheet content to load
+        content_element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".text.editorContent"))
+        )
+
+        # Create output folder if it doesn't exist
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+
+        # Save only the content element's HTML
+        filename = f"{sheet_id}.html"
+        filepath = os.path.join(output_folder, filename)
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content_element.get_attribute('outerHTML'))
+
+        print(f"Saved sheet {sheet_id} as {filepath}")
+
+    except TimeoutException:
+        print(f"Timeout while waiting for sheet {sheet_id} to load")
+    except Exception as e:
+        print(f"Error processing sheet {sheet_id}: {str(e)}")
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python script.py <email> <password>")
         sys.exit(1)
     email = sys.argv[1]
     password = sys.argv[2]
-
-    update_all_sheets(171118)
+    sheets_owner = 171118
+    update_all_sheets(sheets_owner)
+    sheet_ids = [sheet["id"] for sheet in db.sheets.find({"owner": sheets_owner}, {"id": 1})]
     # Initialize the WebDriver
     driver = webdriver.Firefox(executable_path="./geckodriver")  # Or use webdriver.Firefox() for Firefox
 
@@ -65,6 +99,20 @@ if __name__ == "__main__":
 
         # Wait to observe the result
         time.sleep(5)
+
+        # Process each sheet
+        for sheet_id in sheet_ids:
+            try:
+                save_sheet_content(driver, sheet_id)
+                # Small delay between requests to avoid overloading the server
+                time.sleep(1)
+            except Exception as e:
+                print(f"Failed to process sheet {sheet_id}: {str(e)}")
+                continue
+
+
+
+
 
     finally:
         # Close the browser window
