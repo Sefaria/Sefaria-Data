@@ -38,14 +38,42 @@ def update_all_sheets(new_owner):
         print("No sheets needed updating.")
 
 
-def save_sheet_content(driver, sheet_id, output_folder="saved_sheets"):
+def save_sheet_content_new_editor(driver, sheet_id, output_folder="sheets_content_old_new_editor"):
     url = f"http://localhost:8000/sheets/{sheet_id}"
     driver.get(url)
 
     try:
         # Wait for the sheet content to load
         content_element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".text.editorContent"))
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".text"))
+        )
+
+        # Create output folder if it doesn't exist
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+
+        # Save only the content element's HTML
+        filename = f"{sheet_id}.html"
+        filepath = os.path.join(output_folder, filename)
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content_element.get_attribute('outerHTML'))
+
+        print(f"Saved sheet {sheet_id} as {filepath}")
+
+    except TimeoutException:
+        print(f"Timeout while waiting for sheet {sheet_id} to load")
+    except Exception as e:
+        print(f"Error processing sheet {sheet_id}: {str(e)}")
+
+def save_sheet_content_viewer(driver, sheet_id, output_folder="sheets_content_viewer"):
+    url = f"http://localhost:8000/sheets/{sheet_id}"
+    driver.get(url)
+
+    try:
+        # Wait for the sheet content to load
+        content_element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".text"))
         )
 
         # Create output folder if it doesn't exist
@@ -78,42 +106,47 @@ if __name__ == "__main__":
     # Initialize the WebDriver
     driver = webdriver.Firefox(executable_path="./geckodriver")  # Or use webdriver.Firefox() for Firefox
 
-    try:
-        # Navigate to the Sefaria login page
-        driver.get("http://localhost:8000/login")
+    # Navigate to the Sefaria login page
+    driver.get("http://localhost:8000/login")
 
-        # Allow the page to load
-        time.sleep(2)
+    # Allow the page to load
+    time.sleep(2)
 
-        # Locate the email and password input fields and the login button
-        email_input = driver.find_element(By.ID, "id_email")
-        password_input = driver.find_element(By.ID, "id_password")
-        login_button = driver.find_element(By.ID, "login-submit-button")
+    # Locate the email and password input fields and the login button
+    email_input = driver.find_element(By.ID, "id_email")
+    password_input = driver.find_element(By.ID, "id_password")
+    login_button = driver.find_element(By.ID, "login-submit-button")
 
-        # Enter your credentials
-        email_input.send_keys(email)
-        password_input.send_keys(password)
+    # Enter your credentials
+    email_input.send_keys(email)
+    password_input.send_keys(password)
 
-        # Submit the login form
-        login_button.click()
+    # Submit the login form
+    login_button.click()
 
-        # Wait to observe the result
-        time.sleep(5)
+    # Wait to observe the result
+    time.sleep(5)
 
-        # Process each sheet
+    for sheet_id in sheet_ids:
+        break
+        try:
+            save_sheet_content_new_editor(driver, sheet_id)
+            # Small delay between requests to avoid overloading the server
+            time.sleep(1)
+        except Exception as e:
+            print(f"Failed to process sheet {sheet_id}: {str(e)}")
+            continue
+    driver.quit()
+    driver = webdriver.Firefox(executable_path="./geckodriver")
+    driver.get("http://localhost:8000/login")
+    for sheet_id in sheet_ids:
         for sheet_id in sheet_ids:
             try:
-                save_sheet_content(driver, sheet_id)
+                save_sheet_content_viewer(driver, sheet_id)
                 # Small delay between requests to avoid overloading the server
                 time.sleep(1)
             except Exception as e:
                 print(f"Failed to process sheet {sheet_id}: {str(e)}")
                 continue
 
-
-
-
-
-    finally:
-        # Close the browser window
-        driver.quit()
+    driver.quit()
