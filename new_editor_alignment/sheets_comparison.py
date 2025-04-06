@@ -105,6 +105,31 @@ def sign_in_to_account(driver, email, password):
         print(f"Login failed: {e}")
 
 
+def update_sheet_owner(sheet_id, new_owner):
+    # Find the sheet by ID
+    sheet = db.sheets.find_one({"id": sheet_id})
+
+    if sheet:
+        # Update the owner of the sheet
+        db.sheets.update_one({"id": sheet_id}, {"$set": {"owner": new_owner}})
+        print(f"Updated owner of sheet {sheet_id} to {new_owner}.")
+    else:
+        print(f"Sheet with ID {sheet_id} not found.")
+
+
+def update_all_sheets(new_owner):
+    # Find all sheets where the owner is not the desired one
+    sheets = db.sheets.find({"owner": {"$ne": new_owner}}, {"id": 1})
+
+    # Update the owner in bulk
+    sheet_ids = [sheet["id"] for sheet in sheets if "id" in sheet]
+
+    if sheet_ids:
+        db.sheets.update_many({"id": {"$in": sheet_ids}}, {"$set": {"owner": new_owner}})
+        print(f"Updated {len(sheet_ids)} sheets to owner {new_owner}.")
+    else:
+        print("No sheets needed updating.")
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python script.py <email> <password>")
@@ -113,6 +138,7 @@ if __name__ == "__main__":
     email = sys.argv[1]
     password = sys.argv[2]
     sheets_owner = 171118
+    update_all_sheets(sheets_owner)
 
     sheet_ids = [sheet["id"] for sheet in db.sheets.find({"owner": sheets_owner}, {"id": 1})]
 
