@@ -1,19 +1,40 @@
 import os
 import sys
 import time
+
+from selenium import webdriver
 from tqdm import tqdm
 import django
 
 django.setup()
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from sefaria.system.database import db
 from selenium.webdriver.firefox.options import Options
+from selenium.common.exceptions import NoSuchElementException
+from concurrent.futures import ProcessPoolExecutor
 
+def run_viewer_mode(sheet_id):
+    return exec_save_sheet_content(sheet_id, ".text", "sheets_content_viewer")
 
+def run_editor_mode(sheet_id_and_auth):
+    sheet_id, email, password = sheet_id_and_auth
+    return exec_save_sheet_content(sheet_id, ".text.editorContent", "sheets_content_new_editor", email, password, True)
+
+def exec_save_sheet_content(sheet_id, css_selector, output_folder, email=None, password=None, login=False):
+    options = Options()
+    options.headless = True
+    driver = webdriver.Firefox(executable_path="./geckodriver", options=options)
+
+    try:
+        if login:
+            sign_in_to_account(driver, email, password)
+
+        save_sheet_content(driver, sheet_id, css_selector, output_folder)
+    finally:
+        driver.quit()
 
 def save_sheet_content(driver, sheet_id, css_selector, output_folder, max_retries=3):
     """Saves the HTML content of a sheet, ensuring all elements are fully loaded."""
@@ -34,18 +55,20 @@ def save_sheet_content(driver, sheet_id, css_selector, output_folder, max_retrie
         try:
             driver.get(url)
 
-            # Wait until the page is fully loaded
-            WebDriverWait(driver, 10).until(
-                lambda d: d.execute_script("return document.readyState") == "complete"
-            )
+            # # Wait until the page is fully loaded
+            # WebDriverWait(driver, 10).until(
+            #     lambda d: d.execute_script("return document.readyState") == "complete"
+            # )
 
+
+            # WebDriverWait(driver, 10).until(lambda d: element_exists_by_css(d, selector))
             # Wait for the target element to be visible (not just present)
             content_element = WebDriverWait(driver, 10).until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, css_selector))
             )
 
             # Optional: Wait for additional elements if needed
-            time.sleep(2)  # Small delay to ensure dynamic content is loaded
+            # time.sleep(2)  # Small delay to ensure dynamic content is loaded
 
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content_element.get_attribute("outerHTML"))
@@ -91,26 +114,21 @@ if __name__ == "__main__":
     password = sys.argv[2]
     sheets_owner = 171118
 
-    options = Options()
-    options.headless = True  # Enable headless mode
-
-    # Retrieve all sheets owned by `sheets_owner`
     sheet_ids = [sheet["id"] for sheet in db.sheets.find({"owner": sheets_owner}, {"id": 1})]
 
-    # Simulate sheets viewer
-    driver = webdriver.Firefox(executable_path="./geckodriver", options=options)
-    driver.get("http://localhost:8000")
+    print("Saving sheets from viewer (no login)...")
+    with ProcessPoolExecutor(max_workers=10) as executor:
+        list(tqdm(
+            executor.map(run_viewer_mode, sheet_ids),
+            total=len(sheet_ids),
+            desc="Viewer"
+        ))
 
-    for sheet_id in tqdm(sheet_ids, desc="Simulating sheets viewer"):
-        save_sheet_content(driver, sheet_id, ".text", "sheets_content_viewer")
-
-    driver.quit()
-
-    # Simulate sheets new editor
-    driver = webdriver.Firefox(executable_path="./geckodriver", options=options)
-    sign_in_to_account(driver, email, password)
-
-    for sheet_id in tqdm(sheet_ids, desc="Simulating sheets new editor"):
-        save_sheet_content(driver, sheet_id, ".text.editorContent", "sheets_content_new_editor")
-
-    driver.quit()
+    print("Saving sheets from new editor (with login)...")
+    with ProcessPoolExecutor(max_workers=10) as executor:
+        auth_args = [(sid, email, password) for sid in sheet_ids]
+        list(tqdm(
+            executor.map(run_editor_mode, auth_args),
+            total=len(sheet_ids),
+            desc="Editor"
+        ))
