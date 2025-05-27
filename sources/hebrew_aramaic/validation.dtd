@@ -7,13 +7,12 @@
 <!ELEMENT head-word (#PCDATA)>
 <!ELEMENT pos (#PCDATA)>
 <!ELEMENT senses (sense)+>
-<!--<!ELEMENT binyan ((binyan-form, binyan-name)+, pos?, senses)>-->
-<!ELEMENT binyan (binyan-form?, binyan-name?, pos?, binyan-form?, senses)>
+<!ELEMENT binyan ((binyan-form*, binyan-name*)*, pos*, senses)>
 <!ELEMENT binyan-form (#PCDATA)>
 <!ELEMENT binyan-name (#PCDATA)>
-<!ELEMENT notes ANY>
-<!ELEMENT sense (number?, definition, notes?)>
-<!ELEMENT definition ANY>
+<!ELEMENT notes (#PCDATA | bold | xref | italic | pgbrk)*>
+<!ELEMENT sense (number?, pos?, definition?, notes?)>
+<!ELEMENT definition (#PCDATA | pos | bold | xref | italic | pgbrk)*>
 <!ELEMENT bold ANY>
 <!ELEMENT italic (#PCDATA)>
 <!ELEMENT number (#PCDATA)>

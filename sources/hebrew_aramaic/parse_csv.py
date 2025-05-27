@@ -1,21 +1,25 @@
 import csv
 from lxml import etree
 import re
+import traceback
 import django
 from pymongo.errors import DuplicateKeyError
 
 from sefaria.helper.normalization import TableReplaceNormalizer, RegexNormalizer, NormalizerComposer
+from sefaria.system.exceptions import InputError
 
 django.setup()
 from sefaria.model import *
 from sefaria.model.linker.ref_resolver import AmbiguousResolvedRef
-# from sefaria.model.lexicon import KrupnikEntry
+from sefaria.model.lexicon import KrupnikEntry
 from sefaria.model.schema import DictionaryNode
-from sources.functions import post_index, post_text
+from sources.functions import post_index, post_text, post_link
 from linking_utilities.weighted_levenshtein import WeightedLevenshtein
+from linking_utilities.dibur_hamatchil_matcher import match_ref
+
 
 weighted_levenshtein = WeightedLevenshtein()
-set1 = set()
+set1, set2, set3, set4 = set(), set(), set(), set()
 y,n=0,0
 hebrew_letters_range = range(1488, 1515)
 nikkud_range = [x for x in range(1456, 1469)] + [1473, 1474, 1479]
@@ -28,13 +32,21 @@ refs_report = []
 no_refs = []
 
 with open('abbr.csv') as fp:
-    abbr = sorted(csv.DictReader(fp), key=lambda i: len(i['from']))
+    abbr = sorted(csv.DictReader(fp), key=lambda i: -len(i['from']))
     abbr = {row['from']: row['to'] for row in abbr}
 ref_replacement_table = {**abbr, '׃': ';', ':': ';'}
 bereshit_normalizer = RegexNormalizer('בר׳ (?=[^פ ][^ ]* [^ע])', r'בראשית ')
 table_normalizer = TableReplaceNormalizer(ref_replacement_table)
-yerushalmi_normalizer = RegexNormalizer('(ירושלמי (?:[^ ]+ ){1,2}?)פ(?:״[א-כ]|[ט-כ]״[א-ט]) ', r'\1 דף ')
-normalizer = NormalizerComposer(steps=[bereshit_normalizer, table_normalizer, yerushalmi_normalizer])
+yer_masechtot = [i.get_title('he').replace('תלמוד ירושלמי ', '') for i in library.get_indexes_in_corpus('Yerushalmi', full_records=True)]
+masechet_reg = f"(?:{'|'.join(yer_masechtot)})"
+yer = 'ירושלמי'
+yer_lookbehind = f'(?<={yer} {masechet_reg} )'
+yerushalmi_normalizer = RegexNormalizer(f'{yer_lookbehind}פ(?:״[א-כ]|[ט-כ]״[א-ט]) ', ' דף ')
+perek = '([א-כפ]׳|[ט-כ]״[א-ט])'
+page_lookahead = '(?= (?:[א-צ]׳|[ט-צ]״[א-ט]) ע״[א-ד])'
+yerushalmi_no_peh = RegexNormalizer(f'{yer_lookbehind}{perek}{page_lookahead}', 'דף')
+tags_normalizer = RegexNormalizer('[<>/bi]', '')
+normalizer = NormalizerComposer(steps=[bereshit_normalizer, table_normalizer, yerushalmi_normalizer, yerushalmi_no_peh, tags_normalizer])
 
 def is_venice(ref):
     if isinstance(ref, str):
@@ -42,6 +54,24 @@ def is_venice(ref):
     for node in getattr(ref.index, 'alt_structs', {'Venice': {'nodes': []}})['Venice']['nodes']:
         if ref.normal() in node['refs']:
             return True
+
+
+def match(ref, text):
+    strip = lambda t: re.sub('[^א-ת ]', '', t)
+    base_tokenizer = lambda t: strip(t).split()
+    dh_extract_method = lambda t: strip(t)
+    oref = Ref(ref)
+    if not oref.is_empty():
+        try:
+            base_tc = oref.text('he')
+        except InputError:
+            pass
+        else:
+            matches = match_ref(base_tc, [text], base_tokenizer, dh_extract_method=dh_extract_method)
+            if matches['matches'][0]:
+                return matches['matches'][0].normal()
+    return 'NONE'
+
 
 class Entry:
 
@@ -64,8 +94,9 @@ class Entry:
         double = 'וו|יי'
         nikkud_after_double = 'ְֳִֵֶַָֹּ'
         text = re.sub(f'({double})([{nikkud_after_double}]+)', lambda m: f'{m.group(1)[0]}{m.group(2)}{m.group(1)[1]}', text)
-        text = re.sub('[\u034F‬‍‏\*]', '', text)
-        return text.strip()
+        text = re.sub('[\u034F‬‍‎‏\*]', '', text)
+        text = re.sub(' +\.', '.', text)
+        return ' '.join(text.split())
 
     def get_text_of_only_text_element(self, element):
         text = element.text
@@ -159,30 +190,16 @@ class Entry:
         for xref in self.xml.findall('.//xref'):
             rid = xref.get('rid')
             xref_hw = self.manipulate_text(xref.text).replace('.', '')
-            if rid:
-                linked_entry = [e for e in entries if e.id == rid]
-                if not linked_entry:
-                    row['xref'] = f'rid does not exist: {rid}'
-                    n+=1
-                else:
-                    if len(xref) != 0:
-                        print(f'xref with sub elements')
-                    if not xref.text:
-                        print('xref without text')
-                    linked_entry = linked_entry[0]
-                    ref_hw = linked_entry.headword['word']
-                    new_xref = xref.text
-                    a_string = f'<a data-ref="{index_title}, {ref_hw}" href="/{index_title},_{ref_hw}">{new_xref}</a>'
-                    y+=1
-            else:
+            new_xref = None
+            if not rid:
                 strip = lambda x: re.sub('[^ א-ת]', '', x)
                 xref_hw_stripped = strip(xref_hw)
                 # addenda_entries = [e for e in entries]# if e.id.startswith('A')]
                 matches = [e for e in entries if strip(e.headword['word']) == xref_hw_stripped]
                 if len(matches) == 1:
+                    rid = matches[0].id
                     xref.set('id', matches[0].id)
                     new_xref = matches[0].id
-                    y+=1
                 else:
                     optional_matches = []
                     for entry in entries:
@@ -195,12 +212,27 @@ class Entry:
                             optional_matches.append((entry, distance))
                     if len(optional_matches) > 0:
                         match = min(optional_matches, key=lambda x: x[1])[0]
-                        y += 1
+                        rid = match.id
                         row['xref'] = f'suggested match for {xref_hw}: xref: {match.id}, hw: {match.headword["word"]}'
                         row['linked headword'] = (etree.tostring(match.xml, encoding="unicode"))
                     else:
                         row['xref'] = 'xref without rid'
-                        n+=1
+            if rid:
+                linked_entry = [e for e in entries if e.id == rid]
+                if not linked_entry:
+                    row['xref'] = f'rid does not exist: {rid}'
+                else:
+                    if len(xref) != 0:
+                        print(f'xref with sub elements')
+                    if not xref.text:
+                        print('xref without text')
+                    linked_entry = linked_entry[0]
+                    ref_hw = linked_entry.headword['word']
+                    new_xref = xref.text
+            if new_xref:
+                a_string = f'<a class="refLink" data-ref="{index_title}, {ref_hw}" href="/{index_title},_{ref_hw}" data-scroll-link="true">{new_xref}</a>'
+                xref.text = a_string
+
 
     def handle_refs(self, text):
         # text = text.replace('׳', "'").replace('״', '"')
@@ -219,12 +251,13 @@ class Entry:
             print(9999, e, text)
             return
         has_valid_refs = False
+        replacings = []
         for rr in doc.resolved_refs:
             ambiguation = ''
             if isinstance(rr, AmbiguousResolvedRef):
                 ref_text = rr.resolved_raw_refs[0].raw_entity.span.text
                 optional_refs = [r.ref.normal() for r in rr.resolved_raw_refs]
-                optional_refs = [r for r in optional_refs if 'Lieberman' in r]
+                optional_refs = [r for r in optional_refs if 'Lieberman' not in r]
                 if len(optional_refs) == 1:
                     ref = optional_refs[0]
                 elif ref_text.startswith('ירושלמי'):
@@ -242,6 +275,10 @@ class Entry:
             else:
                 ref_text = rr.raw_entity.span.text
                 ref = rr.ref
+                if ref_text.startswith('אסתר רבה'):
+                    ref = Ref('Esther Rabbah')
+                if ref_text.startswith('רות רבה'):
+                    ref = Ref('Ruth Rabbah')
                 if ref:
                     ref = ref.normal()
 
@@ -312,11 +349,40 @@ class Entry:
 
             if ref:
                 has_valid_refs = True
-            if ref and Ref.is_ref(ref) and not (Ref(ref).is_segment_level() or Ref(ref).is_range()):
+
+            quot = segment_ref = base_text = ''
+            if ref and Ref.is_ref(ref) and (not Ref(ref).is_segment_level() or Ref(ref).is_range()):
                 remain = text[orig_range[1]:].strip()
-                if remain and remain[0] not in '׃:':
-                    print(ref_text, orig_text, 5555, remain)
-                    print(6666, text)
+                word = '[א-ת,׳״)(]+'
+                regex = f'^(?:{word} ?){{,5}}[׃:;]'
+                before_quot = re.search(regex, remain)
+                if not before_quot:
+                    pass
+                else:
+                    global y,n
+                    remain = re.split(regex, remain)[1]
+                    quot = re.split('[\.;׃:(\d]|וכו׳', remain)[0]
+                    quot = ' '.join(quot.split()[:7])
+                    segment_ref = match(ref, quot)
+                    if segment_ref == 'NONE':
+                        base_text = ''
+                        if ref_text.startswith('ירושלמי'):
+                            pass
+                            # n+=1
+                    else:
+                        if ref_text.startswith('ירושלמי'):
+                            y+=1
+                        base_text = Ref(segment_ref).text('he').text
+            if segment_ref or (ref and Ref.is_ref(ref) and Ref(ref).is_segment_level()  and not Ref(ref).is_range()):
+                tref = segment_ref or ref
+                if tref and tref != 'NONE' and not Ref(tref).is_empty():
+                    replacings.append((orig_text, f'<a class="refLink" data-ref="{tref}" href="/{Ref(tref).url()}">{orig_text}</a>'))
+                    links.append({
+                        'refs': [tref, f'{index_title}, {self.headword["word"]} 1'],
+                        'type': 'quotation',
+                        'auto': True,
+                        'generated_by': 'krupnik parser'
+                    })
 
 
             refs_report.append({'identified text': ref_text,
@@ -324,21 +390,103 @@ class Entry:
                                 'ref': ref,
                                 'ghost ref': True if ref and Ref.is_ref(ref) and Ref(ref).is_empty() else None,
                                 'ambiguation': ambiguation,
-                                'xml': etree.tostring(self.xml, encoding="unicode")})
+                                'xml': etree.tostring(self.xml, encoding="unicode"),
+                                'quot': quot,
+                                'segment ref': segment_ref,
+                                'base text': base_text})
         if not has_valid_refs and ':' in text:
             no_refs.append(etree.tostring(self.xml, encoding="unicode"))
             pass
+        for rep in replacings:
+            text = text.replace(*rep)
+
+        return text
+
+    def handle_rest_naively(self, elements):
+        rest = ''
+        for element in elements:
+            rest += f' {etree.tostring(element, encoding="unicode")}'
+        content = rest
+        for tag in ['italic', 'binyan-form']:
+            t = tag[0]
+            content = content.replace(f'<{tag}>', f' <{t}>').replace(f'</{tag}>', f'</{t}> ')
+        content = re.sub('</?[^>/]{2,}>', ' ', content)
+        content = content.replace('&lt;', '<').replace('&gt;', '>')
+        content = ' '.join(content.split())
+        content = self.handle_refs(content)
+        if content:
+            content = self.manipulate_text(content)
+        return content
+
+    def handle_sense(self, sense):
+        sense_dict = {}
+        number = sense.find("number")
+        pos = sense.find("pos")
+        definition = sense.find("definition")
+        notes = sense.find("notes")
+        if definition is not None and definition.find('pos') is not None:
+            if pos is not None:
+                print('pos in sense and another one in its definition')
+            pos = definition.find('pos')
+            definition.remove(pos)
+            index = sense.index(definition) #this is redundant for this xml is not in use anympre, but i'm doing it for a case i'll print it and won't understand
+            sense.insert(index, pos)
+        if number is not None:
+            sense_dict['number'] = int(re.search('\d', number.text).group(0))
+        if pos is not None:
+            sense_dict['pos'] = pos.text.strip()
+        if definition is not None:
+            tags = tuple(e.tag for e in definition)
+            set1.add(tags)
+            if 'bold' in tags or 'italic' in tags:
+                row['definition'] = f'definition had bold or italic: {etree.tostring(definition, encoding="unicode")}'
+            sense_dict['definition'] = self.handle_rest_naively([definition])
+        if notes is not None:
+            set3.add(tuple(e.tag for e in notes))
+            sense_dict['notes'] = self.handle_rest_naively([notes])
+        return sense_dict
+
+    def handle_senses(self, senses):
+        return [self.handle_sense(sense) for sense in senses]
+
+    def handle_binyan(self, binyan):
+        binyan_arr = []
+        for element in binyan:
+            if element.tag == 'senses':
+                binyan_arr.append({'senses': self.handle_senses(element)})
+            else:
+                binyan_arr.append({element.tag: ' '.join(element.text.split())})
+        return binyan_arr
+
+    def handle_rest_tags(self, elements):
+        if elements[0].tag == 'senses':
+            self.content = {'senses': self.handle_senses(elements[0])}
+        else:
+            self.content = {'binyans': [self.handle_binyan(binyan) for binyan in elements]}
+
+    def handle_rest(self):
+        next_element = self.first_not_hw_element
+        rest = []
+        while next_element is not None:
+            if next_element.tag == 'pgbrk':
+                next_element = next_element.getnext()
+                continue
+            rest.append(next_element)
+            next_element = next_element.getnext()
+        if any(all(e.tag == tag for e in rest) for tag in ['senses', 'binyan']):
+        # if False:
+            self.handle_rest_tags(rest)
+        else:
+            # set1.add(tuple(e.tag for e in rest))
+            global n
+            n+=1
+            row['tags problem'] = [e.tag for e in rest]
+            self.content = self.handle_rest_naively(rest)
+            row['xml'] = etree.tostring(self.xml, encoding="unicode")
 
     def parse(self):
         self.handle_xrefs()
-        next_element = self.first_not_hw_element
-        rest = ''
-        while next_element is not None:
-            rest += ' '.join(next_element.itertext())
-            next_element = next_element.getnext()
-        self.content = ' '.join(rest.split())
-        self.handle_refs(self.content)
-        row['xml'] = etree.tostring(self.xml, encoding="unicode")
+        self.handle_rest()
 
 index_title = 'A Dictionary of the Talmud'
 version_title = 'A dictionary of the Talmud, London, 1927'
@@ -438,27 +586,39 @@ def make_version():
             'text': ['א']}
     post_text(f'{index_title}, Preface', text_version, server=server, index_count='on')
 
+def post_links():
+    post_link(links, skip_lang_check=False, VERBOSE=False)
+
 def make_objects():
     make_lexicon()
     delete_lexicon_entries()
     make_lexicon_entries()
     make_index()
     make_version()
+    post_links()
 
 if __name__ == '__main__':
     with open('entries.csv') as fp:
         data = list(csv.DictReader(fp))
     entries = []
+    links = []
     for row in data:
-        entry = Entry(row['xml'])
-        entries.append(entry)
+        try:
+            entry = Entry(row['xml'])
+            entries.append(entry)
+        except Exception as e:
+            print(1,e, row['xml'])
     handle_headwords()
     for row, entry in zip(data, entries):
-        entry.parse()
-    print(y,n,set1)
+        try:
+            entry.parse()
+        except Exception as e:
+            print(2,e, row['xml'])
+            print(traceback.format_exc())
+    print(y,n,set1,set2,set3)
 
-    report_name = 'xref'
-    additional_fields = ['xref', 'linked headword']
+    report_name = 'definition'
+    additional_fields = [report_name]
     fieldnames = ['xml'] + additional_fields
     with open(f'krupnik {report_name} report.csv', 'w') as fp:
         w = csv.DictWriter(fp, fieldnames=fieldnames)
@@ -467,12 +627,17 @@ if __name__ == '__main__':
             row = {k: row.get(k, '') for k in fieldnames}
             w.writerow(row)
 
-    # make_objects()
+    make_objects()
 
     with open('krupnik refs report.csv', 'w') as fp:
-        w = csv.DictWriter(fp, fieldnames=refs_report[0].keys())
+        fieldnames = list(refs_report[0].keys())
+        if 'segment ref' not in fieldnames:
+            fieldnames += ['quot', 'segment ref', 'base text']
+        w = csv.DictWriter(fp, fieldnames=fieldnames)
         w.writeheader()
         for row in refs_report:
+            if 'segment ref' not in row:
+                row['segment ref'] = row['quot'] = row['base text'] = ''
             w.writerow(row)
     with open('krupnik no refs entries.csv', 'w') as fp:
         w = csv.DictWriter(fp, fieldnames=['xml'])
