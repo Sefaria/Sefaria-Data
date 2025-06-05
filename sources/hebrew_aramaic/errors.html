@@ -1,0 +1,3136 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="robots" content="NONE,NOARCHIVE">
+  <title>AttributeError at /api/texts/A_Dictionary_of_the_Talmud,_Preface</title>
+  <style type="text/css">
+    html * { padding:0; margin:0; }
+    body * { padding:10px 20px; }
+    body * * { padding:0; }
+    body { font:small sans-serif; }
+    body>div { border-bottom:1px solid #ddd; }
+    h1 { font-weight:normal; }
+    h2 { margin-bottom:.8em; }
+    h2 span { font-size:80%; color:#666; font-weight:normal; }
+    h3 { margin:1em 0 .5em 0; }
+    h4 { margin:0 0 .5em 0; font-weight: normal; }
+    code, pre { font-size: 100%; white-space: pre-wrap; }
+    table { border:1px solid #ccc; border-collapse: collapse; width:100%; background:white; }
+    tbody td, tbody th { vertical-align:top; padding:2px 3px; }
+    thead th {
+      padding:1px 6px 1px 3px; background:#fefefe; text-align:left;
+      font-weight:normal; font-size:11px; border:1px solid #ddd;
+    }
+    tbody th { width:12em; text-align:right; color:#666; padding-right:.5em; }
+    table.vars { margin:5px 0 2px 40px; }
+    table.vars td, table.req td { font-family:monospace; }
+    table td.code { width:100%; }
+    table td.code pre { overflow:hidden; }
+    table.source th { color:#666; }
+    table.source td { font-family:monospace; white-space:pre; border-bottom:1px solid #eee; }
+    ul.traceback { list-style-type:none; color: #222; }
+    ul.traceback li.frame { padding-bottom:1em; color:#666; }
+    ul.traceback li.user { background-color:#e0e0e0; color:#000 }
+    div.context { padding:10px 0; overflow:hidden; }
+    div.context ol { padding-left:30px; margin:0 10px; list-style-position: inside; }
+    div.context ol li { font-family:monospace; white-space:pre; color:#777; cursor:pointer; padding-left: 2px; }
+    div.context ol li pre { display:inline; }
+    div.context ol.context-line li { color:#505050; background-color:#dfdfdf; padding: 3px 2px; }
+    div.context ol.context-line li span { position:absolute; right:32px; }
+    .user div.context ol.context-line li { background-color:#bbb; color:#000; }
+    .user div.context ol li { color:#666; }
+    div.commands { margin-left: 40px; }
+    div.commands a { color:#555; text-decoration:none; }
+    .user div.commands a { color: black; }
+    #summary { background: #ffc; }
+    #summary h2 { font-weight: normal; color: #666; }
+    #explanation { background:#eee; }
+    #template, #template-not-exist { background:#f6f6f6; }
+    #template-not-exist ul { margin: 0 0 10px 20px; }
+    #template-not-exist .postmortem-section { margin-bottom: 3px; }
+    #unicode-hint { background:#eee; }
+    #traceback { background:#eee; }
+    #requestinfo { background:#f6f6f6; padding-left:120px; }
+    #summary table { border:none; background:transparent; }
+    #requestinfo h2, #requestinfo h3 { position:relative; margin-left:-100px; }
+    #requestinfo h3 { margin-bottom:-1em; }
+    .error { background: #ffc; }
+    .specific { color:#cc3300; font-weight:bold; }
+    h2 span.commands { font-size:.7em;}
+    span.commands a:link {color:#5E5694;}
+    pre.exception_value { font-family: sans-serif; color: #666; font-size: 1.5em; margin: 10px 0 10px 0; }
+    .append-bottom { margin-bottom: 10px; }
+  </style>
+  
+  <script type="text/javascript">
+  //<!--
+    function getElementsByClassName(oElm, strTagName, strClassName){
+        // Written by Jonathan Snook, http://www.snook.ca/jon; Add-ons by Robert Nyman, http://www.robertnyman.com
+        var arrElements = (strTagName == "*" && document.all)? document.all :
+        oElm.getElementsByTagName(strTagName);
+        var arrReturnElements = new Array();
+        strClassName = strClassName.replace(/\-/g, "\\-");
+        var oRegExp = new RegExp("(^|\\s)" + strClassName + "(\\s|$)");
+        var oElement;
+        for(var i=0; i<arrElements.length; i++){
+            oElement = arrElements[i];
+            if(oRegExp.test(oElement.className)){
+                arrReturnElements.push(oElement);
+            }
+        }
+        return (arrReturnElements)
+    }
+    function hideAll(elems) {
+      for (var e = 0; e < elems.length; e++) {
+        elems[e].style.display = 'none';
+      }
+    }
+    window.onload = function() {
+      hideAll(getElementsByClassName(document, 'table', 'vars'));
+      hideAll(getElementsByClassName(document, 'ol', 'pre-context'));
+      hideAll(getElementsByClassName(document, 'ol', 'post-context'));
+      hideAll(getElementsByClassName(document, 'div', 'pastebin'));
+    }
+    function toggle() {
+      for (var i = 0; i < arguments.length; i++) {
+        var e = document.getElementById(arguments[i]);
+        if (e) {
+          e.style.display = e.style.display == 'none' ? 'block': 'none';
+        }
+      }
+      return false;
+    }
+    function varToggle(link, id) {
+      toggle('v' + id);
+      var s = link.getElementsByTagName('span')[0];
+      var uarr = String.fromCharCode(0x25b6);
+      var darr = String.fromCharCode(0x25bc);
+      s.textContent = s.textContent == uarr ? darr : uarr;
+      return false;
+    }
+    function switchPastebinFriendly(link) {
+      s1 = "Switch to copy-and-paste view";
+      s2 = "Switch back to interactive view";
+      link.textContent = link.textContent.trim() == s1 ? s2: s1;
+      toggle('browserTraceback', 'pastebinTraceback');
+      return false;
+    }
+    //-->
+  </script>
+  
+</head>
+<body>
+<div id="summary">
+  <h1>AttributeError at /api/texts/A_Dictionary_of_the_Talmud,_Preface</h1>
+  <pre class="exception_value">&#39;DictionaryEntryNode&#39; object has no attribute &#39;word&#39;</pre>
+  <table class="meta">
+
+    <tr>
+      <th>Request Method:</th>
+      <td>POST</td>
+    </tr>
+    <tr>
+      <th>Request URL:</th>
+      <td>http://localhost:8000/api/texts/A_Dictionary_of_the_Talmud,_Preface?status=locked&amp;count_after=1</td>
+    </tr>
+
+    <tr>
+      <th>Django Version:</th>
+      <td>1.11.29</td>
+    </tr>
+
+    <tr>
+      <th>Exception Type:</th>
+      <td>AttributeError</td>
+    </tr>
+
+
+    <tr>
+      <th>Exception Value:</th>
+      <td><pre>&#39;DictionaryEntryNode&#39; object has no attribute &#39;word&#39;</pre></td>
+    </tr>
+
+
+    <tr>
+      <th>Exception Location:</th>
+      <td>/Users/yishaiglasner/sefaria/Project/sefaria/model/schema.py in __init__, line 1646</td>
+    </tr>
+
+    <tr>
+      <th>Python Executable:</th>
+      <td>/Users/yishaiglasner/.pyenv/versions/venv/bin/python</td>
+    </tr>
+    <tr>
+      <th>Python Version:</th>
+      <td>3.9.4</td>
+    </tr>
+    <tr>
+      <th>Python Path:</th>
+      <td><pre>[&#39;/Users/yishaiglasner/sefaria/Project&#39;,
+ &#39;/Users/yishaiglasner/sefaria/Project&#39;,
+ &#39;/Users/yishaiglasner/sefaria/Project&#39;,
+ &#39;/Users/yishaiglasner/sefaria/Mobile&#39;,
+ &#39;/Applications/PyCharm.app/Contents/plugins/python/helpers/pycharm_display&#39;,
+ &#39;/Users/yishaiglasner/.pyenv/versions/3.9.4/lib/python39.zip&#39;,
+ &#39;/Users/yishaiglasner/.pyenv/versions/3.9.4/lib/python3.9&#39;,
+ &#39;/Users/yishaiglasner/.pyenv/versions/3.9.4/lib/python3.9/lib-dynload&#39;,
+ &#39;/Users/yishaiglasner/.pyenv/versions/venv/lib/python3.9/site-packages&#39;,
+ &#39;/Applications/PyCharm.app/Contents/plugins/python/helpers/pycharm_matplotlib_backend&#39;]</pre></td>
+    </tr>
+    <tr>
+      <th>Server time:</th>
+      <td>Thu, 30 Jan 2025 04:43:51 -0400</td>
+    </tr>
+  </table>
+</div>
+
+
+
+
+<div id="traceback">
+  <h2>Traceback <span class="commands"><a href="#" onclick="return switchPastebinFriendly(this);">
+    Switch to copy-and-paste view</a></span>
+  </h2>
+  <div id="browserTraceback">
+    <ul class="traceback">
+      
+        
+        <li class="frame django">
+          <code>/Users/yishaiglasner/.pyenv/versions/venv/lib/python3.9/site-packages/django/core/handlers/exception.py</code> in <code>inner</code>
+
+          
+            <div class="context" id="c5576395136">
+              
+                <ol start="34" class="pre-context" id="pre5576395136">
+                
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>    This decorator is automatically applied to all middleware to ensure that</pre></li>
+                
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>    no middleware leaks an exception and that the next middleware in the stack</pre></li>
+                
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>    can rely on getting a response instead of an exception.</pre></li>
+                
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>    &quot;&quot;&quot;</pre></li>
+                
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>    @wraps(get_response, assigned=available_attrs(get_response))</pre></li>
+                
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>    def inner(request):</pre></li>
+                
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>        try:</pre></li>
+                
+                </ol>
+              
+              <ol start="41" class="context-line">
+                <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>
+            response = get_response(request)</pre> <span>...</span></li></ol>
+              
+                <ol start='42' class="post-context" id="post5576395136">
+                  
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>        except Exception as exc:</pre></li>
+                  
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>            response = response_for_exception(request, exc)</pre></li>
+                  
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>        return response</pre></li>
+                  
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre>    return inner</pre></li>
+                  
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre5576395136', 'post5576395136')"><pre></pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5576395136')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5576395136">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>exc</td>
+                    <td class="code"><pre>AttributeError(&quot;&#39;DictionaryEntryNode&#39; object has no attribute &#39;word&#39;&quot;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>get_response</td>
+                    <td class="code"><pre>&lt;bound method BaseHandler._get_response of &lt;django.core.handlers.wsgi.WSGIHandler object at 0x148ed9fa0&gt;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>request</td>
+                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/texts/A_Dictionary_of_the_Talmud,_Preface?status=locked&amp;count_after=1&#39;&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame django">
+          <code>/Users/yishaiglasner/.pyenv/versions/venv/lib/python3.9/site-packages/django/core/handlers/base.py</code> in <code>_get_response</code>
+
+          
+            <div class="context" id="c5576393920">
+              
+                <ol start="180" class="pre-context" id="pre5576393920">
+                
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>                break</pre></li>
+                
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>        if response is None:</pre></li>
+                
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>            wrapped_callback = self.make_view_atomic(callback)</pre></li>
+                
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>            try:</pre></li>
+                
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>                response = wrapped_callback(request, *callback_args, **callback_kwargs)</pre></li>
+                
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>            except Exception as e:</pre></li>
+                
+                </ol>
+              
+              <ol start="187" class="context-line">
+                <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>
+                response = self.process_exception_by_middleware(e, request)</pre> <span>...</span></li></ol>
+              
+                <ol start='188' class="post-context" id="post5576393920">
+                  
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>        # Complain if the view returned None (a common error).</pre></li>
+                  
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>        if response is None:</pre></li>
+                  
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>            if isinstance(callback, types.FunctionType):    # FBV</pre></li>
+                  
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>                view_name = callback.__name__</pre></li>
+                  
+                  <li onclick="toggle('pre5576393920', 'post5576393920')"><pre>            else:                                           # CBV</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5576393920')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5576393920">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>callback</td>
+                    <td class="code"><pre>&lt;function texts_api at 0x1488c3f70&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>callback_args</td>
+                    <td class="code"><pre>()</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>callback_kwargs</td>
+                    <td class="code"><pre>{&#39;tref&#39;: &#39;A_Dictionary_of_the_Talmud,_Preface&#39;}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>middleware_method</td>
+                    <td class="code"><pre>&lt;bound method ProfileMiddleware.process_view of &lt;sefaria.system.middleware.ProfileMiddleware object at 0x1493306d0&gt;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>request</td>
+                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/texts/A_Dictionary_of_the_Talmud,_Preface?status=locked&amp;count_after=1&#39;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>resolver</td>
+                    <td class="code"><pre>&lt;RegexURLResolver &#39;sefaria.urls&#39; (None:None) ^/&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>resolver_match</td>
+                    <td class="code"><pre>ResolverMatch(func=reader.views.texts_api, args=(), kwargs={&#39;tref&#39;: &#39;A_Dictionary_of_the_Talmud,_Preface&#39;}, url_name=None, app_names=[], namespaces=[])</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>response</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;django.core.handlers.wsgi.WSGIHandler object at 0x148ed9fa0&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>wrapped_callback</td>
+                    <td class="code"><pre>&lt;function texts_api at 0x1488c3f70&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame django">
+          <code>/Users/yishaiglasner/.pyenv/versions/venv/lib/python3.9/site-packages/django/core/handlers/base.py</code> in <code>_get_response</code>
+
+          
+            <div class="context" id="c5576396416">
+              
+                <ol start="178" class="pre-context" id="pre5576396416">
+                
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>            response = middleware_method(request, callback, callback_args, callback_kwargs)</pre></li>
+                
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>            if response:</pre></li>
+                
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>                break</pre></li>
+                
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>        if response is None:</pre></li>
+                
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>            wrapped_callback = self.make_view_atomic(callback)</pre></li>
+                
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>            try:</pre></li>
+                
+                </ol>
+              
+              <ol start="185" class="context-line">
+                <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>
+                response = wrapped_callback(request, *callback_args, **callback_kwargs)</pre> <span>...</span></li></ol>
+              
+                <ol start='186' class="post-context" id="post5576396416">
+                  
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>            except Exception as e:</pre></li>
+                  
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>                response = self.process_exception_by_middleware(e, request)</pre></li>
+                  
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>        # Complain if the view returned None (a common error).</pre></li>
+                  
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>        if response is None:</pre></li>
+                  
+                  <li onclick="toggle('pre5576396416', 'post5576396416')"><pre>            if isinstance(callback, types.FunctionType):    # FBV</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5576396416')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5576396416">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>callback</td>
+                    <td class="code"><pre>&lt;function texts_api at 0x1488c3f70&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>callback_args</td>
+                    <td class="code"><pre>()</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>callback_kwargs</td>
+                    <td class="code"><pre>{&#39;tref&#39;: &#39;A_Dictionary_of_the_Talmud,_Preface&#39;}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>middleware_method</td>
+                    <td class="code"><pre>&lt;bound method ProfileMiddleware.process_view of &lt;sefaria.system.middleware.ProfileMiddleware object at 0x1493306d0&gt;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>request</td>
+                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/texts/A_Dictionary_of_the_Talmud,_Preface?status=locked&amp;count_after=1&#39;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>resolver</td>
+                    <td class="code"><pre>&lt;RegexURLResolver &#39;sefaria.urls&#39; (None:None) ^/&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>resolver_match</td>
+                    <td class="code"><pre>ResolverMatch(func=reader.views.texts_api, args=(), kwargs={&#39;tref&#39;: &#39;A_Dictionary_of_the_Talmud,_Preface&#39;}, url_name=None, app_names=[], namespaces=[])</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>response</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>&lt;django.core.handlers.wsgi.WSGIHandler object at 0x148ed9fa0&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>wrapped_callback</td>
+                    <td class="code"><pre>&lt;function texts_api at 0x1488c3f70&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame user">
+          <code>/Users/yishaiglasner/sefaria/Project/sefaria/system/decorators.py</code> in <code>wrapper</code>
+
+          
+            <div class="context" id="c5576394816">
+              
+                <ol start="34" class="pre-context" id="pre5576394816">
+                
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>def catch_error_as_json(func):</pre></li>
+                
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>    &quot;&quot;&quot;</pre></li>
+                
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>    Decorator that catches InputErrors and translates them into JSON &#39;error&#39; dicts for front end consumption.</pre></li>
+                
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>    &quot;&quot;&quot;</pre></li>
+                
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>    @wraps(func)</pre></li>
+                
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>    def wrapper(*args, **kwargs):</pre></li>
+                
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>        try:</pre></li>
+                
+                </ol>
+              
+              <ol start="41" class="context-line">
+                <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>
+            result = func(*args, **kwargs)</pre> <span>...</span></li></ol>
+              
+                <ol start='42' class="post-context" id="post5576394816">
+                  
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>        except exps.InputError as e:</pre></li>
+                  
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>            logger.warning(&quot;An exception occurred processing request for &#39;{}&#39; while running {}. Caught as JSON&quot;.format(args[0].path, func.__name__), exc_info=True)</pre></li>
+                  
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>            request = args[0]</pre></li>
+                  
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>            return jsonResponse({&quot;error&quot;: str(e)}, callback=request.GET.get(&quot;callback&quot;, None))</pre></li>
+                  
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>        return result</pre></li>
+                  
+                  <li onclick="toggle('pre5576394816', 'post5576394816')"><pre>    return wrapper</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5576394816')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5576394816">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>args</td>
+                    <td class="code"><pre>(&lt;WSGIRequest: POST &#39;/api/texts/A_Dictionary_of_the_Talmud,_Preface?status=locked&amp;count_after=1&#39;&gt;,)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>func</td>
+                    <td class="code"><pre>&lt;function texts_api at 0x1488c3ee0&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>kwargs</td>
+                    <td class="code"><pre>{&#39;tref&#39;: &#39;A_Dictionary_of_the_Talmud,_Preface&#39;}</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame django">
+          <code>/Users/yishaiglasner/.pyenv/versions/venv/lib/python3.9/site-packages/django/views/decorators/csrf.py</code> in <code>wrapped_view</code>
+
+          
+            <div class="context" id="c5576393472">
+              
+                <ol start="51" class="pre-context" id="pre5576393472">
+                
+                  <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>    &quot;&quot;&quot;</pre></li>
+                
+                  <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>    Marks a view function as being exempt from the CSRF view protection.</pre></li>
+                
+                  <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>    &quot;&quot;&quot;</pre></li>
+                
+                  <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>    # We could just do view_func.csrf_exempt = True, but decorators</pre></li>
+                
+                  <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>    # are nicer if they don&#39;t have side-effects, so we return a new</pre></li>
+                
+                  <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>    # function.</pre></li>
+                
+                  <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>    def wrapped_view(*args, **kwargs):</pre></li>
+                
+                </ol>
+              
+              <ol start="58" class="context-line">
+                <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>
+        return view_func(*args, **kwargs)</pre> <span>...</span></li></ol>
+              
+                <ol start='59' class="post-context" id="post5576393472">
+                  
+                  <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>    wrapped_view.csrf_exempt = True</pre></li>
+                  
+                  <li onclick="toggle('pre5576393472', 'post5576393472')"><pre>    return wraps(view_func, assigned=available_attrs(view_func))(wrapped_view)</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5576393472')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5576393472">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>args</td>
+                    <td class="code"><pre>(&lt;WSGIRequest: POST &#39;/api/texts/A_Dictionary_of_the_Talmud,_Preface?status=locked&amp;count_after=1&#39;&gt;,)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>kwargs</td>
+                    <td class="code"><pre>{&#39;tref&#39;: &#39;A_Dictionary_of_the_Talmud,_Preface&#39;}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>view_func</td>
+                    <td class="code"><pre>&lt;function texts_api at 0x1488c3e50&gt;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame user">
+          <code>/Users/yishaiglasner/sefaria/Project/reader/views.py</code> in <code>texts_api</code>
+
+          
+            <div class="context" id="c5521068800">
+              
+                <ol start="1476" class="pre-context" id="pre5521068800">
+                
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>            key = request.POST.get(&quot;apikey&quot;)</pre></li>
+                
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>            if not key:</pre></li>
+                
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>                return jsonResponse({&quot;error&quot;: &quot;You must be logged in or use an API key to save texts.&quot;})</pre></li>
+                
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>            apikey = db.apikeys.find_one({&quot;key&quot;: key})</pre></li>
+                
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>            if not apikey:</pre></li>
+                
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>                return jsonResponse({&quot;error&quot;: &quot;Unrecognized API key.&quot;})</pre></li>
+                
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>            t = json.loads(j)</pre></li>
+                
+                </ol>
+              
+              <ol start="1483" class="context-line">
+                <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>
+            tracker.modify_text(apikey[&quot;uid&quot;], oref, t[&quot;versionTitle&quot;], t[&quot;language&quot;], t[&quot;text&quot;], t[&quot;versionSource&quot;], method=&quot;API&quot;, skip_links=skip_links, count_after=count_after)</pre> <span>...</span></li></ol>
+              
+                <ol start='1484' class="post-context" id="post5521068800">
+                  
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>            return jsonResponse({&quot;status&quot;: &quot;ok&quot;})</pre></li>
+                  
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>        else:</pre></li>
+                  
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>            @csrf_protect</pre></li>
+                  
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>            def protected_post(request):</pre></li>
+                  
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>                t = json.loads(j)</pre></li>
+                  
+                  <li onclick="toggle('pre5521068800', 'post5521068800')"><pre>                tracker.modify_text(request.user.id, oref, t[&quot;versionTitle&quot;], t[&quot;language&quot;], t[&quot;text&quot;], t.get(&quot;versionSource&quot;, None), skip_links=skip_links, count_after=count_after)</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5521068800')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5521068800">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>apikey</td>
+                    <td class="code"><pre>{&#39;_id&#39;: ObjectId(&#39;606d8361c8ece6c9f91a044c&#39;),
+ &#39;key&#39;: &#39;F3XF80E9J46VMrT95bwASLRPYkhmLT1GYrr34fGC2kw&#39;,
+ &#39;uid&#39;: 1}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>count_after</td>
+                    <td class="code"><pre>1</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>j</td>
+                    <td class="code"><pre>(&#39;{&quot;versionTitle&quot;: &quot;A dictionary of the Talmud, London, 1927&quot;, &#39;
+ &#39;&quot;versionSource&quot;: &#39;
+ &#39;&quot;https://www.nli.org.il/he/books/NNL_ALEPH990026160720205171/NLI&quot;, &#39;
+ &#39;&quot;language&quot;: &quot;he&quot;, &quot;text&quot;: [&quot;\\u05d0&quot;]}&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>key</td>
+                    <td class="code"><pre>&#39;F3XF80E9J46VMrT95bwASLRPYkhmLT1GYrr34fGC2kw&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>oref</td>
+                    <td class="code"><pre>Ref(&#39;A Dictionary of the Talmud, Preface&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>request</td>
+                    <td class="code"><pre>&lt;WSGIRequest: POST &#39;/api/texts/A_Dictionary_of_the_Talmud,_Preface?status=locked&amp;count_after=1&#39;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>skip_links</td>
+                    <td class="code"><pre>False</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>t</td>
+                    <td class="code"><pre>{&#39;language&#39;: &#39;he&#39;,
+ &#39;text&#39;: [&#39;×&#39;],
+ &#39;versionSource&#39;: &#39;https://www.nli.org.il/he/books/NNL_ALEPH990026160720205171/NLI&#39;,
+ &#39;versionTitle&#39;: &#39;A dictionary of the Talmud, London, 1927&#39;}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>tref</td>
+                    <td class="code"><pre>&#39;A_Dictionary_of_the_Talmud,_Preface&#39;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame user">
+          <code>/Users/yishaiglasner/sefaria/Project/sefaria/tracker.py</code> in <code>modify_text</code>
+
+          
+            <div class="context" id="c5521069248">
+              
+                <ol start="33" class="pre-context" id="pre5521069248">
+                
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>    if getattr(chunk.version(), &quot;status&quot;, &quot;&quot;) == &quot;locked&quot; and not model.user_profile.is_user_staff(user):</pre></li>
+                
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>        raise InputError(&quot;This text has been locked against further edits.&quot;)</pre></li>
+                
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>    action = kwargs.get(&quot;type&quot;) or &quot;edit&quot; if chunk.text else &quot;add&quot;</pre></li>
+                
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>    old_text = chunk.text</pre></li>
+                
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>    chunk.text = text</pre></li>
+                
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>    if vsource:</pre></li>
+                
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>        chunk.versionSource = vsource  # todo: log this change</pre></li>
+                
+                </ol>
+              
+              <ol start="40" class="context-line">
+                <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>
+    if chunk.save():</pre> <span>...</span></li></ol>
+              
+                <ol start='41' class="post-context" id="post5521069248">
+                  
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>        kwargs[&#39;skip_links&#39;] = kwargs.get(&#39;skip_links&#39;, False) or chunk.has_manually_wrapped_refs()</pre></li>
+                  
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>        post_modify_text(user, action, oref, lang, vtitle, old_text, chunk.text, chunk.full_version._id, **kwargs)</pre></li>
+                  
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre>    return chunk</pre></li>
+                  
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre5521069248', 'post5521069248')"><pre></pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5521069248')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5521069248">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>action</td>
+                    <td class="code"><pre>&#39;edit&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>chunk</td>
+                    <td class="code"><pre>TextChunk(A Dictionary of the Talmud, Preface, he, A dictionary of the Talmud, London, 1927)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>kwargs</td>
+                    <td class="code"><pre>{&#39;count_after&#39;: 1, &#39;method&#39;: &#39;API&#39;, &#39;skip_links&#39;: False}</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>lang</td>
+                    <td class="code"><pre>&#39;he&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>old_text</td>
+                    <td class="code"><pre>[&#39;×r&#39;]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>oref</td>
+                    <td class="code"><pre>Ref(&#39;A Dictionary of the Talmud, Preface&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>text</td>
+                    <td class="code"><pre>[&#39;×&#39;]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>user</td>
+                    <td class="code"><pre>1</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>vsource</td>
+                    <td class="code"><pre>&#39;https://www.nli.org.il/he/books/NNL_ALEPH990026160720205171/NLI&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>vtitle</td>
+                    <td class="code"><pre>&#39;A dictionary of the Talmud, London, 1927&#39;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame user">
+          <code>/Users/yishaiglasner/sefaria/Project/sefaria/model/text.py</code> in <code>save</code>
+
+          
+            <div class="context" id="c5521069184">
+              
+                <ol start="1924" class="pre-context" id="pre5521069184">
+                
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>        content = self.full_version.sub_content(self._oref.index_node.version_address())</pre></li>
+                
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>        self._pad(content)</pre></li>
+                
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>        self.full_version.sub_content(self._oref.index_node.version_address(), [i - 1 for i in self._oref.sections], self.text)</pre></li>
+                
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>        self._check_available_text_pre_save()</pre></li>
+                
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>        self.full_version.save()</pre></li>
+                
+                </ol>
+              
+              <ol start="1931" class="context-line">
+                <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>
+        self._oref.recalibrate_next_prev_refs(len(self.text))</pre> <span>...</span></li></ol>
+              
+                <ol start='1932' class="post-context" id="post5521069184">
+                  
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>        self._update_link_language_availability()</pre></li>
+                  
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>        return self</pre></li>
+                  
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>    def _pad(self, content):</pre></li>
+                  
+                  <li onclick="toggle('pre5521069184', 'post5521069184')"><pre>        &quot;&quot;&quot;</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5521069184')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5521069184">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>content</td>
+                    <td class="code"><pre>[&#39;×&#39;]</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>force_save</td>
+                    <td class="code"><pre>False</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>TextChunk(A Dictionary of the Talmud, Preface, he, A dictionary of the Talmud, London, 1927)</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame user">
+          <code>/Users/yishaiglasner/sefaria/Project/sefaria/model/text.py</code> in <code>recalibrate_next_prev_refs</code>
+
+          
+            <div class="context" id="c5626457344">
+              
+                <ol start="3596" class="pre-context" id="pre5626457344">
+                
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>        &quot;&quot;&quot;</pre></li>
+                
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>        Internal. Called when a section is inserted or deleted.</pre></li>
+                
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>        :param add_self:</pre></li>
+                
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>        :return: None</pre></li>
+                
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>        &quot;&quot;&quot;</pre></li>
+                
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>        next_ref = self.next_section_ref()</pre></li>
+                
+                </ol>
+              
+              <ol start="3603" class="context-line">
+                <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>
+        prev_ref = self.prev_section_ref()</pre> <span>...</span></li></ol>
+              
+                <ol start='3604' class="post-context" id="post5626457344">
+                  
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>        if next_ref:</pre></li>
+                  
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>            next_ref._prev = self if add_self else prev_ref</pre></li>
+                  
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>        if prev_ref:</pre></li>
+                  
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>            prev_ref._next = self if add_self else next_ref</pre></li>
+                  
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre5626457344', 'post5626457344')"><pre>    def prev_segment_ref(self):</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5626457344')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5626457344">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>add_self</td>
+                    <td class="code"><pre>1</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>next_ref</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Ref(&#39;A Dictionary of the Talmud, Preface&#39;)</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame user">
+          <code>/Users/yishaiglasner/sefaria/Project/sefaria/model/text.py</code> in <code>prev_section_ref</code>
+
+          
+            <div class="context" id="c5576378688">
+              
+                <ol start="3572" class="pre-context" id="pre5576378688">
+                
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>            self._prev = self._iter_text_section(False, vstate=vstate)</pre></li>
+                
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>            if self._prev is None and not self.index_node.children:</pre></li>
+                
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                current_leaf = self.index_node</pre></li>
+                
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                # we now need to iterate over the prev leaves, finding the first available section</pre></li>
+                
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                while True:</pre></li>
+                
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                    prev_leaf = current_leaf.prev_leaf()  # prev schema/JANode</pre></li>
+                
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                    if prev_leaf and prev_leaf.is_virtual:</pre></li>
+                
+                </ol>
+              
+              <ol start="3579" class="context-line">
+                <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>
+                        if prev_leaf.last_child():</pre> <span>...</span></li></ol>
+              
+                <ol start='3580' class="post-context" id="post5576378688">
+                  
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                            return prev_leaf.last_child().ref()</pre></li>
+                  
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                        else:</pre></li>
+                  
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                            return None</pre></li>
+                  
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                    if prev_leaf:</pre></li>
+                  
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                        prev_node_ref = prev_leaf.ref()  # get a ref so we can do the next lines</pre></li>
+                  
+                  <li onclick="toggle('pre5576378688', 'post5576378688')"><pre>                        potential_prev = prev_node_ref._iter_text_section(forward=False, depth_up=0 if prev_leaf.depth == 1 else 1, vstate=vstate)</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5576378688')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5576378688">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>current_leaf</td>
+                    <td class="code"><pre>JaggedArrayNode(&#39;A Dictionary of the Talmud, Preface&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>prev_leaf</td>
+                    <td class="code"><pre>DictionaryNode(&#39;A Dictionary of the Talmud&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Ref(&#39;A Dictionary of the Talmud, Preface&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>vstate</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame user">
+          <code>/Users/yishaiglasner/sefaria/Project/sefaria/model/schema.py</code> in <code>last_child</code>
+
+          
+            <div class="context" id="c5623662592">
+              
+                <ol start="1777" class="pre-context" id="pre5623662592">
+                
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>        try:</pre></li>
+                
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>            return self.entry_class(self, word=self.firstWord)</pre></li>
+                
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>        except DictionaryEntryNotFoundError:</pre></li>
+                
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>            return None</pre></li>
+                
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>    def last_child(self):</pre></li>
+                
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>        try:</pre></li>
+                
+                </ol>
+              
+              <ol start="1784" class="context-line">
+                <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>
+            return self.entry_class(self, word=self.lastWord)</pre> <span>...</span></li></ol>
+              
+                <ol start='1785' class="post-context" id="post5623662592">
+                  
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>        except DictionaryEntryNotFoundError:</pre></li>
+                  
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>            return None</pre></li>
+                  
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre></pre></li>
+                  
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>    def all_children(self):</pre></li>
+                  
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>        lexicon_entry_set = LexiconEntrySet({&quot;parent_lexicon&quot;: self.lexiconName})</pre></li>
+                  
+                  <li onclick="toggle('pre5623662592', 'post5623662592')"><pre>        for lexicon_entry in lexicon_entry_set:</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5623662592')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5623662592">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>DictionaryNode(&#39;A Dictionary of the Talmud&#39;)</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+        
+        <li class="frame user">
+          <code>/Users/yishaiglasner/sefaria/Project/sefaria/model/schema.py</code> in <code>__init__</code>
+
+          
+            <div class="context" id="c5578627328">
+              
+                <ol start="1639" class="pre-context" id="pre5578627328">
+                
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>            self.lexicon_entry = lexicon_entry</pre></li>
+                
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>            self.has_word_match = bool(self.lexicon_entry)</pre></li>
+                
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>            self.word = self.lexicon_entry.headword</pre></li>
+                
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre></pre></li>
+                
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>        super(DictionaryEntryNode, self).__init__({</pre></li>
+                
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>            &quot;titles&quot;: [{</pre></li>
+                
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>                &quot;lang&quot;: &quot;he&quot;,</pre></li>
+                
+                </ol>
+              
+              <ol start="1646" class="context-line">
+                <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>
+                &quot;text&quot;: self.word,</pre> <span>...</span></li></ol>
+              
+                <ol start='1647' class="post-context" id="post5578627328">
+                  
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>                &quot;primary&quot;: True</pre></li>
+                  
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>            },</pre></li>
+                  
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>                {</pre></li>
+                  
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>                &quot;lang&quot;: &quot;en&quot;,</pre></li>
+                  
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>                &quot;text&quot;: self.word,</pre></li>
+                  
+                  <li onclick="toggle('pre5578627328', 'post5578627328')"><pre>                &quot;primary&quot;: True</pre></li>
+                  
+              </ol>
+              
+            </div>
+          
+
+          
+            <div class="commands">
+                
+                    <a href="#" onclick="return varToggle(this, '5578627328')"><span>&#x25b6;</span> Local vars</a>
+                
+            </div>
+            <table class="vars" id="v5578627328">
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>__class__</td>
+                    <td class="code"><pre>&lt;class &#39;sefaria.model.schema.DictionaryEntryNode&#39;&gt;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>lexicon_entry</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>parent</td>
+                    <td class="code"><pre>DictionaryNode(&#39;A Dictionary of the Talmud&#39;)</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>self</td>
+                    <td class="code"><pre>Error in formatting: AttributeError: &#39;DictionaryEntryNode&#39; object has no attribute &#39;_full_title&#39;</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>title</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>tref</td>
+                    <td class="code"><pre>None</pre></td>
+                  </tr>
+                
+                  <tr>
+                    <td>word</td>
+                    <td class="code"><pre>&#39;&#39;</pre></td>
+                  </tr>
+                
+              </tbody>
+            </table>
+          
+        </li>
+      
+    </ul>
+  </div>
+  <form action="http://dpaste.com/" name="pasteform" id="pasteform" method="post">
+
+  <div id="pastebinTraceback" class="pastebin">
+    <input type="hidden" name="language" value="PythonConsole">
+    <input type="hidden" name="title"
+      value="AttributeError at /api/texts/A_Dictionary_of_the_Talmud,_Preface">
+    <input type="hidden" name="source" value="Django Dpaste Agent">
+    <input type="hidden" name="poster" value="Django">
+    <textarea name="content" id="traceback_area" cols="140" rows="25">
+Environment:
+
+
+Request Method: POST
+Request URL: http://localhost:8000/api/texts/A_Dictionary_of_the_Talmud,_Preface?status=locked&amp;count_after=1
+
+Django Version: 1.11.29
+Python Version: 3.9.4
+Installed Applications:
+(&#39;django.contrib.auth&#39;,
+ &#39;django.contrib.contenttypes&#39;,
+ &#39;django.contrib.sessions&#39;,
+ &#39;django.contrib.sites&#39;,
+ &#39;django.contrib.messages&#39;,
+ &#39;reader&#39;,
+ &#39;django.contrib.staticfiles&#39;,
+ &#39;django.contrib.humanize&#39;,
+ &#39;emailusernames&#39;,
+ &#39;sourcesheets&#39;,
+ &#39;sefaria.gauth&#39;,
+ &#39;django_topics.apps.DjangoTopicsAppConfig&#39;,
+ &#39;captcha&#39;,
+ &#39;django.contrib.admin&#39;,
+ &#39;anymail&#39;,
+ &#39;webpack_loader&#39;,
+ &#39;django_user_agents&#39;,
+ &#39;rest_framework&#39;)
+Installed Middleware:
+[&#39;django.contrib.sessions.middleware.SessionMiddleware&#39;,
+ &#39;django.middleware.locale.LocaleMiddleware&#39;,
+ &#39;django.middleware.common.CommonMiddleware&#39;,
+ &#39;django.middleware.csrf.CsrfViewMiddleware&#39;,
+ &#39;django.contrib.auth.middleware.AuthenticationMiddleware&#39;,
+ &#39;django.contrib.messages.middleware.MessageMiddleware&#39;,
+ &#39;django_user_agents.middleware.UserAgentMiddleware&#39;,
+ &#39;sefaria.system.middleware.LocationSettingsMiddleware&#39;,
+ &#39;sefaria.system.middleware.LanguageCookieMiddleware&#39;,
+ &#39;sefaria.system.middleware.LanguageSettingsMiddleware&#39;,
+ &#39;sefaria.system.middleware.ProfileMiddleware&#39;,
+ &#39;sefaria.system.middleware.CORSDebugMiddleware&#39;,
+ &#39;sefaria.system.middleware.SharedCacheMiddleware&#39;,
+ &#39;sefaria.system.multiserver.coordinator.MultiServerEventListenerMiddleware&#39;,
+ &#39;django_structlog.middlewares.RequestMiddleware&#39;]
+
+
+
+Traceback:
+
+File "/Users/yishaiglasner/.pyenv/versions/venv/lib/python3.9/site-packages/django/core/handlers/exception.py" in inner
+  41.             response = get_response(request)
+
+File "/Users/yishaiglasner/.pyenv/versions/venv/lib/python3.9/site-packages/django/core/handlers/base.py" in _get_response
+  187.                 response = self.process_exception_by_middleware(e, request)
+
+File "/Users/yishaiglasner/.pyenv/versions/venv/lib/python3.9/site-packages/django/core/handlers/base.py" in _get_response
+  185.                 response = wrapped_callback(request, *callback_args, **callback_kwargs)
+
+File "/Users/yishaiglasner/sefaria/Project/sefaria/system/decorators.py" in wrapper
+  41.             result = func(*args, **kwargs)
+
+File "/Users/yishaiglasner/.pyenv/versions/venv/lib/python3.9/site-packages/django/views/decorators/csrf.py" in wrapped_view
+  58.         return view_func(*args, **kwargs)
+
+File "/Users/yishaiglasner/sefaria/Project/reader/views.py" in texts_api
+  1483.             tracker.modify_text(apikey[&quot;uid&quot;], oref, t[&quot;versionTitle&quot;], t[&quot;language&quot;], t[&quot;text&quot;], t[&quot;versionSource&quot;], method=&quot;API&quot;, skip_links=skip_links, count_after=count_after)
+
+File "/Users/yishaiglasner/sefaria/Project/sefaria/tracker.py" in modify_text
+  40.     if chunk.save():
+
+File "/Users/yishaiglasner/sefaria/Project/sefaria/model/text.py" in save
+  1931.         self._oref.recalibrate_next_prev_refs(len(self.text))
+
+File "/Users/yishaiglasner/sefaria/Project/sefaria/model/text.py" in recalibrate_next_prev_refs
+  3603.         prev_ref = self.prev_section_ref()
+
+File "/Users/yishaiglasner/sefaria/Project/sefaria/model/text.py" in prev_section_ref
+  3579.                         if prev_leaf.last_child():
+
+File "/Users/yishaiglasner/sefaria/Project/sefaria/model/schema.py" in last_child
+  1784.             return self.entry_class(self, word=self.lastWord)
+
+File "/Users/yishaiglasner/sefaria/Project/sefaria/model/schema.py" in __init__
+  1646.                 &quot;text&quot;: self.word,
+
+Exception Type: AttributeError at /api/texts/A_Dictionary_of_the_Talmud,_Preface
+Exception Value: &#39;DictionaryEntryNode&#39; object has no attribute &#39;word&#39;
+</textarea>
+  <br><br>
+  <input type="submit" value="Share this traceback on a public website">
+  </div>
+</form>
+</div>
+
+
+
+<div id="requestinfo">
+  <h2>Request information</h2>
+
+
+  
+    <h3 id="user-info">USER</h3>
+    <p>AnonymousUser</p>
+  
+
+  <h3 id="get-info">GET</h3>
+  
+    <table class="req">
+      <thead>
+        <tr>
+          <th>Variable</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>status</td>
+            <td class="code"><pre>&#39;locked&#39;</pre></td>
+          </tr>
+        
+          <tr>
+            <td>count_after</td>
+            <td class="code"><pre>&#39;1&#39;</pre></td>
+          </tr>
+        
+      </tbody>
+    </table>
+  
+
+  <h3 id="post-info">POST</h3>
+  
+    <table class="req">
+      <thead>
+        <tr>
+          <th>Variable</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>apikey</td>
+            <td class="code"><pre>&#39;F3XF80E9J46VMrT95bwASLRPYkhmLT1GYrr34fGC2kw&#39;</pre></td>
+          </tr>
+        
+          <tr>
+            <td>json</td>
+            <td class="code"><pre>(&#39;{&quot;versionTitle&quot;: &quot;A dictionary of the Talmud, London, 1927&quot;, &#39;
+ &#39;&quot;versionSource&quot;: &#39;
+ &#39;&quot;https://www.nli.org.il/he/books/NNL_ALEPH990026160720205171/NLI&quot;, &#39;
+ &#39;&quot;language&quot;: &quot;he&quot;, &quot;text&quot;: [&quot;\\u05d0&quot;]}&#39;)</pre></td>
+          </tr>
+        
+      </tbody>
+    </table>
+  
+  <h3 id="files-info">FILES</h3>
+  
+    <p>No FILES data</p>
+  
+
+
+  <h3 id="cookie-info">COOKIES</h3>
+  
+    <p>No cookie data</p>
+  
+
+  <h3 id="meta-info">META</h3>
+  <table class="req">
+    <thead>
+      <tr>
+        <th>Variable</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>COMMAND_MODE</td>
+          <td class="code"><pre>&#39;unix2003&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CONTENT_LENGTH</td>
+          <td class="code"><pre>&#39;312&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CONTENT_TYPE</td>
+          <td class="code"><pre>&#39;application/x-www-form-urlencoded&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DJANGO_SETTINGS_MODULE</td>
+          <td class="code"><pre>&#39;sefaria.settings&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GATEWAY_INTERFACE</td>
+          <td class="code"><pre>&#39;CGI/1.1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HOME</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HOMEBREW_CELLAR</td>
+          <td class="code"><pre>&#39;/opt/homebrew/Cellar&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HOMEBREW_PREFIX</td>
+          <td class="code"><pre>&#39;/opt/homebrew&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HOMEBREW_REPOSITORY</td>
+          <td class="code"><pre>&#39;/opt/homebrew&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_ACCEPT</td>
+          <td class="code"><pre>&#39;*/*&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_ACCEPT_ENCODING</td>
+          <td class="code"><pre>&#39;gzip, deflate&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_CONNECTION</td>
+          <td class="code"><pre>&#39;keep-alive&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_HOST</td>
+          <td class="code"><pre>&#39;localhost:8000&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HTTP_USER_AGENT</td>
+          <td class="code"><pre>&#39;python-requests/2.32.3&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>INFOPATH</td>
+          <td class="code"><pre>&#39;/opt/homebrew/share/info:&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>JAVA_HOME</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner/.sdkman/candidates/java/current&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LC_CTYPE</td>
+          <td class="code"><pre>&#39;UTF-8&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGNAME</td>
+          <td class="code"><pre>&#39;yishaiglasner&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MANPATH</td>
+          <td class="code"><pre>&#39;/opt/homebrew/share/man::&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>OLDPWD</td>
+          <td class="code"><pre>&#39;/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PATH</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner/.pyenv/versions/3.9.4/envs/venv/bin:/Users/yishaiglasner/.sdkman/candidates/java/current/bin:/Users/yishaiglasner/google-cloud-sdk/bin:/Users/yishaiglasner/.pyenv/shims:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PATH_INFO</td>
+          <td class="code"><pre>&#39;/api/texts/A_Dictionary_of_the_Talmud,_Preface&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PS1</td>
+          <td class="code"><pre>&#39;(venv) &#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PWD</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner/sefaria/Project&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PYCHARM_DISPLAY_PORT</td>
+          <td class="code"><pre>&#39;63342&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PYCHARM_HOSTED</td>
+          <td class="code"><pre>&#39;1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PYENV_ROOT</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner/.pyenv&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PYENV_SHELL</td>
+          <td class="code"><pre>&#39;zsh&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PYTHONIOENCODING</td>
+          <td class="code"><pre>&#39;UTF-8&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PYTHONPATH</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner/sefaria/Project:/Users/yishaiglasner/sefaria/Mobile:/Applications/PyCharm.app/Contents/plugins/python/helpers/pycharm_matplotlib_backend:/Applications/PyCharm.app/Contents/plugins/python/helpers/pycharm_display&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PYTHONUNBUFFERED</td>
+          <td class="code"><pre>&#39;1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>QUERY_STRING</td>
+          <td class="code"><pre>&#39;status=locked&amp;count_after=1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REMOTE_ADDR</td>
+          <td class="code"><pre>&#39;127.0.0.1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REMOTE_HOST</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REQUEST_METHOD</td>
+          <td class="code"><pre>&#39;POST&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>RUN_MAIN</td>
+          <td class="code"><pre>&#39;true&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SCRIPT_NAME</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SDKMAN_CANDIDATES_API</td>
+          <td class="code"><pre>&#39;https://api.sdkman.io/2&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SDKMAN_CANDIDATES_DIR</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner/.sdkman/candidates&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SDKMAN_DIR</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner/.sdkman&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SDKMAN_PLATFORM</td>
+          <td class="code"><pre>&#39;darwinarm64&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_NAME</td>
+          <td class="code"><pre>&#39;1.0.0.127.in-addr.arpa&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_PORT</td>
+          <td class="code"><pre>&#39;8000&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_PROTOCOL</td>
+          <td class="code"><pre>&#39;HTTP/1.1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_SOFTWARE</td>
+          <td class="code"><pre>&#39;WSGIServer/0.2&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SHELL</td>
+          <td class="code"><pre>&#39;/bin/zsh&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SSH_AUTH_SOCK</td>
+          <td class="code"><pre>&#39;/private/tmp/com.apple.launchd.3dh8rdgSu3/Listeners&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TMPDIR</td>
+          <td class="code"><pre>&#39;/var/folders/ml/2r8d6zn94cg_s02mlqmg03rh0000gn/T/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TZ</td>
+          <td class="code"><pre>&#39;America/Halifax&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USER</td>
+          <td class="code"><pre>&#39;yishaiglasner&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>VIRTUAL_ENV</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner/.pyenv/versions/3.9.4/envs/venv&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>XPC_FLAGS</td>
+          <td class="code"><pre>&#39;0x0&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>XPC_SERVICE_NAME</td>
+          <td class="code"><pre>&#39;application.com.jetbrains.pycharm.652462.653128&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>__CFBundleIdentifier</td>
+          <td class="code"><pre>&#39;com.jetbrains.pycharm&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>__CF_USER_TEXT_ENCODING</td>
+          <td class="code"><pre>&#39;0x1F5:0x0:0x0&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.errors</td>
+          <td class="code"><pre>&lt;_io.TextIOWrapper name=&#39;&lt;stderr&gt;&#39; mode=&#39;w&#39; encoding=&#39;utf-8&#39;&gt;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.file_wrapper</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.input</td>
+          <td class="code"><pre>&lt;_io.BufferedReader name=10&gt;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.multiprocess</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.multithread</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.run_once</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.url_scheme</td>
+          <td class="code"><pre>&#39;http&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>wsgi.version</td>
+          <td class="code"><pre>(1, 0)</pre></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+
+  <h3 id="settings-info">Settings</h3>
+  <h4>Using settings module <code>sefaria.settings</code></h4>
+  <table class="req">
+    <thead>
+      <tr>
+        <th>Setting</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>ABSOLUTE_URL_OVERRIDES</td>
+          <td class="code"><pre>{}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ADMINS</td>
+          <td class="code"><pre>((&#39;Your Name&#39;, &#39;you@example.com&#39;),)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ADMIN_PATH</td>
+          <td class="code"><pre>&#39;somethingsomething&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ALLOWED_HOSTS</td>
+          <td class="code"><pre>[&#39;localhost&#39;, &#39;127.0.0.1&#39;, &#39;[::1]&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>APPEND_SLASH</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>APSCHEDULER_NAME</td>
+          <td class="code"><pre>&#39;apscheduler&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>AUTHENTICATION_BACKENDS</td>
+          <td class="code"><pre>(&#39;emailusernames.backends.EmailAuthBackend&#39;,)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>AUTH_PASSWORD_VALIDATORS</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>AUTH_USER_MODEL</td>
+          <td class="code"><pre>&#39;auth.User&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>BASE_DIR</td>
+          <td class="code"><pre>&#39;/Users/yishaiglasner/sefaria/Project&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CACHES</td>
+          <td class="code"><pre>{&#39;default&#39;: {&#39;BACKEND&#39;: &#39;django.core.cache.backends.dummy.DummyCache&#39;},
+ &#39;shared&#39;: {&#39;BACKEND&#39;: &#39;django.core.cache.backends.dummy.DummyCache&#39;}}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CACHE_MIDDLEWARE_ALIAS</td>
+          <td class="code"><pre>&#39;default&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CACHE_MIDDLEWARE_KEY_PREFIX</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CACHE_MIDDLEWARE_SECONDS</td>
+          <td class="code"><pre>600</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CELERY_ENABLED</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CELERY_QUEUES</td>
+          <td class="code"><pre>{&#39;tasks&#39;: &#39;web&#39;}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CELERY_REDIS_BROKER_DB_NUM</td>
+          <td class="code"><pre>0</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CELERY_REDIS_RESULT_BACKEND_DB_NUM</td>
+          <td class="code"><pre>1</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CLIENT_SENTRY_DSN</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CLOUDFLARE_EMAIL</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CLOUDFLARE_TOKEN</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CLOUDFLARE_ZONE</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CRM_TYPE</td>
+          <td class="code"><pre>&#39;NONE&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_AGE</td>
+          <td class="code"><pre>31449600</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_DOMAIN</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_HTTPONLY</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_NAME</td>
+          <td class="code"><pre>&#39;csrftoken&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_PATH</td>
+          <td class="code"><pre>&#39;/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_COOKIE_SECURE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_FAILURE_VIEW</td>
+          <td class="code"><pre>&#39;django.views.csrf.csrf_failure&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_HEADER_NAME</td>
+          <td class="code"><pre>&#39;HTTP_X_CSRFTOKEN&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_TRUSTED_ORIGINS</td>
+          <td class="code"><pre>[]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>CSRF_USE_SESSIONS</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATABASES</td>
+          <td class="code"><pre>{&#39;default&#39;: {&#39;ATOMIC_REQUESTS&#39;: False,
+             &#39;AUTOCOMMIT&#39;: True,
+             &#39;CONN_MAX_AGE&#39;: 0,
+             &#39;ENGINE&#39;: &#39;django.db.backends.sqlite3&#39;,
+             &#39;HOST&#39;: &#39;&#39;,
+             &#39;NAME&#39;: &#39;/Users/yishaiglasner/sefaria/Project/data/db.sqlite&#39;,
+             &#39;OPTIONS&#39;: {},
+             &#39;PASSWORD&#39;: &#39;********************&#39;,
+             &#39;PORT&#39;: &#39;&#39;,
+             &#39;TEST&#39;: {&#39;CHARSET&#39;: None,
+                      &#39;COLLATION&#39;: None,
+                      &#39;MIRROR&#39;: None,
+                      &#39;NAME&#39;: None},
+             &#39;TIME_ZONE&#39;: None,
+             &#39;USER&#39;: &#39;&#39;}}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATABASE_ROUTERS</td>
+          <td class="code"><pre>[]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATA_UPLOAD_MAX_MEMORY_SIZE</td>
+          <td class="code"><pre>24000000</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATA_UPLOAD_MAX_NUMBER_FIELDS</td>
+          <td class="code"><pre>1000</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATETIME_FORMAT</td>
+          <td class="code"><pre>&#39;N j, Y, P&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATETIME_INPUT_FORMATS</td>
+          <td class="code"><pre>[&#39;%Y-%m-%d %H:%M:%S&#39;,
+ &#39;%Y-%m-%d %H:%M:%S.%f&#39;,
+ &#39;%Y-%m-%d %H:%M&#39;,
+ &#39;%Y-%m-%d&#39;,
+ &#39;%m/%d/%Y %H:%M:%S&#39;,
+ &#39;%m/%d/%Y %H:%M:%S.%f&#39;,
+ &#39;%m/%d/%Y %H:%M&#39;,
+ &#39;%m/%d/%Y&#39;,
+ &#39;%m/%d/%y %H:%M:%S&#39;,
+ &#39;%m/%d/%y %H:%M:%S.%f&#39;,
+ &#39;%m/%d/%y %H:%M&#39;,
+ &#39;%m/%d/%y&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATE_FORMAT</td>
+          <td class="code"><pre>&#39;N j, Y&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DATE_INPUT_FORMATS</td>
+          <td class="code"><pre>[&#39;%Y-%m-%d&#39;,
+ &#39;%m/%d/%Y&#39;,
+ &#39;%m/%d/%y&#39;,
+ &#39;%b %d %Y&#39;,
+ &#39;%b %d, %Y&#39;,
+ &#39;%d %b %Y&#39;,
+ &#39;%d %b, %Y&#39;,
+ &#39;%B %d %Y&#39;,
+ &#39;%B %d, %Y&#39;,
+ &#39;%d %B %Y&#39;,
+ &#39;%d %B, %Y&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEBUG</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEBUG_PROPAGATE_EXCEPTIONS</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DECIMAL_SEPARATOR</td>
+          <td class="code"><pre>&#39;.&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_CHARSET</td>
+          <td class="code"><pre>&#39;utf-8&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_CONTENT_TYPE</td>
+          <td class="code"><pre>&#39;text/html&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_EXCEPTION_REPORTER_FILTER</td>
+          <td class="code"><pre>&#39;django.views.debug.SafeExceptionReporterFilter&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_FILE_STORAGE</td>
+          <td class="code"><pre>&#39;django.core.files.storage.FileSystemStorage&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_FROM_EMAIL</td>
+          <td class="code"><pre>&#39;webmaster@localhost&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_INDEX_TABLESPACE</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DEFAULT_TABLESPACE</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DISABLE_AUTOCOMPLETER</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DISABLE_INDEX_SAVE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DISALLOWED_USER_AGENTS</td>
+          <td class="code"><pre>[]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DOMAIN_LANGUAGES</td>
+          <td class="code"><pre>{}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>DOWN_FOR_MAINTENANCE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_BACKEND</td>
+          <td class="code"><pre>&#39;django.core.mail.backends.smtp.EmailBackend&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_HOST</td>
+          <td class="code"><pre>&#39;localhost&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_HOST_PASSWORD</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_HOST_USER</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_PORT</td>
+          <td class="code"><pre>1025</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_SSL_CERTFILE</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_SSL_KEYFILE</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_SUBJECT_PREFIX</td>
+          <td class="code"><pre>&#39;[Django] &#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_TIMEOUT</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_USE_LOCALTIME</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_USE_SSL</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>EMAIL_USE_TLS</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ENABLE_LINKER</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FAIL_GRACEFULLY</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_CHARSET</td>
+          <td class="code"><pre>&#39;utf-8&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_UPLOAD_DIRECTORY_PERMISSIONS</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_UPLOAD_HANDLERS</td>
+          <td class="code"><pre>[&#39;django.core.files.uploadhandler.MemoryFileUploadHandler&#39;,
+ &#39;django.core.files.uploadhandler.TemporaryFileUploadHandler&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_UPLOAD_MAX_MEMORY_SIZE</td>
+          <td class="code"><pre>2621440</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_UPLOAD_PERMISSIONS</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FILE_UPLOAD_TEMP_DIR</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FIRST_DAY_OF_WEEK</td>
+          <td class="code"><pre>0</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FIXTURE_DIRS</td>
+          <td class="code"><pre>[]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FORCE_SCRIPT_NAME</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FORMAT_MODULE_PATH</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FORM_RENDERER</td>
+          <td class="code"><pre>&#39;django.forms.renderers.DjangoTemplates&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>FRONT_END_URL</td>
+          <td class="code"><pre>&#39;http://localhost:8000&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GEOIPV6_DATABASE</td>
+          <td class="code"><pre>&#39;data/geoip/GeoLiteCityv6.dat&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GEOIP_DATABASE</td>
+          <td class="code"><pre>&#39;data/geoip/GeoLiteCity.dat&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GOOGLE_APPLICATION_CREDENTIALS_FILEPATH</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GOOGLE_GTAG</td>
+          <td class="code"><pre>&#39;your gtag id here&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GOOGLE_OAUTH2_CLIENT_ID</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GOOGLE_OAUTH2_CLIENT_SECRET</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GOOGLE_OAUTH2_CLIENT_SECRET_FILEPATH</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>GOOGLE_TAG_MANAGER_CODE</td>
+          <td class="code"><pre>&#39;you tag manager code here&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>HOTJAR_ID</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>IGNORABLE_404_URLS</td>
+          <td class="code"><pre>[]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>INSTALLED_APPS</td>
+          <td class="code"><pre>(&#39;django.contrib.auth&#39;,
+ &#39;django.contrib.contenttypes&#39;,
+ &#39;django.contrib.sessions&#39;,
+ &#39;django.contrib.sites&#39;,
+ &#39;django.contrib.messages&#39;,
+ &#39;reader&#39;,
+ &#39;django.contrib.staticfiles&#39;,
+ &#39;django.contrib.humanize&#39;,
+ &#39;emailusernames&#39;,
+ &#39;sourcesheets&#39;,
+ &#39;sefaria.gauth&#39;,
+ &#39;django_topics.apps.DjangoTopicsAppConfig&#39;,
+ &#39;captcha&#39;,
+ &#39;django.contrib.admin&#39;,
+ &#39;anymail&#39;,
+ &#39;webpack_loader&#39;,
+ &#39;django_user_agents&#39;,
+ &#39;rest_framework&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>INTERNAL_IPS</td>
+          <td class="code"><pre>[]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGES</td>
+          <td class="code"><pre>((&#39;en&#39;, &#39;English&#39;), (&#39;he&#39;, &#39;Hebrew&#39;))</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGES_BIDI</td>
+          <td class="code"><pre>[&#39;he&#39;, &#39;ar&#39;, &#39;fa&#39;, &#39;ur&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGE_CODE</td>
+          <td class="code"><pre>&#39;en&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGE_COOKIE_AGE</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGE_COOKIE_DOMAIN</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGE_COOKIE_NAME</td>
+          <td class="code"><pre>&#39;django_language&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LANGUAGE_COOKIE_PATH</td>
+          <td class="code"><pre>&#39;/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOCALE_PATHS</td>
+          <td class="code"><pre>(&#39;/Users/yishaiglasner/sefaria/Project/sefaria/../locale&#39;,)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGGING</td>
+          <td class="code"><pre>{&#39;disable_existing_loggers&#39;: False,
+ &#39;formatters&#39;: {&#39;json_formatter&#39;: {&#39;()&#39;: &lt;class &#39;structlog.stdlib.ProcessorFormatter&#39;&gt;,
+                                   &#39;processor&#39;: &lt;structlog.processors.JSONRenderer object at 0x105eb1430&gt;}},
+ &#39;handlers&#39;: {&#39;default&#39;: {&#39;class&#39;: &#39;logging.StreamHandler&#39;,
+                          &#39;formatter&#39;: &#39;json_formatter&#39;}},
+ &#39;loggers&#39;: {&#39;&#39;: {&#39;handlers&#39;: [&#39;default&#39;], &#39;propagate&#39;: False},
+             &#39;django&#39;: {&#39;handlers&#39;: [&#39;default&#39;], &#39;propagate&#39;: False},
+             &#39;django.request&#39;: {&#39;handlers&#39;: [&#39;default&#39;], &#39;propagate&#39;: False}},
+ &#39;version&#39;: 1}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGGING_CONFIG</td>
+          <td class="code"><pre>&#39;logging.config.dictConfig&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGIN_REDIRECT_URL</td>
+          <td class="code"><pre>&#39;table_of_contents&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGIN_URL</td>
+          <td class="code"><pre>&#39;login&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>LOGOUT_REDIRECT_URL</td>
+          <td class="code"><pre>&#39;table_of_contents&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MAINTENANCE_MESSAGE</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MANAGERS</td>
+          <td class="code"><pre>((&#39;Your Name&#39;, &#39;you@example.com&#39;),)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MEDIA_ROOT</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MEDIA_URL</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MESSAGE_STORAGE</td>
+          <td class="code"><pre>&#39;django.contrib.messages.storage.fallback.FallbackStorage&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MIDDLEWARE</td>
+          <td class="code"><pre>[&#39;django.contrib.sessions.middleware.SessionMiddleware&#39;,
+ &#39;django.middleware.locale.LocaleMiddleware&#39;,
+ &#39;django.middleware.common.CommonMiddleware&#39;,
+ &#39;django.middleware.csrf.CsrfViewMiddleware&#39;,
+ &#39;django.contrib.auth.middleware.AuthenticationMiddleware&#39;,
+ &#39;django.contrib.messages.middleware.MessageMiddleware&#39;,
+ &#39;django_user_agents.middleware.UserAgentMiddleware&#39;,
+ &#39;sefaria.system.middleware.LocationSettingsMiddleware&#39;,
+ &#39;sefaria.system.middleware.LanguageCookieMiddleware&#39;,
+ &#39;sefaria.system.middleware.LanguageSettingsMiddleware&#39;,
+ &#39;sefaria.system.middleware.ProfileMiddleware&#39;,
+ &#39;sefaria.system.middleware.CORSDebugMiddleware&#39;,
+ &#39;sefaria.system.middleware.SharedCacheMiddleware&#39;,
+ &#39;sefaria.system.multiserver.coordinator.MultiServerEventListenerMiddleware&#39;,
+ &#39;django_structlog.middlewares.RequestMiddleware&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MIDDLEWARE_CLASSES</td>
+          <td class="code"><pre>[&#39;django.middleware.common.CommonMiddleware&#39;,
+ &#39;django.middleware.csrf.CsrfViewMiddleware&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MIGRATION_MODULES</td>
+          <td class="code"><pre>{}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MOBILE_APP_KEY</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MONGO_HOST</td>
+          <td class="code"><pre>&#39;localhost&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MONGO_PORT</td>
+          <td class="code"><pre>27017</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MONGO_REPLICASET_NAME</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MONTH_DAY_FORMAT</td>
+          <td class="code"><pre>&#39;F j&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MULTISERVER_ENABLED</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MULTISERVER_REDIS_CONFIRM_CHANNEL</td>
+          <td class="code"><pre>&#39;mconfirm&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MULTISERVER_REDIS_DB</td>
+          <td class="code"><pre>0</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MULTISERVER_REDIS_EVENT_CHANNEL</td>
+          <td class="code"><pre>&#39;msync&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MULTISERVER_REDIS_PORT</td>
+          <td class="code"><pre>6379</pre></td>
+        </tr>
+      
+        <tr>
+          <td>MULTISERVER_REDIS_SERVER</td>
+          <td class="code"><pre>&#39;127.0.0.1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NATIONBUILDER_CLIENT_ID</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NATIONBUILDER_CLIENT_SECRET</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NATIONBUILDER_SLUG</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NATIONBUILDER_TOKEN</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NODE_HOST</td>
+          <td class="code"><pre>&#39;http://localhost:4040&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NODE_TIMEOUT</td>
+          <td class="code"><pre>10</pre></td>
+        </tr>
+      
+        <tr>
+          <td>NUMBER_GROUPING</td>
+          <td class="code"><pre>0</pre></td>
+        </tr>
+      
+        <tr>
+          <td>OFFLINE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PASSWORD_HASHERS</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PASSWORD_RESET_TIMEOUT_DAYS</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PINNED_IPCOUNTRY</td>
+          <td class="code"><pre>&#39;IL&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>PREPEND_WWW</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>RAW_REF_MODEL_BY_LANG_FILEPATH</td>
+          <td class="code"><pre>{&#39;en&#39;: None, &#39;he&#39;: None}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>RAW_REF_PART_MODEL_BY_LANG_FILEPATH</td>
+          <td class="code"><pre>{&#39;en&#39;: None, &#39;he&#39;: None}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REDIS_PASSWORD</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REDIS_PORT</td>
+          <td class="code"><pre>6379</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REDIS_URL</td>
+          <td class="code"><pre>&#39;redis://127.0.0.1&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>REST_FRAMEWORK</td>
+          <td class="code"><pre>{&#39;DEFAULT_AUTHENTICATION_CLASSES&#39;: (&#39;rest_framework_simplejwt.authentication.JWTAuthentication&#39;,
+                                    &#39;rest_framework.authentication.SessionAuthentication&#39;)}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>ROOT_URLCONF</td>
+          <td class="code"><pre>&#39;sefaria.urls&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SALESFORCE_BASE_URL</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SALESFORCE_CLIENT_ID</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SALESFORCE_CLIENT_SECRET</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEARCH_INDEX_NAME_SHEET</td>
+          <td class="code"><pre>&#39;sheet&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEARCH_INDEX_NAME_TEXT</td>
+          <td class="code"><pre>&#39;text&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEARCH_INDEX_ON_SAVE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEARCH_URL</td>
+          <td class="code"><pre>&#39;https://www.sefaria.org:443/api/search&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECRET_KEY</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_BROWSER_XSS_FILTER</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_CONTENT_TYPE_NOSNIFF</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_HSTS_INCLUDE_SUBDOMAINS</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_HSTS_PRELOAD</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_HSTS_SECONDS</td>
+          <td class="code"><pre>0</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_PROXY_SSL_HEADER</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_REDIRECT_EXEMPT</td>
+          <td class="code"><pre>[]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_SSL_HOST</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SECURE_SSL_REDIRECT</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_BOT_API_KEY</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_DATA_PATH</td>
+          <td class="code"><pre>&#39;/path/to/your/Data&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_DB</td>
+          <td class="code"><pre>&#39;sefaria&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_DB_PASSWORD</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_DB_USER</td>
+          <td class="code"><pre>&#39;&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SEFARIA_EXPORT_PATH</td>
+          <td class="code"><pre>&#39;/path/to/your/Data/export&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SENTINEL_HEADLESS_URL</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SENTINEL_PASSWORD</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SENTINEL_PORT</td>
+          <td class="code"><pre>26379</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SENTINEL_TRANSPORT_OPTS</td>
+          <td class="code"><pre>{}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SENTRY_DSN</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SERVER_EMAIL</td>
+          <td class="code"><pre>&#39;root@localhost&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_CACHE_ALIAS</td>
+          <td class="code"><pre>&#39;default&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_AGE</td>
+          <td class="code"><pre>1209600</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_DOMAIN</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_HTTPONLY</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_NAME</td>
+          <td class="code"><pre>&#39;sessionid&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_PATH</td>
+          <td class="code"><pre>&#39;/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_COOKIE_SECURE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_ENGINE</td>
+          <td class="code"><pre>&#39;django.contrib.sessions.backends.db&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_EXPIRE_AT_BROWSER_CLOSE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_FILE_PATH</td>
+          <td class="code"><pre>None</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_SAVE_EVERY_REQUEST</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SESSION_SERIALIZER</td>
+          <td class="code"><pre>&#39;django.contrib.sessions.serializers.JSONSerializer&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SETTINGS_MODULE</td>
+          <td class="code"><pre>&#39;sefaria.settings&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SHARED_DATA_CACHE_ALIAS</td>
+          <td class="code"><pre>&#39;shared&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SHORT_DATETIME_FORMAT</td>
+          <td class="code"><pre>&#39;m/d/Y P&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SHORT_DATE_FORMAT</td>
+          <td class="code"><pre>&#39;m/d/Y&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SIGNING_BACKEND</td>
+          <td class="code"><pre>&#39;django.core.signing.TimestampSigner&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SILENCED_SYSTEM_CHECKS</td>
+          <td class="code"><pre>[&#39;captcha.recaptcha_test_key_error&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SIMPLE_JWT</td>
+          <td class="code"><pre>{&#39;ACCESS_TOKEN_LIFETIME&#39;: &#39;********************&#39;,
+ &#39;REFRESH_TOKEN_LIFETIME&#39;: &#39;********************&#39;,
+ &#39;ROTATE_REFRESH_TOKENS&#39;: &#39;********************&#39;,
+ &#39;SIGNING_KEY&#39;: &#39;********************&#39;}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SITE_ID</td>
+          <td class="code"><pre>1</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SITE_PACKAGE</td>
+          <td class="code"><pre>&#39;sites.sefaria&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>SLACK_URL</td>
+          <td class="code"><pre>&#39;https://hooks.slack.com/services/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&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATICFILES_DIRS</td>
+          <td class="code"><pre>[&#39;/Users/yishaiglasner/sefaria/Project/sefaria/../static/&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATICFILES_FINDERS</td>
+          <td class="code"><pre>(&#39;django.contrib.staticfiles.finders.FileSystemFinder&#39;,
+ &#39;django.contrib.staticfiles.finders.AppDirectoriesFinder&#39;)</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATICFILES_STORAGE</td>
+          <td class="code"><pre>&#39;django.contrib.staticfiles.storage.StaticFilesStorage&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATIC_ROOT</td>
+          <td class="code"><pre>&#39;/app/static-collected&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STATIC_URL</td>
+          <td class="code"><pre>&#39;/static/&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STRAPI_LOCATION</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>STRAPI_PORT</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TEMPLATES</td>
+          <td class="code"><pre>[{&#39;BACKEND&#39;: &#39;django.template.backends.django.DjangoTemplates&#39;,
+  &#39;DIRS&#39;: [&#39;/Users/yishaiglasner/sefaria/Project/sefaria/../templates/&#39;],
+  &#39;OPTIONS&#39;: {&#39;context_processors&#39;: [&#39;django.contrib.auth.context_processors.auth&#39;,
+                                     &#39;django.template.context_processors.debug&#39;,
+                                     &#39;django.template.context_processors.i18n&#39;,
+                                     &#39;django.template.context_processors.media&#39;,
+                                     &#39;django.template.context_processors.static&#39;,
+                                     &#39;django.template.context_processors.tz&#39;,
+                                     &#39;django.contrib.messages.context_processors.messages&#39;,
+                                     &#39;django.template.context_processors.request&#39;,
+                                     &#39;sefaria.system.context_processors.global_settings&#39;,
+                                     &#39;sefaria.system.context_processors.cache_timestamp&#39;,
+                                     &#39;sefaria.system.context_processors.large_data&#39;,
+                                     &#39;sefaria.system.context_processors.body_flags&#39;,
+                                     &#39;sefaria.system.context_processors.header_html&#39;,
+                                     &#39;sefaria.system.context_processors.footer_html&#39;,
+                                     &#39;sefaria.system.context_processors.base_props&#39;],
+              &#39;loaders&#39;: [&#39;django.template.loaders.filesystem.Loader&#39;,
+                          &#39;django.template.loaders.app_directories.Loader&#39;]}}]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TEST_NON_SERIALIZED_APPS</td>
+          <td class="code"><pre>[]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TEST_RUNNER</td>
+          <td class="code"><pre>&#39;django.test.runner.DiscoverRunner&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>THOUSAND_SEPARATOR</td>
+          <td class="code"><pre>&#39;,&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TIME_FORMAT</td>
+          <td class="code"><pre>&#39;P&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TIME_INPUT_FORMATS</td>
+          <td class="code"><pre>[&#39;%H:%M:%S&#39;, &#39;%H:%M:%S.%f&#39;, &#39;%H:%M&#39;]</pre></td>
+        </tr>
+      
+        <tr>
+          <td>TIME_ZONE</td>
+          <td class="code"><pre>&#39;America/Halifax&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USER_AGENTS_CACHE</td>
+          <td class="code"><pre>&#39;default&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_ETAGS</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_I18N</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_L10N</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_NODE</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_THOUSAND_SEPARATOR</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_TZ</td>
+          <td class="code"><pre>True</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_VARNISH</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_VARNISH_ESI</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_X_FORWARDED_HOST</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>USE_X_FORWARDED_PORT</td>
+          <td class="code"><pre>False</pre></td>
+        </tr>
+      
+        <tr>
+          <td>VARNISH_ADM_ADDR</td>
+          <td class="code"><pre>&#39;localhost:6082&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>VARNISH_FRNT_PORT</td>
+          <td class="code"><pre>8040</pre></td>
+        </tr>
+      
+        <tr>
+          <td>VARNISH_HOST</td>
+          <td class="code"><pre>&#39;localhost&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>VARNISH_SECRET</td>
+          <td class="code"><pre>&#39;********************&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>WEBPACK_LOADER</td>
+          <td class="code"><pre>{&#39;DEFAULT&#39;: {&#39;BUNDLE_DIR_NAME&#39;: &#39;bundles/client/&#39;,
+             &#39;CACHE&#39;: False,
+             &#39;POLL_INTERVAL&#39;: 0.1,
+             &#39;STATS_FILE&#39;: &#39;/Users/yishaiglasner/sefaria/Project/sefaria/../node/webpack-stats.client.json&#39;,
+             &#39;TIMEOUT&#39;: None},
+ &#39;LINKER&#39;: {&#39;BUNDLE_DIR_NAME&#39;: &#39;bundles/linker.v3/&#39;,
+            &#39;CACHE&#39;: False,
+            &#39;POLL_INTERVAL&#39;: 0.1,
+            &#39;STATS_FILE&#39;: &#39;/Users/yishaiglasner/sefaria/Project/sefaria/../node/webpack-stats.linker.v3.json&#39;,
+            &#39;TIMEOUT&#39;: None},
+ &#39;SEFARIA_JS&#39;: {&#39;BUNDLE_DIR_NAME&#39;: &#39;bundles/sefaria/&#39;,
+                &#39;CACHE&#39;: False,
+                &#39;POLL_INTERVAL&#39;: 0.1,
+                &#39;STATS_FILE&#39;: &#39;/Users/yishaiglasner/sefaria/Project/sefaria/../node/webpack-stats.sefaria.json&#39;,
+                &#39;TIMEOUT&#39;: None}}</pre></td>
+        </tr>
+      
+        <tr>
+          <td>WSGI_APPLICATION</td>
+          <td class="code"><pre>&#39;sefaria.wsgi.application&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>X_FRAME_OPTIONS</td>
+          <td class="code"><pre>&#39;SAMEORIGIN&#39;</pre></td>
+        </tr>
+      
+        <tr>
+          <td>YEAR_MONTH_FORMAT</td>
+          <td class="code"><pre>&#39;F Y&#39;</pre></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+</div>
+
+  <div id="explanation">
+    <p>
+      You're seeing this error because you have <code>DEBUG = True</code> in your
+      Django settings file. Change that to <code>False</code>, and Django will
+      display a standard page generated by the handler for this status code.
+    </p>
+  </div>
+
+</body>
+</html>
