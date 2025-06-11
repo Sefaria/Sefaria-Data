@@ -36,13 +36,13 @@ def list_to_csv(data, filename):
 
 def get_no_description_slugs_csv():
     no_description_slugs = []
-    library_topics_slugs = list(DjangoTopic.objects.get_topic_slugs_by_pool("library"))
-    library_topics = TopicSet(query={"slug": {"$in": library_topics_slugs}}).array()
-    for topic in library_topics:
+    general_topics_slugs = list(DjangoTopic.objects.get_topic_slugs_by_pool("general_en"))
+    general_topics = TopicSet(query={"slug": {"$in": general_topics_slugs}}).array()
+    for topic in general_topics:
         if not getattr(topic,"description", {}).get('en') or len(topic.description.get('en', '')) < 20:
             no_description_slugs.append(topic.slug)
+    list_to_csv([[slug] for slug in no_description_slugs], "no_description_slugs_from_general_en_pool.csv")
 
-    list_to_csv([[slug] for slug in no_description_slugs], "no_description_slugs.csv")
 def get_no_description_top_slugs_csv():
     no_description_top_slugs = []
     top_topics = TopicSet(query={"slug": {"$in": topic_10_slugs}}).array()
@@ -52,5 +52,6 @@ def get_no_description_top_slugs_csv():
     list_to_csv([[slug] for slug in no_description_top_slugs], "no_description_top_slugs.csv")
 
 if __name__ == '__main__':
-    get_no_description_top_slugs_csv()
+    no_description_general_pool = get_no_description_slugs_csv()
+
     print("hi")
