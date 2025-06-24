@@ -1,8 +1,12 @@
-import django
+from __future__ import annotations
 
+import django
 django.setup()
 from sefaria.model import *
 from sources.functions import *
+from bs4 import BeautifulSoup
+
+
 
 num_to_book_map = {
     **{i: 'Genesis' for i in range(1, 13)},
@@ -43,3 +47,6 @@ if __name__ == "__main__":
             html_content = file.read()
             print(html_content)
             soup = BeautifulSoup(html_content, 'html.parser')
+            peshat_elements = soup.find_all(class_="Peshat")
+            for elem in peshat_elements:
+                print(elem)
