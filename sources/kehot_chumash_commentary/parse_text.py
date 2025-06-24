@@ -47,6 +47,7 @@ if __name__ == "__main__":
             html_content = file.read()
             print(html_content)
             soup = BeautifulSoup(html_content, 'html.parser')
-            peshat_elements = soup.find_all(class_="Peshat")
-            for elem in peshat_elements:
+            target_classes = {"Peshat", "Peshat-Chapter-number-drop"}
+            matches = soup.find_all(lambda tag: target_classes & set(tag.get("class", [])))
+            for elem in matches:
                 print(elem)
