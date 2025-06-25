@@ -33,6 +33,7 @@ if __name__ == "__main__":
     #     for seg_ref in seg_refs:
     #         chumash_base_dict[seg_ref.tref] = ""  # Initialize with empty string
     # # print(chumash_base_dict)
+    book_map = {}
 
     directory = '../kehot_chp_chumash/html'
     for filename in sorted(os.listdir(directory)):
@@ -44,9 +45,9 @@ if __name__ == "__main__":
         if current_book is None:
             continue
         # print(current_book)
-        book_map = {}
         current_chapter = 0
         curr_chapter_and_verse_num = None
+        curr_segment_num = 0
 
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             html_content = file.read()
@@ -61,7 +62,10 @@ if __name__ == "__main__":
             chapter_and_verse_num = match.group(0) if match else None
             if chapter_and_verse_num:
                 curr_chapter_and_verse_num = chapter_and_verse_num
-                print(chapter_and_verse_num)
+                curr_segment_num = 0
             # print(elem.text.strip())
-            book_map[f"{title} {current_book} {curr_chapter_and_verse_num}"] = str(elem)
+            if 'class="bold-small-text' in str(elem):
+                curr_segment_num += 1
+            key = f"{title} {current_book} {curr_chapter_and_verse_num}:{curr_segment_num}"
+            book_map[key] = book_map.get(key, '') + str(elem)
     print('hi')
