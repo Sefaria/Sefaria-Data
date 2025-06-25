@@ -44,16 +44,24 @@ if __name__ == "__main__":
         if current_book is None:
             continue
         # print(current_book)
+        book_map = {}
         current_chapter = 0
+        curr_chapter_and_verse_num = None
 
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             html_content = file.read()
             # print(html_content)
         soup = BeautifulSoup(html_content, 'html.parser')
-        target_classes = {"Peshat", "Peshat-Chapter-number-drop"}
-        matches = soup.find_all(lambda tag: target_classes & set(tag.get("class", [])))
-        for elem in matches:
-            if "Peshat-Chapter-number-drop" in elem.attrs["class"]:
-                current_chapter = int(elem.text.strip())
-                print(current_chapter)
-            # print(elem)
+        # target_classes = {"Peshat", "Peshat-Chapter-number-drop"}
+        # matches = soup.find_all(lambda tag: target_classes & set(tag.get("class", [])))
+        chasidic_boxes = soup.find_all(class_="chasidic-insights-box")
+        chasidic_ps = [p for box in chasidic_boxes for p in box.find_all("p")]
+        for elem in chasidic_ps:
+            match = re.match(r'^(\d+):(\d+)', elem.text.strip())
+            chapter_and_verse_num = match.group(0) if match else None
+            if chapter_and_verse_num:
+                curr_chapter_and_verse_num = chapter_and_verse_num
+                print(chapter_and_verse_num)
+            # print(elem.text.strip())
+            book_map[f"{title} {current_book} {curr_chapter_and_verse_num}"] = str(elem)
+    print('hi')
