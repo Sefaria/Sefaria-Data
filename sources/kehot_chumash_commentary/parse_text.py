@@ -6,6 +6,8 @@ from sefaria.model import *
 from sources.functions import *
 from bs4 import BeautifulSoup
 
+title = "The Kehot Chumash; A Chasidic Commentary"
+
 
 
 num_to_book_map = {
@@ -25,12 +27,12 @@ def file_name_to_book(file_name):
         return None
     return num_to_book_map[num]
 if __name__ == "__main__":
-    chumash_base_dict = {}
-    for chumash in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
-        seg_refs = library.get_index(chumash).all_segment_refs()
-        for seg_ref in seg_refs:
-            chumash_base_dict[seg_ref.tref] = ""  # Initialize with empty string
-    print(chumash_base_dict)
+    # chumash_base_dict = {}
+    # for chumash in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
+    #     seg_refs = library.get_index(chumash).all_segment_refs()
+    #     for seg_ref in seg_refs:
+    #         chumash_base_dict[seg_ref.tref] = ""  # Initialize with empty string
+    # # print(chumash_base_dict)
 
     directory = '../kehot_chp_chumash/html'
     for filename in sorted(os.listdir(directory)):
@@ -42,12 +44,16 @@ if __name__ == "__main__":
         if current_book is None:
             continue
         # print(current_book)
+        current_chapter = 0
 
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             html_content = file.read()
-            print(html_content)
-            soup = BeautifulSoup(html_content, 'html.parser')
-            target_classes = {"Peshat", "Peshat-Chapter-number-drop"}
-            matches = soup.find_all(lambda tag: target_classes & set(tag.get("class", [])))
-            for elem in matches:
-                print(elem)
+            # print(html_content)
+        soup = BeautifulSoup(html_content, 'html.parser')
+        target_classes = {"Peshat", "Peshat-Chapter-number-drop"}
+        matches = soup.find_all(lambda tag: target_classes & set(tag.get("class", [])))
+        for elem in matches:
+            if "Peshat-Chapter-number-drop" in elem.attrs["class"]:
+                current_chapter = int(elem.text.strip())
+                print(current_chapter)
+            # print(elem)
