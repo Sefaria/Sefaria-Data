@@ -1,10 +1,11 @@
-from __future__ import annotations
 
 import django
 django.setup()
 from sefaria.model import *
 from sources.functions import *
 from bs4 import BeautifulSoup
+import pandas as pd
+
 
 title = "The Kehot Chumash; A Chasidic Commentary"
 
@@ -26,6 +27,15 @@ def file_name_to_book(file_name):
     if num == 0 or num > 54:
         return None
     return num_to_book_map[num]
+def insert_style(html_text):
+    soup = BeautifulSoup(html_text, 'html.parser')
+
+    for span in soup.find_all('span', class_='bold-small-text'):
+        b_tag = soup.new_tag('b')
+        b_tag.string = span.get_text()
+        span.replace_with(b_tag)
+    return str(soup)
+
 if __name__ == "__main__":
     # chumash_base_dict = {}
     # for chumash in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
@@ -67,5 +77,11 @@ if __name__ == "__main__":
             if 'class="bold-small-text' in str(elem):
                 curr_segment_num += 1
             key = f"{title} {current_book} {curr_chapter_and_verse_num}:{curr_segment_num}"
-            book_map[key] = book_map.get(key, '') + str(elem)
+            book_map[key] = f"{book_map[key]}<br>{elem}" if key in book_map else str(elem)
+    for key, value in book_map.items():
+        book_map[key] = insert_style(value)
+    pd.DataFrame(list(book_map.items()), columns=["ref", "html"]) \
+        .to_html("book_map.html",  # output file
+                 index=False,  # no row numbers
+                 escape=False)  # keep the inner HTML un-escaped
     print('hi')
