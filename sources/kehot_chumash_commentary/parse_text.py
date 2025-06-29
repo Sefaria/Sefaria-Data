@@ -36,6 +36,27 @@ def insert_style(html_text):
         span.replace_with(b_tag)
     return str(soup)
 
+def extract_notes_dict(html: str) -> dict[int, str]:
+    soup = BeautifulSoup(html, "html.parser")
+    notes: dict[int, str] = {}
+
+    for p in soup.find_all("p", class_="FNote-Eng"):
+        for span in p.find_all("span", class_="FNN-Peshat"):
+            m = re.match(r"(\d+)\.\s*", span.get_text())
+            if not m:
+                continue
+            num = int(m.group(1))
+            # Collect all sibling content until the next note span
+            parts = []
+            for sib in span.next_siblings:
+                if sib.name == "span" and "FNN-Peshat" in sib.get("class", []):
+                    break
+                parts.append(getattr(sib, "get_text", lambda: str(sib))())
+            text = " ".join(" ".join(parts).split())
+            notes[num] = text
+
+    return notes
+
 if __name__ == "__main__":
     # chumash_base_dict = {}
     # for chumash in ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]:
@@ -63,11 +84,16 @@ if __name__ == "__main__":
             html_content = file.read()
             # print(html_content)
         soup = BeautifulSoup(html_content, 'html.parser')
-        # target_classes = {"Peshat", "Peshat-Chapter-number-drop"}
-        # matches = soup.find_all(lambda tag: target_classes & set(tag.get("class", [])))
+
         chasidic_boxes = soup.find_all(class_="chasidic-insights-box")
         chasidic_ps = [p for box in chasidic_boxes for p in box.find_all("p")]
+
+        # notes = soup.select(".FNote-Eng .FNN-Peshat")
+        notes_map = extract_notes_dict(html_content)
         for elem in chasidic_ps:
+
+
+
             match = re.match(r'^(\d+):(\d+)', elem.text.strip())
             chapter_and_verse_num = match.group(0) if match else None
             if chapter_and_verse_num:
