@@ -56,6 +56,33 @@ def extract_notes_dict(html: str) -> dict[int, str]:
             notes[num] = text
 
     return notes
+def replace_inline_notes(html: str, notes_map: dict[int, str]) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    pattern = re.compile(r'^\d+$')
+
+    for span in soup.find_all("span", class_="FNR-Chasidic"):
+        txt = span.get_text(strip=True)
+        if not pattern.fullmatch(txt):
+            continue
+        num = int(txt)
+        footnote_text = notes_map.get(num, "")
+
+        # Create new <sup> and <i> tags directly
+        sup = soup.new_tag("sup", **{"class": "footnote-marker"})
+        sup.string = str(num)
+
+        itag = soup.new_tag("i", **{"class": "footnote"})
+        itag.string = footnote_text
+
+        # Insert them before the span
+        span.insert_before(sup)
+        span.insert_before(itag)
+
+        # Remove the original <span>
+        span.decompose()
+
+    return str(soup)
+
 
 if __name__ == "__main__":
     # chumash_base_dict = {}
@@ -85,15 +112,17 @@ if __name__ == "__main__":
             # print(html_content)
         soup = BeautifulSoup(html_content, 'html.parser')
 
+        # notes = soup.select(".FNote-Eng .FNN-Peshat")
+        notes_map = extract_notes_dict(html_content)
+
+        html_content = replace_inline_notes(html_content, notes_map)
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+
         chasidic_boxes = soup.find_all(class_="chasidic-insights-box")
         chasidic_ps = [p for box in chasidic_boxes for p in box.find_all("p")]
 
-        # notes = soup.select(".FNote-Eng .FNN-Peshat")
-        notes_map = extract_notes_dict(html_content)
         for elem in chasidic_ps:
-
-
-
             match = re.match(r'^(\d+):(\d+)', elem.text.strip())
             chapter_and_verse_num = match.group(0) if match else None
             if chapter_and_verse_num:
