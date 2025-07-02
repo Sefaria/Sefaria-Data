@@ -589,7 +589,7 @@ def weak_connection(func):
     return post_weak_connection
 
 
-def http_request(url, params=None, body=None, json_payload=None, method="GET"):
+def http_request(url, params=None, body=None, json_payload=None, method="GET", apikey=API_KEY):
     if params is None:
         params = {}
     if body is None:
@@ -600,9 +600,9 @@ def http_request(url, params=None, body=None, json_payload=None, method="GET"):
     if method == "GET":
         response = requests.get(url)
     elif method == "POST":
-        response = requests.post(url, params=params, data=body)
+        response = requests.post(url, params=params, data=body, headers={"X-APIKEY": apikey})
     elif method == "DELETE":
-        response = requests.delete(url, params=params, data=body)
+        response = requests.delete(url, params=params, data=body, headers={"X-APIKEY": apikey})
     else:
         raise ValueError("Cannot handle HTTP request method {}".format(method))
 
@@ -667,7 +667,7 @@ def make_title(text):
 @weak_connection
 def post_sheet(sheet, server=SEFARIA_SERVER, spec_sheet_id='', api_key = API_KEY):
     url = server + "/api/sheets{}".format("/{}/add".format(spec_sheet_id) if len(spec_sheet_id) > 0 else '')
-    response = http_request(url, body={"apikey": api_key, "rebuildNodes": True}, json_payload=sheet, method="POST")
+    response = http_request(url, body={"rebuildNodes": True}, json_payload=sheet, method="POST", apikey=api_key)
     if isinstance(response, dict):
         return response
     else:
@@ -681,7 +681,7 @@ def post_index(index, server=SEFARIA_SERVER, method="POST", dump_json=False):
         with open('index_json.json', 'w') as fp:
             json.dump(index, fp)
     url = server+'/api/v2/raw/index/' + index["title"].replace(" ", "_")
-    return http_request(url, body={'apikey': API_KEY}, json_payload=index, method=method)
+    return http_request(url, json_payload=index, method=method, apikey=API_KEY)
     # indexJSON = json.dumps(index)
     # values = {
     #     'json': indexJSON,
@@ -705,7 +705,7 @@ def hasTags(comment):
 @weak_connection
 def post_category(category_dict, server=SEFARIA_SERVER):
     url = server+'/api/category/'
-    return requests.post(url, data={'apikey': API_KEY, 'json': json.dumps(category_dict)})
+    return http_request(url, body={'json': json.dumps(category_dict)}, apikey=API_KEY)
 
     
 def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
@@ -766,7 +766,7 @@ def add_category(en_title, path, he_title=None, server=SEFARIA_SERVER):
                 {'lang': 'he', 'primary': True, 'text': he_title}
             ]
         }
-    return requests.post('{}/api/category'.format(server), data={'apikey': API_KEY, 'json': json.dumps(category_dict)})
+    return http_request(f'{server}/api/category', body={'json': json.dumps(category_dict)}, apikey=API_KEY)
 
 
 @weak_connection
@@ -775,7 +775,7 @@ def post_link(info, server=SEFARIA_SERVER, skip_lang_check=True, VERBOSE=True, m
         with open('links_dump.json', 'w') as fp:
             json.dump(info, fp)
     url = server+'/api/links/' if not skip_lang_check else server+"/api/links/?skip_lang_check=1"
-    result = http_request(url, body={'apikey': API_KEY}, json_payload=info, method=method)
+    result = http_request(url, json_payload=info, method=method, apikey=API_KEY)
     if VERBOSE:
         print(result)
     return result
@@ -784,7 +784,7 @@ def post_link(info, server=SEFARIA_SERVER, skip_lang_check=True, VERBOSE=True, m
 def delete_link(id_or_ref, server=SEFARIA_SERVER, VERBOSE=False):
     id_or_ref = id_or_ref.replace(" ", "_")
     url = server + "/api/links/{}".format(id_or_ref)
-    result = http_request(url, body={'apikey': API_KEY}, json_payload=url, method="DELETE")
+    result = http_request(url, json_payload=url, method="DELETE", apikey=API_KEY)
     if VERBOSE:
         print(result)
     return result
@@ -792,12 +792,10 @@ def delete_link(id_or_ref, server=SEFARIA_SERVER, VERBOSE=False):
 def post_link_weak_connection(info, repeat=10):
     url = SEFARIA_SERVER + '/api/links/'
     infoJSON = json.dumps(info)
-    values = {
-        'json': infoJSON,
-        'apikey': API_KEY
-    }
-    data = urllib.parse.urlencode(values)
+    data = urllib.parse.urlencode({'json': infoJSON})
     req = urllib.request.Request(url, data)
+    req.add_header("X-APIKEY", API_KEY)
+
     for i in range(repeat):
         try:
             response = urllib.request.urlopen(req, timeout=20)
@@ -1114,7 +1112,7 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
     # textJSON = json.dumps(text)
     ref = ref.replace(" ", "_")
     url = server+'/api/texts/'+ref
-    params, body = {}, {'apikey': API_KEY}
+    params = {}
     if 'status' not in params:
         params['status'] = 'locked'
     if index_count == "on":
@@ -1126,7 +1124,7 @@ def post_text(ref, text, index_count="off", skip_links=False, server=SEFARIA_SER
         # else:
         #     url += '?skip_links={}'.format(skip_links)
 
-    return http_request(url, params=params, body=body, json_payload=text, method="POST")
+    return http_request(url, params=params, json_payload=text, method="POST", apikey=API_KEY)
     # values = {'json': textJSON, 'apikey': API_KEY}
     # data = urllib.urlencode(values)
     # req = urllib2.Request(url, data)
@@ -1190,9 +1188,9 @@ def post_text_weak_connection(ref, text, index_count="off", repeat=10):
         url = SEFARIA_SERVER + '/api/texts/' + ref
     else:
         url = SEFARIA_SERVER + '/api/texts/' + ref + '?count_after=1'
-    values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.parse.urlencode(values)
+    data = urllib.parse.urlencode({'json': textJSON})
     req = urllib.request.Request(url, data)
+    req.add_header("X-APIKEY", API_KEY)
     for i in range(repeat):
         try:
             response = urllib.request.urlopen(req, timeout=15)
@@ -1226,9 +1224,9 @@ def post_text_burp(ref, text, index_count="off"):
         url = SEFARIA_SERVER + '/api/texts/' + ref
     else:
         url = SEFARIA_SERVER + '/api/texts/' + ref + '?count_after=1'
-    values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.parse.urlencode(values)
+    data = urllib.parse.urlencode({'json': textJSON})
     req = urllib.request.Request(url, data)
+    req.add_header("X-APIKEY", API_KEY)
     try:
         response = opener.open(req)
         x = response.read()
@@ -1254,9 +1252,9 @@ def post_flags(version, flags, server=SEFARIA_SERVER):
     url = server+'/api/version/flags/{}/{}/{}'.format(
         urllib.parse.quote(version['ref']), urllib.parse.quote(version['lang']), urllib.parse.quote(version['vtitle']).encode('utf-8')
     )
-    values = {'json': textJSON, 'apikey': API_KEY}
-    data = urllib.parse.urlencode(values).encode('utf-8')
+    data = urllib.parse.urlencode({'json': textJSON}).encode('utf-8')
     req = urllib.request.Request(url, data)
+    req.add_header("X-APIKEY", API_KEY)
     try:
         response = urllib.request.urlopen(req)
         x = response.read()
@@ -1275,7 +1273,7 @@ def post_term(term_dict, server=SEFARIA_SERVER, update=False):
     url = '{}/api/terms/{}'.format(server, urllib.parse.quote(name))
     if update:
         url += "?update=1"
-    return http_request(url, body={'apikey': API_KEY}, json_payload=term_dict, method="POST")
+    return http_request(url, json_payload=term_dict, method="POST", apikey=API_KEY)
     # values = {'json': term_JSON, 'apikey': API_KEY}
     # data = urllib.urlencode(values)
     # req = urllib2.Request(url, data)
