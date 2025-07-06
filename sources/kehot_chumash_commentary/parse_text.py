@@ -6,11 +6,34 @@ from sources.functions import *
 from bs4 import BeautifulSoup
 import pandas as pd
 from sources.functions import eng_parshiot, heb_parshiot
+from sefaria.tracker import modify_bulk_text
+superuser_id = 171118
 
 
 title = "The Kehot Chumash; A Chasidic Commentary"
 
+def ingest_version(map_text):
+    # vs = VersionState(index=library.get_index("Introductions to the Babylonian Talmud"))
+    # vs.delete()
+    # print("deleted version state")
+    index = library.get_index(title)
+    cur_version = VersionSet({'title': title})
+    if cur_version.count() > 0:
+        cur_version.delete()
+        print("deleted existing version")
+    chapter = index.nodes.create_skeleton()
+    version = Version({"versionTitle": "The Torah; Chabad House Publications, Los Angeles, 2015-2023",
+                       "versionSource": "https://www.chabadhousepublications.org/books",
+                       "title": title,
+                       "language": "en",
+                       "chapter": chapter,
+                       # "digitizedBySefaria": True,
+                       "license": "PD",
+                       "status": "locked"
+                       })
 
+
+    modify_bulk_text(superuser_id, version, map_text)
 
 num_to_book_map = {
     **{i: 'Genesis' for i in range(1, 13)},
@@ -58,9 +81,6 @@ def extract_notes_dict(html: str) -> dict[int, str]:
 
     return notes
 
-
-from bs4 import BeautifulSoup, NavigableString, Tag
-import re
 
 
 def extract_overview_footnotes(html: str,
@@ -152,6 +172,7 @@ def replace_inline_notes(html: str, notes_map: dict[int, str]) -> str:
     return str(soup)
 
 def closest_word(input_str, words):
+    input_str = input_str.replace("’", "'").replace("’", "'").replace("'", "")
     distances = [Levenshtein.distance(input_str, w) for w in words]
     best = min(distances)
     # Get first minimal match; you can adjust tie-breaking if needed
@@ -169,46 +190,54 @@ if __name__ == "__main__":
     book_map = {}
     directory = '../kehot_chp_chumash/html'
 
-    # for filename in sorted(os.listdir(directory)):
-    #     file_path = os.path.join(directory, filename)
-    #     if not os.path.isfile(file_path):
-    #         continue
-    #     print(file_path)
-    #     current_book = file_name_to_book(filename)
-    #     if current_book is None:
-    #         continue
-    #     # print(current_book)
-    #     current_chapter = 0
-    #     curr_chapter_and_verse_num = None
-    #     curr_segment_num = 0
-    #
-    #     with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
-    #         html_content = file.read()
-    #         # print(html_content)
-    #     soup = BeautifulSoup(html_content, 'html.parser')
-    #
-    #     # notes = soup.select(".FNote-Eng .FNN-Peshat")
-    #     notes_map = extract_notes_dict(html_content)
-    #
-    #     html_content = replace_inline_notes(html_content, notes_map)
-    #     soup = BeautifulSoup(html_content, 'html.parser')
-    #
-    #
-    #     chasidic_boxes = soup.find_all(class_="chasidic-insights-box")
-    #     chasidic_ps = [p for box in chasidic_boxes for p in box.find_all("p")]
-    #
-    #     for elem in chasidic_ps:
-    #         match = re.match(r'^(\d+):(\d+)', elem.text.strip())
-    #         chapter_and_verse_num = match.group(0) if match else None
-    #         if chapter_and_verse_num:
-    #             curr_chapter_and_verse_num = chapter_and_verse_num
-    #             curr_segment_num = 0
-    #         # print(elem.text.strip())
-    #         if 'class="bold-small-text' in str(elem):
-    #             curr_segment_num += 1
-    #         key = f"{title} {current_book} {curr_chapter_and_verse_num}:{curr_segment_num}"
-    #         book_map[key] = f"{book_map[key]}<br>{elem}" if key in book_map else str(elem)
-   ## parashot intros
+    for filename in sorted(os.listdir(directory)):
+        file_path = os.path.join(directory, filename)
+        if not os.path.isfile(file_path):
+            continue
+        print(file_path)
+        current_book = file_name_to_book(filename)
+        if current_book is None:
+            continue
+        # print(current_book)
+        current_chapter = 0
+        curr_chapter_and_verse_num = None
+        curr_segment_num = 0
+
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+            html_content = file.read()
+            # print(html_content)
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        # notes = soup.select(".FNote-Eng .FNN-Peshat")
+        notes_map = extract_notes_dict(html_content)
+
+        html_content = replace_inline_notes(html_content, notes_map)
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+
+        chasidic_boxes = soup.find_all(class_="chasidic-insights-box")
+        chasidic_ps = [p for box in chasidic_boxes for p in box.find_all("p")]
+
+        for elem in chasidic_ps:
+            match = re.match(r'^(\d+):(\d+)', elem.text.strip())
+            chapter_and_verse_num = match.group(0) if match else None
+            if chapter_and_verse_num:
+                curr_chapter_and_verse_num = chapter_and_verse_num
+                curr_segment_num = 0
+            # print(elem.text.strip())
+            if 'class="bold-small-text' in str(elem):
+                curr_segment_num += 1
+
+            key = f"{title}, {current_book} {curr_chapter_and_verse_num}:{curr_segment_num}"
+            # patch
+            if key == f"{title}, Numbers None:1":
+                key = f"{title}, Numbers 33:1"
+            # if key == f"{title}, Genesis 30:43:1":
+            #     elem = str(elem).replace("Shir HaShirim Rabbah 2:45", "Shir HaShirim Rabbah 2:16")
+            elem = str(elem).replace("Shir HaShirim Rabbah", "SHR")
+
+            book_map[key] = f"{book_map[key]}<br>{elem}" if key in book_map else str(elem)
+   # parashot intros
     for filename in sorted(os.listdir(directory)):
         file_path = os.path.join(directory, filename)
         if not os.path.isfile(file_path):
@@ -236,7 +265,7 @@ if __name__ == "__main__":
 
         segment_number = 1
         for intro_text in intro_text_segments:
-            key = f"{title}, Parashah Overviews, {parasha_name} {segment_number}"
+            key = f"{title}, Parashah Overviews, {parasha_name}, {segment_number}"
             book_map[key] = insert_style(intro_text)
             segment_number += 1
 
@@ -252,4 +281,6 @@ if __name__ == "__main__":
         .to_html("book_map.html",  # output file
                  index=False,  # no row numbers
                  escape=False)  # keep the inner HTML un-escaped
+
+    ingest_version(book_map)
     print('hi')

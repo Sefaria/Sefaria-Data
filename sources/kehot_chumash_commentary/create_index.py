@@ -13,7 +13,8 @@ django.setup()
 from sefaria.model import *
 from sources.functions import *
 
-
+# Import parashot lists from functions
+from sources.functions import eng_parshiot, heb_parshiot
 
 # Configuration
 CONFIG = {
@@ -91,20 +92,42 @@ def create_kehot_chumash_index():
     root.add_primary_titles(CONFIG["title_en"], CONFIG["title_he"])
     root.key = CONFIG["title_en"]
 
-    # Add special sections (Introduction, Prologue, Parashah Overviews)
+    # Add special sections (Introduction, Prologue, and Parashah Overviews)
     for section_en, section_he, title_type in CONFIG["sections"]:
-        section_node = JaggedArrayNode()
-        section_node.key = section_en
-
-        if title_type == "shared_term":
-            section_node.add_shared_term(section_en)
-        else:
-            section_node.add_primary_titles(section_en, section_he)
-
-        # Set structure based on section type
         if section_en == "Parashah Overviews":
-            section_node.add_structure(["Parashah", "Paragraph"])
+            # Create SchemaNode for Parashah Overviews with all parashot as children
+            section_node = SchemaNode()
+            section_node.key = section_en
+
+            if title_type == "shared_term":
+                section_node.add_shared_term(section_en)
+            else:
+                section_node.add_primary_titles(section_en, section_he)
+
+            # Add all 54 Torah parashot as children
+            for parsha_en, parsha_he in zip(eng_parshiot, heb_parshiot):
+                parsha_node = JaggedArrayNode()
+                parsha_node.key = parsha_en
+
+                # Try to use shared term if it exists, otherwise use primary titles
+                try:
+                    parsha_node.add_shared_term(parsha_en)
+                except:
+                    parsha_node.add_primary_titles(parsha_en, parsha_he)
+
+                parsha_node.add_structure(["Paragraph"])
+                section_node.append(parsha_node)
+
         else:
+            # Regular JaggedArrayNode for Introduction and Prologue
+            section_node = JaggedArrayNode()
+            section_node.key = section_en
+
+            if title_type == "shared_term":
+                section_node.add_shared_term(section_en)
+            else:
+                section_node.add_primary_titles(section_en, section_he)
+
             section_node.add_structure(["Paragraph"])
 
         root.append(section_node)
@@ -175,6 +198,7 @@ def display_index_info(index):
     print("├── Introduction (הקדמה)")
     print("├── Prologue (פתח דבר)")
     print("├── Parashah Overviews (הקדמות לפרשה)")
+    print("│   ├── [54 Torah Parashot]")
     for i, (book_en, book_he) in enumerate(CONFIG["torah_books"]):
         connector = "└──" if i == len(CONFIG["torah_books"]) - 1 else "├──"
         print(f"{connector} {book_en} ({book_he}) [Chapter:Verse:Paragraph]")
