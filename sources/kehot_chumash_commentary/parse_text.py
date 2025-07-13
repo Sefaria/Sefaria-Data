@@ -62,6 +62,8 @@ def insert_style(html_text):
         i_tag = soup.new_tag('i')
         i_tag.string = span.get_text()
         span.replace_with(i_tag)
+    for p in soup.find_all('p'):
+        p.replaceWithChildren()
     return str(soup)
 
 def extract_notes_dict(html: str) -> dict[int, str]:
