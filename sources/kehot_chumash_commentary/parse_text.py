@@ -54,7 +54,7 @@ def file_name_to_book(file_name):
 def insert_style(html_text):
     soup = BeautifulSoup(html_text, 'html.parser')
 
-    for span in soup.find_all('span', class_='bold-small-text'):
+    for span in soup.find_all(['span', 'p'], class_=['bold-small-text', "Overvview-heading-2-NEW"]):
         b_tag = soup.new_tag('b')
         b_tag.string = span.get_text()
         span.replace_with(b_tag)
