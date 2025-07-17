@@ -58,7 +58,7 @@ def insert_style(html_text):
         b_tag = soup.new_tag('b')
         b_tag.string = span.get_text()
         span.replace_with(b_tag)
-    for span in soup.find_all(['span', 'p'], class_=['it-small-text']):
+    for span in soup.find_all(['span', 'p'], class_=['it-small-text', 'O-it-small-text']):
         i_tag = soup.new_tag('i')
         i_tag.string = span.get_text()
         span.replace_with(i_tag)
@@ -222,7 +222,9 @@ if __name__ == "__main__":
 
 
         chasidic_boxes = soup.find_all(class_="chasidic-insights-box")
-        chasidic_ps = [p for box in chasidic_boxes for p in box.find_all("p")]
+        # chasidic_ps = [p for box in chasidic_boxes for p in box.find_all("p")]
+        # chasidic_ps = [el for box in chasidic_boxes for el in box.find_all(True)]
+        chasidic_ps = [p for box in chasidic_boxes for p in box.find_all(['p', 'ul', 'ol'])]
 
         for elem in chasidic_ps:
             match = re.match(r'^(\d+):(\d+)', elem.text.strip())
