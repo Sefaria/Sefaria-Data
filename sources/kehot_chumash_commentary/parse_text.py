@@ -64,6 +64,8 @@ def insert_style(html_text):
         span.replace_with(i_tag)
     for p in soup.find_all('p'):
         p.replaceWithChildren()
+    for nb_span in soup.find_all('span', class_='nb'):
+        nb_span.replaceWithChildren()
     return str(soup)
 
 def extract_notes_dict(html: str) -> dict[int, str]:
