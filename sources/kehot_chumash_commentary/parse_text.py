@@ -52,6 +52,7 @@ def file_name_to_book(file_name):
         return None
     return num_to_book_map[num]
 def insert_style(html_text):
+    # html_text = html_text.replace("Rashi on Leviticus 24:1", "*******")
     soup = BeautifulSoup(html_text, 'html.parser')
 
     for span in soup.find_all(['span', 'p'], class_=['bold-small-text', "Overvview-heading-2-NEW"]):
@@ -66,7 +67,8 @@ def insert_style(html_text):
         p.replaceWithChildren()
     for nb_span in soup.find_all('span', class_='nb'):
         nb_span.replaceWithChildren()
-    return str(soup)
+    result = str(soup) .replace('&lt;', '<').replace('&gt;', '>')
+    return result
 
 def extract_notes_dict(html: str) -> dict[int, str]:
     soup = BeautifulSoup(html, "html.parser")
@@ -91,66 +93,137 @@ def extract_notes_dict(html: str) -> dict[int, str]:
 
 
 
-def extract_overview_footnotes(html: str,
-                      *,
-                      start: int = 1,
-                      footnote_cls = "FNote-Eng"
-                      ) -> dict[int, str]:
+# def extract_overview_footnotes(html: str,
+#                       *,
+#                       start: int = 1,
+#                       footnote_cls = "FNote-Eng"
+#                       ) -> dict[int, str]:
+#     """
+#     Return {footnote_number: plain-text_footnote} parsed from an HTML string.
+#
+#     Parameters
+#     ----------
+#     html : str
+#         The raw HTML containing one *or more* <p class="FNote-Eng"> … </p>.
+#     start : int, optional
+#         The first foot-note number you expect to see (default 1).
+#         This acts as a simple guard against “p. 110.”-style false positives.
+#     footnote_cls : str | tuple[str, ...], optional
+#         Class name(s) that mark the footnote paragraph(s).
+#
+#     Notes
+#     -----
+#     •  The function looks for the textual hint “`<number>. `” – i.e. *digits*,
+#        a dot, and at least one space – to locate each marker.
+#     •  Only markers that appear in strictly ascending order
+#        (*start*, *start* + 1, …) are accepted; everything else is ignored.
+#        This prunes out pattern matches inside citations like
+#        “`Exodus 19:5.`” or “`p. 110.`”.
+#     """
+#     soup = BeautifulSoup(html, "html.parser")
+#
+#     # 1 – Keep only the HTML that contains footnotes
+#     para_html = " ".join(
+#         str(tag)
+#         for tag in soup.find_all(class_=footnote_cls)
+#         if not tag.find_parent(class_="translation-box-footnotes")
+#     )
+#     if not para_html:                       # fallback: treat whole input as one chunk
+#         para_html = html
+#
+#     # 2 – Strip outer <p> tags and normalise &nbsp;
+#     para_html = re.sub(r"^<p[^>]*>|</p>$", "", para_html).replace("&nbsp;", " ")
+#
+#     # 3 – Locate every “…<digits>. ” in the paragraph
+#     marker = re.compile(r"(\d{1,4})\.\s")   # e.g. “3. ”
+#     matches = list(marker.finditer(para_html))
+#
+#     footnotes, expect = {}, start
+#     for i, m in enumerate(matches):
+#         num = int(m.group(1))
+#         if num != expect:                   # skip anything out of sequence
+#             continue
+#
+#         # slice runs from the end of this marker to the *next* marker with expect+1
+#         nxt = next((n.start() for n in matches[i + 1:]
+#                     if int(n.group(1)) == expect + 1),
+#                    len(para_html))
+#         raw_snippet = para_html[m.end():nxt].strip()
+#
+#         # strip residual tags → plain text
+#         txt = BeautifulSoup(raw_snippet, "html.parser").get_text(" ", strip=True)
+#         footnotes[num] = txt
+#         expect += 1
+#
+#     return footnotes
+
+
+def extract_overview_footnotes(
+    html: str,
+    *,
+    start: int = 1,
+    footnote_cls="FNote-Eng",
+) -> dict[int, str]:
     """
-    Return {footnote_number: plain-text_footnote} parsed from an HTML string.
+    Return {footnote_number: HTML_footnote_with_italics} parsed from an HTML string.
+
+    Differences from the previous version
+    -------------------------------------
+    • All <span> tags are converted to <i> tags (attributes preserved) so the
+      text still appears italicised.
+    • Every other tag is removed via .unwrap(), leaving just text and <i> tags.
 
     Parameters
     ----------
     html : str
-        The raw HTML containing one *or more* <p class="FNote-Eng"> … </p>.
+        Raw HTML containing one or more <p class="FNote-Eng"> … </p>.
     start : int, optional
-        The first foot-note number you expect to see (default 1).
-        This acts as a simple guard against “p. 110.”-style false positives.
+        The first foot-note number you expect (default 1).
     footnote_cls : str | tuple[str, ...], optional
-        Class name(s) that mark the footnote paragraph(s).
-
-    Notes
-    -----
-    •  The function looks for the textual hint “`<number>. `” – i.e. *digits*,
-       a dot, and at least one space – to locate each marker.
-    •  Only markers that appear in strictly ascending order
-       (*start*, *start* + 1, …) are accepted; everything else is ignored.
-       This prunes out pattern matches inside citations like
-       “`Exodus 19:5.`” or “`p. 110.`”.
+        Class name(s) that mark foot-note paragraphs.
     """
     soup = BeautifulSoup(html, "html.parser")
 
-    # 1 – Keep only the HTML that contains footnotes
-    para_html = " ".join(str(tag) for tag in soup.find_all(class_=footnote_cls))
-    if not para_html:                       # fallback: treat whole input as one chunk
-        para_html = html
+    # 1 – Collect only the paragraphs that carry foot-notes
+    para_html = " ".join(
+        str(tag)
+        for tag in soup.find_all(class_=footnote_cls)
+        if not tag.find_parent(class_="translation-box-footnotes")
+    )
+    # if not para_html:
+    #     para_html = html
 
-    # 2 – Strip outer <p> tags and normalise &nbsp;
+    # 2 – Strip outer <p> wrappers and normalise &nbsp;
     para_html = re.sub(r"^<p[^>]*>|</p>$", "", para_html).replace("&nbsp;", " ")
 
-    # 3 – Locate every “…<digits>. ” in the paragraph
-    marker = re.compile(r"(\d{1,4})\.\s")   # e.g. “3. ”
+    # 3 – Locate every “…<digits>. ” marker
+    marker = re.compile(r"(\d{1,4})\.\s")
     matches = list(marker.finditer(para_html))
 
     footnotes, expect = {}, start
     for i, m in enumerate(matches):
         num = int(m.group(1))
-        if num != expect:                   # skip anything out of sequence
+        if num != expect:            # skip out-of-sequence matches
             continue
 
-        # slice runs from the end of this marker to the *next* marker with expect+1
+        # range: from end of this marker to start of next expected marker
         nxt = next((n.start() for n in matches[i + 1:]
                     if int(n.group(1)) == expect + 1),
                    len(para_html))
         raw_snippet = para_html[m.end():nxt].strip()
 
-        # strip residual tags → plain text
-        txt = BeautifulSoup(raw_snippet, "html.parser").get_text(" ", strip=True)
-        footnotes[num] = txt
+        # 4 – Convert <span> → <i>, unwrap everything else
+        snippet_soup = BeautifulSoup(raw_snippet, "html.parser")
+        for tag in snippet_soup.find_all(True):
+            if tag.name == "span":
+                tag.name = "i"           # keep attributes; just change tag name
+            else:
+                tag.unwrap()
+
+        footnotes[num] = str(snippet_soup).strip()
         expect += 1
 
     return footnotes
-
 
 def replace_inline_notes(html: str, notes_map: dict[int, str]) -> str:
     soup = BeautifulSoup(html, "html.parser")
