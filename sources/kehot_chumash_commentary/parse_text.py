@@ -69,25 +69,57 @@ def insert_style(html_text):
         nb_span.replaceWithChildren()
     result = str(soup) .replace('&lt;', '<').replace('&gt;', '>')
     return result
-
+#
+# def extract_notes_dict(html: str) -> dict[int, str]:
+#     soup = BeautifulSoup(html, "html.parser")
+#     notes: dict[int, str] = {}
+#
+#     for p in soup.find_all("p", class_="FNote-Eng"):
+#         for span in p.find_all("span", class_="FNN-Peshat"):
+#             m = re.match(r"(\d+)\.?\s*", span.get_text())
+#             if not m:
+#                 continue
+#             num = int(m.group(1))
+#             # Collect all sibling content until the next note span
+#             parts = []
+#             for sib in span.next_siblings:
+#                 if sib.name == "span" and "FNN-Peshat" in sib.get("class", []):
+#                     break
+#                 parts.append(getattr(sib, "get_text", lambda: str(sib))())
+#             text = " ".join(" ".join(parts).split())
+#             notes[num] = text
+#
+#     return notes
 def extract_notes_dict(html: str) -> dict[int, str]:
-    soup = BeautifulSoup(html, "html.parser")
+    soup   = BeautifulSoup(html, "html.parser")
     notes: dict[int, str] = {}
 
+    # iterate over each paragraph that holds English footnotes
     for p in soup.find_all("p", class_="FNote-Eng"):
         for span in p.find_all("span", class_="FNN-Peshat"):
-            m = re.match(r"(\d+)\.?\s*", span.get_text())
+            # 1. Footnote number
+            m = re.match(r"(\d+)\.?\s*", span.get_text(strip=True))
             if not m:
                 continue
             num = int(m.group(1))
-            # Collect all sibling content until the next note span
-            parts = []
+
+            # 2. Collect every sibling up to—but not including—the next marker span
+            fragment_bits: list[str] = []
             for sib in span.next_siblings:
-                if sib.name == "span" and "FNN-Peshat" in sib.get("class", []):
+                if isinstance(sib, Tag) and sib.name == "span" and "FNN-Peshat" in sib.get("class", []):
                     break
-                parts.append(getattr(sib, "get_text", lambda: str(sib))())
-            text = " ".join(" ".join(parts).split())
-            notes[num] = text
+                fragment_bits.append(str(sib))
+
+            fragment_html = "".join(fragment_bits).strip()
+
+            # 3. Convert all <span> → <i> and drop their class attributes
+            frag_soup = BeautifulSoup(fragment_html, "html.parser")
+            for sp in frag_soup.find_all("span"):
+                sp.name = "i"                   # change tag name :contentReference[oaicite:0]{index=0}
+                sp.attrs.pop("class", None)     # remove classes :contentReference[oaicite:1]{index=1}
+
+            # 4. Store cleaned HTML string (keeps inline markup)
+            notes[num] = str(frag_soup)
 
     return notes
 
