@@ -67,6 +67,8 @@ def insert_style(html_text):
         p.replaceWithChildren()
     for nb_span in soup.find_all('span', class_='nb'):
         nb_span.replaceWithChildren()
+    for verse_num_span in soup.find_all('span', class_='Chasidic-PN'):
+        verse_num_span.replaceWithChildren()
     result = str(soup) .replace('&lt;', '<').replace('&gt;', '>')
     return result
 #
