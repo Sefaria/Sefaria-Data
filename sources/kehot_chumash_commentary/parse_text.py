@@ -28,7 +28,7 @@ def ingest_version(map_text):
                        "language": "en",
                        "chapter": chapter,
                        # "digitizedBySefaria": True,
-                       "license": "PD",
+                       "license": "Copyright: Chabad House Publications",
                        "status": "locked"
                        })
 
@@ -68,7 +68,7 @@ def insert_style(html_text):
     for nb_span in soup.find_all('span', class_='nb'):
         nb_span.replaceWithChildren()
     for verse_num_span in soup.find_all('span', class_='Chasidic-PN'):
-        verse_num_span.replaceWithChildren()
+        verse_num_span.decompose()
     result = str(soup) .replace('&lt;', '<').replace('&gt;', '>')
     return result
 #
