@@ -107,20 +107,7 @@ def sample_hebrew_cited_refs(n: int = 5, max_chars: Optional[int] = 4000) -> Lis
         except Exception:
             continue
     return random.sample(all_refs, min(n, len(all_refs)))
-import django
-django.setup()
 
-import random
-from typing import List, Optional
-from sefaria.model import Ref, IndexSet, TextChunk, library
-
-
-import django
-django.setup()
-
-import random
-from typing import Iterable, List, Optional
-from sefaria.model import Ref, IndexSet, TextChunk, library
 
 
 # ---------- basic iterators ----------
@@ -222,13 +209,23 @@ def sample_hebrew_cited_refs(
 
 
 
-
 if __name__ == "__main__":
-    eng = sample_english_cited_refs(10, pool_size=8000)
-    heb = sample_hebrew_cited_refs(10, pool_size=8000)
+    from ibid_llm_marker import *
 
-    print("EN:", eng)
-    print("HE:", heb)
+    # out = analyze_segment_llm_marker_only("Abraham_Cohen_Footnotes_to_the_English_Translation_of_Masechet_Berakhot.48b.6", lang="en")
+    # print(out["has_any_ibid"], out["ibid_citations"])
+
+    # rows = analyze_ref_for_ibid_and_resolution("Abraham_Cohen_Footnotes_to_the_English_Translation_of_Masechet_Berakhot.48b.6", lang="en")
+    # llm_ibids, linker_ibids = split_llm_vs_linker(rows)
+    cands = sample_hebrew_cited_refs(100, pool_size=100000)
+    yes, no = batch_refs_llm_marker_only(cands, lang="he")
+    print("with ibid:", len(yes), "without:", len(no))
+
+    # eng = sample_english_cited_refs(10, pool_size=200)
+    # heb = sample_hebrew_cited_refs(10, pool_size=200)
+    #
+    # print("EN:", eng)
+    # print("HE:", heb)
 
     # for ref in sampled_refs:
     #     print(ref)
