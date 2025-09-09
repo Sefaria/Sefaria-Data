@@ -53,7 +53,9 @@ RESOLVED_JSONL_PATH   = "resolved_ibids.jsonl"
 
 set_llm_cache(SQLiteCache(database_path=".langchain_cache.sqlite"))
 
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")  # swap to gpt-4.1 / gpt-4o if you prefer
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")  # swap to gpt-4.1 / gpt-4o if you prefer
+
+random.seed(613)
 
 # =========================
 # DATA STRUCTS
@@ -194,8 +196,24 @@ def sample_segment_refs(
         max_chars=max_chars,
     )
     if DEBUG_MODE and lang == "en":
-        versions = VersionSet({"language": lang, "title": {"$in": ["Abraham Cohen Footnotes to the English Translation of Masechet Berakhot"]}}).array()
-
+        # versions = VersionSet({"language": lang, "title": {"$in": ["Abraham Cohen Footnotes to the English Translation of Masechet Berakhot"]}}).array()
+        versions = VersionSet({
+            "language": "en",
+            "title": {"$in": [
+                "English Explanation of Mishnah Keritot",
+                "English Explanation of Mishnah Kelim",
+                "English Explanation of Mishnah Parah",
+                "English Explanation of Mishnah Nazir",
+                "English Explanation of Mishnah Sotah",
+                "English Explanation of Mishnah Niddah",
+                "English Explanation of Mishnah Oholot",
+                "English Explanation of Mishnah Negaim",
+                "English Explanation of Mishnah Zavim",
+                "English Explanation of Mishnah Tevul Yom",
+                "English Explanation of Mishnah Yadayim",
+                "English Explanation of Mishnah Uktzin"
+            ]}
+        }).array()
     for version in tqdm(versions, desc=f"Walk versions ({lang})"):
         if bracket_suffix.search(getattr(version, "versionTitle", "") or ""):
             continue
@@ -320,12 +338,30 @@ def llm_classify_ibids(annotated_segment_text: str, lang: str = "en") -> Set[str
 
     system_msg = (
         "You are a rigorous citations expert. "
-        "The user will provide a short passage where citations are wrapped as <ref id=\"rN\">…</ref>. "
-        "A citation is an IBID if it refers to the immediately preceding citation source; "
-        "examples of ibid markers include “ibid.” in English or “שם” in Hebrew (including repeated forms like “שם שם”). "
-        "Your task: return STRICT JSON with a single key 'ibid_ids' listing only the ids (e.g., r1, r3) that are ibid. "
-        "Do not include explanations, markdown, or extra keys. JSON only."
+        "The user will provide a passage where citations are wrapped as <ref id=\"rN\">…</ref>. "
+
+        "Definition of IBID: A citation is IBID if resolving it requires looking at the prior citation or the surrounding context, "
+        "with indicators such as 'ibid', 'IBID', 'שם', 'שם שם', etc. "
+        "IBID does not need to appear immediately after the prior citation. "
+
+        "NOT IBID cases: "
+        "- If the citation names a full, self-contained source (e.g., book + chapter/verse), it is NOT IBID. "
+        "- If the citation refers to a book or source unlikely to appear in a classical Jewish text library, it is NOT IBID. "
+        "- If the reference is actually an entity (person, place, or concept) rather than a bibliographic source, it is NOT IBID. " 
+        "This includes names like 'Moreh', 'Shechem', 'Torah', 'Midrash', etc., even if they repeat across multiple citations."
+        "Repeated place names or entities are NEVER IBID."
+
+        "Examples: "
+        "- 'Has not Rabbi Akiva your student brought a text from the Torah according to which it is unclean…' "
+        "→ NOT IBID (too general, not a specific reference). "
+        "- '…as it says, \"You shall not bring the hire of a harlot or the price of a dog…\" (Deuteronomy 23:19)' "
+        "→ NOT IBID (specific, self-contained citation). "
+
+        "Your task: Return STRICT JSON with a single key 'ibid_ids'. "
+        "Its value must be a list of citation ids (e.g., ['r1','r3']) that are IBID. "
+        "Do not include explanations, markdown, or extra keys. Return JSON only."
     )
+
     user_msg = f"Language: {lang}\n\nTEXT:\n---\n{annotated_segment_text}\n---\n\nReturn JSON only: {{\"ibid_ids\": [\"r1\",\"r3\"]}}"
 
     prompt = ChatPromptTemplate.from_messages([
@@ -615,33 +651,128 @@ def sample_hebrew_cited_refs(n: int = 5, *, pool_size: int = 5000, max_chars: Op
             if len(hits) >= n:
                 break
     return hits
+import csv
+
+def find_ibids_and_save_csv(
+    lang: str,
+    *,
+    target_unresolved_count: int = 50,
+    sample_pool: int = 5000,
+    max_segment_chars: Optional[int] = 4000,
+    out_csv: str = "ibids_results.csv",
+) -> None:
+    """
+    - Samples `sample_pool` segments.
+    - Detects citations (GPU).
+    - Tags + asks LLM for ibids.
+    - For each ibid, builds left-context, runs linker.
+    - Saves ALL ibids (resolved + unresolved) to a single CSV file.
+    - Stops once it has collected at least `target_unresolved_count` unresolved.
+    """
+
+    pool = sample_segment_refs(lang=lang, sample_size=sample_pool, max_chars=max_segment_chars)
+    random.shuffle(pool)
+
+    # open CSV writer
+    fieldnames = [
+        "segment_ref", "lang", "segment_text",
+        "citation_spans", "citation_texts",
+        "ibid_surface", "context_text", "context_first_ref",
+        "linker_found", "resolved_ref", "linker_debug"
+    ]
+    with open(out_csv, "w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+
+        unresolved_count = 0
+
+        for seg_ref in tqdm(pool, desc=f"Scanning {lang} segments"):
+            seg_text = _safe_textchunk(seg_ref, lang)
+            if not seg_text:
+                continue
+
+            # GPU detect
+            raw_cits = gpu_detect_citations_single(seg_text, lang=lang)
+            spans: List[Tuple[int, int]] = []
+            texts: List[str] = []
+            for c in raw_cits:
+                s, e = c.get("start"), c.get("end")
+                if isinstance(s, int) and isinstance(e, int) and 0 <= s < e <= len(seg_text):
+                    spans.append((s, e))
+                    texts.append(c.get("text") or seg_text[s:e])
+            if not spans:
+                continue
+
+            annotated, ann_spans = annotate_with_ref_tags(seg_text, spans)
+            if "Just as she is prohibited to" in seg_text:
+                halt = True
+            ibid_ids = llm_classify_ibids(annotated, lang=lang)
+            if not ibid_ids:
+                continue
+
+            for cs in ann_spans:
+                if cs.cid not in ibid_ids:
+                    continue
+
+                context_text, first_ctx_ref, new_start, words_before = build_left_context(
+                    seg_ref, lang, cs.start, min_left_words=MIN_LEFT_CONTEXT_WORDS
+                )
+                new_end = new_start + (cs.end - cs.start)
+
+                ok, debug = linker_resolves_span(context_text, lang, new_start, new_end)
+                resolved_ref = None
+                if ok and debug.get("hit_item"):
+                    resolved_ref = debug["hit_item"].get("ref")
+
+                writer.writerow({
+                    "segment_ref": str(seg_ref),
+                    "lang": lang,
+                    "segment_text": seg_text,
+                    "citation_spans": json.dumps(spans, ensure_ascii=False),
+                    "citation_texts": json.dumps(texts, ensure_ascii=False),
+                    "ibid_surface": cs.text,
+                    "context_text": context_text,
+                    "context_first_ref": first_ctx_ref,
+                    "linker_found": ok,
+                    "resolved_ref": resolved_ref,
+                    "linker_debug": json.dumps(debug, ensure_ascii=False),
+                })
+
+                if not ok:
+                    unresolved_count += 1
+                    if unresolved_count >= target_unresolved_count:
+                        return
 
 
 # =========================
 # MAIN
 # =========================
 if __name__ == "__main__":
-    # Example: gather EN + HE unresolved ibids (and log ALL resolved too)
-    print("Starting EN pass...")
-    unen, ren = find_ibids_and_save(
-        "en",
-        target_unresolved_count=20,
-        sample_pool=10_000,
-        max_segment_chars=1000000,
-        unresolved_jsonl=UNRESOLVED_JSONL_PATH,
-        resolved_jsonl=RESOLVED_JSONL_PATH,
-    )
-    print(f"EN -> unresolved: {len(unen)}, resolved (logged): {len(ren)}")
+    # # Example: gather EN + HE unresolved ibids (and log ALL resolved too)
+    # print("Starting EN pass...")
+    # unen, ren = find_ibids_and_save(
+    #     "en",
+    #     target_unresolved_count=20,
+    #     sample_pool=10_000,
+    #     max_segment_chars=1000000,
+    #     unresolved_jsonl=UNRESOLVED_JSONL_PATH,
+    #     resolved_jsonl=RESOLVED_JSONL_PATH,
+    # )
+    # print(f"EN -> unresolved: {len(unen)}, resolved (logged): {len(ren)}")
+    #
+    # print("Starting HE pass...")
+    # unhe, rhe = find_ibids_and_save(
+    #     "he",
+    #     target_unresolved_count=20,
+    #     sample_pool=2000,
+    #     max_segment_chars=4000,
+    #     unresolved_jsonl=UNRESOLVED_JSONL_PATH,
+    #     resolved_jsonl=RESOLVED_JSONL_PATH,
+    # )
+    # print(f"HE -> unresolved: {len(unhe)}, resolved (logged): {len(rhe)}")
+    #
+    # print(f"Saved unresolved to {UNRESOLVED_JSONL_PATH} and resolved to {RESOLVED_JSONL_PATH}")
+    find_ibids_and_save_csv("en", target_unresolved_count=20, sample_pool=2000, out_csv="ibids_en.csv")
+    # find_ibids_and_save_csv("he", target_unresolved_count=20, sample_pool=2000, out_csv="ibids_he.csv")
+    print("Done! Saved CSVs.")
 
-    print("Starting HE pass...")
-    unhe, rhe = find_ibids_and_save(
-        "he",
-        target_unresolved_count=20,
-        sample_pool=2000,
-        max_segment_chars=4000,
-        unresolved_jsonl=UNRESOLVED_JSONL_PATH,
-        resolved_jsonl=RESOLVED_JSONL_PATH,
-    )
-    print(f"HE -> unresolved: {len(unhe)}, resolved (logged): {len(rhe)}")
-
-    print(f"Saved unresolved to {UNRESOLVED_JSONL_PATH} and resolved to {RESOLVED_JSONL_PATH}")
