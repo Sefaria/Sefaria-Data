@@ -216,6 +216,14 @@ def sample_segment_refs(
                 "Ramban on Genesis","Ramban on Exodus", "Ramban on Leviticus", "Ramban on Numbers", "Ramban on Deuteronomy"
             ]}
         }).array()
+
+    if DEBUG_MODE and lang == "he":
+        versions = VersionSet({
+            "language": "he",
+            "title": {"$regex": "Kovetz Al Yad HaChazakah", "$options": "i"}
+        }).array()
+
+
     for version in tqdm(versions, desc=f"Walk versions ({lang})"):
         if bracket_suffix.search(getattr(version, "versionTitle", "") or ""):
             continue
@@ -366,6 +374,8 @@ def llm_classify_ibids(annotated_segment_text: str, lang: str = "en") -> Set[str
         "→ NOT IBID (explicit commentary citation that stands on its own, no context required). "
         "- 'The remaining four mishnayoth all contain midrashim… the bet midrash… the midrash which began yesterday’s mishnah' "
         "→ NOT IBID (the word 'midrash/midrashim' refers to a genre or institution, not a specific citation). "
+        "- 'ובפי\"ז מהל׳ מאכלות אסורות הל׳ כ' "
+        "→ NOT IBID (full, self-contained halakhic reference with book name). "
 
         "Examples (IBID): "
         "- Hebrew 'שם' ('ibid') after a Genesis reference → IBID (ambiguous, needs prior context). "
@@ -382,6 +392,8 @@ def llm_classify_ibids(annotated_segment_text: str, lang: str = "en") -> Set[str
         "- Numeric shorthand like 'יג א - ב' after Deuteronomy 1:20 → IBID (depends on context). "
         "- 'Berakhot, folio 2' after Rashi on Berakhot 3a → IBID (context not needed when explicit match exists). "
         "- 'Ramban, chapter 16, verse 4' after Exodus 16:32 → IBID (commentary ibid). "
+        "- 'בפכ\"ד הל׳ י\"א' "
+        "→ IBID (shorthand halakhic references that require context to resolve). "
         "- 'Job' when prior ref was Job 1:1 → IBID (context narrows to Job). "
 
         "Your task: Return STRICT JSON with a single key 'ibid_ids'. "
@@ -731,8 +743,6 @@ def find_ibids_and_save_csv(
                 continue
 
             annotated, ann_spans = annotate_with_ref_tags(seg_text, spans)
-            if "Just as she is prohibited to" in seg_text:
-                halt = True
             ibid_ids = llm_classify_ibids(annotated, lang=lang)
             if not ibid_ids:
                 continue
@@ -799,7 +809,7 @@ if __name__ == "__main__":
     # print(f"HE -> unresolved: {len(unhe)}, resolved (logged): {len(rhe)}")
     #
     # print(f"Saved unresolved to {UNRESOLVED_JSONL_PATH} and resolved to {RESOLVED_JSONL_PATH}")
-    find_ibids_and_save_csv("en", target_unresolved_count=20, sample_pool=2000, out_csv="ibids_en.csv")
-    # find_ibids_and_save_csv("he", target_unresolved_count=20, sample_pool=2000, out_csv="ibids_he.csv")
+    # find_ibids_and_save_csv("en", target_unresolved_count=20, sample_pool=2000, out_csv="ibids_en.csv")
+    find_ibids_and_save_csv("he", target_unresolved_count=20, sample_pool=2000, out_csv="ibids_he.csv")
     print("Done! Saved CSVs.")
 
