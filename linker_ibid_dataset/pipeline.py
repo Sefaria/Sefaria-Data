@@ -34,6 +34,7 @@ from sefaria.system.exceptions import InputError
 
 # ---------- LangChain/OpenAI ----------
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.globals import set_llm_cache
 from langchain.cache import InMemoryCache, SQLiteCache
@@ -200,18 +201,19 @@ def sample_segment_refs(
         versions = VersionSet({
             "language": "en",
             "title": {"$in": [
-                "English Explanation of Mishnah Keritot",
-                "English Explanation of Mishnah Kelim",
-                "English Explanation of Mishnah Parah",
-                "English Explanation of Mishnah Nazir",
-                "English Explanation of Mishnah Sotah",
-                "English Explanation of Mishnah Niddah",
-                "English Explanation of Mishnah Oholot",
-                "English Explanation of Mishnah Negaim",
-                "English Explanation of Mishnah Zavim",
-                "English Explanation of Mishnah Tevul Yom",
-                "English Explanation of Mishnah Yadayim",
-                "English Explanation of Mishnah Uktzin"
+                # "English Explanation of Mishnah Keritot",
+                # "English Explanation of Mishnah Kelim",
+                # "English Explanation of Mishnah Parah",
+                # "English Explanation of Mishnah Nazir",
+                # "English Explanation of Mishnah Sotah",
+                # "English Explanation of Mishnah Niddah",
+                # "English Explanation of Mishnah Oholot",
+                # "English Explanation of Mishnah Negaim",
+                # "English Explanation of Mishnah Zavim",
+                # "English Explanation of Mishnah Tevul Yom",
+                # "English Explanation of Mishnah Yadayim",
+                # "English Explanation of Mishnah Uktzin"
+                "Ramban on Genesis","Ramban on Exodus", "Ramban on Leviticus", "Ramban on Numbers", "Ramban on Deuteronomy"
             ]}
         }).array()
     for version in tqdm(versions, desc=f"Walk versions ({lang})"):
@@ -320,6 +322,8 @@ def annotate_with_ref_tags(text: str, spans: List[Tuple[int, int]]) -> Tuple[str
 
 # ---- LLM client (lazy singleton) ----
 __LLM_CLIENT = ChatOpenAI(model=OPENAI_MODEL, temperature=0)
+__LLM_CLIENT = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+
 def _get_llm():
     global __LLM_CLIENT
     if __LLM_CLIENT is None:
@@ -347,15 +351,38 @@ def llm_classify_ibids(annotated_segment_text: str, lang: str = "en") -> Set[str
         "NOT IBID cases: "
         "- If the citation names a full, self-contained source (e.g., book + chapter/verse), it is NOT IBID. "
         "- If the citation refers to a book or source unlikely to appear in a classical Jewish text library, it is NOT IBID. "
-        "- If the reference is actually an entity (person, place, or concept) rather than a bibliographic source, it is NOT IBID. " 
-        "This includes names like 'Moreh', 'Shechem', 'Torah', 'Midrash', etc., even if they repeat across multiple citations."
-        "Repeated place names or entities are NEVER IBID."
+        "- If the reference is actually an entity (person, place, or concept) rather than a bibliographic source, it is NOT IBID. "
+        "This includes names like 'Moreh', 'Shechem', 'Torah', 'Midrash', 'Writings', etc., even if they repeat across multiple citations. "
+        "Repeated place names or entities are NEVER IBID. "
 
-        "Examples: "
+        "Examples (NOT IBID): "
         "- 'Has not Rabbi Akiva your student brought a text from the Torah according to which it is unclean…' "
         "→ NOT IBID (too general, not a specific reference). "
         "- '…as it says, \"You shall not bring the hire of a harlot or the price of a dog…\" (Deuteronomy 23:19)' "
         "→ NOT IBID (specific, self-contained citation). "
+        "- 'When Israel crossed the Jordan… near the terebinths of Moreh… (Deuteronomy 11:30)' "
+        "→ NOT IBID (the citation Deut. 11:30 is complete and can be understood without prior context, even though 'Moreh' is repeated). "
+        "- 'Rashi on Genesis 1:1' "
+        "→ NOT IBID (explicit commentary citation that stands on its own, no context required). "
+        "- 'The remaining four mishnayoth all contain midrashim… the bet midrash… the midrash which began yesterday’s mishnah' "
+        "→ NOT IBID (the word 'midrash/midrashim' refers to a genre or institution, not a specific citation). "
+
+        "Examples (IBID): "
+        "- Hebrew 'שם' ('ibid') after a Genesis reference → IBID (ambiguous, needs prior context). "
+        "- English 'Ibid' after Exodus 1:7 → IBID (ambiguous, could mean Exodus 1:12 or Exodus 12). "
+        "- Hebrew 'ב' (verse 2) after Genesis 1 → IBID (ambiguous, could be Genesis 1:2 or Genesis 2). "
+        "- Multiple chapter/verse markers like 'ב' and 'ז' with prior refs Genesis 1:3 and Exodus 1:3 → IBID (ambiguous across contexts). "
+        "- 'Bereshit … שם' after prior refs → IBID (points back to Genesis context). "
+        "- Multiple 'שם' in sequence like 'שם', 'שם', 'ב' → IBID (chain of ibids). "
+        "- A bare chapter reference like 'Chapter 4' after Genesis 1 → IBID (needs context to resolve). "
+        "- Page or folio references like 'דף כ' (Folio 20) after Berakhot/Shabbat → IBID (depends on prior tractate context). "
+        "- Tosafot, Rashi, Ramban, Arukh HaShulchan with 'שם' → IBID (explicit ibid usage in commentaries). "
+        "- A prefixed phrase like 'שבפרק ד' (in Chapter 4) after Genesis 1 → IBID (needs context). "
+        "- 'Verses 40–45' after Deuteronomy 14 → IBID (continuation from context). "
+        "- Numeric shorthand like 'יג א - ב' after Deuteronomy 1:20 → IBID (depends on context). "
+        "- 'Berakhot, folio 2' after Rashi on Berakhot 3a → IBID (context not needed when explicit match exists). "
+        "- 'Ramban, chapter 16, verse 4' after Exodus 16:32 → IBID (commentary ibid). "
+        "- 'Job' when prior ref was Job 1:1 → IBID (context narrows to Job). "
 
         "Your task: Return STRICT JSON with a single key 'ibid_ids'. "
         "Its value must be a list of citation ids (e.g., ['r1','r3']) that are IBID. "
