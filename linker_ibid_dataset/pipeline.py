@@ -220,7 +220,8 @@ def sample_segment_refs(
     if DEBUG_MODE and lang == "he":
         versions = VersionSet({
             "language": "he",
-            "title": {"$regex": "Kovetz Al Yad HaChazakah", "$options": "i"}
+            # "title": {"$regex": "Kovetz Al Yad HaChazakah", "$options": "i"},
+            "title": {"$regex": "Mishnah Berurah", "$options": "i"}
         }).array()
 
 
@@ -362,6 +363,7 @@ def llm_classify_ibids(annotated_segment_text: str, lang: str = "en") -> Set[str
         "- If the reference is actually an entity (person, place, or concept) rather than a bibliographic source, it is NOT IBID. "
         "This includes names like 'Moreh', 'Shechem', 'Torah', 'Midrash', 'Writings', etc., even if they repeat across multiple citations. "
         "Repeated place names or entities are NEVER IBID. "
+        "- If the reference is actually a segment number or ordinal marker (e.g., '(טו) מצה שלישית …'), it is NOT IBID. "
 
         "Examples (NOT IBID): "
         "- 'Has not Rabbi Akiva your student brought a text from the Torah according to which it is unclean…' "
@@ -376,6 +378,8 @@ def llm_classify_ibids(annotated_segment_text: str, lang: str = "en") -> Set[str
         "→ NOT IBID (the word 'midrash/midrashim' refers to a genre or institution, not a specific citation). "
         "- 'ובפי\"ז מהל׳ מאכלות אסורות הל׳ כ' "
         "→ NOT IBID (full, self-contained halakhic reference with book name). "
+        "- '(טו) מצה שלישית – כדי לקיים מצוה בשלשתן' "
+        "→ NOT IBID (the number is a segment marker, not a citation). if the segment starts with a marker, it is NOT IBID. "
 
         "Examples (IBID): "
         "- Hebrew 'שם' ('ibid') after a Genesis reference → IBID (ambiguous, needs prior context). "
@@ -392,7 +396,7 @@ def llm_classify_ibids(annotated_segment_text: str, lang: str = "en") -> Set[str
         "- Numeric shorthand like 'יג א - ב' after Deuteronomy 1:20 → IBID (depends on context). "
         "- 'Berakhot, folio 2' after Rashi on Berakhot 3a → IBID (context not needed when explicit match exists). "
         "- 'Ramban, chapter 16, verse 4' after Exodus 16:32 → IBID (commentary ibid). "
-        "- 'בפכ\"ד הל׳ י\"א' "
+        "- 'בפכ\"ד הל׳ י\"א ובפי\"ז' "
         "→ IBID (shorthand halakhic references that require context to resolve). "
         "- 'Job' when prior ref was Job 1:1 → IBID (context narrows to Job). "
 
@@ -810,6 +814,6 @@ if __name__ == "__main__":
     #
     # print(f"Saved unresolved to {UNRESOLVED_JSONL_PATH} and resolved to {RESOLVED_JSONL_PATH}")
     # find_ibids_and_save_csv("en", target_unresolved_count=20, sample_pool=2000, out_csv="ibids_en.csv")
-    find_ibids_and_save_csv("he", target_unresolved_count=20, sample_pool=2000, out_csv="ibids_he.csv")
+    find_ibids_and_save_csv("he", target_unresolved_count=50, sample_pool=5000, out_csv="ibids_he.csv")
     print("Done! Saved CSVs.")
 
