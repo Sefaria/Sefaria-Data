@@ -719,6 +719,8 @@ def find_ibids_and_save_csv(
     # open CSV writer
     fieldnames = [
         "segment_ref", "lang", "segment_text",
+        "ibid_start_in_segment", "ibid_end_in_segment",
+        "ibid_start_in_context", "ibid_end_in_context",
         "citation_spans", "citation_texts",
         "ibid_surface", "context_text", "context_first_ref",
         "linker_found", "resolved_ref", "linker_debug"
@@ -772,6 +774,10 @@ def find_ibids_and_save_csv(
                     "citation_spans": json.dumps(spans, ensure_ascii=False),
                     "citation_texts": json.dumps(texts, ensure_ascii=False),
                     "ibid_surface": cs.text,
+                    "ibid_start_in_segment": cs.start,
+                    "ibid_end_in_segment": cs.end,
+                    "ibid_start_in_context": new_start,
+                    "ibid_end_in_context": new_end,
                     "context_text": context_text,
                     "context_first_ref": first_ctx_ref,
                     "linker_found": ok,
