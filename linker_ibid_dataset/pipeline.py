@@ -42,7 +42,7 @@ from langchain.cache import InMemoryCache, SQLiteCache
 # =========================
 # CONFIG
 # =========================
-DEBUG_MODE = True
+DEBUG_MODE = False
 GPU_BASE_URL = os.getenv("CITATION_GPU_URL", "http://localhost:5000")
 GPU_TIMEOUT = 30
 GPU_RETRIES = 2
@@ -819,7 +819,7 @@ if __name__ == "__main__":
     # print(f"HE -> unresolved: {len(unhe)}, resolved (logged): {len(rhe)}")
     #
     # print(f"Saved unresolved to {UNRESOLVED_JSONL_PATH} and resolved to {RESOLVED_JSONL_PATH}")
-    # find_ibids_and_save_csv("en", target_unresolved_count=20, sample_pool=2000, out_csv="ibids_en.csv")
-    find_ibids_and_save_csv("he", target_unresolved_count=50, sample_pool=5000, out_csv="ibids_he.csv")
+    find_ibids_and_save_csv("en", target_unresolved_count=1_000, sample_pool=1_000*100, out_csv="ibids_en.csv")
+    # find_ibids_and_save_csv("he", target_unresolved_count=1_000, sample_pool=1_000*100, out_csv="ibids_he.csv")
     print("Done! Saved CSVs.")
 
