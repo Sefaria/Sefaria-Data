@@ -38,6 +38,8 @@ from langchain.cache import SQLiteCache
 from langchain.globals import set_llm_cache
 import numpy as np
 from tqdm.auto import tqdm
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import SystemMessage, HumanMessage
 
 set_llm_cache(SQLiteCache(database_path=".langchain_cache.sqlite"))
 
@@ -45,7 +47,7 @@ set_llm_cache(SQLiteCache(database_path=".langchain_cache.sqlite"))
 # ==============================
 # CONFIG — EDIT THESE VALUES
 # ==============================
-base_csv_file_name = "ibids_en"
+base_csv_file_name = "ibids_he"
 CONFIG = {
     # IO
     "input_path": f"{base_csv_file_name}_filtered.csv",
@@ -95,7 +97,7 @@ CONFIG = {
     # Pairwise comparison budget & selection
     "seed": 1337,
     "max_items": 300,  # set 0 for all rows; otherwise cap to this many (helps cost control)
-    "total_comparisons": 1500,  # total LLM pairwise matches to run
+    "total_comparisons": 2500,  # total LLM pairwise matches to run
     "batch_pairs": 60,  # pairs per round (processed in parallel)
     "candidate_pool": 800,  # sample this many random pairs per round, score by UV, take top-k=batch_pairs
     "max_workers": 5,  # parallel Anthropic calls (respect rate limits!)
@@ -114,17 +116,14 @@ def _truthy(val: Optional[str]) -> bool:
 # ==============================
 # Anthropic client
 # ==============================
-def get_anthropic_client():
-    try:
-        import anthropic
-    except ImportError:
-        print("ERROR: anthropic package not found. Install with: pip install anthropic", file=sys.stderr)
-        sys.exit(1)
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("ERROR: ANTHROPIC_API_KEY environment variable not set.", file=sys.stderr)
-        sys.exit(1)
-    return anthropic.Anthropic(api_key=api_key)
+def get_langchain_llm(cfg):
+    # Picks up ANTHROPIC_API_KEY from env (same as before)
+    return ChatAnthropic(
+        model=cfg["anthropic_model"],
+        temperature=cfg["temperature"],
+        max_tokens=cfg["max_output_tokens"],
+        # LangChain handles retries internally; you already do your own backoff below.
+    )
 
 
 # ==============================
@@ -216,27 +215,32 @@ def build_pair_prompt(
     )
 
 
-def ask_claude_pairwise(client, model, temperature, max_tokens, timeout, retries, backoff, system_prompt, user_msg) -> \
-Tuple[int, str]:
+def ask_claude_pairwise(
+    client,            # now the LangChain LLM (ChatAnthropic), name kept to minimize churn
+    model,             # unused, kept for compatibility
+    temperature,
+    max_tokens,
+    timeout,
+    retries,
+    backoff,
+    system_prompt,
+    user_msg
+) -> Tuple[int, str]:
     """
     Returns (y, reason) where:
       y = 1 if A beats B
       y = 0 if B beats A
     """
-    import anthropic
     last_err = None
     for attempt in range(1, retries + 1):
         try:
-            resp = client.messages.create(
-                model=model,
-                system=system_prompt,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                messages=[{"role": "user", "content": user_msg}],
-                timeout=timeout,
-            )
-            parts = resp.content or []
-            txt = "".join([p.text for p in parts if getattr(p, "type", None) == "text"]).strip()
+            # LangChain-style messages
+            msgs = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=user_msg),
+            ]
+            resp = client.invoke(msgs)
+            txt = (resp.content or "").strip()
             data = json.loads(txt)
             choice = str(data.get("choice", "")).strip().upper()
             reason = str(data.get("reason", "") or "")
@@ -246,7 +250,7 @@ Tuple[int, str]:
         except Exception as e:
             last_err = e
             time.sleep(backoff ** (attempt - 1))
-    # On failure, default to a tie-break towards B (arbitrary but consistent)
+    # On failure, default to B
     return 0, f"LLM error: {last_err}"
 
 
@@ -394,7 +398,7 @@ def run_parallel(items: List[Any], unit_func, max_workers: int, **tqdm_kwargs) -
 def main():
     cfg = CONFIG
     rng = random.Random(cfg["seed"])
-    client = get_anthropic_client()
+    llm = get_langchain_llm(cfg)
 
     # Load rows
     with open(cfg["input_path"], "r", newline="", encoding="utf-8") as fin:
@@ -469,7 +473,7 @@ def main():
         def unit_func(payload):
             a, b, user_msg = payload
             y, reason = ask_claude_pairwise(
-                client=client,
+                client=llm,
                 model=cfg["anthropic_model"],
                 temperature=cfg["temperature"],
                 max_tokens=cfg["max_output_tokens"],

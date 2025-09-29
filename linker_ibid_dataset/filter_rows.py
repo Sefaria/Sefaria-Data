@@ -1,15 +1,15 @@
 """
-Filter a CSV using Claude (Anthropic) with parallel requests.
+Filter a CSV using LangChain + Anthropic (Claude) with parallel requests.
 
 - Reads an input CSV
 - For each row, asks Claude if it's relevant to your filtering instruction
 - Writes ONLY relevant rows to an output CSV
 - Optionally writes rejected rows with a brief reason
 - Parallelized with ThreadPoolExecutor and a tqdm progress bar
-- All configuration is in CONFIG (no CLI args)
+- Uses LangChain cache (SQLite)
 
 Setup:
-  pip install anthropic tqdm
+  pip install langchain langchain-anthropic tqdm pydantic
 
 Env:
   export ANTHROPIC_API_KEY=your_key
@@ -24,16 +24,22 @@ import sys
 import time
 from typing import Any, Callable, Dict, List, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from langchain.cache import SQLiteCache
-from langchain.globals import set_llm_cache
 
 from tqdm.auto import tqdm
+
+# LangChain imports
+from pydantic import BaseModel, Field
+from langchain.cache import SQLiteCache
+from langchain.globals import set_llm_cache
+from langchain_anthropic import ChatAnthropic
+from langchain_core.prompts import ChatPromptTemplate
+
 set_llm_cache(SQLiteCache(database_path=".langchain_cache.sqlite"))
 
 # ==============================
 # CONFIG — EDIT THESE VALUES
 # ==============================
-basic_csv_file_name = "ibids_en"
+basic_csv_file_name = "ibids_he"
 CONFIG = {
     # Paths
     "input_path": f"{basic_csv_file_name}.csv",
@@ -46,10 +52,12 @@ CONFIG = {
         "Rows that only mention generic terms (e.g., 'the Gemara', 'the Torah', "
         "'the Midrash', or similar non-specific references) should NOT be treated as "
         "citations and must be marked NOT relevant.\n"
+        "However, if these terms refer to a very specific and well-defined quote from the Mishnah or Gemara, "
+        "then they might be considered relevant ibid citations.\n"
         "Remember: an ibid is by definition a citation that requires wider context "
         "to resolve — whether by reference to previous citations in the text, or by "
         "knowledge of the current book or work being discussed.\n"
-        "Even if the previous citation is not present in the current row or the provided context, it cold still be considered relevant ibid citation, "
+        "Even if the previous citation is not present in the current row or the provided context, it could still be considered a relevant ibid citation, "
         "as long as it likely refers to an actual reference from the library.\n"
         "If the ibid reference seems unclear, and you're not sure it refers to an actual citation in the library, "
         "mark NOT relevant as well."
@@ -57,12 +65,10 @@ CONFIG = {
 
     "model": "claude-3-5-sonnet-latest",
     "temperature": 0.0,
-    "max_output_tokens": 150,
-
+    "max_output_tokens": 150,   # LangChain passes this to Anthropic as max_tokens
     # Concurrency
     "max_workers": 5,
     "request_timeout": 60.0,
-
     # Retry policy
     "retries": 3,
     "backoff": 1.6,
@@ -73,52 +79,49 @@ You are a meticulous data triage assistant. You are given a piece of text in whi
 (the ibid marker) is wrapped in <IBID>…</IBID> tags. Decide if this substring is a valid ibid
 marker referring clearly to a citation in the surrounding context.
 
-Return STRICT JSON ONLY:
-{"relevant": true|false, "reason": "<brief reason>"}
+Return STRICT JSON ONLY with two keys:
+{{"relevant": true|false, "reason": "<brief reason>"}}
 """
 
+
 # ==============================
-# Anthropic client
+# Structured output schema
 # ==============================
-def get_anthropic_client():
-    try:
-        import anthropic
-    except ImportError:
-        print("ERROR: anthropic package not found. Install with: pip install anthropic", file=sys.stderr)
-        sys.exit(1)
+class FilterDecision(BaseModel):
+    relevant: bool = Field(description="Whether the row is relevant (explicit ibid) or not.")
+    reason: str = Field(description="A brief reason for the decision.")
+
+# ==============================
+# Build LangChain LLM & chain
+# ==============================
+def build_chain(cfg: Dict[str, Any]):
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         print("ERROR: ANTHROPIC_API_KEY environment variable not set.", file=sys.stderr)
         sys.exit(1)
-    return anthropic.Anthropic(api_key=api_key)
 
-# ==============================
-# LLM decision
-# ==============================
-def decide_with_claude(client, model, filtering_instruction, text_with_ibid,
-                       temperature, max_output_tokens, retries, backoff, request_timeout):
-    import anthropic
-    user_msg = f"{filtering_instruction}\n\nText:\n{text_with_ibid}"
-    last_err = None
-    for attempt in range(1, retries + 1):
-        try:
-            resp = client.messages.create(
-                model=model,
-                system=SYSTEM_PROMPT,
-                max_tokens=max_output_tokens,
-                temperature=temperature,
-                messages=[{"role": "user", "content": user_msg}],
-                timeout=request_timeout,
-            )
-            parts = resp.content or []
-            text_chunks = [p.text for p in parts if getattr(p, "type", None) == "text"]
-            txt = "".join(text_chunks).strip()
-            data = json.loads(txt)
-            return bool(data.get("relevant", False)), str(data.get("reason", "") or "")
-        except Exception as e:
-            last_err = e
-            time.sleep(backoff ** (attempt - 1))
-    return False, f"LLM error: {last_err}"
+    llm = ChatAnthropic(
+        model=cfg["model"],
+        temperature=cfg["temperature"],
+        max_tokens=cfg["max_output_tokens"],
+        timeout=cfg["request_timeout"],
+        max_retries=cfg["retries"],  # built-in retries
+        # You can also set default_headers or base_url if needed.
+    )
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", SYSTEM_PROMPT),
+            (
+                "human",
+                "{filtering_instruction}\n\nSource: {segment_ref}\nText:\n{text_with_ibid}",
+            ),
+        ]
+    )
+
+    # Ask Claude to produce the exact structured schema; LC handles parsing/repair.
+    chain = prompt | llm.with_structured_output(FilterDecision)
+    return chain
 
 # ==============================
 # Parallel helper
@@ -135,19 +138,42 @@ def run_parallel(items: List[Any], unit_func: Callable[[Any], Any], max_workers:
             for f in as_completed(futures):
                 try:
                     r = f.result()
-                except Exception:
+                except Exception as e:
                     r = None
                 if r is not None:
                     results.append(r)
     return results
 
 # ==============================
+# Per-row decision using chain
+# ==============================
+def decide_with_langchain(chain, cfg, filtering_instruction, text_with_ibid, segment_ref) -> Tuple[bool, str]:
+    # extra safety loop with manual backoff around the chain, in case you want more control:
+    last_err = None
+    for attempt in range(1, cfg["retries"] + 1):
+        try:
+            out: FilterDecision = chain.invoke(
+                {
+                    "filtering_instruction": filtering_instruction,
+                    "segment_ref": segment_ref,
+                    "text_with_ibid": text_with_ibid,
+                }
+            )
+            # out is already a validated Pydantic object
+            return bool(out.relevant), str(out.reason or "")
+        except Exception as e:
+            last_err = e
+            time.sleep(cfg["backoff"] ** (attempt - 1))
+    return False, f"LLM error: {last_err}"
+
+# ==============================
 # Main
 # ==============================
 def main():
     cfg = CONFIG
-    client = get_anthropic_client()
+    chain = build_chain(cfg)
 
+    # ---- Load CSV
     with open(cfg["input_path"], "r", newline="", encoding="utf-8") as fin:
         reader = csv.DictReader(fin)
         header = reader.fieldnames or []
@@ -156,30 +182,30 @@ def main():
             sys.exit(1)
         rows = list(reader)
 
+    # ---- Unit function for parallel execution
     def unit_func(row):
         ibid = row.get("ibid_surface", "")
         seg = row.get("segment_text", "")
+        segment_ref = row.get("segment_ref", "")
         tagged = seg.replace(ibid, f"<IBID>{ibid}</IBID>", 1) if ibid else seg
-        is_rel, reason = decide_with_claude(
-            client=client,
-            model=cfg["model"],
+        is_rel, reason = decide_with_langchain(
+            chain=chain,
+            cfg=cfg,
             filtering_instruction=cfg["filtering_prompt"],
             text_with_ibid=tagged,
-            temperature=cfg["temperature"],
-            max_output_tokens=cfg["max_output_tokens"],
-            retries=cfg["retries"],
-            backoff=cfg["backoff"],
-            request_timeout=cfg["request_timeout"],
+            segment_ref=segment_ref,
         )
         return (is_rel, reason, row)
 
+    # ---- Execute
     decisions = run_parallel(
         rows,
         unit_func=unit_func,
         max_workers=cfg["max_workers"],
-        desc="Filtering rows with Claude",
+        desc="Filtering rows with Claude (LangChain)",
     )
 
+    # ---- Split results
     relevant_rows, rejected_rows = [], []
     for is_rel, reason, row in decisions:
         if is_rel:
@@ -191,6 +217,7 @@ def main():
                 r["_llm_reason"] = reason
                 rejected_rows.append(r)
 
+    # ---- Write outputs
     with open(cfg["output_path"], "w", newline="", encoding="utf-8") as fout:
         writer = csv.DictWriter(fout, fieldnames=header)
         writer.writeheader()
