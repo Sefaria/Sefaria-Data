@@ -97,7 +97,7 @@ CONFIG = {
     # Pairwise comparison budget & selection
     "seed": 1337,
     "max_items": 300,  # set 0 for all rows; otherwise cap to this many (helps cost control)
-    "total_comparisons": 2500,  # total LLM pairwise matches to run
+    "total_comparisons": 3000,  # total LLM pairwise matches to run
     "batch_pairs": 60,  # pairs per round (processed in parallel)
     "candidate_pool": 800,  # sample this many random pairs per round, score by UV, take top-k=batch_pairs
     "max_workers": 5,  # parallel Anthropic calls (respect rate limits!)

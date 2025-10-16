@@ -328,6 +328,53 @@ def annotate_with_ref_tags(text: str, spans: List[Tuple[int, int]]) -> Tuple[str
     pieces.append(text[last:])
     return "".join(pieces), annotated
 
+def linker_detect_citations_single(text: str, lang: str) -> List[Dict[str, Any]]:
+    """
+    Uses Sefaria's linker to find citation spans inside `text`.
+    Returns: [{"start": int, "end": int, "text": str}, ...]
+    """
+    if not text or not text.strip():
+        return []
+
+    linker = library.get_linker(lang)
+    # Only ask for citations; ignore failures to keep it fast/noisy-free
+    doc = linker.link(text, type_filter="citation", with_failures=True)
+
+    spans: List[Tuple[int, int]] = []
+
+    # Prefer character offsets from the linker (resolved + unresolved)
+    refs = []
+    for attr in ("resolved_refs", "unresolved_refs"):
+        items = getattr(doc, attr, None)
+        if isinstance(items, list):
+            refs.extend(items)
+
+    for r in refs:
+        s = e = None
+        try:
+            # best source of truth: explicit char range
+            s, e = r.raw_entity.span.range
+        except Exception:
+            # fallback: try surface text search
+            surf = getattr(r.raw_entity, "span_text", None) or getattr(r.raw_entity, "text", None)
+            if surf:
+                s = text.find(surf)
+                if s >= 0:
+                    e = s + len(surf)
+
+        if isinstance(s, int) and isinstance(e, int) and 0 <= s < e <= len(text):
+            spans.append((s, e))
+
+    # Merge overlaps (keep longer) to avoid nested/duplicate tags downstream
+    spans = _merge_overlaps_keep_longer(spans)
+
+    # Return with surface text for convenience
+    out: List[Dict[str, Any]] = []
+    for s, e in spans:
+        out.append({"start": s, "end": e, "text": text[s:e]})
+    return out
+
+
 
 # ---- LLM client (lazy singleton) ----
 __LLM_CLIENT = ChatOpenAI(model=OPENAI_MODEL, temperature=0)
@@ -496,7 +543,7 @@ def build_left_context(
 # LINKER RESOLUTION CHECK
 # =========================
 def linker_resolves_span(
-    context_text: str, lang: str, target_start: int, target_end: int
+    context_text: str, lang: str, target_start: int, target_end: int, book_context_ref: Optional[str] = None
 ) -> Tuple[bool, Dict[str, Any]]:
     """
     Returns (resolved?, debug_info) where debug_info includes minimal JSONable details:
@@ -507,7 +554,7 @@ def linker_resolves_span(
       }
     """
     linker = library.get_linker(lang)
-    doc = linker.link(context_text, type_filter="citation", with_failures=False)
+    doc = linker.link(context_text, type_filter="citation", with_failures=False, book_context_ref=book_context_ref)
     dbg: Dict[str, Any] = {"resolved_count": None, "matched_by": None, "hit_item": None}
 
     resolved = getattr(doc, "resolved_refs", None)
@@ -582,7 +629,8 @@ def find_ibids_and_save(
                 continue
 
             # GPU detect (compliant)
-            raw_cits = gpu_detect_citations_single(seg_text, lang=lang)
+            # raw_cits = gpu_detect_citations_single(seg_text, lang=lang)
+            raw_cits = linker_detect_citations_single(seg_text, lang=lang)
             spans: List[Tuple[int, int]] = []
             for c in raw_cits:
                 s, e = c.get("start"), c.get("end")
@@ -737,7 +785,8 @@ def find_ibids_and_save_csv(
                 continue
 
             # GPU detect
-            raw_cits = gpu_detect_citations_single(seg_text, lang=lang)
+            # raw_cits = gpu_detect_citations_single(seg_text, lang=lang)
+            raw_cits = linker_detect_citations_single(seg_text, lang=lang)
             spans: List[Tuple[int, int]] = []
             texts: List[str] = []
             for c in raw_cits:
@@ -762,7 +811,7 @@ def find_ibids_and_save_csv(
                 )
                 new_end = new_start + (cs.end - cs.start)
 
-                ok, debug = linker_resolves_span(context_text, lang, new_start, new_end)
+                ok, debug = linker_resolves_span(context_text, lang, new_start, new_end, book_context_ref=seg_ref)
                 resolved_ref = None
                 if ok and debug.get("hit_item"):
                     resolved_ref = debug["hit_item"].get("ref")
