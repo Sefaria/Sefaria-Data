@@ -47,7 +47,7 @@ set_llm_cache(SQLiteCache(database_path=".langchain_cache.sqlite"))
 # ==============================
 # CONFIG — EDIT THESE VALUES
 # ==============================
-base_csv_file_name = "ibids_he"
+base_csv_file_name = "ibids_en"
 CONFIG = {
     # IO
     "input_path": f"{base_csv_file_name}_filtered.csv",
