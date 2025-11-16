@@ -6,9 +6,7 @@ from typing import Iterable
 
 from google.cloud import storage
 
-SEFARIA_PROJECT_ROOT = Path("/Users/yon/projects/Sefaria-Project")
-if str(SEFARIA_PROJECT_ROOT) not in sys.path:
-    sys.path.append(str(SEFARIA_PROJECT_ROOT))
+
 
 from sefaria.google_storage_manager import GoogleStorageManager  # noqa: E402
 
