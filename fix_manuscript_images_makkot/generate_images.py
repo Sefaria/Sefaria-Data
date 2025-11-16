@@ -10,9 +10,9 @@ from PIL import Image
 
 
 BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = BASE_DIR / "output_images"
-START_PAGE = 4  # PDF page number (1-indexed) where real content begins
-END_PAGE = None  # Optionally stop before the PDF ends
+OUTPUT_DIR = BASE_DIR / "makkot_vilna_images"
+START_PAGE = 3  # PDF page number (1-indexed) where real content begins
+END_PAGE = 48  # Optionally stop before the PDF ends
 DPI = 400
 THUMBNAIL_SIZE = (256, 278)
 TRACTATE_NAME = "Makkot"
