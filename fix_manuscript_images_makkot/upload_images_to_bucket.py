@@ -12,8 +12,9 @@ from sefaria.google_storage_manager import GoogleStorageManager  # noqa: E402
 
 
 BASE_DIR = Path(__file__).resolve().parent
-LOCAL_IMAGES_DIR = BASE_DIR / "makkot_vilna_images"
-BACKUP_DIR = BASE_DIR / "makkot_backup"
+TRACTATE_NAME = "Bekhorot"
+LOCAL_IMAGES_DIR = BASE_DIR / f"{TRACTATE_NAME.lower()}_vilna_images"
+BACKUP_DIR = BASE_DIR / f"{TRACTATE_NAME.lower()}_backup"
 BUCKET_NAME = "manuscripts.sefaria.org"
 REMOTE_PREFIX = "vilna-romm"
 RUN_BACKUP = False
@@ -27,7 +28,7 @@ def get_bucket() -> storage.bucket.Bucket:
 
 def iter_makkot_blobs(bucket: storage.bucket.Bucket) -> Iterable[storage.blob.Blob]:
     for blob in bucket.list_blobs(prefix=REMOTE_PREFIX):
-        if "Makkot" in blob.name:
+        if TRACTATE_NAME in blob.name:
             yield blob
 
 

@@ -10,12 +10,12 @@ from PIL import Image
 
 
 BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = BASE_DIR / "makkot_vilna_images"
-START_PAGE = 3  # PDF page number (1-indexed) where real content begins
-END_PAGE = 48  # Optionally stop before the PDF ends
+TRACTATE_NAME = "Bekhorot"  # Used in filenames and folder name
+OUTPUT_DIR = BASE_DIR / f"{TRACTATE_NAME.lower()}_vilna_images"
+START_PAGE = 9  # PDF page number (1-indexed) where real content begins
+END_PAGE = 128  # Optionally stop before the PDF ends
 DPI = 400
 THUMBNAIL_SIZE = (256, 278)
-TRACTATE_NAME = "Makkot"
 POPPLER_PATH = os.environ.get("POPPLER_PATH")  # Directory containing pdfinfo/pdftoppm
 
 
