@@ -27,9 +27,23 @@ def connect_via_ssh_tunnel():
 
 
 if __name__ == "__main__":
+    # Remote via SSH
     server, client, mongo_uri = connect_via_ssh_tunnel()
     try:
-        doc = client[CONNECTION["mongo_db"]][CONNECTION["mongo_collection"]].find_one()
-        print(doc)
+        db = client[CONNECTION["mongo_db"]][CONNECTION["mongo_collection"]]
+        print(f"Remote count: {db.estimated_document_count()}")
+        print("Remote doc:", db.find_one())
     finally:
         server.stop()
+
+    # Local direct connection (no tunnel).
+    local_uri = os.getenv(
+        "LOCAL_MONGO_URI",
+        "mongodb://localhost:27017/?retryWrites=true&loadBalanced=false&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000",
+    )
+    local_db_name = os.getenv("LOCAL_MONGO_DB", "sefaria")
+    local_collection_name = os.getenv("LOCAL_MONGO_COLLECTION", CONNECTION["mongo_collection"])
+    local_client = MongoClient(local_uri)
+    local_col = local_client[local_db_name][local_collection_name]
+    print(f"Local count: {local_col.estimated_document_count()}")
+    print("Local doc:", local_col.find_one())
