@@ -4,7 +4,7 @@ def app():
 
 	idList_mapping = {}
 	url = f'https://api.trello.com/1/boards/{BOARD_ID}/lists?key={TRELLO_KEY}&token={TRELLO_TOKEN}'
-	response = requests.request(
+	response = requests.anonymous_request(
 		"GET",
 		url,
 		headers={"Accept": "application/json"}

@@ -411,6 +411,8 @@ class Entry:
             t = tag[0]
             content = content.replace(f'<{tag}>', f' <{t}>').replace(f'</{tag}>', f'</{t}> ')
         content = re.sub('</?[^>/]{2,}>', ' ', content)
+        print(777, re.findall('([A-Za-z][^א-ת]*</i>)', content))
+        content = re.sub('([A-Za-z][^א-ת]*</i>)', r'<span class="englishWithinHebrew dir="ltr">\1</span>', content)
         content = content.replace('&lt;', '<').replace('&gt;', '>')
         content = ' '.join(content.split())
         content = self.handle_refs(content)
