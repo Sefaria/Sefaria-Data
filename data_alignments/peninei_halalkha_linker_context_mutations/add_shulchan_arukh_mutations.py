@@ -12,8 +12,10 @@ Usage:
     python add_shulchan_arukh_mutations.py --save   # Actually save to database
 """
 
-import django
 import sys
+import traceback
+
+import django
 
 django.setup()
 
@@ -21,8 +23,7 @@ from sefaria.model import library
 from sefaria.model.text import Index
 
 # Configuration
-# DEBUG_MODE = "--save" not in sys.argv  # Default to debug mode unless --save is specified
-DEBUG_MODE = False  # Default to debug mode unless --save is specified
+DEBUG_MODE = False
 
 # Map of Peninei Halakhah books to their corresponding Shulchan Arukh section
 BOOK_TO_SA_SECTION = {
@@ -83,17 +84,22 @@ def add_mutation_to_book(book_title, sa_section_slug, debug_mode=True):
         dict: Result information
     """
     try:
+        print(f"\n-- Processing: {book_title} (section slug: {sa_section_slug})")
         # Load the index
         index = library.get_index(book_title)
+        print(f"   Loaded index: {index.title}")
 
         # Get the root node
         root_node = index.nodes
+        print(f"   Root node: {root_node.full_title()}")
 
         # Check if mutations already exist
         existing_mutations = getattr(root_node, 'ref_resolver_context_mutations', None)
+        print(f"   Existing mutations: {len(existing_mutations) if existing_mutations else 0}")
 
         # Create the new mutation
         new_mutation = create_mutation(sa_section_slug)
+        print(f"   New mutation: {new_mutation}")
 
         # Prepare the mutation list
         if existing_mutations:
@@ -102,6 +108,7 @@ def add_mutation_to_book(book_title, sa_section_slug, debug_mode=True):
                 if (mut.get('op') == new_mutation['op'] and
                     mut.get('input_terms') == new_mutation['input_terms'] and
                     mut.get('output_terms') == new_mutation['output_terms']):
+                    print("   Mutation already exists; skipping.")
                     return {
                         'status': 'skipped',
                         'reason': 'Mutation already exists',
@@ -140,10 +147,13 @@ def add_mutation_to_book(book_title, sa_section_slug, debug_mode=True):
         root_node.ref_resolver_context_mutations = mutations_list
 
         # Validate the node
+        print("   Validating node...")
         root_node.validate()
 
         # Save the index
+        print("   Saving index...")
         index.save()
+        print("   Save complete.")
 
         return {
             'status': 'saved',
@@ -154,6 +164,8 @@ def add_mutation_to_book(book_title, sa_section_slug, debug_mode=True):
         }
 
     except Exception as e:
+        print(f"   ERROR: {e}")
+        print(traceback.format_exc())
         return {
             'status': 'error',
             'book': book_title,
@@ -189,6 +201,7 @@ def main():
     }
 
     for book_title, sa_section_slug in BOOK_TO_SA_SECTION.items():
+        print("\n" + "-"*80)
         result = add_mutation_to_book(book_title, sa_section_slug, debug_mode=DEBUG_MODE)
         status = result['status']
         results[status].append(result)
@@ -243,4 +256,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
