@@ -1,0 +1,11 @@
+# Official DictaLM-3.0-24B-Thinking Q4_K_M, downloaded from dicta-il on Hugging Face.
+# Download GGUF to the following path before importing with ollama create.
+FROM ./DictaLM-3.0-24B-Thinking-Q4_K_M.gguf
+TEMPLATE """{{- range .Messages }}<|im_start|>{{ .Role }}
+{{ .Content }}<|im_end|>
+{{ end }}<|im_start|>assistant
+<think>"""
+PARAMETER stop <|im_end|>
+PARAMETER stop </s>
+PARAMETER num_ctx 8192
+PARAMETER temperature 0

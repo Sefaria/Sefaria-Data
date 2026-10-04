@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+# Frozen source text, generated datasets, reviews and superseded notes stay local.
+/datasets/
+/reviews/
+/local_archive/
+/configs/*.generated.json
+/configs/dictalm-chat-template.jinja
+*.gguf
+**/staging.sqlite*
