@@ -36,9 +36,10 @@ committed [summary](../results/density_summary.json) and
 full-corpus projection: the cohort was selected for prior extraction success.
 
 The 1,000-link runs took about 25–44 seconds locally; the density probe about
-21 seconds. Those warm, small runs do not establish full-run runtime. The full
-246,757-candidate corpus has not run. A larger timed batch is needed before
-committing to a runtime estimate.
+21 seconds. Those warm, small runs do not establish full-run runtime. The subsequent full run processed all 246,757 candidates and recovered 9,062
+occurrences across 3,901 entries (1,599 with at least two occurrences; 929 with
+at least three). The user-reported extraction/export time was 210.5 seconds,
+plus inventory and initialization. Full-run semantic precision is not yet measured.
 
 ## Local model experiment
 
