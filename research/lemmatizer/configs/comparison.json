@@ -1,0 +1,46 @@
+{
+  "status": "installed; all three passed one-sentence offline Apple MPS smoke tests; dataset evaluation not run",
+  "input_policy": "unpointed-v1",
+  "alternative_input_policy": "raw-v1",
+  "dicta": {
+    "model": "dicta-il/dictabert-lex",
+    "revision": "384e79fc97afc9070c34be5b334716873ff54795",
+    "api": "model.predict([text], tokenizer, use_lexicon=False)",
+    "max_tokens_including_special": 512,
+    "trust_remote_code": true
+  },
+  "shoshan": {
+    "code_repository": "https://github.com/ivrit/shoshan",
+    "code_revision": "046a031ee5ff0b5585b9185c41e37f9e1e6e784f",
+    "documented_package_version": "0.4.0",
+    "model": "HebArabNlpProject/shoshan",
+    "revision": "c5f520f61a0de2eefa22aeff227e7daa4e979f45",
+    "api": "lemmatize([{form, sentence, start}])",
+    "max_tokens_including_special": 160,
+    "blank_function_words": false,
+    "supply_gold_pos": false
+  },
+  "stanza": {
+    "resources_version": "1.11.0",
+    "model_repository_revision_observed": "c0d0f6d5f0175073668c06546adc99ff290827c6",
+    "language": "he",
+    "processors": {
+      "tokenize": "combined_nocharlm",
+      "mwt": "combined",
+      "pos": "combined_charlm",
+      "lemma": "combined_nocharlm"
+    },
+    "note": "Resolve these exact packages through the pinned resources file; retain downloaded file checksums. GPU execution must be smoke-tested separately."
+  },
+  "evaluation": {
+    "group_by": "dictionary",
+    "metrics": [
+      "bcubed",
+      "pairwise",
+      "coverage"
+    ],
+    "primary_support": "same target IDs successfully aligned by all three systems",
+    "missing_predictions": "abstain; never one shared empty cluster",
+    "cross_dictionary_merging": false
+  }
+}

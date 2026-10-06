@@ -1,0 +1,16 @@
+name: sefaria-lemma-eval
+services:
+  elasticsearch:
+    build: .
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+    ports:
+      - "127.0.0.1:19200:9200"
+    mem_limit: 4g
+    restart: unless-stopped
+    volumes:
+      - index-data:/usr/share/elasticsearch/data
+volumes:
+  index-data:

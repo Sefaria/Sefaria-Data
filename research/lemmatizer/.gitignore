@@ -8,3 +8,7 @@ __pycache__/
 /configs/dictalm-chat-template.jinja
 *.gguf
 **/staging.sqlite*
+
+# Local model runtime and downloaded weights
+/.venv/
+/models/

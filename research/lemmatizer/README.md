@@ -7,7 +7,7 @@ Jastrow and Klein; WordForms and LLM predictions do not supply its labels.
 **Status:** the full run processed 246,757 candidate links and recovered 9,062
 occurrences across 3,901 dictionary-specific entries. Of those entries, 1,599
 have at least two occurrences and 929 have at least three. No confidence model
-has been trained and no lemmatizers have been evaluated. Accepted examples are
+has been trained and the three installed lemmatizers have now been evaluated on repeated dictionary-specific groups (see below). Accepted examples are
 provisional rule-based associations, not expert-adjudicated gold.
 
 ## What is saved
@@ -153,3 +153,25 @@ reference, with one row per association. Generated CSV files stay local under
 | `dictionary_ref` | Source dictionary reference |
 | `extraction_rule` | Rule supporting acceptance |
 | `example_id` | Identifier linking to the full JSONL record |
+
+## Comparing off-the-shelf lemmatizers
+
+See [model comparison groundwork](docs/model_comparison.md) for the inspected
+Dicta/Shoshan/Stanza preprocessing behavior, pinned model references, context
+limits, Stanza segmentation policy, and preparation command. Shared model inputs
+and dictionary labels are separated by `prepare_benchmark.py`; normalization and
+alignment helpers are in `benchmark_core.py`. The models are now [installed and smoke-tested](docs/model_installation.md).
+The [resumable inference runner](docs/inference.md) records predictions from all
+three models with shared context windows and progress bars. Full inference and the repeated-cluster evaluation have completed locally.
+See the inference guide for the evaluation command and saved-report schema.
+
+## Offline Elasticsearch comparison
+
+The [offline search guide](docs/offline_search.md) documents the runnable local
+Tanakh + Rashi + Mishnah experiment: corpus export, resumable full-text Shoshan inference,
+Docker Elasticsearch, paired baseline/enhanced queries, and relevance scoring.
+The full 55,589-passage corpus has been exported, lemmatized, and indexed locally.
+The Sefaria-Project experiment page supports paired search, per-word lemma inspection,
+and optional י/ו expansion. Retrieval-quality evaluation with judged queries remains
+pending. See the [Cauldron deployment assessment](docs/cauldron_deployment.md) for
+the proposed shared dev deployment.

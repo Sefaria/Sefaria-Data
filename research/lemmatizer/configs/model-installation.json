@@ -1,0 +1,335 @@
+{
+  "date": "2026-10-05",
+  "platform": "macOS arm64",
+  "environment": ".venv",
+  "smoke_tests": {
+    "dicta": {
+      "model": "dicta",
+      "device": "mps",
+      "devices": [
+        "mps:0"
+      ],
+      "mps_available": true,
+      "input": "הילדים קראו בספרים.",
+      "prediction": [
+        [
+          [
+            "הילדים",
+            "ילד"
+          ],
+          [
+            "קראו",
+            "קרא"
+          ],
+          [
+            "בספרים",
+            "ספר"
+          ],
+          [
+            ".",
+            "."
+          ]
+        ]
+      ],
+      "elapsed_seconds": 1.47,
+      "versions": {
+        "torch": "2.14.1",
+        "transformers": "4.57.6",
+        "stanza": "1.11.0",
+        "shoshan": "0.4.0"
+      },
+      "scope": "installation smoke test only; no dataset evaluation"
+    },
+    "shoshan": {
+      "model": "shoshan",
+      "device": "mps",
+      "devices": [
+        "mps:0"
+      ],
+      "mps_available": true,
+      "input": "הילדים קראו בספרים.",
+      "prediction": [
+        {
+          "form": "הילדים",
+          "sentence": "הילדים קראו בספרים.",
+          "start": 0,
+          "lemma": "ילד",
+          "pos": "NOUN",
+          "score": 0.6142110824584961,
+          "source": "bypass"
+        },
+        {
+          "form": "קראו",
+          "sentence": "הילדים קראו בספרים.",
+          "start": 7,
+          "lemma": "קרא",
+          "pos": "VERB",
+          "score": 0.6007969379425049,
+          "source": "retrieved"
+        },
+        {
+          "form": "בספרים",
+          "sentence": "הילדים קראו בספרים.",
+          "start": 12,
+          "lemma": "ספר",
+          "pos": "NOUN",
+          "score": 0.660727858543396,
+          "source": "retrieved"
+        }
+      ],
+      "elapsed_seconds": 11.24,
+      "versions": {
+        "torch": "2.14.1",
+        "transformers": "4.57.6",
+        "stanza": "1.11.0",
+        "shoshan": "0.4.0"
+      },
+      "scope": "installation smoke test only; no dataset evaluation"
+    },
+    "stanza": {
+      "model": "stanza",
+      "device": "mps",
+      "devices": [
+        "mps"
+      ],
+      "mps_available": true,
+      "input": "הילדים קראו בספרים.",
+      "prediction": [
+        [
+          {
+            "form": "הילדים",
+            "start": 0,
+            "end": 6,
+            "words": [
+              {
+                "text": "ה",
+                "lemma": "ה",
+                "upos": "DET"
+              },
+              {
+                "text": "ילדים",
+                "lemma": "ילד",
+                "upos": "NOUN"
+              }
+            ]
+          },
+          {
+            "form": "קראו",
+            "start": 7,
+            "end": 11,
+            "words": [
+              {
+                "text": "קראו",
+                "lemma": "קרא",
+                "upos": "VERB"
+              }
+            ]
+          },
+          {
+            "form": "בספרים",
+            "start": 12,
+            "end": 18,
+            "words": [
+              {
+                "text": "ב",
+                "lemma": "ב",
+                "upos": "ADP"
+              },
+              {
+                "text": "ספרים",
+                "lemma": "ספר",
+                "upos": "NOUN"
+              }
+            ]
+          },
+          {
+            "form": ".",
+            "start": 18,
+            "end": 19,
+            "words": [
+              {
+                "text": ".",
+                "lemma": ".",
+                "upos": "PUNCT"
+              }
+            ]
+          }
+        ]
+      ],
+      "elapsed_seconds": 4.57,
+      "versions": {
+        "torch": "2.14.1",
+        "transformers": "4.57.6",
+        "stanza": "1.11.0",
+        "shoshan": "0.4.0"
+      },
+      "scope": "installation smoke test only; no dataset evaluation"
+    }
+  },
+  "downloaded_files": {
+    "dicta/.gitattributes": {
+      "bytes": 1565,
+      "sha256": "1c5c2c54c2c1c5eabd0037bda7a175180dfde6bb1dd8cd5d67a553dc3d00163f"
+    },
+    "dicta/BertForJointParsing.py": {
+      "bytes": 28731,
+      "sha256": "adff43130f5ab6a3c6c580c507f206709d4a51028db1a8eff2bbd92bcf244daa"
+    },
+    "dicta/BertForLexPrediction.py": {
+      "bytes": 4008,
+      "sha256": "e5af804d0d55b167d1f52319fd366f01241d16074370015ddb165e3d392a220f"
+    },
+    "dicta/BertForMorphTagging.py": {
+      "bytes": 10980,
+      "sha256": "f16fbd2a640194a07c3a52fd809000241746a19f491a7af6702f4eb86a2f7093"
+    },
+    "dicta/BertForPrefixMarking.py": {
+      "bytes": 15161,
+      "sha256": "6fed41e6041d824b4b5ed3b26ccf32b41ceb9b4ddaf1e961375064a2d0ded1d4"
+    },
+    "dicta/BertForSyntaxParsing.py": {
+      "bytes": 28787,
+      "sha256": "2aebe51bf2ca5f090e2e9347786a4b2c032517efd08ee379b5af790456fe2646"
+    },
+    "dicta/README.md": {
+      "bytes": 3671,
+      "sha256": "5657bbd9c0c718ab595d25de004813444311961737cc6484f9171ed6d057b44e"
+    },
+    "dicta/config.json": {
+      "bytes": 733,
+      "sha256": "cc0d0cad854269eb5c75b039f9bdaf19df1db11fa147a84b5390c436f75cdbef"
+    },
+    "dicta/model.safetensors": {
+      "bytes": 737923240,
+      "sha256": "0431fbcf15fa652061006aa34fba76782d7630d3c32bbfc598da33b830b80cba"
+    },
+    "dicta/special_tokens_map.json": {
+      "bytes": 695,
+      "sha256": "5d5b662e421ea9fac075174bb0688ee0d9431699900b90662acd44b2a350503a"
+    },
+    "dicta/tokenizer.json": {
+      "bytes": 3577609,
+      "sha256": "4e520fd9025a2fd5f2dce1d04df5922954c8ff050cc3e67d4bc54a7347eccb32"
+    },
+    "dicta/tokenizer_config.json": {
+      "bytes": 1351,
+      "sha256": "53fde6fe26f7b0f5c9e9e6cdaa549888b35266fb08dc8a57b60e385d4f860eb7"
+    },
+    "dicta/vocab.txt": {
+      "bytes": 1500244,
+      "sha256": "0fb90bfa35244d26f0065d1fcd0b5becc3da3d44d616a7e2aacaf6320b9fa2d0"
+    },
+    "shoshan/.gitattributes": {
+      "bytes": 1579,
+      "sha256": "532d3e1e575144aa1f9d48be7853eced81b9a89a376ea03c88150c4eb3aefa63"
+    },
+    "shoshan/README.md": {
+      "bytes": 3652,
+      "sha256": "f7b3f1ff50270642147557ed00f99f623ff4903a9302d10ce1b1a03cd8f49055"
+    },
+    "shoshan/bank/bank_meta.json": {
+      "bytes": 93,
+      "sha256": "5b39e9b4ecc02301ebdbeaef7cb4ebcedcfbc67840dc1ca4ab96017ada66a461"
+    },
+    "shoshan/bank/lemmas.csv": {
+      "bytes": 2571844,
+      "sha256": "b1172da32faac72ae0f6f73d6677a0fea7d235536a7a18944a9fec4b1239ac09"
+    },
+    "shoshan/bank/lemmas.npy": {
+      "bytes": 361390208,
+      "sha256": "cb8c38d689eba04ce0c3d1dc328719a144346dccb18543db14d2555836874cc4"
+    },
+    "shoshan/config.json": {
+      "bytes": 83,
+      "sha256": "266af1f6bda7ed8b53626b9a849b5e723605517a6b5132dcafcf4432fc861e27"
+    },
+    "shoshan/model/edit_bias.npy": {
+      "bytes": 3124,
+      "sha256": "e90d8c5ecacdd71f8657b1815779d061bf649776bcde31266fae0d59cd375cb2"
+    },
+    "shoshan/model/edit_weight.npy": {
+      "bytes": 2301056,
+      "sha256": "f842cf880d7408cf33aeefed8b7d820c78c6331aac940e9b32fe200866b6d819"
+    },
+    "shoshan/model/encoder/config.json": {
+      "bytes": 692,
+      "sha256": "4288ccc6936f65c7c20854ec3698f2933d7f616f51a6e0244cd278b52839c228"
+    },
+    "shoshan/model/encoder/model.safetensors": {
+      "bytes": 737403752,
+      "sha256": "cd885c6b89f19ba059e66a5bfafc5992f14acc05a6bb1cc61b62f3761c005ad4"
+    },
+    "shoshan/model/encoder/special_tokens_map.json": {
+      "bytes": 695,
+      "sha256": "5d5b662e421ea9fac075174bb0688ee0d9431699900b90662acd44b2a350503a"
+    },
+    "shoshan/model/encoder/tokenizer.json": {
+      "bytes": 3577862,
+      "sha256": "b3133dfdaf83898b414a04884947e97e608681a3aef00c2c3eee502f27c7d0de"
+    },
+    "shoshan/model/encoder/tokenizer_config.json": {
+      "bytes": 1542,
+      "sha256": "436a91098bd9638a9613b93cda31c00e4ce64c0cfe1257e34cd55ab94a430edf"
+    },
+    "shoshan/model/encoder/vocab.txt": {
+      "bytes": 1500244,
+      "sha256": "0fb90bfa35244d26f0065d1fcd0b5becc3da3d44d616a7e2aacaf6320b9fa2d0"
+    },
+    "shoshan/model/joint_meta.json": {
+      "bytes": 77,
+      "sha256": "1096de5b0296b214ef5e12466a77f45efb2fb24fbeb577b317e2c1dd596782b1"
+    },
+    "shoshan/model/pos_anchors.npy": {
+      "bytes": 46208,
+      "sha256": "978f2bd81ee41e8dd63259aed8c98f3d7e1d07ff34939133fe3cee694f6cd3a1"
+    },
+    "shoshan/model/pos_bias.npy": {
+      "bytes": 188,
+      "sha256": "27857632a63b510d5db0431e4777677387a94909fad9142ebd55f477f387b242"
+    },
+    "shoshan/model/pos_labels.json": {
+      "bytes": 114,
+      "sha256": "713749e2d9ce03bb4993a6a63664e874eb737f44041ae0428a25728db2313dc1"
+    },
+    "shoshan/model/scripts.json": {
+      "bytes": 11452,
+      "sha256": "01b82a6c6abe3791633059296e0c4a4fca0a76f614e6249a6cb86dffb254e76e"
+    },
+    "shoshan/model/suppletives.csv": {
+      "bytes": 12359,
+      "sha256": "2849ffce1f52cb74fa66cea6b155a83b6810c69f915112afc056086e66bada76"
+    },
+    "stanza/he/backward_charlm/oscar.pt": {
+      "bytes": 21880010,
+      "sha256": "37651d669b5a1fc552754eed758d0b4885ad9a7b1408b25c8738ca72b21a8495"
+    },
+    "stanza/he/forward_charlm/oscar.pt": {
+      "bytes": 21879983,
+      "sha256": "15218fcfe91a8c23404b99eba764a767b5619965534c37a21f63bb5e3177766f"
+    },
+    "stanza/he/lemma/combined_nocharlm.pt": {
+      "bytes": 3854109,
+      "sha256": "5d77201822b46b6d4cf7fb4445eaaa6d5616ac0eea3f1a985e4903200f242007"
+    },
+    "stanza/he/mwt/combined.pt": {
+      "bytes": 1567694,
+      "sha256": "aebc1fac4c7aa3519bfe168fc00adffcbfeb13439360e5f3cc622650bced9937"
+    },
+    "stanza/he/pos/combined_charlm.pt": {
+      "bytes": 35641111,
+      "sha256": "3b66e98c24b2575737f9f39495d71c9b501d816f7090e49066851777c1e71d89"
+    },
+    "stanza/he/pretrain/conll17.pt": {
+      "bytes": 107615588,
+      "sha256": "004f5818f3bca814136dbd39df44f987f8045567521d3078d8eae595841c5ecc"
+    },
+    "stanza/he/tokenize/combined_nocharlm.pt": {
+      "bytes": 641904,
+      "sha256": "a07b9e05aea6d97bf24516d8a8931333e227123aff438101239d09a5d7d3c27f"
+    },
+    "stanza/resources.json": {
+      "bytes": 439068,
+      "sha256": "e334b4e200aeaa5c1903223de2f3be066f69d3a50a33c70aa1691407628de1ef"
+    }
+  }
+}
